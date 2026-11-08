@@ -9,9 +9,15 @@
 		size?: number;
 		/** Accessible name; defaults to the step's name. Pass '' when a visible name sits beside it. */
 		label?: string;
+		/**
+		 * Fills its box with the art alone, with no token face around it: the picture in a
+		 * character piece's ring, where a character's icon fills it too (Trevor, 2026-11-08:
+		 * "should fully fill character image space, not be within a token").
+		 */
+		fill?: boolean;
 	}
 
-	let { marker, size = 56, label }: Props = $props();
+	let { marker, size = 56, label, fill = false }: Props = $props();
 	const name = $derived(label ?? MARKER_TEXT[marker].name);
 	// Our own art (Trevor, 2026-10-16): the same parchment face as a character token, with a
 	// simple glyph. Dusk: the sun sinking under the horizon below the first stars. Dawn: the sun
@@ -28,10 +34,11 @@
 	aria-label={name || undefined}
 	aria-hidden={name ? undefined : 'true'}
 	data-marker={marker}
-	style:--token-size="{size}px"
+	data-fill={fill || undefined}
+	style:--token-size={fill ? undefined : `${size}px`}
 >
-	<svg viewBox="0 0 100 100" aria-hidden="true">
-		<circle class="face" cx="50" cy="50" r="48" />
+	<svg viewBox={fill ? '3 3 94 94' : '0 0 100 100'} aria-hidden="true">
+		{#if !fill}<circle class="face" cx="50" cy="50" r="48" />{/if}
 		{#if marker === 'dusk'}
 			<path class="night-sky" d={SKY} />
 			<path class="star" d="M30 24 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" />
@@ -75,6 +82,12 @@
 		flex: none;
 		width: var(--token-size);
 		height: var(--token-size);
+	}
+	.token[data-fill] {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		overflow: hidden;
 	}
 	svg {
 		position: absolute;

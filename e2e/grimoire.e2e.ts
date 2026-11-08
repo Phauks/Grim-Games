@@ -4920,6 +4920,15 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 	}
 	await openStep(page, 'Dusk');
 	const step = page.getByRole('dialog', { name: 'First night' });
+	// Trevor, 2026-11-08: "Dawn and dusk icon should fully fill character image space, not be
+	// within a token": the art fills the ring, as a character's icon does, with no face of its own.
+	const art = step.locator('.row-head .ring [data-marker]');
+	expect(
+		await art.evaluate((el) => ({
+			fills: el.getBoundingClientRect().width / el.closest('.ring')!.clientWidth > 0.95,
+			face: !!el.querySelector('.face')
+		}))
+	).toEqual({ fills: true, face: false });
 	const parts = () =>
 		step.evaluate((dialog) => ({
 			row: !!dialog.querySelector('.row-head .ring-row'),
