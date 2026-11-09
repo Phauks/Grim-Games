@@ -18,7 +18,7 @@ import {
 	type Jinx
 } from '#lib/core/data/types.ts';
 import { scriptJinxes, type ScriptJinx } from './jinxes.ts';
-import { onlyNeedsCharacter, setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
+import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
 
 export interface ScriptRequirement {
 	/** The character that needs another in play. */
@@ -31,10 +31,7 @@ export interface ScriptRequirement {
 export interface ScriptFacts {
 	counts: Record<CharacterType, number>;
 	jinxes: ScriptJinx[];
-	/**
-	 * Characters on the script that change setup, in script order. One that only needs another
-	 * character in play (the Choirboy) is left to `requirements`, which shows that character.
-	 */
+	/** Characters on the script that change setup, in script order. */
 	modifiers: SetupModifier[];
 	requirements: ScriptRequirement[];
 }
@@ -65,7 +62,7 @@ export function scriptFacts(
 	return {
 		counts,
 		jinxes,
-		modifiers: modifiers.filter((m) => !onlyNeedsCharacter(m)),
+		modifiers,
 		requirements: modifiers.flatMap((m) =>
 			m.requires ? [{ id: m.id, requires: m.requires, onScript: ids.has(m.requires) }] : []
 		)

@@ -27,14 +27,6 @@ describe('scriptFacts', () => {
 		]);
 	});
 
-	// https://wiki.bloodontheclocktower.com/Choirboy
-	// Wiki: "if the King is not already in play, remove a Townsfolk character token and add the King character token."
-	it('leaves a character that only needs another to the requirements', () => {
-		const facts = scriptFacts(chars('choirboy', 'king', 'imp'), data.jinxes);
-		expect(facts.modifiers.map((m) => m.id)).toEqual([]);
-		expect(facts.requirements).toEqual([{ id: 'choirboy', requires: 'king', onScript: true }]);
-	});
-
 	// https://wiki.bloodontheclocktower.com/Spy: the Spy and the Magician are jinxed.
 	it('lists jinxed pairs', () => {
 		const facts = scriptFacts(chars('spy', 'magician', 'chef', 'imp'), data.jinxes);
