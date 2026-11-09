@@ -13,6 +13,7 @@ export * from './draw-lock.ts';
 export * from './script-facts.ts';
 export * from './script-builder.ts';
 export * from './character-builder.ts';
+export * from './character-builder-rules.ts';
 export * from './prevented-deaths.ts';
 export * from './teensyville.ts';
 export * from './evil-info.ts';

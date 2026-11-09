@@ -283,3 +283,56 @@ test('picks where a character wakes from the night stages', async ({ page }) => 
 	await page.getByRole('button', { name: 'Download character JSON' }).tap();
 	await expect(page.getByRole('dialog').getByTestId('builder-json')).toContainText('"minions"');
 });
+
+// A Rules section (M62, Trevor picked "Add a rule", 2026-11-09): rules are added one at a time
+// from a drop-down, with a field for a simple rule and rules text for one with several
+// settings, each checked as a script would load it; a row's ⋯ changes or removes it.
+test('rules are added, changed and removed one at a time', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Lamplighter');
+	await page.getByTestId('character-ability').fill('Each night*, choose a player: they can’t die.');
+	await page.getByTestId('reminders').getByRole('button', { name: 'Add a reminder' }).tap();
+	await page.getByRole('textbox', { name: 'Reminder 1' }).first().fill('Lit');
+
+	const rules = page.getByTestId('rules');
+	await expect(rules).toHaveText('None');
+
+	// A rule with one reminder: its value is picked from the character's own reminders.
+	await page.getByTestId('add-rule').tap();
+	let dialog = page.getByRole('dialog', { name: 'Add a rule' });
+	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
+	await page.getByRole('option', { name: /^Curses/ }).tap();
+	await expect(dialog.getByRole('combobox', { name: 'Value' })).toHaveText(/Lit/);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(rules).toContainText('Curses');
+	await expect(rules).toContainText('Lit');
+
+	// A rule with several settings is written as rules text, checked as it is typed.
+	await page.getByTestId('add-rule').tap();
+	dialog = page.getByRole('dialog', { name: 'Add a rule' });
+	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
+	await page.getByRole('option', { name: /^Protects/ }).tap();
+	const text = dialog.getByRole('textbox', { name: 'Rules text' });
+	await text.fill('{ "who": "marked", "token": "Safe", "from": "any" }');
+	await expect(dialog.getByTestId('rule-problems')).toContainText('rules.protects.token');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
+	await text.fill('{ "who": "marked", "token": "Lit", "from": "any", "night": true }');
+	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(rules).toContainText('Protects');
+
+	// Change: the ⋯ opens the rule with its value.
+	await rules.getByRole('button', { name: 'Protects options' }).tap();
+	await page.getByRole('menuitem', { name: 'Change' }).tap();
+	dialog = page.getByRole('dialog', { name: 'Change a rule' });
+	await expect(dialog.getByRole('textbox', { name: 'Rules text' })).toHaveValue(/"night": true/);
+	await dialog.getByRole('button', { name: 'Cancel' }).tap();
+
+	// The rules go with the saved character and survive a reload.
+	await page.reload();
+	await expect(rules).toContainText('Protects');
+	await rules.getByRole('button', { name: 'Curses options' }).tap();
+	await page.getByRole('menuitem', { name: 'Remove' }).tap();
+	await expect(rules).not.toContainText('Curses');
+	await expect(rules).toContainText('Protects');
+});
