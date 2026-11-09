@@ -2,8 +2,8 @@
  * One part of a character's rules block: a behaviour the rules code knows, which names no
  * character. Each part is one file in this folder, listed once in `index.ts`; the rules block
  * type (`CharacterRules`) and its reader (`parseCharacterRules`) are built from that list, so a
- * new part is a new file and one line there. A custom character builder can list the parts with
- * their `label` and `description` (not shown in the app yet).
+ * new part is a new file and one line there. The Character builder's Rules section lists the
+ * parts by `label` and `description`, and edits a part with a `field` through that field (M62).
  */
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
@@ -19,11 +19,26 @@ import {
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
 
+/**
+ * How the Character builder edits a part's value: on (`true`), on or off, one of `values`, a
+ * whole number above 0, text, or one of the character's own reminders. A part without one
+ * (several settings at once) is edited as its rules text until it gets fields of its own.
+ */
+export type PartField =
+	| { kind: 'true' }
+	| { kind: 'boolean' }
+	| { kind: 'enum'; values: readonly string[] }
+	| { kind: 'count' }
+	| { kind: 'string' }
+	| { kind: 'token' };
+
 export interface Part<T> {
 	/** A short name for the part. */
 	label: string;
 	/** What the part does, in our own words. */
 	description: string;
+	/** How the Character builder edits it; absent: as rules text. */
+	field?: PartField;
 	/**
 	 * Reads the part's value from `block[key]` (present), recording each problem in `issues`
 	 * under `path` (the block's path). Undefined when the value is unusable.
@@ -59,6 +74,7 @@ export function booleanPart(label: string, description: string): Part<boolean> {
 	return {
 		label,
 		description,
+		field: { kind: 'boolean' },
 		read: (block, key, path, issues) => readBoolean(block, key, path, issues)
 	};
 }
@@ -68,6 +84,7 @@ export function truePart(label: string, description: string): Part<true> {
 	return {
 		label,
 		description,
+		field: { kind: 'true' },
 		read: (block, key, path, issues) => (readBoolean(block, key, path, issues) ? true : undefined)
 	};
 }
@@ -81,6 +98,7 @@ export function enumPart<T extends string>(
 	return {
 		label,
 		description,
+		field: { kind: 'enum', values },
 		read: (block, key, path, issues) => readEnum(block, key, values, path, issues, false)
 	};
 }
@@ -90,6 +108,7 @@ export function countPart(label: string, description: string): Part<number> {
 	return {
 		label,
 		description,
+		field: { kind: 'count' },
 		read: (block, key, path, issues) => {
 			const n = readNumber(block, key, path, issues);
 			if (n === undefined) return undefined;
@@ -105,6 +124,7 @@ export function stringPart(label: string, description: string): Part<string> {
 	return {
 		label,
 		description,
+		field: { kind: 'string' },
 		read: (block, key, path, issues) => readString(block, key, path, issues, false)
 	};
 }
@@ -114,6 +134,7 @@ export function tokenPart(label: string, description: string): Part<ReminderLabe
 	return {
 		label,
 		description,
+		field: { kind: 'token' },
 		read: (block, key, path, issues, reminders) => readToken(block, key, path, issues, reminders)
 	};
 }

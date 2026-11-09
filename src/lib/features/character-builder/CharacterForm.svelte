@@ -19,6 +19,7 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import AbilityField from './AbilityField.svelte';
 	import NightPlaceField from './NightPlaceField.svelte';
+	import RulesField from './RulesField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { savedCharacters, type CharacterBuilderDraft } from './stores.svelte.ts';
 
@@ -163,6 +164,11 @@
 			/>
 		</div>
 	</PageSection>
+
+	<RulesField
+		fields={f}
+		onchange={(rules) => (rules ? draft.update({ rules }) : draft.unset('rules'))}
+	/>
 </div>
 
 <style>
