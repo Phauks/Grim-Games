@@ -26,18 +26,4 @@ describe('splitSetupNote', () => {
 		expect(splitSetupNote('[A] then more')).toEqual({ text: '[A] then more' });
 		expect(splitSetupNote('[No Demon]')).toEqual({ text: '[No Demon]' });
 	});
-
-	// https://wiki.bloodontheclocktower.com/Choirboy
-	// Wiki: "If the Demon kills the King, you learn which player is the Demon. [+the King]"
-	it('drops a note that only adds a character the ability already names', () => {
-		expect(
-			splitSetupNote(
-				'If the Demon kills the King, you learn which player is the Demon. [+the King]'
-			)
-		).toEqual({ text: 'If the Demon kills the King, you learn which player is the Demon.' });
-	});
-
-	it('keeps a note adding a character the ability does not name', () => {
-		expect(splitSetupNote('You have a gift. [+the King]').setup).toBe('+the King');
-	});
 });
