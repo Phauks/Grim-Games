@@ -191,6 +191,13 @@ export interface ScriptMeta {
 	almanac?: string;
 	/** Bootlegger homebrew rules, one per entry. */
 	bootlegger?: string[];
+	/**
+	 * What the `bootlegger` lines do in play, as a rules block (M61f): the same parts a
+	 * character's `rules` has, laid over the Bootlegger's own while it is in play
+	 * (`script-rules.ts`). Not in TPI's schema (which allows extra keys): an app extension, so
+	 * the lines stay the text people read and other tools still load the script.
+	 */
+	bootleggerRules?: CharacterRules;
 	/** Custom night order for this script (ids and night markers). */
 	firstNight?: string[];
 	otherNight?: string[];

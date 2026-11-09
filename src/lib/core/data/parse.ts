@@ -277,6 +277,10 @@ function parseMeta(raw: Record<string, unknown>, path: string, issues: Issues): 
 		const value = readStringArray(raw, key, path, issues);
 		if (value !== undefined) meta[key] = value;
 	}
+	if (raw.bootleggerRules !== undefined) {
+		const rules = parseCharacterRules(raw.bootleggerRules, `${path}.bootleggerRules`, issues);
+		if (rules) meta.bootleggerRules = rules;
+	}
 	return meta;
 }
 

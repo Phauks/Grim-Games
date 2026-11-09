@@ -4,14 +4,14 @@
  * so the game state itself only stores ids.
  */
 import type { Character, CharacterId, GameData, Script } from '#lib/core/data/index.ts';
-import { BOOTLEGGER, bootleggerWithRules, scriptRules } from '#lib/core/rules/script-rules.ts';
+import { BOOTLEGGER, bootleggerWithRules } from '#lib/core/rules/script-rules.ts';
 
 export type CharacterLookup = ReadonlyMap<CharacterId, Character>;
 
 /**
  * All official characters (Travellers, Fabled and Loric can join any game) plus the
  * script's homebrew characters, which win over an official character with the same id.
- * The Bootlegger's ability is the script's rules when it has any.
+ * The Bootlegger's ability is the script's rules when it has any, with their rules block.
  */
 export function characterLookup(
 	data: Pick<GameData, 'characters'>,
@@ -23,7 +23,7 @@ export function characterLookup(
 	}
 	// The Bootlegger shows the script's own rules (script-rules.ts).
 	const bootlegger = map.get(BOOTLEGGER);
-	if (bootlegger) map.set(BOOTLEGGER, bootleggerWithRules(bootlegger, scriptRules(script.meta)));
+	if (bootlegger) map.set(BOOTLEGGER, bootleggerWithRules(bootlegger, script.meta));
 	return map;
 }
 

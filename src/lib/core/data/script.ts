@@ -27,6 +27,7 @@ import {
 	type Special
 } from './types.ts';
 import { describe, Issues, isObject, type Json } from './validate.ts';
+import { loadBootlegger } from './script-bootlegger.ts';
 import { checkScriptJinxRules, withReadableRules, type PendingJinx } from './script-jinx-rules.ts';
 
 export type ScriptProblemSeverity = 'error' | 'warning' | 'info';
@@ -659,19 +660,7 @@ function loadMeta(
 		else meta[key] = value;
 	}
 	if (typeof raw.hideTitle === 'boolean') meta.hideTitle = raw.hideTitle;
-	if (raw.bootlegger !== undefined) {
-		const rules =
-			typeof raw.bootlegger === 'string'
-				? [raw.bootlegger]
-				: Array.isArray(raw.bootlegger)
-					? raw.bootlegger.filter((r): r is string => typeof r === 'string')
-					: [];
-		if (rules.length === 0 && raw.bootlegger !== '') {
-			problems.push(
-				warn(where, 'Ignored the homebrew rules (bootlegger): expected a list of text.')
-			);
-		} else meta.bootlegger = rules;
-	}
+	loadBootlegger(raw, meta, (message) => problems.push(warn(where, message)));
 	for (const key of ['firstNight', 'otherNight'] as const) {
 		if (raw[key] === undefined) continue;
 		if (!Array.isArray(raw[key])) {
