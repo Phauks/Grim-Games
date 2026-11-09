@@ -27,6 +27,7 @@ import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
 import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/turns-players-rules.ts';
+import { neighboursTurned } from '#lib/core/rules/turns-players.ts';
 import type { DraftState, PendingChange } from './draft.ts';
 
 /** Its own rules (a custom character's) or our rules file's. */
@@ -105,9 +106,9 @@ export function conversions(state: DraftState): Conversion[] {
 		const turns = state.turns?.[id];
 		if (!turns) return [];
 		if (turns.players === 'neighbours') {
-			const seats = neighbours(state, seat).filter(
-				(i) => i < state.picks.length && !isEvil(state, state.picks[i])
-			);
+			const seats = neighboursTurned(neighbours(state, seat), (i) =>
+				isEvil(state, state.picks[i])
+			).filter((i) => i < state.picks.length);
 			const { type, players } = turns;
 			return seats.length > 0
 				? [{ characterId: id, seat, type, players, count: seats.length, seats }]
@@ -202,7 +203,7 @@ export function keptForNeighbours(state: DraftState, id: CharacterId): PendingCh
 	if (turns?.players !== 'neighbours') return [];
 	const seat = state.picks.lastIndexOf(id);
 	const known = (i: number) => i < state.picks.length && isEvil(state, state.picks[i]);
-	const count = neighbours(state, seat).filter((i) => !known(i)).length;
+	const count = neighboursTurned(neighbours(state, seat), known).length;
 	return count > 0
 		? [{ characterId: id, op: { kind: 'delta', type: turns.type, values: [-count] } }]
 		: [];
