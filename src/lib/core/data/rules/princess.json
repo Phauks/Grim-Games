@@ -57,5 +57,8 @@
 			"stage": "stops-kills",
 			"after": "lycanthrope"
 		}
+	},
+	"reminderEnds": {
+		"Doesn't Kill": "dawn"
 	}
 }
