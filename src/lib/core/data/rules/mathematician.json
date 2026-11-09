@@ -6,7 +6,8 @@
 		}
 	},
 	"answers": {
-		"question": "abnormal-abilities",
+		"question": "count",
+		"among": "abnormal",
 		"token": "Abnormal"
 	},
 	"setupPrep": {

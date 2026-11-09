@@ -140,17 +140,24 @@ export interface Learns {
 /**
  * What an `answers` character learns, each worked out in `rules/night-info.ts`:
  * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
- * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
- * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
- * statement logged by day, L58), `outsiders-in-play` (the Outsider characters in play),
- * `winning-alignment` (General: which team the Storyteller believes is winning, good, evil or
- * neither, their judgement, so all three are offered).
+ * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `statement-true`
+ * (Gossip, from the statement logged by day, L58), `outsiders-in-play` (the Outsider characters
+ * in play), `winning-alignment` (General: which team the Storyteller believes is winning, good,
+ * evil or neither, their judgement, so all three are offered).
+ * `count` is the building block (M77): how many players of a group match, the group `among`:
+ * - `dead`: those who register as dead;
+ * - `marked`: those carrying this character's reminders, the waking player included;
+ * - `abnormal`: those whose ability worked abnormally since dawn because of another
+ *   character, from the info recorded as abnormal; once the Storyteller has put this
+ *   character's `token` on players, those carrying it (their call).
+ * A player matches when they register as `alignment`, every one of the group when left out.
+ * The official names below that are such a count are presets that expand to it
+ * (`ANSWER_PRESETS`): `evil-dead` (Oracle), `evil-marked` (the Duchess's visitors) and
+ * `abnormal-abilities` (Mathematician).
  * `token` is the character's reminder that marks the answer on the board ("Died Today",
  * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
  * character that learns something else then (the Godfather starts knowing which Outsiders
  * are in play, https://wiki.bloodontheclocktower.com/Godfather).
- * `evil-marked` counts the evil players among those carrying this character's reminders,
- * the waking player included (the Duchess's visitors).
  * `wakes: 'marked'` wakes each player carrying one of this character's reminders, for a
  * character no player holds (a Fabled: https://wiki.bloodontheclocktower.com/Duchess).
  * `falseToken` is the reminder whose player must get false information (the Duchess's
@@ -162,20 +169,51 @@ const ANSWER_QUESTIONS = [
 	'executed-character',
 	'outsider-died',
 	'correct-guesses',
-	'evil-dead',
-	'abnormal-abilities',
 	'statement-true',
 	'outsiders-in-play',
 	'winning-alignment',
-	'evil-marked'
+	'count'
 ] as const;
+const ANSWER_PRESET_NAMES = ['evil-dead', 'evil-marked', 'abnormal-abilities'] as const;
+const ANSWER_NAMES = [...ANSWER_QUESTIONS, ...ANSWER_PRESET_NAMES] as const;
+const COUNT_AMONG = ['dead', 'marked', 'abnormal'] as const;
 const ANSWER_WAKES = ['marked'] as const;
-export interface Answers {
-	question: (typeof ANSWER_QUESTIONS)[number];
+type AnswerQuestion = (typeof ANSWER_QUESTIONS)[number];
+type AnswerPreset = (typeof ANSWER_PRESET_NAMES)[number];
+
+/** A `count` answer: how many players of a group match. */
+export interface AnswerCount {
+	among: (typeof COUNT_AMONG)[number];
+	alignment?: Alignment;
+}
+
+/** The official names that are a `count`, and the count each expands to. */
+const ANSWER_PRESETS: Readonly<Record<AnswerPreset, AnswerCount>> = {
+	'evil-dead': { among: 'dead', alignment: 'evil' },
+	'evil-marked': { among: 'marked', alignment: 'evil' },
+	'abnormal-abilities': { among: 'abnormal' }
+};
+
+/** A question as asked: one worked out on its own, or a `count`. */
+export type AnswerAsked =
+	| { question: Exclude<AnswerQuestion, 'count'> }
+	| ({ question: 'count'; preset?: AnswerPreset } & AnswerCount);
+
+export type Answers = AnswerAsked & {
 	token?: ReminderLabel;
-	firstNight?: (typeof ANSWER_QUESTIONS)[number];
+	firstNight?: AnswerAsked;
 	wakes?: (typeof ANSWER_WAKES)[number];
 	falseToken?: ReminderLabel;
+};
+
+/** `name` as asked: a preset expanded to its `count`. */
+function asked(name: (typeof ANSWER_NAMES)[number], count?: AnswerCount): AnswerAsked {
+	if (name === 'count') return { question: 'count', ...(count as AnswerCount) };
+	if (name in ANSWER_PRESETS) {
+		const preset = name as AnswerPreset;
+		return { question: 'count', ...ANSWER_PRESETS[preset], preset };
+	}
+	return { question: name as Exclude<AnswerQuestion, 'count'> };
 }
 
 export function readLearns(
@@ -306,17 +344,41 @@ export function readAnswers(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['question', 'token', 'firstNight', 'wakes', 'falseToken'], path, issues);
-	const question = readEnum(raw, 'question', ANSWER_QUESTIONS, path, issues, true);
+	checkKeys(
+		raw,
+		['question', 'among', 'alignment', 'token', 'firstNight', 'wakes', 'falseToken'],
+		path,
+		issues
+	);
+	const question = readEnum(raw, 'question', ANSWER_NAMES, path, issues, true);
+	const among = readEnum(raw, 'among', COUNT_AMONG, path, issues, false);
+	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
-	const firstNight = readEnum(raw, 'firstNight', ANSWER_QUESTIONS, path, issues, false);
+	const firstNight = readEnum(raw, 'firstNight', ANSWER_NAMES, path, issues, false);
 	const wakes = readEnum(raw, 'wakes', ANSWER_WAKES, path, issues, false);
 	const falseToken = readToken(raw, 'falseToken', path, issues, reminders);
 	if (!question) return undefined;
+	if (question === 'count') {
+		if (!among) {
+			issues.add(`${path}.among`, 'missing');
+			return undefined;
+		}
+		if (among === 'abnormal' && alignment) {
+			issues.add(`${path}.alignment`, 'not with `among: "abnormal"`');
+			return undefined;
+		}
+	} else if (among || alignment) {
+		issues.add(path, 'only a `count` takes `among` and `alignment`');
+		return undefined;
+	}
+	if (firstNight === 'count') {
+		issues.add(`${path}.firstNight`, 'a `count` needs its own fields: name a preset');
+		return undefined;
+	}
 	return {
-		question,
+		...asked(question, among ? { among, ...(alignment ? { alignment } : {}) } : undefined),
 		...(token ? { token } : {}),
-		...(firstNight ? { firstNight } : {}),
+		...(firstNight ? { firstNight: asked(firstNight) } : {}),
 		...(wakes ? { wakes } : {}),
 		...(falseToken ? { falseToken } : {})
 	};

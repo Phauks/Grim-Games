@@ -82,7 +82,10 @@ describe('evil-marked answers (Duchess)', () => {
 		);
 		expect(issues.list).toEqual([]);
 		expect(ok?.answers).toEqual({
-			question: 'evil-marked',
+			question: 'count',
+			among: 'marked',
+			alignment: 'evil',
+			preset: 'evil-marked',
 			wakes: 'marked',
 			falseToken: 'False Info'
 		});

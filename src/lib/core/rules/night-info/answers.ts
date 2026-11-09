@@ -387,43 +387,6 @@ function statementTrue(
 	return out;
 }
 
-/**
- * Oracle: how many dead players are evil (https://wiki.bloodontheclocktower.com/Oracle).
- * Dead as abilities see it, and the alignment the rules use (overrides win). A dead Recluse
- * might register as evil and a dead Spy as good: both work even if dead (`possible`).
- */
-function evilDead(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup
-): NightAnswer {
-	const evilIn = (w: RegistrationWorld) =>
-		game.seating.filter((s) => registersAsDead(game, s, characters) && w.alignment(s) === 'evil');
-	const w = byWorld(game, seatId, characters, (world) => ({
-		kind: 'number',
-		value: evilIn(world).length
-	}));
-	const [base] = w.worlds;
-	const evilDead = evilIn(base);
-	return answer(
-		game,
-		seatId,
-		characterId,
-		characters,
-		{ kind: 'number', value: evilDead.length },
-		evilDead,
-		{
-			possible: w.possible,
-			relevant: w.relevant,
-			facts: game.seating
-				.filter((s) => registersAsDead(game, s, characters))
-				.map((s) => fact(game, s, characters, base)),
-			alternatives: w.alternatives
-		}
-	);
-}
-
 /** The players carrying one of `characterId`'s reminders, in seating order. */
 export function markedSeats(game: Game, characterId: CharacterId): SeatId[] {
 	return game.seating.filter((s) =>
@@ -432,37 +395,49 @@ export function markedSeats(game: Game, characterId: CharacterId): SeatId[] {
 }
 
 /**
- * Duchess: how many of the players carrying this character's reminders are evil, the waking
- * player included (each visitor counts themself, https://wiki.bloodontheclocktower.com/Duchess).
- * The player carrying `falseToken` ("False Info") must be told any other number: the answer is
- * marked `mustBeFalse` with this character as `falseBy`.
+ * A `count` (M77): how many players of the group `rule.among` register as `rule.alignment`
+ * (every one of them when left out). The Oracle counts the evil dead
+ * (https://wiki.bloodontheclocktower.com/Oracle), the Duchess the evil among her visitors, the
+ * waking player included (https://wiki.bloodontheclocktower.com/Duchess), and the Mathematician
+ * the abilities that worked abnormally (`abnormalAbilities`). Dead as abilities see it, and the
+ * alignment the rules use (overrides win): a dead Recluse might register as evil and a dead Spy
+ * as good, as both work even if dead (`possible`). With `falseToken` on the waking
+ * player, the answer must be false (the Duchess's "False Info").
  */
-function evilMarked(
+function countAnswer(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
 	characters: CharacterLookup,
-	rule: Answers
+	rule: Answers,
+	today?: NightToday
 ): NightAnswer {
-	const marked = markedSeats(game, characterId);
-	const evilIn = (w: RegistrationWorld) => marked.filter((s) => w.alignment(s) === 'evil');
+	if (rule.question !== 'count') throw new Error('not a count');
+	if (rule.among === 'abnormal')
+		return abnormalAbilities(game, seatId, characterId, characters, rule, today);
+	const group =
+		rule.among === 'dead'
+			? game.seating.filter((s) => registersAsDead(game, s, characters))
+			: markedSeats(game, characterId);
+	const matchIn = (w: RegistrationWorld) =>
+		group.filter((s) => rule.alignment === undefined || w.alignment(s) === rule.alignment);
 	const w = byWorld(game, seatId, characters, (world) => ({
 		kind: 'number',
-		value: evilIn(world).length
+		value: matchIn(world).length
 	}));
 	const [base] = w.worlds;
-	const evil = evilIn(base);
+	const matching = matchIn(base);
 	const out = answer(
 		game,
 		seatId,
 		characterId,
 		characters,
-		{ kind: 'number', value: evil.length },
-		evil,
+		{ kind: 'number', value: matching.length },
+		matching,
 		{
 			possible: w.possible,
 			relevant: w.relevant,
-			facts: marked.map((s) => fact(game, s, characters, base)),
+			facts: group.map((s) => fact(game, s, characters, base)),
 			alternatives: w.alternatives
 		}
 	);
@@ -559,14 +534,12 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'executed-character': executedCharacter,
 	'outsider-died': outsiderDied,
 	'correct-guesses': correctGuesses,
-	'evil-dead': evilDead,
-	'abnormal-abilities': abnormalAbilities,
 	'statement-true': statementTrue,
 	'outsiders-in-play': (game, seatId, characterId, characters) =>
 		outsidersInPlay(game, seatId, characterId, characters),
 	'winning-alignment': (game, seatId, characterId, characters) =>
 		winningAlignment(game, seatId, characterId, characters),
-	'evil-marked': evilMarked
+	count: countAnswer
 };
 
 /**
@@ -588,8 +561,9 @@ export function nightAnswer(
 ): NightAnswer | undefined {
 	const rule = rulesOf(characterId, characters)?.answers;
 	if (!rule) return undefined;
-	const question = (night === 'first' && rule.firstNight) || rule.question;
-	return QUESTIONS[question](game, seatId, characterId, characters, rule, today, basis);
+	const asked: Answers =
+		night === 'first' && rule.firstNight ? { ...rule, ...rule.firstNight } : rule;
+	return QUESTIONS[asked.question](game, seatId, characterId, characters, asked, today, basis);
 }
 
 /**
@@ -712,19 +686,16 @@ function answerValue(a: NightAnswer): AnswerValue {
 }
 
 /**
- * The highest number a number answer could be, for listing the false ones: every dead
- * player for a count of the dead, the Juggler's five guesses
+ * The highest number a number answer could be, for listing the false ones: the whole group for
+ * a `count` of the dead or the marked, the Juggler's five guesses
  * (https://wiki.bloodontheclocktower.com/Juggler), else every player.
  */
 function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
-	switch (rulesOf(characterId, characters)?.answers?.question) {
-		case 'evil-dead':
-			return game.seating.filter((s) => registersAsDead(game, s, characters)).length;
-		case 'correct-guesses':
-			return 5;
-		case 'evil-marked':
-			return markedSeats(game, characterId).length;
-		default:
-			return game.seating.length;
-	}
+	const rule = rulesOf(characterId, characters)?.answers;
+	if (rule?.question === 'correct-guesses') return 5;
+	if (rule?.question !== 'count') return game.seating.length;
+	if (rule.among === 'dead')
+		return game.seating.filter((s) => registersAsDead(game, s, characters)).length;
+	if (rule.among === 'marked') return markedSeats(game, characterId).length;
+	return game.seating.length;
 }

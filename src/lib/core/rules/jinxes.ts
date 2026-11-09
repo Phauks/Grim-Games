@@ -39,6 +39,7 @@ import {
 	type CharacterLookup
 } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { neighboursTurned } from './turns-players.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import {
 	isExclusiveJinx,
@@ -611,10 +612,13 @@ export function neighbourBecoming(
 	if (effect?.players !== 'neighbours' || !jinxApplies(game, changer, created, effect, characters))
 		return undefined;
 	const type = effect.type;
-	const near = aliveNeighbours(game, seatId, characters).filter((id) => id !== seatId);
-	const of = near.filter((id) => typeOf(game, id, characters) === type);
-	const fits = of.length > 0;
-	const becomes = fits ? near.find((id) => !of.includes(id)) : undefined;
+	const near = [...new Set(aliveNeighbours(game, seatId, characters))].filter(
+		(id) => id !== seatId
+	);
+	// The Lord of Typhon's own rule for who turns (`turnsPlayersInto` `neighbours`).
+	const turned = neighboursTurned(near, (id) => typeOf(game, id, characters) === type);
+	const fits = turned.length < near.length;
+	const becomes = fits ? turned[0] : undefined;
 	return { type, fits, ...(becomes !== undefined ? { becomes } : {}) };
 }
 

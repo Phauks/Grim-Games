@@ -278,7 +278,7 @@
  *   voted too: no warning, the vote hint says so (the Butler with the Organ Grinder). Read by
  *   the part's own reader (`rules/vote-weights.ts`). Needs `voter`, and the partner's
  *   `voting`;
- * - `abnormalCounts`: the subject's `abnormal-abilities` count also counts a partner's player
+ * - `abnormalCounts`: the subject's `count` `among: "abnormal"` also counts a partner's player
  *   whose ability worked abnormally in a way the count leaves out, `counts`: `self-caused`,
  *   info recorded as abnormal because of the partner's own ability (the Mathematician with the
  *   Drunk and the Marionette); `unlike-demon`, the partner's `choosesLikeDemon` reminder is on
@@ -304,6 +304,7 @@ import {
 import type { CharacterRules } from './character-rules.ts';
 import type { JinxCondition } from './jinx-conditions.ts';
 import type { PROTECTS_FROM } from './parts/protects.ts';
+import type { TurnsPlayers } from './turns-players-rules.ts';
 
 export { JINX_FLAGS, type JinxCondition, type JinxFlag } from './jinx-conditions.ts';
 
@@ -369,7 +370,7 @@ export interface Wakes extends JinxEffect {
  */
 export interface TypeEffect extends JinxEffect {
 	type: SeatedType;
-	players?: 'neighbours';
+	players?: Extract<TurnsPlayers, 'neighbours'>;
 }
 
 export interface CarriedBy extends JinxEffect {
