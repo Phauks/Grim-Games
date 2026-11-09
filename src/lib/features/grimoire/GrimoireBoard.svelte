@@ -16,7 +16,6 @@
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import GameBackdrop from './GameBackdrop.svelte';
-	import { settingsProfiles } from '#lib/features/settings/profiles/settings-profiles.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
@@ -166,12 +165,6 @@
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
 	const game = $derived(grimoire.game);
-	/** The game's settings profile: the one it was started or last played with (plan S18). */
-	const profileGameId = $derived(game.gameId);
-	$effect(() => {
-		const gameId = profileGameId;
-		if (!watching) untrack(() => settingsProfiles.openGame(gameId));
-	});
 	/** Characters a special rule put in play from off the script, not flagged (+1). */
 	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
 	// Once every tile is drawn the bag and selection are closed; seats change here instead.

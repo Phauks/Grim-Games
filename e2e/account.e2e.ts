@@ -218,6 +218,66 @@ async function scriptsSwitch(page: Page) {
 	};
 }
 
+/** A board look and a size, as this device saved them. */
+const savedLooks = (page: Page) =>
+	page.evaluate(() => ({
+		ghostVote: JSON.parse(localStorage.getItem('grim.boardLooks') ?? '{}').usedGhostVote,
+		textScale: JSON.parse(localStorage.getItem('grim-games:preferences:v1') ?? '{}').textScale
+	}));
+
+async function strikeGhostVotes(page: Page, on: boolean) {
+	const settings = await openSettingsDialog(page);
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	const strike = settings.getByRole('checkbox', {
+		name: 'Strike through used ghost votes',
+		includeHidden: true
+	});
+	if ((await strike.isChecked()) !== on) {
+		await settings.getByText('Strike through used ghost votes', { exact: true }).tap();
+	}
+	await settings.getByRole('button', { name: 'Close' }).tap();
+}
+
+// Settings follow the account, sizes stay with each device (Trevor, 2026-11-09: settings
+// profiles removed for "A: Remove, sizes per device").
+test('settings sync between two devices, each keeping its own sizes', async ({
+	page,
+	browser
+}, testInfo) => {
+	const email = uniqueEmail('settings');
+	const other = await browser.newContext({ ...testInfo.project.use });
+	const second = await other.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+	// The second device reads bigger text.
+	await second.addInitScript(() => {
+		if (!localStorage.getItem('grim-games:preferences:v1'))
+			localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ textScale: 1.3 }));
+	});
+
+	// The first device to sign in fills the account.
+	await signInWithCode(page, email);
+	await expect.poll(() => profileDocCount(page, 'settings')).toBe(1);
+	await strikeGhostVotes(page, true);
+
+	// The second takes the account's settings and keeps its own text size.
+	await signInWithCode(second, email, false);
+	await expect.poll(() => savedLooks(second)).toEqual({ ghostVote: 'struck', textScale: 1.3 });
+
+	// A change there comes back; the first device's text size is untouched.
+	await strikeGhostVotes(second, false);
+	await expect
+		.poll(async () => {
+			await page.reload();
+			return savedLooks(page);
+		})
+		.toEqual({ ghostVote: 'hollow', textScale: 1 });
+	await other.close();
+});
+
 // Account sync (Storage thread's plan, Trevor 2026-10-18): one account, two devices, kept in step.
 test('scripts sync between two devices, unless a device turns it off', async ({
 	page,
@@ -490,9 +550,9 @@ test('a downloaded data file imports into another account, adding only what is m
 	const part = () => Math.floor(Math.random() * 254) + 1;
 	await second.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
 	await signInWithCode(second, uniqueEmail('import'));
-	// The new account gets the device's settings profile shortly after sign-in; an import
-	// planned before then counts that profile as new too (CI flake, 2026-10-26 and 27).
-	await expect.poll(() => profileDocCount(second, 'settings-profile')).toBe(1);
+	// The new account gets the device's settings shortly after sign-in; an import planned
+	// before then counts them as new too (CI flake, 2026-10-26 and 27).
+	await expect.poll(() => profileDocCount(second, 'settings')).toBe(1);
 	const importOnce = async () => {
 		await second.locator('input[type="file"][aria-label="Import data"]').setInputFiles(file);
 		return second.getByRole('alertdialog', { name: 'Import data' });
@@ -500,8 +560,8 @@ test('a downloaded data file imports into another account, adding only what is m
 	let dialog = await importOnce();
 	const plan = dialog.getByTestId('import-plan');
 	await expect(plan.getByRole('row', { name: 'Items to add' })).toContainText('1');
-	// Each account starts with the device's settings profile (plan S18); both are the same
-	// untouched "My settings", so that one is already there.
+	// Each account starts with its first device's settings (Trevor, 2026-11-09); both are the
+	// app's defaults, so they are already there.
 	await expect(plan.getByRole('row', { name: 'Already in your account' })).toContainText('1');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect.poll(() => profileScriptNames(second)).toEqual(['Storm Front']);

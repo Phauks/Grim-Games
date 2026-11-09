@@ -136,6 +136,9 @@ export class AccountUser extends DurableObject<AccountEnv> {
 			CREATE INDEX IF NOT EXISTS doc_seq_by_seq ON doc_seq (seq);
 			-- Documents saved before the counter existed count as changed at 1.
 			INSERT OR IGNORE INTO doc_seq (kind, id, seq) SELECT kind, id, 1 FROM doc;
+			-- Settings profiles were removed (Trevor, 2026-11-09); one 'settings' document replaced them.
+			DELETE FROM doc_seq WHERE kind = 'settings-profile';
+			DELETE FROM doc WHERE kind = 'settings-profile';
 		`);
 	}
 

@@ -11,7 +11,6 @@
 	import { settingsDialog } from './settings-dialog.svelte.ts';
 	import { installApp } from './install-app.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import ProfileSelect from './profiles/ProfileSelect.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import { searchSettings, type SettingEntry } from './settings-search.ts';
 	import { readSettings, revealSetting } from './settings-search-dom.ts';
@@ -162,7 +161,6 @@
 					>
 						{activeLabel}
 					</h2>
-					{#if active.profile}<span class="profile"><ProfileSelect /></span>{/if}
 					{#if active.headingAction}<active.headingAction />{/if}
 					<!-- Resets this section only (Trevor, 2026-10-18), in the header like other item
 					     controls; red, and confirmed first. -->
@@ -323,11 +321,6 @@
 		gap: var(--space-2);
 		padding-bottom: var(--space-3);
 		background: var(--dialog-background);
-	}
-	/* The profile a change goes into, beside the name; long names are cut short. */
-	.profile {
-		flex: 0 1 calc(9 * var(--u));
-		min-width: 0;
 	}
 	h2 {
 		flex: 1;

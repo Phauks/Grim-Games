@@ -8,8 +8,8 @@ import './profile-icon.svelte.ts';
 // sign-in sheet offers them.
 import '#lib/features/library/library-labels.svelte.ts';
 import '#lib/features/library/library-collections.svelte.ts';
-// Settings profiles too (plan S18).
-import '#lib/features/settings/profiles/settings-profiles.svelte.ts';
+// Settings, all but each device's own sizes (Trevor, 2026-11-09).
+import '#lib/features/settings/synced/synced-settings.svelte.ts';
 
 export function startAccount(): Promise<void> {
 	return account.refresh();
