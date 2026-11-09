@@ -141,7 +141,6 @@
 	.boxes {
 		grid-area: field;
 		display: flex;
-		gap: var(--space-2);
 		/* Room for the X, which sits at the end of the same cell. */
 		padding-inline-end: var(--tap-target);
 		min-width: 0;
@@ -154,6 +153,10 @@
 	:global(.clearable.code-field.code-field-centred) {
 		justify-self: center;
 	}
+	/*
+	 * Soft filled tiles joined into one strip per group, like the code is written ("482 913"):
+	 * no outlines, a thin line between digits (Trevor, 2026-11-09: "6 but soft filled").
+	 */
 	.box {
 		display: grid;
 		place-items: center;
@@ -162,36 +165,51 @@
 		min-width: 0;
 		height: var(--tap-target);
 		box-sizing: border-box;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-sm);
-		background: var(--surface-raised);
+		border: 0;
+		border-inline-start: 1px solid var(--border);
+		border-radius: 0;
+		background: var(--surface-selected);
 		color: var(--on-surface);
 		font: var(--font-control);
 		font-size: 1.4rem;
 		font-variant-numeric: tabular-nums;
 	}
-	/* Large: the boxes grow to share the row, up to a comfortable size for a thumb. */
+	.box:first-child,
+	.group-end + .box {
+		border-inline-start: 0;
+		border-start-start-radius: var(--radius-md);
+		border-end-start-radius: var(--radius-md);
+	}
+	.box:last-child,
+	.group-end {
+		border-start-end-radius: var(--radius-md);
+		border-end-end-radius: var(--radius-md);
+	}
+	.group-end {
+		margin-inline-end: var(--space-3);
+	}
+	/*
+	 * Large: the boxes share the whole row, the X at its end (Trevor, 2026-11-08: "they should
+	 * be wider"), so no room is kept before them to balance it.
+	 */
 	:global(.clearable.code-field.code-field-large) {
 		width: 100%;
-		max-width: calc(30 * var(--u));
 	}
 	.boxes.large {
-		justify-content: center;
+		padding-inline-start: 0;
+		padding-inline-end: calc(var(--tap-target) + var(--space-1));
 	}
 	.large .box {
 		flex: 1 1 0;
-		max-width: calc(4 * var(--u));
-		height: calc(1.5 * var(--tap-target));
-		font-size: 2rem;
-	}
-	.group-end {
-		margin-inline-end: var(--space-2);
+		height: calc(1.7 * var(--tap-target));
+		font-size: 2.3rem;
 	}
 	/* The box being typed into carries the field's focus ring. */
 	.current {
+		position: relative;
 		outline: 2px solid var(--focus);
 		outline-offset: -2px;
-		border-color: var(--focus);
+		border-radius: var(--radius-sm);
 	}
 	/* As wide as its boxes, so the X sits just after the last one. */
 	:global(.clearable.code-field) {
