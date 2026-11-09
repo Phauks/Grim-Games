@@ -4,7 +4,7 @@
  * (`jinx-conditions.ts`), and the prerequisites on this character's side (`JINX_NEEDS`). Split
  * from the format so each file stays one concern.
  */
-import { readPlayersOfType } from './turns-players-rules.ts';
+import { readPlayersOfType, type TurnsPlayers } from './turns-players-rules.ts';
 import {
 	ABNORMAL_COUNTS,
 	CHOOSES_VIA,
@@ -57,7 +57,7 @@ interface Verb {
 const plain: Verb = { fields: [], read: () => ({}) };
 
 /** Who else becomes one of the type, in `turnsPlayersInto`'s words. */
-const ALSO_BECOMES = ['drafter', 'neighbours'] as const;
+const ALSO_BECOMES = ['drafter', 'neighbours'] as const satisfies readonly TurnsPlayers[];
 
 const enumVerb = (field: string, values: readonly string[]): Verb => ({
 	fields: [field],

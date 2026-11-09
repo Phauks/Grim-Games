@@ -55,7 +55,8 @@ export function abnormalSinceDawn(
 	);
 	for (const e of entries) {
 		// The counting ability's own information does not count (the Mathematician's).
-		if (rulesOf(e.characterId, characters)?.answers?.question === 'abnormal-abilities') continue;
+		const rule = rulesOf(e.characterId, characters)?.answers;
+		if (rule?.question === 'count' && rule.among === 'abnormal') continue;
 		const causes = (e.abnormal ?? []).filter((c) => !own(e, c));
 		if (causes.length === 0) continue;
 		const use = out.find((u) => u.seatId === e.seatId && u.characterId === e.characterId);
