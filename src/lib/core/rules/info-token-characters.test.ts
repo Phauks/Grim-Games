@@ -12,15 +12,19 @@ import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { ruleEntries } from '#lib/core/data/info-token-rules.ts';
 import type { Character } from '#lib/core/data/types.ts';
+import type { Game } from '#lib/core/model/types.ts';
 import {
+	cardsOnLines,
+	fillCard,
 	filledInfoToken,
+	stepInfoCards,
 	infoTokenCharacterRulesOf,
 	shownOrder,
 	shuffled,
 	stepInfoTokens,
 	withChosen
 } from './info-token-characters.ts';
-import { nightTextFor } from './night-text.ts';
+import { nightTextFor, nightTextStepLines, stepNightText } from './night-text.ts';
 
 const data = committedGameData();
 const character = (id: string) => data.byId.get(id)!;
@@ -240,5 +244,43 @@ describe('a card filled with a prep value (Storm Catcher, https://wiki.bloodonth
 		expect(issues({ characters: ['value'], value: 'named', upTo: 1 })).toEqual([]);
 		expect(issues({ characters: ['value'] })).toHaveLength(1);
 		expect(issues({ characters: ['self'], value: 'named' })).toHaveLength(1);
+	});
+});
+
+// Trevor, 2026-11-09: "if a token would be applied, it should showcase in that step"; "The
+// mad as is not showing up as an eyeball under cerenovus".
+describe('cardsOnLines', () => {
+	it("puts the Cerenovus's You are mad as on the line of This character selected you", () => {
+		const c = character('cerenovus');
+		const steps = stepNightText({ character: c, reminder: c.otherNightReminder }, 'other')!;
+		const lines = nightTextStepLines(steps);
+		const placed = cardsOnLines(lines, stepInfoCards(c, c.otherNightReminder));
+		expect(placed.rest).toEqual([]);
+		const line = placed.onLine.findIndex((l) => l.some((x) => x.token.id === 'selected-you'));
+		expect(placed.onLine[line].map((x) => x.token.id)).toEqual(['selected-you', 'mad-as']);
+	});
+	it('keeps the cards aside for a step with no lines', () => {
+		const c = character('cerenovus');
+		const cards = stepInfoCards(c, c.otherNightReminder);
+		expect(cardsOnLines([], cards).rest).toEqual(cards);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Cerenovus
+// Wiki: "Wake this player, show them the '''THIS CHARACTER SELECTED YOU''' info token, then the Cerenovus token, then the character token of the character they are mad about being."
+describe("the Cerenovus's You are mad as card", () => {
+	it('is filled with the character the Mad player is mad as', () => {
+		const game = {
+			seating: ['a', 'b'],
+			seats: {
+				a: { reminders: [] },
+				b: {
+					reminders: [{ characterId: 'cerenovus', label: 'Mad', reminderId: 'r', madAs: 'chef' }]
+				}
+			}
+		} as unknown as Game;
+		const rule = ruleEntries(infoTokenCharacterRulesOf(character('cerenovus'))?.['mad-as'])[0];
+		expect(fillCard(character('cerenovus'), rule, 1, { game }).characterIds).toEqual(['chef']);
+		expect(fillCard(character('cerenovus'), rule, 1, {}).characterIds).toEqual([]);
 	});
 });

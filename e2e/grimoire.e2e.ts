@@ -1388,15 +1388,17 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = nightStep(page, 'Cerenovus');
-	// "This character selected you" is on the line naming it; the card the rules offer stays below.
+	// "This character selected you" is on the line naming it, and "You are mad as" beside it
+	// (Trevor, 2026-11-09: "The mad as is not showing up as an eyeball under cerenovus").
+	const lines = step.getByTestId('night-lines');
 	await expect(
-		step.getByTestId('night-lines').getByRole('button', {
+		lines.getByRole('button', {
 			name: 'Show to player: This character selected you (Cerenovus)',
 			exact: true
 		})
 	).toBeVisible();
-	const tiles = step.getByTestId('step-info-tokens');
-	await tiles.getByRole('button', { name: 'You are mad as', exact: true }).tap();
+	await expect(step.getByTestId('step-info-tokens')).toHaveCount(0);
+	await lines.getByRole('button', { name: 'Show to player: You are mad as', exact: true }).tap();
 	// The Storyteller picks the madness character; both cards then show together.
 	const confirm = page.getByRole('button', { name: 'Confirm' });
 	await expect(confirm).toBeDisabled();
@@ -1506,9 +1508,10 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = nightStep(page, 'Dreamer');
+	// On the step's first line, as every card the step offers (Trevor, 2026-11-09).
 	await step
-		.getByTestId('step-info-tokens')
-		.getByRole('button', { name: 'This player is', exact: true })
+		.getByTestId('night-lines')
+		.getByRole('button', { name: 'Show to player: This player is', exact: true })
 		.tap();
 	// Which player the Dreamer chose, then the picker with their character already picked.
 	await page
@@ -1555,8 +1558,10 @@ test("the Dreamer's Valid Information shows a good and an evil token, never one 
 	// The Clockmaker's row: the picker opens with the Clockmaker in place and the evil token to
 	// pick, instead of showing the Clockmaker alone.
 	await step
+		.getByTestId('night-suggested')
 		.getByRole('listitem')
 		.filter({ hasText: /Seat 2/ })
+		.last()
 		.getByRole('button', { name: 'Show to player' })
 		.tap();
 	await expect(page.getByRole('checkbox', { name: 'Evil only' })).toBeChecked();
@@ -2570,6 +2575,27 @@ test("a step's reminder token sits beneath the line that names it", async ({ pag
 	await expect(guide.getByRole('heading', { name: 'Reminders', exact: true })).toHaveCount(0);
 	await placeFromStep(page, guide, 2);
 	await expect(line.getByTestId('line-reminders')).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+});
+
+test("a step's Valid Information sits on its first line", async ({ page }) => {
+	// Trevor, 2026-11-09: "Valid info for fortune teller for example.shoild be in step 1".
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Fortune Teller'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const guide = await openStep(page, 'Fortune Teller');
+	const first = guide.locator('[data-testid="night-lines"] li').first();
+	await expect(first.getByTestId('night-yes-no')).toBeVisible();
+	await expect(guide.getByTestId('night-yes-no')).toHaveCount(1);
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({
@@ -7779,12 +7805,13 @@ test('the Harlot step asks the chosen player, then shows the Harlot their charac
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = nightStep(page, 'Harlot');
-	const tiles = step.getByTestId('step-info-tokens');
+	// Every card the step offers has its eye on the step's lines (Trevor, 2026-11-09).
+	const lines = step.getByTestId('night-lines');
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await tiles.getByRole('button', { name: 'Sleep with the Harlot?', exact: true }).tap();
+	await lines.getByRole('button', { name: /^Show to player: Sleep with the Harlot\?/ }).tap();
 	await expect(shown).toHaveAccessibleName('Sleep with the Harlot?');
 	await shown.getByRole('button', { name: 'Close' }).tap();
-	await tiles.getByRole('button', { name: 'This player is', exact: true }).tap();
+	await lines.getByRole('button', { name: /^Show to player: This player is/ }).tap();
 	await page
 		.getByRole('dialog', { name: 'Harlot chose' })
 		.getByRole('button', { name: /Clockmaker Seat 2/ })

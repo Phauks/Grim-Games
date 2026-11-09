@@ -382,25 +382,37 @@ export function nightTextSteps(segments: readonly NightTextSegment[]): NightText
 
 /** Every line of `steps` in reading order: the lines before any branch, then each branch's. */
 /**
- * Each reminder row under the first line that names its token (`kind: 'reminder'`), so the
- * Storyteller places it from the line it is about (Trevor, 2026-11-08, M75). Rows for a token
- * no line names are `rest`.
+ * Each reminder row on a line of the step, so every token the step may place shows in its
+ * lines (Trevor, 2026-11-08, M75; 2026-11-09: "if a token would be applied, it should showcase
+ * in that step"): under the first line naming it (the death marker names the Dead token),
+ * under the first line of the branch whose condition names it, else under the first line.
+ * `rest` holds rows only when there are no lines.
  */
 export function rowsOnLines<T extends { label: string }>(
-	lines: readonly NightTextLine[],
+	steps: NightTextSteps | undefined,
 	rows: readonly T[]
 ): { onLine: Record<number, T[]>; rest: T[] } {
-	const same = (a: string | undefined, b: string) => a?.toLowerCase() === b.toLowerCase();
-	const onLine: Record<number, T[]> = {};
-	const rest: T[] = [];
-	for (const row of rows) {
-		const i = lines.findIndex((l) =>
-			l.some((s) => s.kind === 'reminder' && same(s.label, row.label))
+	const lines = steps ? nightTextStepLines(steps) : [];
+	if (lines.length === 0) return { onLine: {}, rest: [...rows] };
+	const names = (line: NightTextLine, label: string) =>
+		line.some(
+			(s) =>
+				(s.kind === 'reminder' && s.label !== undefined && same(s.label, label)) ||
+				(s.kind === 'dead' && isDead(label))
 		);
-		if (i < 0) rest.push(row);
-		else (onLine[i] ??= []).push(row);
-	}
-	return { onLine, rest };
+	const lineOf = (label: string) => {
+		const i = lines.findIndex((l) => names(l, label));
+		if (i >= 0) return i;
+		let first = steps!.lines.length;
+		for (const b of steps!.branches) {
+			if (names(b.condition, label) && b.lines.length > 0) return first;
+			first += b.lines.length;
+		}
+		return 0;
+	};
+	const onLine: Record<number, T[]> = {};
+	for (const row of rows) (onLine[lineOf(row.label)] ??= []).push(row);
+	return { onLine, rest: [] };
 }
 
 export function nightTextStepLines(steps: NightTextSteps): NightTextLine[] {

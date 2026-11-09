@@ -667,8 +667,12 @@
 		data-marked-row={row.marked ? '' : undefined}
 	>
 		<span class="main option">
+			<!-- The player's badge alone when it shows the character already (Trevor, 2026-11-09: the
+			     Dreamer's Valid Information "shows character and player info twice"). -->
 			{#if row.characterIds.length === 1}
-				{@render badge(row.characterIds[0])}
+				{#if game.seats[row.target]?.characterId !== row.characterIds[0]}{@render badge(
+						row.characterIds[0]
+					)}{/if}
 			{:else}
 				{@render shownAsSelect(key, id, row.characterIds)}
 			{/if}
