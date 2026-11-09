@@ -46,16 +46,14 @@
 			<li>Your 20 most recently loaded scripts (IndexedDB).</li>
 			<li>
 				While you are signed in, a copy of your account's scripts, Library folders, tags and names,
-				character collections and settings profiles, and any changes still waiting to reach it, so
-				they work offline (IndexedDB).
+				character collections and settings, and any changes still waiting to reach it, so they work
+				offline (IndexedDB).
 			</li>
 			<li>
-				Your settings, settings profiles and screen choices, such as theme, fonts, text size,
-				language, column widths and how you last viewed the <a href={resolve('/character-analyzer')}
-					>Character Analyzer</a
-				> page; your Library tags and folders; a script you are building; the characters you make and
-				one you are building; your custom info tokens; the player names you have used; and setup in progress
-				(localStorage).
+				Your settings and screen choices, such as theme, fonts, text size, language, column widths
+				and how you last viewed the <a href={resolve('/character-analyzer')}>Character Analyzer</a> page;
+				your Library tags and folders; a script you are building; the characters you make and one you
+				are building; your custom info tokens; the player names you have used; and setup in progress (localStorage).
 			</li>
 			<li>
 				A log of up to 20 recent problems the app ran into: the error, where in the app and on which
@@ -233,10 +231,10 @@
 				keeps them in step; you can stop a device syncing either in Settings, Data.
 			</li>
 			<li>
-				Your settings profiles: each profile's name and its theme, text, icon, board, token and
-				Storyteller settings, including the first time you sign in on a device. A background picture
-				you add is not synced; it leaves the device only for a live room you share, as above. You
-				can stop a device syncing them in Settings, Data.
+				Your settings: theme, fonts, icons, board, token, Storyteller and sound settings, from the
+				first device you sign in on. Sizes, such as text and token sizes, stay on each device. A
+				background picture you add is not synced; it leaves the device only for a live room you
+				share, as above. You can stop a device syncing them in Settings, Data.
 			</li>
 		</ul>
 		<p>

@@ -3,7 +3,7 @@ import { pickScript } from './new-game.ts';
 
 // Game settings (Trevor, 2026-10-28), the settings kept per game: each game keeps its own;
 // Settings holds the default for new games. Since 2026-10-29 it is no longer a start-flow step:
-// it opens over Character selection, with the settings profile the game starts with.
+// it opens over Character selection.
 
 const marks = (page: Page) => page.getByTestId('seat').first().getByTestId('nomination-marks');
 
@@ -29,10 +29,6 @@ test('Game settings opens on Character selection, and a choice there is kept for
 	page
 }) => {
 	const settings = await startToGameSettings(page);
-	// The profile the game starts with comes first, until the game begins.
-	await expect(settings.getByRole('combobox', { name: 'Settings profile' })).toHaveText(
-		/My settings/
-	);
 	const track = settings.getByRole('checkbox', { name: 'Track nominations', includeHidden: true });
 	await expect(track).not.toBeChecked();
 	// Players' phones always show the day timer as a sun (Trevor, 2026-10-29): no choice of it.
@@ -56,7 +52,6 @@ test('Game settings opens on Character selection, and a choice there is kept for
 		.getByRole('button', { name: 'Game settings' })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Game settings' });
-	await expect(dialog.getByRole('combobox', { name: 'Settings profile' })).toHaveCount(0);
 	await expect(
 		dialog.getByRole('checkbox', { name: 'Track nominations', includeHidden: true })
 	).toBeChecked();

@@ -4,7 +4,7 @@ import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 import SoundSection from './SoundSection.svelte';
 
 // Every sound's settings in one section (plan U1, settings registry: features add their own).
-// The timer's, Back to town's and day and night sounds and vibration belong to the settings profile; the volume to the device.
+// The timer's, Back to town's and day and night sounds and vibration follow the account; the volume and speaker stay with the device.
 registerSettingsSection({
 	id: 'sound',
 	label: { key: 'settings.sectionSound' },
@@ -28,6 +28,5 @@ registerSettingsSection({
 			speaker: DEFAULT_PREFERENCES.speaker,
 			soundPads: DEFAULT_PREFERENCES.soundPads
 		}),
-	profile: true,
 	order: 36
 });

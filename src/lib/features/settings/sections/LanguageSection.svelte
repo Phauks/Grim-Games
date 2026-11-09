@@ -6,7 +6,7 @@
 	/**
 	 * The interface language (Trevor, 2026-10-25: a Language tab, English only for now). Only
 	 * released languages are offered; a language being translated joins the list when its
-	 * catalog is complete. Per device, never in a profile or a room.
+	 * catalog is complete. Per device, never synced or sent to a room.
 	 */
 	const options = LOCALES.filter((info) => info.released).map((info) => ({
 		value: info.id as LocaleId,

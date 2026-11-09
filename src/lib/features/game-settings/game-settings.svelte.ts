@@ -55,14 +55,9 @@ class GameSettingsStore {
 		return this.#raw(gameId) !== null;
 	}
 
-	/** A new game's settings, from `prefs` (the profile it starts with); kept if it has some. */
+	/** A new game's settings, from `prefs` (the settings in use); kept if it has some. */
 	seed(gameId: string, prefs: Preferences): void {
 		if (!this.has(gameId)) this.#write(gameId, settingsFrom(prefs));
-	}
-
-	/** Starts a game's settings over from `prefs` (another profile chosen before it begins). */
-	reseed(gameId: string, prefs: Preferences): void {
-		this.#write(gameId, settingsFrom(prefs));
 	}
 
 	/** Changes one game only: its Game settings and each setting's place of use. */

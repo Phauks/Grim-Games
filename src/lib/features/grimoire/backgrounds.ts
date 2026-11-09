@@ -20,11 +20,8 @@ export type BackgroundChoice =
 	/** An animated background and its settings (M43, core/backgrounds/moving.ts). */
 	| ({ kind: 'moving' } & MovingChoice);
 
-/**
- * Where a choice applies: one game, or every game without its own. A settings profile keeps
- * its picture under its own scope while another profile is in use (plan S18).
- */
-export type BackgroundScope = { gameId: string } | { profileId: string } | 'default';
+/** Where a choice applies: one game, or every game without its own. */
+export type BackgroundScope = { gameId: string } | 'default';
 
 const DB_NAME = 'grim-games-backgrounds';
 const STORE = 'choices';
@@ -32,11 +29,7 @@ const STORE = 'choices';
 const MAX_SIDE = 1920;
 
 const keyOf = (scope: BackgroundScope) =>
-	scope === 'default'
-		? 'default'
-		: 'gameId' in scope
-			? `game:${scope.gameId}`
-			: `profile:${scope.profileId}`;
+	scope === 'default' ? 'default' : `game:${scope.gameId}`;
 
 let db: Promise<IDBDatabase> | undefined;
 function open(): Promise<IDBDatabase> {

@@ -19,8 +19,7 @@
 
 	/**
 	 * The game's own options at the top of Character selection (Trevor, 2026-10-29: "condense
-	 * three screens into one"). Special rules and Game settings open over the screen; Game
-	 * settings has the settings profile the game starts with while it hasn't begun. Neither is a
+	 * three screens into one"). Special rules and Game settings open over the screen; Neither is a
 	 * start-flow step any more. The rules apply as their sheet closes (game-rules.svelte.ts), and
 	 * stay as they are once the game has begun.
 	 */
@@ -89,7 +88,7 @@
 </div>
 
 {#if game}
-	<GameSettingsDialog bind:open gameId={game.gameId} profile={starting} />
+	<GameSettingsDialog bind:open gameId={game.gameId} />
 	<SpecialRulesDialog
 		bind:open={rulesOpen}
 		{mode}

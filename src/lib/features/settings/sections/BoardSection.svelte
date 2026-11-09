@@ -69,7 +69,7 @@
 
 <!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms
      every screen, but the board is where two hands rest on the screen. Outside the preview,
-     which it doesn't change; per device, never in a profile. -->
+     which it doesn't change; per device, never synced. -->
 <SettingToggle
 	label={t('settings.allowZoom')}
 	description={t('settings.allowZoomHelp')}

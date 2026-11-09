@@ -10,7 +10,7 @@
 	/**
 	 * The speaker every sound plays on (plan U11), in Settings > Sound and on the Soundboard
 	 * sheet. Disabled where the browser can't choose (phones, Firefox, Safari), so nothing
-	 * moves. Kept on this device, never in a settings profile.
+	 * moves. Kept on this device, never synced with the account.
 	 */
 	const can = canChooseSpeaker();
 	onMount(() => void speakers.refresh());
