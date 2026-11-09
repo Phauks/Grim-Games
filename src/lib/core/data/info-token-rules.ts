@@ -15,9 +15,11 @@
  *   living one first), `marked` the character token of the player carrying this character's
  *   own reminder `token` (the Apprentice's Is The Apprentice), `changed` the character the
  *   step last changed a player into (the Pit-Hag's new character), and `given` the character
- *   whose ability this character's `givesAbility` gave a player (the Boffin's good character);
+ *   whose ability this character's `givesAbility` gave a player (the Boffin's good character),
+ *   and `mad` the character the player carrying this character's own reminder `token` is mad
+ *   as (`madAs` on it: the Cerenovus's chosen character);
  * - `value`: with a `value` character, the key of that prep value (`setupPrep` note `value`);
- * - `token`: with a `marked` character, the reminder that marks the player;
+ * - `token`: with a `marked` or `mad` character, the reminder that marks the player;
  * - `after`: another card of this step shown just before this one, together (the Cerenovus's
  *   "This character selected you", then "You are mad as");
  * - `upTo`: how many the card may show in all on this step, when more than the token's own
@@ -50,10 +52,10 @@ import {
  * `self`: the character whose step it is; `chosen`: the player the Storyteller taps; `value`:
  * the character entered as a prep value; `demon`: the Demon in play; `marked`: the player
  * carrying the character's `token`; `changed`: the character the step last made; `given`: the
- * ability the character gave a player.
+ * ability the character gave a player; `mad`: who the player carrying `token` is mad as.
  */
 export type FilledCharacter =
-	'self' | 'chosen' | 'value' | 'demon' | 'marked' | 'changed' | 'given' | CharacterId;
+	'self' | 'chosen' | 'value' | 'demon' | 'marked' | 'mad' | 'changed' | 'given' | CharacterId;
 
 const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 
@@ -170,7 +172,7 @@ function readEntry(
 	const token = readString(entry, 'token', at, issues, false);
 	const after = readString(entry, 'after', at, issues, false);
 	const usesValue = characters.includes('value');
-	const usesMarked = characters.includes('marked');
+	const usesMarked = characters.includes('marked') || characters.includes('mad');
 	if (upTo !== undefined && (!Number.isInteger(upTo) || upTo < 0 || upTo > MAX_ASKED_CHARACTERS)) {
 		issues.add(`${at}.upTo`, `expected a whole number up to ${MAX_ASKED_CHARACTERS}`);
 	} else if (count === 0 && upTo !== undefined) {
@@ -184,7 +186,7 @@ function readEntry(
 	} else if (usesValue !== (value !== undefined)) {
 		issues.add(`${at}.value`, 'a "value" character and the value key go together');
 	} else if (usesMarked !== (token !== undefined)) {
-		issues.add(`${at}.token`, 'a "marked" character and the token key go together');
+		issues.add(`${at}.token`, 'a "marked" or "mad" character and the token key go together');
 	} else if (after !== undefined && !STANDARD_INFO_TOKENS.some((t) => t.id === after)) {
 		issues.add(`${at}.after`, 'not an info token');
 	} else if (order && flags.shuffle) {

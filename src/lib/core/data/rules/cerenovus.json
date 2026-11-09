@@ -71,7 +71,8 @@
 			"characters": ["self"]
 		},
 		"mad-as": {
-			"characters": [],
+			"characters": ["mad"],
+			"token": "Mad",
 			"offer": true,
 			"after": "selected-you"
 		}

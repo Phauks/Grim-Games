@@ -505,19 +505,45 @@ describe('nightTextSteps', () => {
 	});
 });
 
-// Trevor, 2026-11-08 (M75): a reminder row sits beneath the line that names its token.
+// Trevor, 2026-11-08 (M75): a reminder row sits beneath the line that names its token;
+// 2026-11-09: "if a token would be applied, it should showcase in that step".
 describe('rowsOnLines', () => {
-	const poisoned = { kind: 'reminder' as const, label: 'Poisoned', options: ['Poisoned'] };
-	it('puts each row under the first line naming its token, and the rest aside', () => {
-		const lines = [[{ kind: 'text' as const, text: 'Wake.' }], [poisoned], [poisoned]];
-		const rows = [
-			{ label: 'Poisoned', key: 'a' },
-			{ label: 'poisoned', key: 'b' },
-			{ label: 'Other', key: 'c' }
-		];
-		expect(rowsOnLines(lines, rows)).toEqual({
-			onLine: { 1: [rows[0], rows[1]] },
-			rest: [rows[2]]
-		});
+	const rows = (...labels: string[]) => labels.map((label) => ({ label }));
+	const lines = (id: string, night: 'first' | 'other') => {
+		const c = committedCharacter(id);
+		return stepNightText(
+			{ character: c, reminder: night === 'first' ? c.firstNightReminder : c.otherNightReminder },
+			night
+		);
+	};
+	it("puts the Imp's Dead token on the line with the death marker", () => {
+		const steps = lines('imp', 'other')!;
+		const placed = rowsOnLines(steps, rows('Dead'));
+		const at = Number(Object.keys(placed.onLine)[0]);
+		expect(nightTextStepLines(steps)[at].some((s) => s.kind === 'dead')).toBe(true);
+		expect(placed.rest).toEqual([]);
+	});
+	it('puts a token no line names on the first line, and a named one on its line', () => {
+		const steps = lines('poisoner', 'other')!;
+		expect(rowsOnLines(steps, rows('Poisoned', 'Other')).onLine[0]).toEqual(
+			rows('Poisoned', 'Other')
+		);
+		const maths = rowsOnLines(lines('mathematician', 'other'), rows('Abnormal'));
+		expect(maths).toEqual({ onLine: { 0: rows('Abnormal') }, rest: [] });
+	});
+	it('keeps every row aside for a step with no text', () => {
+		expect(rowsOnLines(undefined, rows('Dead'))).toEqual({ onLine: {}, rest: rows('Dead') });
+	});
+	it('places every official token on a line of its step', () => {
+		for (const id of ['imp', 'nodashii', 'po', 'shabaloth', 'courtier', 'xaan', 'leviathan']) {
+			const c = committedCharacter(id);
+			for (const night of ['first', 'other'] as const) {
+				const steps = lines(id, night);
+				if (!steps) continue;
+				const placed = rowsOnLines(steps, rows(...c.reminders));
+				expect(placed.rest, `${id} ${night}`).toEqual([]);
+				expect(Object.values(placed.onLine).flat().length).toBe(c.reminders.length);
+			}
+		}
 	});
 });

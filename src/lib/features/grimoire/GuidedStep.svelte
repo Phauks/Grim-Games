@@ -287,7 +287,9 @@
 		cardsOnLines(textLines ? nightTextStepLines(textLines) : [], stepCards)
 	);
 	/** Each row under the line naming its token; the rest under Reminders (M75). */
-	const rowsPlaced = $derived(rowsOnLines(textLines ? nightTextStepLines(textLines) : [], rows));
+	/** Valid Information sits on the first line of a step with text, not Minion or Demon info's. */
+	const infoOnLine = $derived(!!textLines && !evilStep);
+	const rowsPlaced = $derived(rowsOnLines(textLines, rows));
 	/** A line's eye, named for its card as the card's tile is ("You are (Imp)"). */
 	function cardLabel(card: StepCard): string {
 		const owners = (card.filled?.characterIds ?? []).flatMap((id) => {
@@ -461,6 +463,57 @@
 			     is its Steps, Dusk, Dawn and the info steps too (Trevor, 2026-11-06: "treated
 			     like character with the night order steps and eyes"); Minion info's and Demon
 			     info's cards are its next lines, each with the same eye. -->
+			<!-- Valid Information: on the first line (Trevor, 2026-11-09), else after the Steps. -->
+			{#snippet validInfo()}
+				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
+				<MadAsStep {grimoire} {step} />
+				<NightSuggested
+					{grimoire}
+					{step}
+					onShowNumber={numberStep ? showNumber : undefined}
+					onShowAnswer={showAnswer}
+					onRecord={record}
+					onShowChosen={chosenCard ? showChosen : undefined}
+					onShow={(id) => {
+						// Over the open step: closing the step in the same update threw inside the
+						// dialog library (an effect scheduled outside a batch, from the Undertaker's
+						// suggestion opened from the walk-through).
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+					onShowCharacters={(set) => {
+						// Every token on one card, as the Godfather is shown its Outsiders; with none,
+						// the card says so ("No Outsiders", Trevor 2026-10-28).
+						shownId = undefined;
+						shownCard =
+							set.value.length === 0
+								? { title: `No ${TYPE_PLURALS[set.type]}` }
+								: {
+										characters: set.value.flatMap((id) => {
+											const character = characters.get(id);
+											return character ? [{ character }] : [];
+										})
+									};
+						showOpen = true;
+					}}
+				/>
+				<NightShownTo
+					{grimoire}
+					{step}
+					onShow={(id) => {
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+					onShowCard={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+				/>
+				<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
+			{/snippet}
 			{#if textLines}
 				<h3>Steps</h3>
 				<!-- Minion info's and Demon info's cards sit on the lines that say to show them, as a
@@ -473,7 +526,9 @@
 						alignment={one && step.character ? alignmentOf(game, one) : undefined}
 						marked={(i) => shownLines.includes(i)}
 					>
-						{#snippet lineExtra(i)}{#if rowsPlaced.onLine[i]}<span
+						{#snippet lineExtra(i)}{#if i === 0 && infoOnLine}<span class="line-info"
+									>{@render validInfo()}</span
+								>{/if}{#if rowsPlaced.onLine[i]}<span
 									class="line-reminders"
 									data-testid="line-reminders"
 									>{#each rowsPlaced.onLine[i] as row (row.key)}{@render reminderRow(
@@ -552,52 +607,7 @@
 					}}
 				/>
 			{/if}
-			<NightSuggested
-				{grimoire}
-				{step}
-				onShowNumber={numberStep ? showNumber : undefined}
-				onShowAnswer={showAnswer}
-				onRecord={record}
-				onShowChosen={chosenCard ? showChosen : undefined}
-				onShow={(id) => {
-					// Over the open step: closing the step in the same update threw inside the
-					// dialog library (an effect scheduled outside a batch, from the Undertaker's
-					// suggestion opened from the walk-through).
-					shownCard = undefined;
-					shownId = id;
-					showOpen = true;
-				}}
-				onShowCharacters={(set) => {
-					// Every token on one card, as the Godfather is shown its Outsiders; with none,
-					// the card says so ("No Outsiders", Trevor 2026-10-28).
-					shownId = undefined;
-					shownCard =
-						set.value.length === 0
-							? { title: `No ${TYPE_PLURALS[set.type]}` }
-							: {
-									characters: set.value.flatMap((id) => {
-										const character = characters.get(id);
-										return character ? [{ character }] : [];
-									})
-								};
-					showOpen = true;
-				}}
-			/>
-			<NightShownTo
-				{grimoire}
-				{step}
-				onShow={(id) => {
-					shownCard = undefined;
-					shownId = id;
-					showOpen = true;
-				}}
-				onShowCard={(card) => {
-					shownId = undefined;
-					shownCard = card;
-					showOpen = true;
-				}}
-			/>
-			<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
+			{#if !infoOnLine}{@render validInfo()}{/if}
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
 				<ChangeCharacterStep
@@ -627,8 +637,6 @@
 				/>
 				<!-- The Philosopher's chosen good character (gainedFrom.choose). -->
 				<GainedAbilityStep {grimoire} {step} />
-				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
-				<MadAsStep {grimoire} {step} />
 				<!-- The Courtier's Drunk 1, 2, 3: moved on each other night, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
 				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->
@@ -779,6 +787,10 @@
 		padding: 0 0 var(--space-2) var(--space-2);
 	}
 	/* Under the line that names the token, in the step's own words' column (M75). */
+	.line-info {
+		display: block;
+		font-family: var(--font-body);
+	}
 	.line-reminders {
 		display: grid;
 		gap: var(--space-2);

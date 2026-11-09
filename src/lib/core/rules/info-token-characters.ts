@@ -143,8 +143,10 @@ export function stepInfoCards(
  * A step's cards placed on the night text lines that name them (Trevor, 2026-11-06: "tie the
  * show info tokens to those lines"): each info token a line names takes the first card for
  * that token not yet placed, in reading order, so the Snake Charmer's two "You are" lines get
- * its two cards in turn. `rest` holds the cards no line names (a card a rule offers, a second
- * card for one mention).
+ * its two cards in turn. A card no line names joins the line of the card shown just before it
+ * (`before`: the Cerenovus's "You are mad as" after "This character selected you"), else the
+ * first line (Trevor, 2026-11-09: "if a token would be applied, it should showcase in that
+ * step"). `rest` holds cards only when there are no lines.
  */
 export function cardsOnLines(
 	lines: readonly NightTextLine[],
@@ -158,7 +160,13 @@ export function cardsOnLines(
 			return at < 0 ? [] : left.splice(at, 1);
 		})
 	);
-	return { onLine, rest: left };
+	if (lines.length === 0) return { onLine, rest: left };
+	for (const card of left) {
+		const lead = card.filled?.before?.token;
+		const at = lead ? onLine.findIndex((l) => l.some((c) => c.token.id === lead.id)) : -1;
+		onLine[Math.max(at, 0)].push(card);
+	}
+	return { onLine, rest: [] };
 }
 
 /**
@@ -196,6 +204,14 @@ function markedBy(game: Game, characterId: CharacterId, token: string): Characte
 	return seat ? game.seats[seat]?.characterId : undefined;
 }
 
+/** The character the player carrying `characterId`'s `token` is mad as (`madAs` on it). */
+function madAsBy(game: Game, characterId: CharacterId, token: string): CharacterId | undefined {
+	for (const s of game.seating)
+		for (const r of game.seats[s]?.reminders ?? [])
+			if (r.characterId === characterId && r.label === token && r.madAs) return r.madAs;
+	return undefined;
+}
+
 /** The character whose ability `characterId` gave a player (`givesAbility`), first in seating. */
 function givenBy(game: Game, characterId: CharacterId): CharacterId | undefined {
 	return game.seating
@@ -225,6 +241,8 @@ export function fillCard(
 					return one(game && characters && demonInPlay(game, characters));
 				case 'marked':
 					return one(game && rule.token && markedBy(game, character.id, rule.token));
+				case 'mad':
+					return one(game && rule.token && madAsBy(game, character.id, rule.token));
 				case 'changed':
 					return one(changed?.at(-1));
 				case 'given':
