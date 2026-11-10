@@ -21,6 +21,7 @@ import {
 	reminderGroups,
 	reminderKey,
 	isGeneric,
+	looksLike,
 	tokenLabel
 } from './reminders.ts';
 import { placingAlignment } from './board.ts';
@@ -407,5 +408,20 @@ describe('stepTokenCharacter (M50)', () => {
 		expect(stepTokenCharacter(step, characters)?.id).toBe('monk');
 		expect(stepFocusOf(step, 'other', characters)?.characterId).toBe('monk');
 		expect(stepTokenCharacter({ character: chef }, characters)?.id).toBe('chef');
+	});
+});
+
+describe('a placed ∞ copy that still looks like its token', () => {
+	// Trevor (2026-11-10, option B): deleting a token can take its copies off the seats too.
+	const token = { note: 'Claims Chef', symbol: 'ph:star', symbolColour: 'blue' as const };
+	it('matches words, symbol, colour and fill', () => {
+		expect(looksLike({ ...token }, token)).toBe(true);
+		expect(looksLike({ ...token, symbolFill: undefined }, token)).toBe(true);
+	});
+	it('leaves a copy changed since it was placed', () => {
+		expect(looksLike({ ...token, note: 'Claims Empath' }, token)).toBe(false);
+		expect(looksLike({ ...token, symbolColour: 'red' }, token)).toBe(false);
+		expect(looksLike({ ...token, symbolFill: true }, token)).toBe(false);
+		expect(looksLike({}, token)).toBe(false);
 	});
 });

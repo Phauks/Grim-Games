@@ -14,18 +14,16 @@ test("a player's tray makes its own ∞ tokens with + New token, as the bank doe
 	const tray = page.getByRole('list', { name: 'Reminder bank' });
 	const make = tray.getByRole('button', { name: 'New token' });
 	await make.scrollIntoViewIfNeeded();
-	// A tap makes one and opens its look, as the bank's does.
+	// A tap makes one and opens its look, as the bank's does; Enter confirms it, in hand.
 	await make.tap();
 	const text = page.getByTestId('reminder-note');
 	await text.fill('Chose');
 	await text.press('Enter');
-	await page.keyboard.press('Escape');
 	await expect(text).toBeHidden();
 	const mine = tray.getByRole('button', { name: 'Generic reminder: Chose' });
 	await expect(mine).toHaveCount(1);
 	// Its copies go on seats with its words, and it stays in the tray.
 	const seat = page.getByTestId('grim-seat').nth(1);
-	await mine.tap();
 	await seat.tap();
 	await expect(seat).toHaveAttribute('aria-label', /your reminders: Chose$/);
 	await expect(mine).toHaveCount(1);

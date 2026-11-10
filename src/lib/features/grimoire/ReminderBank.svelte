@@ -12,7 +12,8 @@
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
-	import { copiedLook, type StepReminders } from './reminders.ts';
+	import { copiedLook, isGeneric, looksLike, onBoard, type StepReminders } from './reminders.ts';
+	import DeleteTokenConfirm from './DeleteTokenConfirm.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
@@ -276,16 +277,45 @@
 	// ── The bank's reusable ∞ tokens (plan B9) ──
 	let editing = $state<string | undefined>();
 	let editorOpen = $state(false);
-	/** Opens an ∞ token's editor (its ⋯ > Edit token). */
+	/** The token in the editor was just made: Cancel deletes it, Confirm puts it in hand. */
+	let fresh = $state(false);
+	/** Opens an ∞ token's editor (its ✎ in the hand). */
 	function editToken(tokenId: string) {
 		editing = tokenId;
+		fresh = false;
 		editorOpen = true;
 	}
 	/** A new ∞ token at the end of the others, opened to set its look. */
 	function makeToken() {
 		if (!grimoire.run({ type: 'AddGenericToken' })) return;
 		editing = grimoire.game.genericTokens?.at(-1)?.tokenId;
+		fresh = true;
 		editorOpen = true;
+	}
+	/** Confirmed, a new token is in hand for the seat tapped next (Trevor, 2026-11-10, B). */
+	function confirmed() {
+		if (!fresh) return;
+		const item = all.find((i) => i.token?.tokenId === editing);
+		if (item) hand.held = { kind: 'bank', item };
+	}
+
+	// ── Deleting one, and its copies still on the board if wanted ──
+	let deleting = $state<string>();
+	let deleteOpen = $state(false);
+	const deletingToken = $derived(game.genericTokens?.find((t) => t.tokenId === deleting));
+	const deletingCopies = $derived(
+		deletingToken ? onBoard(game).filter((r) => isGeneric(r) && looksLike(r, deletingToken)) : []
+	);
+	function deleteToken(tokenId: string) {
+		deleting = tokenId;
+		deleteOpen = true;
+	}
+	function deleteConfirmed(withCopies: boolean) {
+		if (!deleting) return;
+		if (withCopies)
+			for (const copy of deletingCopies)
+				grimoire.run({ type: 'RemoveReminder', reminderId: copy.reminderId });
+		grimoire.run({ type: 'RemoveGenericToken', tokenId: deleting });
 	}
 </script>
 
@@ -352,6 +382,7 @@
 		{remDrag}
 		dropBank={dropAt}
 		{editToken}
+		{deleteToken}
 		{onRemove}
 		{onHints}
 	/>
@@ -364,7 +395,20 @@
 	</div>
 {/if}
 
-<GenericTokenDialog {grimoire} bind:open={editorOpen} tokenId={editing} />
+<GenericTokenDialog
+	{grimoire}
+	bind:open={editorOpen}
+	tokenId={editing}
+	{fresh}
+	onConfirm={confirmed}
+	onDelete={deleteToken}
+/>
+<DeleteTokenConfirm
+	bind:open={deleteOpen}
+	look={deletingToken}
+	copies={deletingCopies.length}
+	onConfirm={deleteConfirmed}
+/>
 
 <style>
 	.floating {

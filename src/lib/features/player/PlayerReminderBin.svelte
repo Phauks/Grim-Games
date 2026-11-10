@@ -12,6 +12,7 @@
 		type BankGroup,
 		type BankItem
 	} from '#lib/features/grimoire/bank-items.ts';
+	import DeleteTokenConfirm from '#lib/features/grimoire/DeleteTokenConfirm.svelte';
 	import GenericLookDialog from '#lib/features/grimoire/GenericLookDialog.svelte';
 	import HeldTokenPick from '#lib/features/grimoire/HeldTokenPick.svelte';
 	import ReminderAbout from '#lib/features/grimoire/ReminderAbout.svelte';
@@ -25,7 +26,12 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
-	import { isGenericReminder, playerLook, type PlayerReminder } from './player-reminders.ts';
+	import {
+		copiesOf,
+		isGenericReminder,
+		playerLook,
+		type PlayerReminder
+	} from './player-reminders.ts';
 	import type { PlayerReminderState } from './player-reminders.svelte.ts';
 	import { TRAY_EXTRA } from './tray-ring.ts';
 
@@ -111,12 +117,40 @@
 	}
 	let editingToken = $state<string>();
 	let tokenEditorOpen = $state(false);
-	function editToken(tokenId: string) {
+	/** The token in the editor was just made: Cancel deletes it, Confirm puts it in hand. */
+	let freshToken = $state(false);
+	function editToken(tokenId: string, fresh = false) {
 		held = undefined;
 		editingToken = tokenId;
+		freshToken = fresh;
 		tokenEditorOpen = true;
 	}
 	const editedToken = $derived(reminders.tokens.find((t) => t.tokenId === editingToken));
+	/** Confirmed, a new token is in hand for the seat tapped next (Trevor, 2026-11-10, B). */
+	function tokenConfirmed() {
+		if (!freshToken) return;
+		const item = playerBankItems(characters, guessed, reminders.tokens, '').find(
+			(i) => i.token?.tokenId === editingToken
+		);
+		if (item) held = { kind: 'tray', item, number: 1, look: {} };
+	}
+
+	// ── Deleting a tray token, and its copies on the seats if wanted ──
+	let deleting = $state<string>();
+	let deleteOpen = $state(false);
+	const deletingToken = $derived(reminders.tokens.find((t) => t.tokenId === deleting));
+	const deletingCopies = $derived(deletingToken ? copiesOf(reminders.current, deletingToken) : []);
+	function askDelete(tokenId: string) {
+		held = undefined;
+		deleting = tokenId;
+		deleteOpen = true;
+	}
+	function deleteConfirmed(withCopies: boolean) {
+		if (!deleting) return;
+		if (withCopies)
+			for (const { seatId, reminder } of deletingCopies) reminders.move(seatId, reminder);
+		reminders.removeToken(deleting);
+	}
 
 	// ── Drag a token onto a seat, or onto "+ New token" ──
 	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean }>();
@@ -171,7 +205,7 @@
 			// Holding a token, "+ New token" takes it as a drop there does.
 			if (heldReminder) return newTokenLike(heldReminder);
 			const tokenId = reminders.addToken();
-			if (tokenId) editToken(tokenId);
+			if (tokenId) editToken(tokenId, true);
 			return;
 		}
 		held = heldKey === item.key ? undefined : { kind: 'tray', item, number: 1, look: {} };
@@ -265,14 +299,33 @@
 	const owner = $derived(
 		subject && !subjectGeneric ? characterOf(subject.reminder.characterId) : undefined
 	);
+	/**
+	 * The pill's ✎ and trash (Trevor, 2026-11-10, option B): one of the tray's own ∞ tokens is
+	 * edited or deleted itself, as the bank's; a token on a seat is edited (an ∞ one) or taken
+	 * off there.
+	 */
 	const actions = $derived.by(() => {
 		const label = t('player.grim.editToken');
-		// One of the tray's own ∞ tokens: its editor changes the token itself, as the bank's.
 		const tokenId = held?.kind === 'tray' ? held.item.token?.tokenId : undefined;
-		if (tokenId) return [{ value: 'edit', label, onSelect: () => editToken(tokenId) }];
-		return heldReminder && isGenericReminder(heldReminder)
-			? [{ value: 'edit', label, onSelect: () => (editOpen = true) }]
-			: [];
+		if (tokenId)
+			return [
+				{ value: 'edit', label, onSelect: () => editToken(tokenId) },
+				{
+					value: 'delete',
+					label: t('player.grim.deleteGeneric'),
+					onSelect: () => askDelete(tokenId)
+				}
+			];
+		const edit = { value: 'edit', label, onSelect: () => (editOpen = true) };
+		// The tray's plain ∞ or #: its words and look before it goes on a seat.
+		if (held?.kind !== 'placed')
+			return heldReminder && isGenericReminder(heldReminder) ? [edit] : [];
+		const takeOff = {
+			value: 'remove',
+			label: t('player.grim.removeReminder'),
+			onSelect: () => remove()
+		};
+		return isGenericReminder(held.reminder) ? [edit, takeOff] : [takeOff];
 	});
 	/** A held # token's number (plan M48), or which token of a stacked run: in its pill. */
 	const heldNumber = $derived(symbolNumber(heldReminder?.symbol));
@@ -403,7 +456,7 @@
 	look={subject && subjectGeneric ? subject.reminder : undefined}
 	onChange={setLook}
 	onDelete={remove}
-	deleteLabel={t('player.grim.deleteGeneric')}
+	deleteLabel={t('player.grim.removeReminder')}
 	tokenKey={subject?.reminder.id ?? 'tray'}
 	art={subject?.reminder.like ? characterOf(subject.reminder.like.characterId) : undefined}
 	onCountsUp={now ? (countsUp) => setLook({ countsUp }) : undefined}
@@ -413,10 +466,23 @@
 	bind:open={tokenEditorOpen}
 	look={editedToken}
 	onChange={(change) => editingToken && reminders.setTokenLook(editingToken, change)}
-	onDelete={() => editingToken && reminders.removeToken(editingToken)}
+	onDelete={() => {
+		if (!editingToken) return;
+		if (freshToken) reminders.removeToken(editingToken);
+		else askDelete(editingToken);
+	}}
 	deleteLabel={t('player.grim.deleteGeneric')}
 	tokenKey={editingToken}
 	art={editedToken?.like ? characterOf(editedToken.like.characterId) : undefined}
+	fresh={freshToken}
+	onConfirm={tokenConfirmed}
+/>
+
+<DeleteTokenConfirm
+	bind:open={deleteOpen}
+	look={deletingToken}
+	copies={deletingCopies.length}
+	onConfirm={deleteConfirmed}
 />
 
 <style>

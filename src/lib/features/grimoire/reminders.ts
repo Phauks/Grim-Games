@@ -224,6 +224,20 @@ export function copiedLook(reminder: Reminder & GenericLook): GenericLook {
 	return { note, symbol, symbolColour, symbolFill, like, countsUp };
 }
 
+/**
+ * Whether a placed ∞ copy still looks like an ∞ token (its words, symbol, colour and fill):
+ * the copies that deleting the token can take off the seats too (Trevor, 2026-11-10, option B).
+ * Copies are not linked to their token, so one changed since it was placed is left alone.
+ */
+export function looksLike(placed: GenericLook, token: GenericLook): boolean {
+	return (
+		(placed.note ?? '') === (token.note ?? '') &&
+		(placed.symbol ?? '') === (token.symbol ?? '') &&
+		placed.symbolColour === token.symbolColour &&
+		!!placed.symbolFill === !!token.symbolFill
+	);
+}
+
 /** The reminder a token stands for when marking seats: the one a generic copy copies. */
 export const handReminder = (reminder: Reminder & GenericLook): Reminder =>
 	reminder.like ?? reminder;

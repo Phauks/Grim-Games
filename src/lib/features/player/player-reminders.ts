@@ -17,6 +17,7 @@ import {
 import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { looksLike } from '#lib/features/grimoire/reminders.ts';
 
 /**
  * A script character's token, or a generic one (Trevor, 2026-10-26: "the generic token
@@ -277,4 +278,19 @@ export function setGenericLook(
 ): PlayerReminders {
 	const list = remindersOn(reminders, seatId).map((r) => (r.id === id ? { ...r, ...look } : r));
 	return parsePlayerReminders({ ...reminders, [seatId]: list });
+}
+
+/**
+ * The ∞ copies on the seats that still look like a tray token (`looksLike`), each with its
+ * seat: what Delete token can take off too (Trevor, 2026-11-10, option B).
+ */
+export function copiesOf(
+	reminders: PlayerReminders,
+	token: GenericLook
+): { seatId: string; reminder: PlayerReminder }[] {
+	return Object.entries(reminders).flatMap(([seatId, placed]) =>
+		placed
+			.filter((r) => isGenericReminder(r) && looksLike(r, token))
+			.map((reminder) => ({ seatId, reminder }))
+	);
 }

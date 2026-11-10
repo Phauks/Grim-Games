@@ -14,19 +14,21 @@
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { named, TILE_EMOJI, TILE_SYMBOLS } from '#lib/features/setup/tile-face.ts';
 	import TileMarkFace from '#lib/features/setup/TileMarkFace.svelte';
 
 	/**
-	 * A generic ∞ token's symbol, symbol colour and text, for a placed reminder
-	 * (ReminderNoteField) and for the bank's reusable ∞ tokens (GenericTokenDialog). The symbol
-	 * (Trevor, 2026-10-19: chosen per token) is nothing, one of the bag tiles' symbols, or one
-	 * of their emoji. The text (Trevor, 2026-10-18: "if you touch it, you can add more
-	 * information"): Enter saves it, and so does closing; emptied, the token goes back to a
-	 * plain ∞. A number token (plan M35, Trevor 2026-11-03) has its Number first instead of a
-	 * symbol, then its colour and text.
+	 * A generic ∞ token's text, symbol, symbol colour and fill, for a placed reminder
+	 * (ReminderNoteField) and for the ∞ tokens of the bank and a player's tray
+	 * (GenericLookDialog). The text comes first (Trevor, 2026-11-10: fewer steps to add details):
+	 * Enter saves it, and so does closing; emptied, the token goes back to a plain ∞. The symbol
+	 * (Trevor, 2026-10-19: chosen per token) is nothing, one of the bag tiles' symbols, or one of
+	 * their emoji, every one shown at once in a grid that scrolls on its own, and the colours are
+	 * swatches (Trevor, 2026-11-10: "access to symbols and stuff"). A number token (plan M35,
+	 * Trevor 2026-11-03) has its Number instead of a symbol.
 	 */
 	interface Props {
 		look: GenericLook;
@@ -41,6 +43,8 @@
 		 * dusk) or day (at dawn); none stays put. Left out, the row isn't offered.
 		 */
 		onCountsUp?: (countsUp: CounterTime | undefined) => void;
+		/** Enter in the text, after it is saved (GenericLookDialog: Confirm). */
+		onEnter?: () => void;
 		/** The text as typed, before it is saved (a live preview shows it). */
 		text?: string;
 	}
@@ -52,6 +56,7 @@
 		onColour,
 		onFill,
 		onCountsUp,
+		onEnter,
 		text = $bindable('')
 	}: Props = $props();
 	// Only when the saved text changes: picking a symbol mid-typing keeps what was typed.
@@ -66,13 +71,13 @@
 	}
 	onDestroy(save);
 
-	// Select drops an empty value, so None and Default need a word of their own.
+	// A radio needs a value of its own for None and Default.
 	const NONE = 'none';
 	const DEFAULT = 'default';
 	const symbols = [
 		{ value: NONE, label: 'None' },
-		...TILE_SYMBOLS.map(({ icon, key }) => ({ value: icon, label: named(key), group: 'Symbols' })),
-		...TILE_EMOJI.map(({ emoji, key }) => ({ value: emoji, label: named(key), group: 'Emoji' }))
+		...TILE_SYMBOLS.map(({ icon, key }) => ({ value: icon, label: named(key) })),
+		...TILE_EMOJI.map(({ emoji, key }) => ({ value: emoji, label: named(key) }))
 	];
 
 	/**
@@ -93,6 +98,18 @@
 	const number = $derived(isNumberSymbol(look.symbol) ? symbolNumber(look.symbol) : undefined);
 </script>
 
+<TextField
+	label="Text"
+	bind:value={text}
+	maxlength={60}
+	enterkeyhint="done"
+	oncommit={() => {
+		save();
+		onEnter?.();
+	}}
+	testid="reminder-note"
+/>
+
 {#if number !== undefined}
 	<NumberSelect
 		label="Number"
@@ -111,27 +128,30 @@
 		/>
 	{/if}
 {:else}
-	<Select
-		label="Symbol"
-		value={look.symbol || NONE}
-		options={symbols}
-		onChange={(v) => onSymbol(v === NONE ? '' : v)}
-	>
-		{#snippet item(option)}{@render choice(option)}{/snippet}
-		{#snippet selected(option)}{@render choice(option)}{/snippet}
-	</Select>
+	<!-- Every symbol at once, in a box that scrolls on its own (no reflow). -->
+	<div class="symbols" data-testid="symbol-choices">
+		<ChoiceGroup
+			label="Symbol"
+			layout="row"
+			value={look.symbol || NONE}
+			options={symbols}
+			onChange={(v) => onSymbol(v === NONE ? '' : v)}
+		>
+			{#snippet item(option)}{@render choice(option)}{/snippet}
+		</ChoiceGroup>
+	</div>
 {/if}
 
-<Select
+<ChoiceGroup
 	label={number !== undefined ? 'Colour' : 'Symbol colour'}
+	layout="row"
 	value={look.symbolColour ?? DEFAULT}
 	options={colours}
 	onChange={(v) => onColour(v === DEFAULT ? undefined : (v as SymbolColour))}
 	disabled={!iconSymbol && number === undefined}
 >
 	{#snippet item(option)}{@render swatch(option)}{/snippet}
-	{#snippet selected(option)}{@render swatch(option)}{/snippet}
-</Select>
+</ChoiceGroup>
 
 <!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. A
 	 number is never drawn filled. -->
@@ -156,23 +176,16 @@
 {/snippet}
 
 {#snippet choice(option: { value: string; label: string })}
-	<span class="choice"
+	<span class="face" title={option.label}
 		>{#if option.value.startsWith('ph:')}<TileMarkFace
 				mark={{ kind: 'symbol', icon: option.value, name: option.label }}
 			/>{:else if option.value !== NONE}<TileMarkFace
 				mark={{ kind: 'emoji', emoji: option.value, name: option.label }}
-			/>{/if}{option.label}</span
+			/>{:else}{option.label}{/if}{#if option.value !== NONE}<span class="visually-hidden"
+				>{option.label}</span
+			>{/if}</span
 	>
 {/snippet}
-
-<TextField
-	label="Text"
-	bind:value={text}
-	maxlength={60}
-	enterkeyhint="done"
-	oncommit={save}
-	testid="reminder-note"
-/>
 
 <style>
 	.choice {
@@ -186,7 +199,19 @@
 		border: 0.0625rem solid var(--border);
 		border-radius: 50%;
 	}
-	.choice :global(.mark) {
+	.face {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.5em;
+	}
+	.face :global(.mark) {
 		font-size: 0.75em;
+	}
+	/* About three rows of symbols in view under their label; the rest scroll inside. */
+	.symbols :global(.options) {
+		max-height: calc(3.6 * var(--tap-target));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: calc(0.25 * var(--u));
 	}
 </style>

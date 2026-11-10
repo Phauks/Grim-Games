@@ -27,6 +27,8 @@
 		 * while another option is chosen. Never locks the choice.
 		 */
 		emphasized?: T;
+		/** Shown but not choosable (no reflow while it has no effect). */
+		disabled?: boolean;
 	}
 
 	let {
@@ -38,7 +40,8 @@
 		onChange,
 		layout = 'cards',
 		item,
-		emphasized
+		emphasized,
+		disabled = false
 	}: Props = $props();
 </script>
 
@@ -48,6 +51,7 @@
 	onValueChange={(details) => details.value && onChange(details.value as T)}
 	aria-labelledby={labelledBy}
 	data-layout={layout}
+	{disabled}
 >
 	{#if !labelledBy}
 		<RadioGroup.Label class={hideLabel ? 'visually-hidden' : undefined}>{label}</RadioGroup.Label>
@@ -114,6 +118,10 @@
 		color: var(--choice-color);
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	:global([data-scope='radio-group'][data-part='item'][data-disabled]) {
+		opacity: 0.5;
+		cursor: default;
 	}
 	:global([data-scope='radio-group'][data-part='item'][data-state='checked']) {
 		border-color: var(--choice-selected-border);
