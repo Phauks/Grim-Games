@@ -22,7 +22,7 @@ interface Row {
 export function heldTokenActions(
 	grimoire: Grimoire,
 	item: BankItem,
-	on: { edit: (tokenId: string) => void; putDown: () => void }
+	on: { edit: (tokenId: string) => void; remove: (tokenId: string) => void; putDown: () => void }
 ): Row[] {
 	const done = (action: () => void) => () => {
 		on.putDown();
@@ -44,8 +44,12 @@ export function heldTokenActions(
 			});
 	}
 	const tokenId = item.token?.tokenId;
+	// Its own ✎ and trash in the pill (Trevor, 2026-11-10, option B): Delete asks first.
 	if (tokenId)
-		rows.push({ value: 'edit', label: 'Edit token', onSelect: done(() => on.edit(tokenId)) });
+		rows.push(
+			{ value: 'edit', label: 'Edit token', onSelect: done(() => on.edit(tokenId)) },
+			{ value: 'delete', label: 'Delete token', onSelect: done(() => on.remove(tokenId)) }
+		);
 	return rows;
 }
 

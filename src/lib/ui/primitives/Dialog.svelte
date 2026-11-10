@@ -76,6 +76,11 @@
 		 * screen, not just over the board, so they can't read it (Trevor, 2026-10-26).
 		 */
 		shownToPlayers?: boolean;
+		/**
+		 * The element focused on opening, instead of the first one that can be (a new ∞
+		 * token's Text, so typing starts at once).
+		 */
+		initialFocus?: () => HTMLElement | null;
 	}
 
 	let {
@@ -98,7 +103,8 @@
 		pinAside = true,
 		asideColumn,
 		beforeClose,
-		shownToPlayers = false
+		shownToPlayers = false,
+		initialFocus
 	}: Props = $props();
 	let head = $state<HTMLElement>();
 	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
@@ -137,6 +143,7 @@
 	onEscapeKeyDown={guard}
 	onInteractOutside={guard}
 	onRequestDismiss={dismissedByParent}
+	initialFocusEl={initialFocus}
 >
 	<Portal container={portalTarget()}>
 		<Dialog.Backdrop

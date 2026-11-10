@@ -36,13 +36,25 @@
 		dropBank: (item: BankItem, x: number, y: number) => void;
 		/** Opens an ∞ token's editor (ReminderBank). */
 		editToken: (tokenId: string) => void;
+		/** Asks to delete an ∞ token (ReminderBank). */
+		deleteToken: (tokenId: string) => void;
 		/** Takes a board token off the board (ReminderMoveConfirm). */
 		onRemove: (reminderId: ReminderId) => void;
 		/** Marks the seats for a board token in hand. */
 		onHints: (hints: { seats: SeatId[]; reminder?: Reminder }) => void;
 	}
 
-	let { grimoire, hand, board, remDrag, dropBank, editToken, onRemove, onHints }: Props = $props();
+	let {
+		grimoire,
+		hand,
+		board,
+		remDrag,
+		dropBank,
+		editToken,
+		deleteToken,
+		onRemove,
+		onHints
+	}: Props = $props();
 
 	const characters = $derived(grimoire.open.characters);
 	const game = $derived(grimoire.game);
@@ -95,7 +107,11 @@
 		const held = hand.held;
 		const putDown = () => hand.putDown();
 		if (held?.kind === 'bank')
-			return heldTokenActions(grimoire, held.item, { edit: editToken, putDown });
+			return heldTokenActions(grimoire, held.item, {
+				edit: editToken,
+				remove: deleteToken,
+				putDown
+			});
 		if (!placed || !held) return [];
 		const edit = () => hand.showAbout(held);
 		return placedTokenActions(grimoire, placed, { remove: onRemove, putDown, edit });

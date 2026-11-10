@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { inHand, tapToSeat } from './reminder-bank.ts';
+import { confirmToken, inHand, pickLook, tapToSeat } from './reminder-bank.ts';
 
 // Dragging a reminder onto the bank's "+ New token" makes a new ∞ token like it (Trevor,
 // 2026-10-27), and the + glows while a reminder is dragged.
@@ -75,10 +75,12 @@ test('a reminder dropped on "+ New token" becomes a new ∞ token with its words
 	// An ∞ token with its own text and symbol: a second one just like it.
 	await plus.tap();
 	await page.getByTestId('reminder-note').fill('Red herring');
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option').nth(1).tap();
-	await page.keyboard.press('Escape');
+	await pickLook(page, 'Star');
+	await confirmToken(page);
 	await expect(page.getByTestId('reminder-note')).toBeHidden();
+	// Confirmed, the new token is in hand for a seat (Trevor, 2026-11-10, option B).
+	await expect(inHand(page)).toBeVisible();
+	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
 	const herring = bank.getByRole('button', { name: 'Generic reminder: Red herring' });
 	await expect(herring).toHaveCount(1);
 	const symbol = await herring.locator('[data-symbol]').getAttribute('data-symbol');

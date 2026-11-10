@@ -12,9 +12,22 @@
 		grimoire: Grimoire;
 		open?: boolean;
 		tokenId?: string;
+		/** Just made by "+ New token": closing without Confirm deletes it. */
+		fresh?: boolean;
+		/** After Confirm (a new token goes into the hand). */
+		onConfirm?: () => void;
+		/** Its trash: asks first (DeleteTokenConfirm); a token just made goes at once. */
+		onDelete: (tokenId: string) => void;
 	}
 
-	let { grimoire, open = $bindable(false), tokenId }: Props = $props();
+	let {
+		grimoire,
+		open = $bindable(false),
+		tokenId,
+		fresh = false,
+		onConfirm,
+		onDelete
+	}: Props = $props();
 
 	const token = $derived(grimoire.game.genericTokens?.find((t) => t.tokenId === tokenId));
 
@@ -31,6 +44,12 @@
 	tokenKey={token?.tokenId}
 	art={token?.like ? grimoire.open.characters.get(token.like.characterId) : undefined}
 	onChange={set}
-	onDelete={() => token && grimoire.run({ type: 'RemoveGenericToken', tokenId: token.tokenId })}
+	onDelete={() => {
+		if (!token) return;
+		if (fresh) grimoire.run({ type: 'RemoveGenericToken', tokenId: token.tokenId });
+		else onDelete(token.tokenId);
+	}}
 	deleteLabel="Delete token"
+	{fresh}
+	{onConfirm}
 />

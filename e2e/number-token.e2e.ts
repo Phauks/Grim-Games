@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
-import { heldAction, inHand, tapToSeat } from './reminder-bank.ts';
+import { heldAction, inHand, pickLook, tapToSeat } from './reminder-bank.ts';
 
 // The bank's # token (plan M35, Trevor 2026-11-03: "a new generic token that is only used for
 // numbers"): it lands showing 1, and its ⋯ > Edit token picks the number from a drop-down. A
@@ -35,10 +35,9 @@ test('the # token lands showing 1 and its number is picked from a drop-down', as
 	await one.tap();
 	await expect(inHand(page)).toBeVisible();
 	await heldAction(page, 'Edit token');
-	await expect(page.getByRole('combobox', { name: 'Symbol', exact: true })).toHaveCount(0);
+	await expect(page.getByRole('radiogroup', { name: 'Symbol', exact: true })).toHaveCount(0);
 	await pickNumber(page, 'Number', 3);
-	await page.getByRole('combobox', { name: 'Colour', exact: true }).tap();
-	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	await pickLook(page, 'Red');
 	const text = page.getByTestId('reminder-note');
 	await text.fill('Votes');
 	await text.press('Enter');

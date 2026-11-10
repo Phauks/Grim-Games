@@ -2326,14 +2326,13 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 		await generic.tap();
 		await third.tap();
 	}
-	// An ∞ in hand has a ⋯ with Edit token (Trevor, 2026-10-31): its words before it goes on.
+	// An ∞ in hand has its ✎ (Trevor, 2026-11-10): its words before it goes on.
 	await generic.tap();
 	const hand = phone.getByTestId('reminder-in-hand');
-	await hand.getByRole('button', { name: 'More reminder actions' }).tap();
-	await phone.getByRole('menuitem', { name: 'Edit token' }).tap();
+	await hand.getByRole('button', { name: 'Edit token' }).tap();
 	await phone.getByTestId('reminder-note').fill('7');
+	// Enter confirms (Trevor, 2026-11-10, option B).
 	await phone.getByTestId('reminder-note').press('Enter');
-	await phone.keyboard.press('Escape');
 	await phone.getByTestId('grim-seat').nth(5).tap();
 	await expect(phone.getByTestId('grim-seat').nth(5)).toHaveAttribute(
 		'aria-label',
@@ -2349,7 +2348,6 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 		await phone.getByRole('button', { name: 'Edit token' }).tap();
 		await text.fill(words);
 		await text.press('Enter');
-		await phone.keyboard.press('Escape');
 		await expect(text).toBeHidden();
 		await phone.keyboard.press('Escape');
 	}

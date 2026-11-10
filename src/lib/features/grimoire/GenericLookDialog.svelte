@@ -5,20 +5,22 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GenericLookFields from './GenericLookFields.svelte';
 
 	/**
-	 * A generic ∞ token's look (symbol, colour, text) in two panes (Trevor, 2026-10-24): the
+	 * A generic ∞ token's look (text, symbol, colour) in two panes (Trevor, 2026-10-24): the
 	 * token as it will look on the left, its fields on the right; on a phone the token stays on
 	 * top. The bank's reusable tokens (GenericTokenDialog) and a player's own generic reminders
-	 * (PlayerReminderBin) alike.
+	 * (PlayerReminderBin) alike. Changes wait for Confirm (Trevor, 2026-11-10, option B);
+	 * Cancel, ✕ or Escape leave the token as it was, and a token just made goes again.
 	 */
 	interface Props {
 		open?: boolean;
 		/** The token's look; none closes the dialog (deleted, undone). */
 		look: GenericLook | undefined;
-		/** Changes it, keeping the fields not named. */
+		/** Changes it on Confirm, keeping the fields not named. */
 		onChange: (change: GenericLook) => void;
 		onDelete: () => void;
 		deleteLabel: string;
@@ -28,6 +30,10 @@
 		art?: Character;
 		/** A # token's Counts up (GenericLookFields); left out, the row isn't offered. */
 		onCountsUp?: (countsUp: CounterTime | undefined) => void;
+		/** Just made by "+ New token": closing without Confirm deletes it. */
+		fresh?: boolean;
+		/** After Confirm has saved it (a new token goes into the hand). */
+		onConfirm?: () => void;
 	}
 
 	let {
@@ -38,11 +44,26 @@
 		deleteLabel,
 		tokenKey,
 		art,
-		onCountsUp
+		onCountsUp,
+		fresh = false,
+		onConfirm
 	}: Props = $props();
 
 	$effect(() => {
 		if (open && !look) open = false;
+	});
+
+	/** The look as changed so far, saved on Confirm. */
+	let draft = $state<GenericLook>({});
+	let confirmed = false;
+	let wasOpen = false;
+	$effect.pre(() => {
+		if (open && !wasOpen) {
+			draft = { ...look };
+			confirmed = false;
+		}
+		if (!open && wasOpen && !confirmed && fresh) onDelete();
+		wasOpen = open;
 	});
 
 	// The text as typed, so the preview shows it before Enter saves it.
@@ -50,9 +71,28 @@
 	let width = $state(0);
 	// Large enough to read, small enough to leave the fields room under it on a phone.
 	const size = $derived(Math.round(Math.min(width * 0.5, 128)));
+	let fields = $state<HTMLElement>();
+
+	function confirm() {
+		if (!look) return;
+		const note = text.trim() || undefined;
+		const next = { ...draft, note };
+		const change: GenericLook = {};
+		for (const key of ['note', 'symbol', 'symbolColour', 'symbolFill'] as const)
+			if (next[key] !== look[key]) Object.assign(change, { [key]: next[key] });
+		if (Object.keys(change).length > 0) onChange(change);
+		if (onCountsUp && next.countsUp !== look.countsUp) onCountsUp(next.countsUp);
+		confirmed = true;
+		open = false;
+		onConfirm?.();
+	}
 </script>
 
-<Dialog bind:open title="∞ token">
+<Dialog
+	bind:open
+	title="∞ token"
+	initialFocus={() => fields?.querySelector<HTMLElement>('[data-testid="reminder-note"]') ?? null}
+>
 	{#snippet heading()}
 		<ReminderToken label={(look?.note || '∞') as ReminderLabel} /> token
 	{/snippet}
@@ -68,9 +108,9 @@
 					label={text.trim() as ReminderLabel}
 					character={undefined}
 					infinite
-					symbol={look.symbol}
-					symbolColour={look.symbolColour}
-					symbolFill={look.symbolFill}
+					symbol={draft.symbol}
+					symbolColour={draft.symbolColour}
+					symbolFill={draft.symbolFill}
 					{art}
 					{size}
 					disabled
@@ -80,26 +120,33 @@
 		</div>
 	{/snippet}
 	{#if look}
-		{#key tokenKey}
-			<GenericLookFields
-				{look}
-				bind:text
-				onNote={(note) => onChange({ note: note || undefined })}
-				onSymbol={(symbol) => onChange({ symbol: symbol || undefined })}
-				onColour={(symbolColour) => onChange({ symbolColour })}
-				onFill={(fill) => onChange({ symbolFill: fill || undefined })}
-				{onCountsUp}
-			/>
-		{/key}
+		<div class="fields" bind:this={fields}>
+			{#key tokenKey}
+				<GenericLookFields
+					look={draft}
+					bind:text
+					onNote={(note) => (draft = { ...draft, note: note || undefined })}
+					onSymbol={(symbol) => (draft = { ...draft, symbol: symbol || undefined })}
+					onColour={(symbolColour) => (draft = { ...draft, symbolColour })}
+					onFill={(fill) => (draft = { ...draft, symbolFill: fill || undefined })}
+					onCountsUp={onCountsUp && ((countsUp) => (draft = { ...draft, countsUp }))}
+					onEnter={confirm}
+				/>
+			{/key}
+		</div>
 	{/if}
 	{#snippet headActions()}
 		<DeleteButton
 			label={deleteLabel}
 			onclick={() => {
+				confirmed = true;
 				onDelete();
 				open = false;
 			}}
 		/>
+	{/snippet}
+	{#snippet actions()}
+		<ModalActions onCancel={() => (open = false)} onConfirm={confirm} />
 	{/snippet}
 </Dialog>
 
@@ -113,5 +160,10 @@
 		border: var(--card-border);
 		border-radius: var(--card-radius);
 		background: var(--card-background);
+	}
+	.fields {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
 	}
 </style>

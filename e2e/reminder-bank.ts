@@ -74,8 +74,24 @@ export async function tapToSeat(page: Page, token: Locator, seat: number | strin
 
 /** Picks a row of the held token's ⋯. */
 export async function heldAction(page: Page, row: string) {
+	// Edit and the trash are the pill's own buttons (Trevor, 2026-11-10, option B).
+	if (PILL_BUTTONS.includes(row)) {
+		await inHand(page).getByRole('button', { name: row, exact: true }).tap();
+		return;
+	}
 	await inHand(page).getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('menuitem', { name: row, exact: true }).tap();
+}
+const PILL_BUTTONS = ['Edit token', 'Remove reminder', 'Remove copy', 'Delete token'];
+
+/** Picks an ∞ token's symbol or colour in its editor's grid (GenericLookFields). */
+export async function pickLook(page: Page, name: string) {
+	await page.getByRole('radio', { name, exact: true }).locator('..').tap();
+}
+
+/** Saves an ∞ token's editor (GenericLookDialog): Confirm. */
+export async function confirmToken(page: Page) {
+	await page.getByRole('dialog', { name: /token/ }).getByRole('button', { name: 'Confirm' }).tap();
 }
 
 /** Taps a seat's token on the board to hold it, then the seat it moves to (Trevor, 2026-10-30). */

@@ -22,9 +22,11 @@ import {
 	closeBin,
 	boardSeat,
 	dragToSeat,
+	confirmToken,
 	heldAction,
 	inHand,
 	openBin,
+	pickLook,
 	moveOnBoard,
 	putReminder,
 	placeFromStep,
@@ -4572,8 +4574,9 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 		.getByRole('button', { name: 'New token' })
 		.tap();
 	await page.getByTestId('reminder-note').fill('Red herring');
-	await page.keyboard.press('Escape');
+	await confirmToken(page);
 	await expect(page.getByTestId('reminder-note')).toBeHidden();
+	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
 	for (const [number, name] of [
 		[1, 'Poisoner'],
 		[2, 'Monk']
@@ -6065,13 +6068,12 @@ test('"+ New token" makes a reusable ∞ token whose copies carry its look', asy
 	await bank.getByRole('button', { name: 'New token' }).tap();
 	const text = page.getByTestId('reminder-note');
 	await text.fill('Red herring');
-	await text.press('Enter');
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'Star', exact: true }).tap();
-	await page.getByRole('combobox', { name: 'Symbol colour' }).tap();
-	await page.getByRole('option', { name: 'Red', exact: true }).tap();
-	await page.keyboard.press('Escape');
+	await pickLook(page, 'Star');
+	await pickLook(page, 'Red');
+	await confirmToken(page);
 	await expect(text).toBeHidden();
+	// Confirmed, it is in hand (Trevor, 2026-11-10, option B).
+	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
 	const token = bank.getByRole('button', { name: 'Generic reminder: Red herring' });
 	await expect(token.locator('[data-symbol^="ph:"]')).toBeAttached();
 	// "+ New token" stays last, after the plain ∞ and the new token.
@@ -6090,22 +6092,23 @@ test('"+ New token" makes a reusable ∞ token whose copies carry its look', asy
 	await page.reload();
 	await expect(token).toHaveCount(1);
 
-	// Edited from its ⋯: the copy already placed keeps its words.
+	// Edited from its ✎: the copy already placed keeps its words.
 	await token.tap();
 	await heldAction(page, 'Edit token');
 	await text.fill('Changed');
 	await text.press('Enter');
-	await page.keyboard.press('Escape');
 	await expect(text).toBeHidden();
 	const changed = bank.getByRole('button', { name: 'Generic reminder: Changed' });
 	await expect(changed).toHaveCount(1);
 	await expect(placed).toHaveCount(1);
 
-	// The red trash takes it out of the bank; the copy on the seat stays.
+	// The red trash takes it out of the bank; the copy on the seat, changed since, stays.
 	await changed.tap();
-	await heldAction(page, 'Edit token');
-	await page.getByRole('button', { name: 'Delete token' }).tap();
-	await expect(text).toBeHidden();
+	await heldAction(page, 'Delete token');
+	await page
+		.getByRole('alertdialog', { name: 'Delete token' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
 	await expect(changed).toHaveCount(0);
 	await expect(placed).toHaveCount(1);
 });
@@ -6130,8 +6133,7 @@ test('an ∞ token is edited beside a live preview of it', async ({ page }, test
 	await expect(token).toHaveAttribute('aria-label', 'Generic reminder');
 	await page.getByTestId('reminder-note').fill('Red herring');
 	await expect(token).toHaveAttribute('aria-label', 'Generic reminder: Red herring');
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await pickLook(page, 'Star');
 	await expect(token.locator('[data-symbol="ph:star"]')).toBeAttached();
 	await page.getByText('Filled symbol', { exact: true }).tap();
 	await expect(token.locator('[data-icon="ph:star-fill"] svg')).toBeAttached();
@@ -6151,12 +6153,12 @@ test('an ∞ token can have a filled symbol, and copying one is not unusual', as
 	const fillLabel = page.getByText('Filled symbol', { exact: true });
 	// Only for an icon symbol, like its colour.
 	await expect(filled).toBeDisabled();
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await pickLook(page, 'Star');
 	await fillLabel.tap();
 	await expect(filled).toBeChecked();
-	await page.keyboard.press('Escape');
+	await confirmToken(page);
 	await expect(fillLabel).toBeHidden();
+	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
 	const token = bank.getByRole('button', { name: 'Generic reminder' }).filter({
 		has: page.locator('[data-symbol="ph:star"]')
 	});
@@ -6217,11 +6219,10 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.fill('Chose Sam');
 	await text.press('Enter');
 	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'Owl', exact: true }).tap();
+	await pickLook(page, 'Owl');
 	// Its symbol's colour (Trevor, 2026-10-20: per token): kept in place, but an emoji keeps
 	// its own colours, so it waits for an icon symbol.
-	const colour = page.getByRole('combobox', { name: 'Symbol colour' });
+	const colour = page.getByRole('radio', { name: 'Red', exact: true });
 	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
@@ -6255,14 +6256,12 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	// An icon symbol takes a colour from the theme's own, and Default gives it back its ink.
 	await openSeat(page, 1);
 	await page.getByRole('button', { name: 'Actions for Chose Sam' }).tap();
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'Star', exact: true }).tap();
+	await pickLook(page, 'Star');
 	const icon = placed.locator('[data-symbol^="ph:"]');
 	await expect(icon).toBeAttached();
 	const ink = await icon.evaluate((el) => getComputedStyle(el).color);
 	await expect(colour).toBeEnabled();
-	await colour.tap();
-	await page.getByRole('option', { name: 'Red', exact: true }).tap();
+	await pickLook(page, 'Red');
 	const evil = await page.evaluate(() => {
 		const probe = document.createElement('span');
 		probe.style.color = 'var(--evil)';
@@ -6272,12 +6271,10 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 		return value;
 	});
 	await expect(icon).toHaveCSS('color', evil);
-	await colour.tap();
-	await page.getByRole('option', { name: 'Default', exact: true }).tap();
+	await pickLook(page, 'Default');
 	await expect(icon).toHaveCSS('color', ink);
 	// None takes the symbol off again.
-	await page.getByRole('combobox', { name: 'Symbol', exact: true }).tap();
-	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await pickLook(page, 'None');
 	await expect(placed.locator('[data-symbol]')).toHaveCount(0);
 	await expect(colour).toBeDisabled();
 });

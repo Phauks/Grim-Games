@@ -1,15 +1,17 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 
 	/**
 	 * The reminder in hand (Trevor, 2026-10-30): a tapped token from the Storyteller's bank or a
 	 * player's bin, waiting for the seat tapped next. Centred over the foot of what holds it
-	 * (`--hand-bottom` above it), the token, its ⋯
-	 * when it has actions (Duplicate, About, ...), and × to put it down. No words: the token
-	 * says what is held.
+	 * (`--hand-bottom` above it), the token, its ✎ (an `edit` row) and red trash (a `remove`
+	 * or `delete` row) as buttons of their own (Trevor, 2026-11-10, option B: one tap, not ⋯
+	 * and a row), a ⋯ for any other rows (Duplicate, ...), and × to put it down. No words: the
+	 * token says what is held.
 	 */
 	interface MenuItem {
 		value: string;
@@ -40,6 +42,10 @@
 		onAbout,
 		onPutDown
 	}: Props = $props();
+
+	const edit = $derived(actions.find((a) => a.value === 'edit'));
+	const trash = $derived(actions.find((a) => a.value === 'remove' || a.value === 'delete'));
+	const more = $derived(actions.filter((a) => a !== edit && a !== trash));
 </script>
 
 <div class="in-hand" role="status" data-testid="reminder-in-hand">
@@ -50,10 +56,21 @@
 			onclick={onAbout}>{@render token()}</button
 		>{:else}<span class="token">{@render token()}</span>{/if}
 	{@render extra?.()}
-	{#if actions.length > 0}
+	{#if edit}<IconButton
+			icon="edit"
+			label={edit.label}
+			disabled={edit.disabled}
+			onclick={edit.onSelect}
+		/>{/if}
+	{#if trash}<DeleteButton
+			label={trash.label}
+			disabled={trash.disabled}
+			onclick={trash.onSelect}
+		/>{/if}
+	{#if more.length > 0}
 		<Menu
 			label={t('common.moreReminderActions')}
-			items={actions}
+			items={more}
 			placement="top"
 			bind:open={menuOpen}
 		/>

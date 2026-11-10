@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	MAX_SEAT_REMINDERS,
 	addGenericReminder,
+	copiesOf,
 	countUp,
 	hasReminder,
 	moveReminder,
@@ -141,5 +142,18 @@ describe("reminder tokens on a player's own grim", () => {
 			])
 		).toEqual([{ tokenId: 't1', note: 'Chose', symbol: '#1' }]);
 		expect(parsePlayerTokens({})).toEqual([]);
+	});
+});
+
+describe("a tray token's copies on the seats", () => {
+	// Trevor (2026-11-10, option B): Delete token asks whether these go too.
+	it('finds the ∞ copies that still look like it, with their seats', () => {
+		let reminders = addGenericReminder({}, 's1', 'a');
+		reminders = setGenericLook(reminders, 's1', 'a', { note: 'Chose' });
+		reminders = addGenericReminder(reminders, 's2', 'b');
+		reminders = setGenericLook(reminders, 's2', 'b', { note: 'Other' });
+		reminders = toggleReminder(reminders, 's2', poisoned);
+		const copies = copiesOf(reminders, { note: 'Chose' });
+		expect(copies.map((c) => [c.seatId, c.reminder.id])).toEqual([['s1', 'a']]);
 	});
 });
