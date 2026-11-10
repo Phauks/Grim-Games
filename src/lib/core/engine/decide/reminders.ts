@@ -1,7 +1,7 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
-	SYMBOL_COLOURS,
+	isSymbolColour,
 	numberSymbol,
 	reminderHolder,
 	replacedBy,
@@ -231,7 +231,7 @@ export const REMINDERS_DECIDERS: Deciders<
 		if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
 		const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
 		const { colour } = command;
-		if (colour !== undefined && !SYMBOL_COLOURS.includes(colour))
+		if (colour !== undefined && !isSymbolColour(colour))
 			refuse('invalid-colour', `no symbol colour ${colour}`);
 		if (colour === reminder.symbolColour) {
 			warn('no-change', 'the colour is unchanged');

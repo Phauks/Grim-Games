@@ -151,6 +151,15 @@
 	/* Beside Setup: this phone's own candle burns red, and the dusk glows violet. */
 	--sky-own-flame: color-mix(in srgb, var(--evil), var(--evil-text) 50%);
 	--sky-dusk: color-mix(in srgb, var(--sky-night), var(--evil) 45%);
+	/* Every hue at once: the custom colour's swatch before one is picked (GenericLookFields). */
+	--colour-wheel: conic-gradient(
+		var(--evil),
+		var(--fabled),
+		var(--loric),
+		var(--good),
+		var(--traveller),
+		var(--evil)
+	);
 }
 
 /*

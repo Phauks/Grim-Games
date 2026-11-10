@@ -1,17 +1,16 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 
 	/**
 	 * The reminder in hand (Trevor, 2026-10-30): a tapped token from the Storyteller's bank or a
 	 * player's bin, waiting for the seat tapped next. Centred over the foot of what holds it
-	 * (`--hand-bottom` above it), the token, its ✎ (an `edit` row) and red trash (a `remove`
-	 * or `delete` row) as buttons of their own (Trevor, 2026-11-10, option B: one tap, not ⋯
-	 * and a row), a ⋯ for any other rows (Duplicate, ...), and × to put it down. No words: the
-	 * token says what is held.
+	 * (`--hand-bottom` above it), the token, its ✎ (an `edit` row) as a button of its own
+	 * (Trevor, 2026-11-10, option B: one tap, not ⋯ and a row), a ⋯ for the other rows
+	 * (Duplicate, then Remove or Delete last; Trevor, 2026-11-10: the trash moved into ⋯), and
+	 * × to put it down. No words: the token says what is held.
 	 */
 	interface MenuItem {
 		value: string;
@@ -44,8 +43,12 @@
 	}: Props = $props();
 
 	const edit = $derived(actions.find((a) => a.value === 'edit'));
-	const trash = $derived(actions.find((a) => a.value === 'remove' || a.value === 'delete'));
-	const more = $derived(actions.filter((a) => a !== edit && a !== trash));
+	const isTrash = (a: MenuItem) => a.value === 'remove' || a.value === 'delete';
+	// Removing or deleting last, after Duplicate.
+	const more = $derived([
+		...actions.filter((a) => a !== edit && !isTrash(a)),
+		...actions.filter(isTrash)
+	]);
 </script>
 
 <div class="in-hand" role="status" data-testid="reminder-in-hand">
@@ -61,11 +64,6 @@
 			label={edit.label}
 			disabled={edit.disabled}
 			onclick={edit.onSelect}
-		/>{/if}
-	{#if trash}<DeleteButton
-			label={trash.label}
-			disabled={trash.disabled}
-			onclick={trash.onSelect}
 		/>{/if}
 	{#if more.length > 0}
 		<Menu

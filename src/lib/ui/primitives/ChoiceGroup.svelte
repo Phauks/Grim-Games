@@ -29,6 +29,12 @@
 		emphasized?: T;
 		/** Shown but not choosable (no reflow while it has no effect). */
 		disabled?: boolean;
+		/**
+		 * A tap on the chosen option clears the choice, `onChange('')`, so the group needs no
+		 * "None" option (Trevor, 2026-11-10: "just click to deselect current"). `value` is
+		 * then '' while nothing is chosen.
+		 */
+		clearable?: boolean;
 	}
 
 	let {
@@ -41,13 +47,14 @@
 		layout = 'cards',
 		item,
 		emphasized,
-		disabled = false
+		disabled = false,
+		clearable = false
 	}: Props = $props();
 </script>
 
 <!-- A radio group of tappable cards: one choice, every option visible at once. -->
 <RadioGroup.Root
-	{value}
+	value={value || null}
 	onValueChange={(details) => details.value && onChange(details.value as T)}
 	aria-labelledby={labelledBy}
 	data-layout={layout}
@@ -60,6 +67,13 @@
 		{#each options as option (option.value)}
 			<RadioGroup.Item
 				value={option.value}
+				onclick={clearable && !disabled && option.value === value
+					? (event: MouseEvent) => {
+							// Not passed on to the radio, which would choose it again.
+							event.preventDefault();
+							onChange('' as T);
+						}
+					: undefined}
 				data-emphasized={option.value === emphasized
 					? value === emphasized
 						? 'chosen'

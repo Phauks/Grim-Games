@@ -224,8 +224,7 @@
 	let toolsW = $state(0);
 	let toolsH = $state(0);
 	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
-	// The player's reminders keep clear of them too (Trevor, 2026-11-10: the buttons over the
-	// Oracle's Know), as the board's keep clear of its timer (keepClear).
+	// The player's reminders keep clear of them too (Trevor, 2026-11-10), as on the board.
 	const toolsClear = $derived(
 		tools && toolsW > 0 ? [{ x: width - tools.w / 2, y: tools.h / 2, w: tools.w, h: tools.h }] : []
 	);
@@ -261,8 +260,7 @@
 	/** The live room a seat's profile can add friends from (plan F2). */
 	const friendRoom = $derived(display ? undefined : town ? town.roomCode : code);
 	const look = $derived(drawnLook(parsePublicLook(table?.look)));
-	// The room's picture (Trevor, 2026-10-26: "Images should be uploaded and shared"), or the
-	// board's own one on the Storyteller's device.
+	// The room's picture (Trevor, 2026-10-26), or the board's own on the Storyteller's device.
 	const pictureRoom = $derived(town ? (town.pictureRoom ?? town.roomCode) : code);
 	let pictureUrl = $state<string>();
 	$effect(() => {
@@ -296,9 +294,8 @@
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
-		// The note mark opens the note itself, as the board's does (Trevor, 2026-10-25), and
-		// the guess pill makes the next guess the main one; its "+N" opens the sheet, where
-		// every guess is listed (Trevor, 2026-10-29).
+		// The note mark opens the note (Trevor, 2026-10-25); the guess pill makes the next guess
+		// the main one, and its "+N" opens the sheet listing every guess (Trevor, 2026-10-29).
 		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
 		else if (target?.closest('[data-testid="more-guesses"]')) open = true;
