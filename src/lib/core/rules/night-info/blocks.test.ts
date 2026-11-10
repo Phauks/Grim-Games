@@ -7,6 +7,11 @@
  * - https://wiki.bloodontheclocktower.com/Noble (three players, exactly one evil)
  * - https://wiki.bloodontheclocktower.com/Fortune_Teller (yes if either is the Demon or the
  *   red herring)
+ * - https://wiki.bloodontheclocktower.com/Washerwoman (two players, one a Townsfolk, shown
+ *   which), /Ravenkeeper (a player's character), /Seamstress (whether two players are the same
+ *   alignment), /Village_Idiot (a player's alignment), /Shugenja (the closest evil player's
+ *   direction), /Clockmaker (steps from the Demon to its nearest Minion), /High_Priestess (a
+ *   player the Storyteller picks): the blocks added in M78.
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
@@ -115,6 +120,98 @@ describe('learns building blocks', () => {
 	});
 });
 
+describe('learns building blocks added in M78', () => {
+	const cast = ['imp', 'chef', 'poisoner', 'butler', 'empath'];
+
+	it('a `character` of two players, one a Townsfolk, is the Washerwoman', () => {
+		const { theirs, mine } = both(
+			'washerwoman',
+			{ measure: 'character', choose: 2, types: ['townsfolk'] },
+			cast
+		);
+		same(theirs, mine);
+		expect(mine).toMatchObject({ kind: 'pair-character', characterType: 'townsfolk' });
+	});
+
+	it('a `character` of one player, any of them, is the Ravenkeeper', () => {
+		const { theirs, mine, seats } = both(
+			'ravenkeeper',
+			{ measure: 'character', choose: 1, self: true },
+			cast
+		);
+		expect(mine).toMatchObject({ kind: theirs.kind, seatCount: theirs.seatCount });
+		// The waking player is shown as their own character, which differs between the two.
+		const others = (p: typeof mine) => p.options.filter((o) => o.seats[0] !== seats[0]);
+		expect(others(mine)).toEqual(others(theirs));
+		expect(mine.options.map((o) => o.seats[0])).toEqual(theirs.options.map((o) => o.seats[0]));
+		expect(mine.characterType).toBeUndefined();
+	});
+
+	it('`same` of two players is the Seamstress', () => {
+		const { theirs, mine } = both('seamstress', { measure: 'same', choose: 2 }, cast);
+		same(theirs, mine);
+	});
+
+	it('an `alignment` of one player is the Village Idiot', () => {
+		const { theirs, mine } = both(
+			'villageidiot',
+			{ measure: 'alignment', choose: 1, self: true },
+			cast
+		);
+		same(theirs, mine);
+		expect(mine.answer).toBe('alignment');
+	});
+
+	it('the `direction` of the closest evil player is the Shugenja', () => {
+		const { theirs, mine } = both('shugenja', { measure: 'direction', alignment: 'evil' }, cast);
+		same(theirs, mine);
+		expect(mine.answer).toBe('direction');
+	});
+
+	it('the `distance` from the Demon to a Minion is the Clockmaker', () => {
+		const { theirs, mine } = both(
+			'clockmaker',
+			{ measure: 'distance', types: ['demon'], to: ['minion'] },
+			cast
+		);
+		same(theirs, mine);
+		expect(mine).toMatchObject({ highest: 3, lowest: 1 });
+	});
+
+	it('a `storyteller` pick of one player is the High Priestess', () => {
+		const { theirs, mine } = both('highpriestess', { measure: 'storyteller', choose: 1 }, cast);
+		same(theirs, mine);
+		expect(mine.mustBeFalse).toBeUndefined();
+	});
+
+	it('measures what no official character does: steps from the Demon to the nearest Outsider', () => {
+		const lamp = custom({ measure: 'distance', types: ['demon'], to: ['outsider'] });
+		const all = new Map([...characters, [lamp.id, lamp]]);
+		const { game, seats } = castWith({ characters: all })([
+			lamp.id,
+			'imp',
+			'chef',
+			'empath',
+			'butler'
+		]);
+		const picker = infoPicker(game, seats[0], lamp.id, all)!;
+		// The Imp sits at 1, the Butler at 4: 2 steps through the Lamplighter's seat.
+		expect(picker).toMatchObject({ kind: 'number', measure: 'distance' });
+		expect(picker.options).toEqual([{ seats: [], number: 2 }]);
+	});
+
+	it('shows an evil player’s character, which no official character does', () => {
+		const lamp = custom({ measure: 'character', choose: 1, alignment: 'evil' });
+		const all = new Map([...characters, [lamp.id, lamp]]);
+		const { game, seats } = castWith({ characters: all })([lamp.id, 'imp', 'chef', 'poisoner']);
+		const picker = infoPicker(game, seats[0], lamp.id, all)!;
+		expect(picker.options.map((o) => [o.seats, o.characterId])).toEqual([
+			[[seats[1]], 'imp'],
+			[[seats[3]], 'poisoner']
+		]);
+	});
+});
+
 describe('reading a building block', () => {
 	const parse = (learns: unknown) => {
 		const issues = new Issues();
@@ -141,12 +238,27 @@ describe('reading a building block', () => {
 			parse({ measure: 'players', scope: 'alive-neighbours', choose: 1, alignment: 'evil' }).issues
 		).toEqual([
 			'rules.learns.choose: not with scope `alive-neighbours`',
-			'rules.learns.scope: only a `count` looks at neighbours'
+			'rules.learns.scope: only a `count` takes a scope'
 		]);
 		expect(parse({ measure: 'players', choose: 2, matching: 3, alignment: 'evil' }).issues).toEqual(
 			['rules.learns.matching: more than are shown']
 		);
 		expect(parse({ measure: 'chosen-alignment', scope: 'everyone' }).issues).toEqual([
+			'rules.learns.scope: only a `count` takes a scope'
+		]);
+		expect(parse({ measure: 'distance', types: ['demon'] }).issues).toEqual([
+			'rules.learns.to: missing'
+		]);
+		expect(parse({ measure: 'direction', choose: 1, alignment: 'evil' }).issues).toEqual([
+			'rules.learns.choose: not with `direction`'
+		]);
+		expect(parse({ measure: 'character', choose: 3 }).issues).toEqual([
+			'rules.learns.choose: a `character` shows 1 or 2 players'
+		]);
+		expect(parse({ measure: 'same-alignment', to: ['minion'] }).issues).toEqual([
+			'rules.learns.to: only `distance` takes it'
+		]);
+		expect(parse({ measure: 'demon-in-pair', choose: 2 }).issues).toEqual([
 			'rules.learns: only the building blocks take a scope or count'
 		]);
 	});

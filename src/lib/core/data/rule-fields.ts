@@ -23,7 +23,6 @@ import {
 	STR,
 	STRS,
 	T,
-	TEXT,
 	TOKEN,
 	TOKENS,
 	variants,
@@ -33,6 +32,7 @@ import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
 import { DEATH_KINDS } from './death-cause-rules.ts';
 import { INFO_CARDS } from './choice-rules.ts';
 import { TURNS_PLAYERS } from './turns-players-rules.ts';
+import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
 import { REMINDER_ENDS } from './parts/reminder-ends.ts';
 import type * as PARTS from './parts/index.ts';
@@ -52,23 +52,30 @@ const DAY_GROUPS = oneOf([
 	'announcement'
 ]);
 const ANSWER_NAMES = [
-	'minion-nominated',
-	'demon-voted',
-	'executed-character',
+	'count',
+	'any',
+	'character',
+	'characters',
 	'outsider-died',
 	'correct-guesses',
 	'statement-true',
-	'outsiders-in-play',
 	'winning-alignment',
-	'count',
 	'evil-dead',
 	'evil-marked',
-	'abnormal-abilities'
+	'abnormal-abilities',
+	'minion-nominated',
+	'demon-voted',
+	'executed-character',
+	'outsiders-in-play'
 ];
 const ASKED = {
 	question: oneOf(ANSWER_NAMES),
-	among: opt(oneOf(['dead', 'marked', 'abnormal'])),
-	alignment: opt(ALIGNMENT)
+	among: opt(
+		oneOf(['dead', 'marked', 'abnormal', 'nominators', 'voters', 'executed', 'died', 'everyone'])
+	),
+	alignment: opt(ALIGNMENT),
+	types: opt(SOME_TYPES),
+	mark: opt(oneOf(['minion-nominated', 'demon-voted']))
 };
 const INFO_TOKEN = obj({
 	characters: STRS,
@@ -338,7 +345,7 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			{ label: 'Several steps', is: 'array', spec: list(INFO_TOKEN) }
 		)
 	),
-	jinxes: byKey(TEXT),
+	jinxes: JINX_FIELDS,
 	keepsAbility: obj({ token: TOKEN, type: opt(TYPES) }),
 	kills: obj({
 		by: oneOf(['demon', 'other']),
@@ -354,6 +361,12 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			'count',
 			'players',
 			'any-of',
+			'character',
+			'same',
+			'alignment',
+			'direction',
+			'distance',
+			'storyteller',
 			'pair-of-type',
 			'evil-pairs',
 			'evil-alive-neighbours',
@@ -384,7 +397,8 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		scope: opt(oneOf(['alive-neighbours', 'neighbour-pairs', 'everyone'])),
 		choose: opt(COUNT),
 		matching: opt(COUNT),
-		woke: opt(T)
+		woke: opt(T),
+		to: opt(SOME_TYPES)
 	}),
 	madAs: obj({
 		token: TOKEN,

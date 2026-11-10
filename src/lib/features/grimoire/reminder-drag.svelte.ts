@@ -28,6 +28,26 @@ import { copiedLook, handReminder, onBoard } from './reminders.ts';
 export const overNewToken = (x: number, y: number): boolean =>
 	document.elementsFromPoint(x, y).some((el) => el.closest('[data-new-token]') !== null);
 
+/**
+ * Whether a client point is over the reminder bank's tray (the Storyteller's bank or a
+ * player's tray, one ReminderTray): a token on a seat dropped there comes off its seat, in
+ * both views alike (Trevor, 2026-11-10). The tray's whole box counts, so the token being
+ * dragged, which sits under the finger, never hides it.
+ */
+export function overTray(x: number, y: number): boolean {
+	return [...document.querySelectorAll('[data-tray]')].some((el) => {
+		const tray = el.getBoundingClientRect();
+		return x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom;
+	});
+}
+
+/**
+ * How "+ New token" looks while a reminder is dragged (Trevor, 2026-10-27), in both views:
+ * it glows while any reminder is on the move and brighter with one over it.
+ */
+export const newTokenGlow = (dragging: boolean, over: boolean): 'over' | 'ready' | undefined =>
+	over ? 'over' : dragging ? 'ready' : undefined;
+
 /** What dragging reads from the board, fresh on each call. */
 export interface ReminderDragContext {
 	grimoire: Grimoire;
@@ -167,8 +187,7 @@ export class ReminderDragging {
 			return;
 		}
 		// Dropped back on the setup reminders tray: it waits there again (History has it).
-		const tray = element.querySelector('[data-tray]')?.getBoundingClientRect();
-		if (tray && x >= tray.left && x <= tray.right && y >= tray.top && y <= tray.bottom) {
+		if (overTray(x, y)) {
 			confirm?.requestReturn(reminderId);
 			return;
 		}

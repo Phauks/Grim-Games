@@ -2,11 +2,11 @@
  * Night information: the info picker, the truthful options for a character whose rules
  * block `learns` something. Part of `night-info.ts`.
  */
-import { isLearnsBlock, type Learns } from '#lib/core/data/character-rules.ts';
+import { isLearnsBlock, type Learns, type LearnsBlock } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
-import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import {
 	type Registration,
@@ -23,9 +23,9 @@ import { perPairOptions } from './neighbour-pairs.ts';
 import {
 	blockFacts,
 	blockHighest,
+	blockLowest,
 	blockMostTrue,
 	blockOptions,
-	choose,
 	type BlockSpec
 } from './blocks.ts';
 import {
@@ -102,6 +102,8 @@ export interface InfoPicker extends Reliability {
 	measure: Learns['measure'];
 	/** For `number`: the highest number it can show. */
 	highest?: number;
+	/** For `number`: the lowest number it can show (a distance is at least 1). */
+	lowest?: number;
 	/**
 	 * For `number`, when lower than `highest`: the highest number that could be true (the most
 	 * pairs the evil players can make). Information that may be false (drunk, poisoned) stays
@@ -170,22 +172,32 @@ type PickerShape = Pick<PickerSpec, 'kind' | 'seatCount' | 'answer' | 'judgement
  * reading them expands them (`data/night-info-rules.ts`).
  */
 const MEASURE_PICKERS: Readonly<Partial<Record<Learns['measure'], PickerShape>>> = {
-	'pair-of-type': { kind: 'pair-character', seatCount: 2 },
-	'demon-minion-steps': { kind: 'number', seatCount: 0 },
-	'same-alignment': { kind: 'yes-no', seatCount: 2 },
 	'demon-in-pair': { kind: 'players', seatCount: 2 },
-	'character-of': { kind: 'pair-character', seatCount: 1 },
-	'closest-evil-direction': { kind: 'yes-no', seatCount: 0, answer: 'direction' },
-	'chosen-alignment': { kind: 'yes-no', seatCount: 1, answer: 'alignment' },
-	'type-differs-from-token': { kind: 'players', seatCount: 1 },
-	'storyteller-pick': { kind: 'players', seatCount: 1, judgement: true }
+	'type-differs-from-token': { kind: 'players', seatCount: 1 }
 };
-const BLOCK_KINDS = { count: 'number', players: 'players', 'any-of': 'yes-no' } as const;
+const BLOCK_SHAPES: Readonly<Record<LearnsBlock, Omit<PickerShape, 'seatCount'>>> = {
+	count: { kind: 'number' },
+	players: { kind: 'players' },
+	'any-of': { kind: 'yes-no' },
+	character: { kind: 'pair-character' },
+	same: { kind: 'yes-no' },
+	alignment: { kind: 'yes-no', answer: 'alignment' },
+	direction: { kind: 'yes-no', answer: 'direction' },
+	distance: { kind: 'number' },
+	storyteller: { kind: 'players', judgement: true }
+};
 
 function shapeOf(learns: Learns): PickerShape | undefined {
 	if (isLearnsBlock(learns.measure))
-		return { kind: BLOCK_KINDS[learns.measure], seatCount: learns.choose ?? 0 };
+		return { ...BLOCK_SHAPES[learns.measure], seatCount: learns.choose ?? 0 };
 	return MEASURE_PICKERS[learns.measure];
+}
+
+/** The character type a two-player `character` block shows (the Washerwoman's Townsfolk). */
+function characterTypeOf(spec: PickerSpec): CharacterType | undefined {
+	return spec.measure === 'character' && spec.choose === 2 && spec.types?.length === 1
+		? spec.types[0]
+		: undefined;
 }
 
 /**
@@ -227,57 +239,11 @@ function optionsIn(
 	characters: CharacterLookup,
 	world: RegistrationWorld
 ): InfoOption[] {
-	const evil = (s: SeatId) => world.alignment(s) === 'evil';
 	// Information is about the other players: the waking player is never one of them
 	// (a rules question for Trevor; see the report).
 	const others = game.seating.filter((s) => s !== seatId);
 	if (isBlock(spec)) return blockOptions(spec, { game, seatId, characterId, characters, world });
 	switch (spec.measure) {
-		case 'pair-of-type': {
-			// https://wiki.bloodontheclocktower.com/Washerwoman, /Librarian, /Investigator:
-			// one of the two players is the character shown; the other is anyone else. A player
-			// registering as that type without being it may be shown as any such character.
-			const type = spec.type;
-			const targets = others.filter((s) => world.type(s) === type);
-			const ofType = scriptCharacterIds(game.script).filter(
-				(id) => characters.get(id)?.type === type
-			);
-			const options = targets.flatMap((target) => {
-				const shown: Pick<InfoOption, 'characterId' | 'characterIds'> =
-					typeOf(game, target, characters) === type
-						? { characterId: trueCharacter(game, target, characters)! }
-						: { characterIds: ofType };
-				return others
-					.filter((s) => s !== target)
-					.map((other): InfoOption => ({ seats: [target, other], ...shown }));
-			});
-			// The Librarian learns there are no Outsiders when none are in play.
-			if (spec.noneWhenAbsent && targets.length === 0) {
-				options.push({ seats: [], none: true, number: 0 });
-			}
-			return options;
-		}
-		case 'demon-minion-steps': {
-			// https://wiki.bloodontheclocktower.com/Clockmaker: steps from the Demon to its
-			// nearest Minion, either way round the circle.
-			const n = game.seating.length;
-			const at = (type: CharacterType) =>
-				game.seating.flatMap((s, i) => (world.type(s) === type ? [i] : []));
-			const demons = at('demon');
-			const minions = at('minion');
-			if (demons.length === 0 || minions.length === 0) return [];
-			const steps = Math.min(
-				...demons.flatMap((d) => minions.map((m) => Math.min(Math.abs(d - m), n - Math.abs(d - m))))
-			);
-			return [{ seats: [], number: steps }];
-		}
-		case 'same-alignment':
-			// https://wiki.bloodontheclocktower.com/Seamstress: the player chose 2 other players;
-			// yes when both are good or both are evil.
-			return choose(others, 2).map((pair) => ({
-				seats: pair,
-				yes: evil(pair[0]) === evil(pair[1])
-			}));
 		case 'demon-in-pair':
 			// https://wiki.bloodontheclocktower.com/Sage: two players, one of them the Demon; the
 			// other is anyone else.
@@ -286,43 +252,6 @@ function optionsIn(
 					.filter((s) => s !== demon)
 					.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
 			);
-		case 'character-of':
-			// https://wiki.bloodontheclocktower.com/Ravenkeeper (any player's character),
-			// /King (an alive character), /Pixie (an in-play Townsfolk), /Grandmother (a good
-			// Townsfolk or Outsider). A player registering as another type (the Recluse as a
-			// Minion) may be shown as any character of that type.
-			return characterOfSeats(game, seatId, spec, world, characters).map((s) => ({
-				seats: [s],
-				...shownAs(game, s, characters, world)
-			}));
-		case 'closest-evil-direction': {
-			// https://wiki.bloodontheclocktower.com/Shugenja: the direction of the evil player
-			// fewest steps away; when the nearest each way are as close, either. The wiki counts
-			// steps round the circle, so dead players count.
-			const n = game.seating.length;
-			const at = game.seating.indexOf(seatId);
-			const steps = (dir: 1 | -1) => {
-				for (let i = 1; i < n; i++) {
-					if (evil(game.seating[(((at + dir * i) % n) + n) % n])) return i;
-				}
-				return undefined;
-			};
-			const clockwise = steps(1);
-			const anticlockwise = steps(-1);
-			if (clockwise === undefined || anticlockwise === undefined) return [];
-			return [
-				...(clockwise <= anticlockwise ? [{ seats: [], yes: true }] : []),
-				...(anticlockwise <= clockwise ? [{ seats: [], yes: false }] : [])
-			];
-		}
-		case 'chosen-alignment':
-			// https://wiki.bloodontheclocktower.com/Village_Idiot: the alignment of the player
-			// chosen. Like the Fortune Teller, any player, themselves included.
-			return game.seating.map((s) => ({ seats: [s], yes: evil(s) }));
-		case 'storyteller-pick':
-			// https://wiki.bloodontheclocktower.com/High_Priestess: the player the Storyteller
-			// believes they should talk to most, their judgement, so any other player.
-			return others.map((s) => ({ seats: [s], pivot: s }));
 		case 'type-differs-from-token': {
 			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
 			// type than the one shown last time (any player the first time). Alive or dead.
@@ -338,41 +267,6 @@ function optionsIn(
 }
 
 const isBlock = (spec: PickerSpec): spec is PickerSpec & BlockSpec => isLearnsBlock(spec.measure);
-
-/** The players a `character-of` picker may show the character of. */
-function characterOfSeats(
-	game: Game,
-	seatId: SeatId,
-	spec: PickerSpec,
-	world: RegistrationWorld,
-	characters: CharacterLookup
-): SeatId[] {
-	return game.seating.filter((s) => {
-		const type = world.type(s);
-		return (
-			(spec.self || s !== seatId) &&
-			(!spec.alive || !registersAsDead(game, s, characters)) &&
-			(!spec.types || (type !== undefined && spec.types.includes(type))) &&
-			(!spec.alignment || world.alignment(s) === spec.alignment)
-		);
-	});
-}
-
-/** The character a player is shown as: their own, or any of the type they register as. */
-function shownAs(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup,
-	world: RegistrationWorld
-): Pick<InfoOption, 'characterId' | 'characterIds'> {
-	const type = world.type(seatId);
-	if (typeOf(game, seatId, characters) === type) {
-		return { characterId: trueCharacter(game, seatId, characters)! };
-	}
-	return {
-		characterIds: scriptCharacterIds(game.script).filter((id) => characters.get(id)?.type === type)
-	};
-}
 
 const optionKey = (o: InfoOption) =>
 	JSON.stringify([o.seats, o.characterId, o.characterIds, o.number, o.yes, o.none]);
@@ -429,7 +323,6 @@ function pickerFacts(
 ): WhyFact[] {
 	const others = game.seating.filter((s) => s !== seatId);
 	const f = (s: SeatId) => fact(game, s, characters, world);
-	const evil = (s: SeatId) => world.alignment(s) === 'evil';
 	if (isBlock(spec)) {
 		// The Fortune Teller's red herring is marked as one.
 		return blockFacts(spec, { game, seatId, characterId, characters, world }).map((s) =>
@@ -437,26 +330,10 @@ function pickerFacts(
 		);
 	}
 	switch (spec.measure) {
-		case 'pair-of-type':
-			return others.filter((s) => world.type(s) === spec.type).map(f);
-		case 'demon-minion-steps':
-			return game.seating
-				.filter((s) => world.type(s) === 'demon' || world.type(s) === 'minion')
-				.map(f);
-		case 'same-alignment':
-			return others.filter(evil).map(f);
 		case 'demon-in-pair':
 			return killerDemons(game, seatId, others, world, characters).map(f);
-		case 'demon-player':
-			return others.filter((s) => world.type(s) === 'demon').map(f);
-		case 'closest-evil-direction':
-			return others.filter(evil).map(f);
 		case 'type-differs-from-token':
 			return lastShown(game, seatId, characterId, spec.token).map(f);
-		case 'chosen-alignment':
-		case 'character-of':
-		case 'storyteller-pick':
-			return [];
 		default:
 			return [];
 	}
@@ -521,12 +398,14 @@ export function infoPicker(
 		...r,
 		kind: spec.kind,
 		measure: spec.preset ?? spec.measure,
-		...(isBlock(spec) && spec.kind === 'number' ? { highest: blockHighest(spec, game) } : {}),
+		...(isBlock(spec) && spec.kind === 'number'
+			? { highest: blockHighest(spec, game), lowest: blockLowest(spec) }
+			: {}),
 		...(mostTrue !== undefined ? { mostTrue } : {}),
 		characterId,
 		seatId,
 		seatCount: spec.seatCount,
-		...(spec.type ? { characterType: spec.type } : {}),
+		...(characterTypeOf(spec) ? { characterType: characterTypeOf(spec) } : {}),
 		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),

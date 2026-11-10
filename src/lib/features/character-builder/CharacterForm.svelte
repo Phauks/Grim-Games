@@ -55,6 +55,13 @@
 		)
 	);
 
+	/** Characters a rule can name, such as a jinx's partner: official and saved, every type. */
+	const namable = $derived(
+		[...(data?.characters ?? []), ...savedCharacters.list.map(savedPreview)].filter(
+			(c) => c.id !== id
+		)
+	);
+
 	const typeOptions = CHARACTER_TYPES.map((value) => ({ value, label: TYPE_LABELS[value] }));
 </script>
 
@@ -167,6 +174,7 @@
 
 	<RulesField
 		fields={f}
+		characters={namable}
 		onchange={(rules) => (rules ? draft.update({ rules }) : draft.unset('rules'))}
 	/>
 </div>

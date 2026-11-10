@@ -30,7 +30,7 @@
 		type BankGroup,
 		type BankItem
 	} from './bank-items.ts';
-	import { overNewToken } from './reminder-drag.svelte.ts';
+	import { newTokenGlow, overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -185,9 +185,7 @@
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean } | undefined>();
 	/** "+ New token" glows while a reminder is dragged, brighter under it (Trevor, 2026-10-27). */
-	const newGlow = $derived(
-		drag?.overNew || dropOver ? 'over' : drag || dropping ? 'ready' : undefined
-	);
+	const newGlow = $derived(newTokenGlow(!!drag || dropping, !!drag?.overNew || dropOver));
 	function dragItem(item: BankItem, x: number, y: number, end: boolean, tap = false) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
@@ -336,7 +334,7 @@
 		{size}
 		{disabled}
 		glow={newGlow}
-		onNew={makeToken}
+		onNew={() => tap(item)}
 		onTap={() => tap(item)}
 		onMenu={() => menuFor(item)}
 		onDrag={(x, y, end) => dragItem(item, x, y, end)}
