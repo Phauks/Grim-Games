@@ -1,5 +1,28 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { pickNumber } from './number-select.ts';
+import { leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
+
+/** The titles of the notes this phone keeps for Trouble Brewing (notebook-store). */
+const storedNotes = (page: Page) => () =>
+	page.evaluate(
+		() =>
+			new Promise<string[]>((resolve, reject) => {
+				const open = indexedDB.open('grim-games-player', 1);
+				open.onsuccess = () => {
+					const get = open.result
+						.transaction('notebooks')
+						.objectStore('notebooks')
+						.get('edition:tb');
+					get.onsuccess = () => {
+						open.result.close();
+						const notes = (get.result?.notes ?? []) as { title: string }[];
+						resolve(notes.map((n) => n.title));
+					};
+					get.onerror = () => reject(get.error);
+				};
+				open.onerror = () => reject(open.error);
+			})
+	);
 
 // A players-only game (plan M55, Trevor 2026-11-05): no Storyteller in the app, so the
 // player keeps their own town on /play's Grim tab, on this phone only.
@@ -99,6 +122,15 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	await expect(page.getByTestId('grim-seat')).toHaveCount(6);
 
+	// A note written in this game, kept on the phone.
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	const notes = page.getByRole('tabpanel');
+	await notes.getByTestId('new-note').first().tap();
+	await noteTitle(newNoteRow(notes)).fill('Bob claims Chef');
+	await leaveNote(page);
+	await expect.poll(noteSummaries(notes)).toContain('Bob claims Chef');
+	await expect.poll(storedNotes(page)).toContain('Bob claims Chef');
+
 	// A new game on the same script starts on a clear board (Trevor, 2026-11-10: the old
 	// town stayed "not even making a new game").
 	await page.goto('/new');
@@ -109,6 +141,11 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	const fresh = page.getByTestId('grim-seat');
 	await expect(fresh).toHaveCount(7);
 	await expect(fresh.nth(0)).not.toHaveAttribute('aria-label', /dead/);
+	// Notes go too: they are "usually associated with actions in a game" (Trevor, 2026-11-10).
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(notes.getByTestId('new-note').first()).toBeVisible();
+	await expect.poll(noteSummaries(notes)).not.toContain('Bob claims Chef');
+	expect(await storedNotes(page)()).not.toContain('Bob claims Chef');
 	await page.goto('/join');
 	await expect(page.getByTestId('players-only-games').getByRole('button')).toContainText('7 seats');
 });
