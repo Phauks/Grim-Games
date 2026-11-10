@@ -273,6 +273,27 @@ export class TrayGestures {
 		if (item) this.hand.hold({ kind: 'bank', item });
 	}
 
+	/**
+	 * Duplicate (Trevor, 2026-11-10): a new ∞ token with this look, last in the tray, in hand
+	 * for the seat tapped next.
+	 */
+	duplicate(look: GenericLook): void {
+		const { tokenId: _id, ...own } = { tokenId: '', ...look };
+		void _id;
+		const tokenId = this.#places().addToken(own);
+		if (!tokenId) return;
+		const item = genericStretch(this.#places().tokens()).find((i) => i.token?.tokenId === tokenId);
+		if (item) this.hand.hold({ kind: 'bank', item });
+	}
+
+	/** One of the tray's ∞ tokens copied (⋯ Duplicate token in the hand's pill). */
+	duplicateToken(tokenId: string): void {
+		const token = this.#places()
+			.tokens()
+			.find((t) => t.tokenId === tokenId);
+		if (token) this.duplicate(token);
+	}
+
 	/** The editor's Delete: a new token is thrown away, another asks first. */
 	editorDelete(): void {
 		if (!this.editing) return;

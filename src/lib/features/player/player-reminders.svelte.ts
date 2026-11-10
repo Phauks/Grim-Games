@@ -46,7 +46,7 @@ export class PlayerReminderState {
 	addToken(look: GenericLook = {}): string | undefined {
 		if (!this.#kept) return undefined;
 		const tokenId = crypto.randomUUID();
-		this.#saveTokens([...this.tokens, { tokenId, ...look }]);
+		this.#saveTokens([...this.tokens, { ...look, tokenId }]);
 		return tokenId;
 	}
 
