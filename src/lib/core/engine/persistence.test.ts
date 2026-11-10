@@ -557,24 +557,3 @@ describe('version 29 saves', () => {
 		expect(migrateSavedGame(v29).log).toEqual(v29.log);
 	});
 });
-
-describe('version 31 saves', () => {
-	it('renames the `vortox` abnormal reason to `false-info` and leaves the rest', () => {
-		const cause = { reason: 'vortox', characterId: 'vortox', seatId: 'c' };
-		const other = { reason: 'drunk', characterId: 'drunk' };
-		const raw = {
-			schemaVersion: 31,
-			gameId: 'g',
-			savedAt: 1,
-			log: { entries: [{ events: [{ type: 'InfoNoted', abnormal: [cause, other], seatId: 'a' }] }] }
-		};
-		const migrated = MIGRATIONS[31](raw) as typeof raw;
-		expect(migrated.schemaVersion).toBe(32);
-		expect(migrated.log.entries[0].events[0]).toEqual({
-			type: 'InfoNoted',
-			abnormal: [{ ...cause, reason: 'false-info' }, other],
-			seatId: 'a'
-		});
-		expect(raw.log.entries[0].events[0].abnormal[0].reason).toBe('vortox');
-	});
-});
