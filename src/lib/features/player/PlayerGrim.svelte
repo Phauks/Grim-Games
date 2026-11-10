@@ -5,7 +5,12 @@
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
 	import { parsePublicLook, type PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { parsePlayersPhase } from '#lib/core/rules/game-phase.ts';
-	import { finalGrimoireOf, type PlayerGrimTown } from './player-grim-town.ts';
+	import {
+		finalGrimoireOf,
+		seatPicture,
+		seatWords,
+		type PlayerGrimTown
+	} from './player-grim-town.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -75,8 +80,6 @@
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import SeatAvatarButton from './SeatAvatarButton.svelte';
-	import type { ProfileWords } from '#lib/core/profile/index.ts';
-	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
@@ -196,21 +199,10 @@
 
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
-	function pictureOf(seat: PublicSeat): string | undefined {
-		const hash = (town ? town.pictures : player?.view?.pictures)?.[seat.seatId];
-		const room = town ? town.roomCode : code;
-		if (hash && room) return roomImagePath(room, hash);
-		return town && !town.roomCode && !display ? roomHost().pictureOf(seat.seatId) : undefined;
-	}
-
-	/** A seat's player's tag-line and details, from wherever its picture comes (2026-11-01). */
-	function wordsOfSeat(seat: PublicSeat): ProfileWords | undefined {
-		const words = (town ? town.profiles : player?.view?.profiles)?.[seat.seatId];
-		if (words) return words;
-		if (!town || town.roomCode || display) return undefined;
-		const member = roomHost().members.find((m) => m.seatId === seat.seatId);
-		return member ? wordsOf(member) : undefined;
-	}
+	const pictureOf = (seat: PublicSeat) =>
+		seatPicture(seat.seatId, { town, view: player?.view, code, display });
+	const wordsOfSeat = (seat: PublicSeat) =>
+		seatWords(seat.seatId, { town, view: player?.view, display });
 
 	// The board's own layout, read like a saved one, so a bad one never stops the drawing.
 	const layout = $derived(table?.layout ? parseSeatLayout(table.layout) : DEFAULT_SEAT_LAYOUT);

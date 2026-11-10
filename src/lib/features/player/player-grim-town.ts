@@ -1,6 +1,9 @@
 import type { ProfileWords } from '#lib/core/profile/index.ts';
 import type { GameOver, SharedGrimoire } from '#lib/core/sync/room.ts';
 import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
+import { roomHost } from '#lib/features/room/host.svelte.ts';
+import { roomImagePath } from '#lib/core/sync/room-images.ts';
+import { wordsOf } from '#lib/core/sync/room-look.ts';
 import type {
 	PublicCorner,
 	PublicStoryteller,
@@ -54,4 +57,35 @@ export function finalGrimoireOf(
 	if (town) return town.final;
 	const sent = player?.revealed;
 	return sent && { grimoire: sent.grimoire, ended: player?.view?.ended, room };
+}
+
+/** Where a grim reads its seats' pictures and words: the town it was given, or its room's view. */
+export interface SeatSource {
+	town?: PlayerGrimTown;
+	view?: RoomPlayer['view'];
+	code?: string | null;
+	display: boolean;
+}
+
+/**
+ * A seat's player's picture: the room's copy, or the board's own on the Storyteller's device
+ * when its room has none (no display shows the host's).
+ */
+export function seatPicture(seatId: string, { town, view, code, display }: SeatSource) {
+	const hash = (town ? town.pictures : view?.pictures)?.[seatId];
+	const room = town ? town.roomCode : code;
+	if (hash && room) return roomImagePath(room, hash);
+	return town && !town.roomCode && !display ? roomHost().pictureOf(seatId) : undefined;
+}
+
+/** A seat's player's tag-line and details, from wherever its picture comes (2026-11-01). */
+export function seatWords(
+	seatId: string,
+	{ town, view, display }: SeatSource
+): ProfileWords | undefined {
+	const words = (town ? town.profiles : view?.profiles)?.[seatId];
+	if (words) return words;
+	if (!town || town.roomCode || display) return undefined;
+	const member = roomHost().members.find((m) => m.seatId === seatId);
+	return member ? wordsOf(member) : undefined;
 }
