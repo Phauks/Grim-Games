@@ -1,7 +1,7 @@
 /**
  * A pretend camera for the live scan spike: a printed script sheet on a table, moved about
  * the way a hand holds a phone (a second or two of moving, then a few seconds held still),
- * with a patch of glare that shifts as it moves, like a laminated sheet under a lamp
+ * with a small constant shake and a patch of glare that shifts as it moves, like a laminated sheet under a lamp
  * (Trevor, 2026-11-10). It lets the spike be tried on a computer with no camera.
  */
 
@@ -103,6 +103,10 @@ export function demoFeed(title: string, rows: readonly SheetRow[]) {
 				turn: from.turn + (to.turn - from.turn) * k,
 				scale: from.scale + (to.scale - from.scale) * k
 			};
+			// A hand never holds quite still (Trevor, 2026-11-10): a small, constant shake.
+			pose.x += 3 * Math.sin(elapsed / 83);
+			pose.y += 3 * Math.cos(elapsed / 97);
+			pose.turn += 0.2 * Math.sin(elapsed / 131);
 			ctx.fillStyle = TABLE;
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
