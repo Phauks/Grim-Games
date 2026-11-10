@@ -129,9 +129,10 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await tablet.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await fullScreen.tap();
-	// The request settles after the tap, so wait for it.
-	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	// The installed app fills the window without the browser's full screen, which would only
+	// add Chrome's "drag from the top to exit" notice (Trevor, 2026-11-10).
+	expect(await tablet.evaluate(() => document.fullscreenElement)).toBeNull();
 	// The whole screen, under the camera too: only the text and controls step in (Trevor,
 	// 2026-10-27: "moving out text and controls").
 	const filled = (await town.boundingBox())!;
@@ -248,14 +249,14 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	const after = (await title.boundingBox())!;
 	expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 	// In full screen the title line is gone, so it moves to the town's own corner.
-	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
-	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
-	await tablet
+	const townFull = tablet
 		.getByTestId('public-town')
-		.getByRole('button', { name: 'Full screen', exact: true })
-		.tap();
-	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
+		.getByRole('button', { name: 'Full screen', exact: true });
+	await tablet.getByRole('button', { name: 'Full screen', exact: true }).tap();
+	await expect(townFull).toHaveAttribute('aria-pressed', 'true');
+	await expect(tablet.getByTestId('public-town').getByTestId('players-timer')).toBeVisible();
+	await townFull.tap();
+	await expect(townFull).toHaveAttribute('aria-pressed', 'false');
 	await tabletContext.close();
 });
 
