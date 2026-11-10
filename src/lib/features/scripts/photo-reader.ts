@@ -23,16 +23,25 @@ export async function photoCanvas(photo: Blob): Promise<HTMLCanvasElement> {
 	return canvas;
 }
 
+/** A line of text and where it sits in the picture read, in that picture's pixels. */
+export interface PlacedLine extends PhotoLine {
+	box: { x0: number; y0: number; x1: number; y1: number };
+}
+
+/** A text reader kept open, for reading many pictures (the live scan spike) without reloading. */
+export interface TextReader {
+	read: (picture: HTMLCanvasElement) => Promise<PlacedLine[]>;
+	close: () => Promise<void>;
+}
+
 /**
- * The photo's lines of text, top to bottom, with each line's height. `onProgress` hears how
- * far it has got, 0 to 1 (loading the reader, then reading); `log` hears each step the
- * reader takes, for the import log.
+ * Opens the text reader. `onProgress` hears how far loading and each read have got, 0 to 1
+ * (loading the reader, then reading); `log` hears each step the reader takes.
  */
-export async function readPhotoLines(
-	photo: HTMLCanvasElement,
+export async function openTextReader(
 	onProgress?: (share: number) => void,
 	log?: (text: string) => void
-): Promise<PhotoLine[]> {
+): Promise<TextReader> {
 	let lastStatus = '';
 	let lastQuarter = -1;
 	const { createWorker } = await import('tesseract.js');
@@ -56,19 +65,39 @@ export async function readPhotoLines(
 			onProgress?.(loading ? m.progress * 0.3 : 0.3 + m.progress * 0.7);
 		}
 	});
+	return {
+		async read(picture) {
+			const { data } = await worker.recognize(picture, {}, { blocks: true });
+			log?.(`Text reader: done, ${Math.round(data.confidence)}% confident overall`);
+			return (data.blocks ?? []).flatMap((block) =>
+				block.paragraphs.flatMap((paragraph) =>
+					paragraph.lines.map((line) => ({
+						text: line.text.trim(),
+						height: line.bbox.y1 - line.bbox.y0,
+						confidence: line.confidence,
+						box: line.bbox
+					}))
+				)
+			);
+		},
+		close: () => worker.terminate().then(() => undefined)
+	};
+}
+
+/**
+ * The photo's lines of text, top to bottom, with each line's height. `onProgress` hears how
+ * far it has got, 0 to 1 (loading the reader, then reading); `log` hears each step the
+ * reader takes, for the import log.
+ */
+export async function readPhotoLines(
+	photo: HTMLCanvasElement,
+	onProgress?: (share: number) => void,
+	log?: (text: string) => void
+): Promise<PhotoLine[]> {
+	const reader = await openTextReader(onProgress, log);
 	try {
-		const { data } = await worker.recognize(photo, {}, { blocks: true });
-		log?.(`Text reader: done, ${Math.round(data.confidence)}% confident overall`);
-		return (data.blocks ?? []).flatMap((block) =>
-			block.paragraphs.flatMap((paragraph) =>
-				paragraph.lines.map((line) => ({
-					text: line.text.trim(),
-					height: line.bbox.y1 - line.bbox.y0,
-					confidence: line.confidence
-				}))
-			)
-		);
+		return await reader.read(photo);
 	} finally {
-		await worker.terminate();
+		await reader.close();
 	}
 }
