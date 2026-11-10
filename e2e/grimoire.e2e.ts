@@ -1991,6 +1991,14 @@ test('a dead player whose ability has ended moves their reminders to the end of 
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+		if (number === 3) {
+			// The Sweetheart's death asks whom to make drunk.
+			const choose = page
+				.getByRole('dialog')
+				.filter({ has: page.getByRole('heading', { name: /^Put\b.*\bDrunk\b.*\bon$/ }) });
+			await choose.getByRole('button', { name: /Seat 2$/ }).tap();
+			await expect(choose).toBeHidden();
+		}
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
