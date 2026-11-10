@@ -1950,13 +1950,12 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		'aria-label',
 		'Seat 2: Seat 2, your guess: Empath, Spy'
 	);
-	// In the sheet, tapping a guess makes it the main one, and tapping it in the list takes it off.
+	// In the sheet, tapping a guess in the Guesses row takes it off (Trevor, 2026-11-10), as
+	// tapping it in the list does.
 	await seats.nth(1).tap();
 	await yours.getByRole('button', { name: /Spy/ }).tap();
-	await expect(yours.getByRole('button').first()).toContainText('Spy');
-	// The picker's Spy, after the chip of the same name.
-	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).last().tap();
 	await expect(yours.getByRole('button')).toHaveCount(1);
+	await expect(yours.getByRole('button').first()).toContainText('Empath');
 	await phone.keyboard.press('Escape');
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	// Or only a type, or only good or evil (Trevor, 2026-10-24).
@@ -2498,6 +2497,13 @@ test("a seat's guesses in its sheet all stay on the screen, with no None to pick
 	// Tapping a chosen character again takes it off.
 	await picker.getByRole('button', { name: 'Ravenkeeper', exact: true }).tap();
 	await expect(chips).toHaveCount(2);
+	// So does tapping it in the Guesses row (Trevor, 2026-11-10); the picker then adds it anew.
+	await chips.filter({ hasText: 'Scarlet Woman' }).tap();
+	await expect(chips).toHaveCount(1);
+	await expect(chips.first()).toContainText('Fortune Teller');
+	await picker.getByRole('button', { name: 'Scarlet Woman', exact: true }).tap();
+	await expect(chips).toHaveCount(2);
+	await expect(chips.first()).toContainText('Scarlet Woman');
 	await phoneContext.close();
 });
 
