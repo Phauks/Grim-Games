@@ -330,8 +330,9 @@
 		padding: calc(0.25 * var(--u));
 	}
 	/* The options and More characters flow as one run of cells. */
-	.grid :global([data-scope='radio-group'][data-part='root']),
-	.grid :global(.options) {
+	/* Doubled, to win over ChoiceGroup's own row layout. */
+	.grid.grid :global([data-scope='radio-group'][data-part='root']),
+	.grid.grid :global([data-scope='radio-group'] .options) {
 		display: contents;
 	}
 	.colours {
