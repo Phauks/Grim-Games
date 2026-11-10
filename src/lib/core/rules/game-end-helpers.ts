@@ -2,7 +2,13 @@
  * Shared helpers for the game end rules (`game-end.ts`): day logs, the
  * players whose rules have an end or hold of a kind, and who is alive for the game's end.
  */
-import type { EndKind, GameEndRules, HoldKind } from '#lib/core/data/game-end-rules.ts';
+import type {
+	EndEvent,
+	EndKind,
+	EndsGame,
+	GameEndRules,
+	HoldThen
+} from '#lib/core/data/game-end-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
@@ -67,8 +73,30 @@ export function endsOf<K extends EndKind>(game: Game, characters: CharacterLooku
 	return ruled(game, characters, (r) => r.ends?.filter((e) => e.kind === kind));
 }
 
-export function holdsOf<K extends HoldKind>(game: Game, characters: CharacterLookup, kind: K) {
-	return ruled(game, characters, (r) => r.holds?.filter((h) => h.kind === kind));
+/** Every player whose true character has a `condition` end on `event`, with the rule. */
+export function eventsOf(game: Game, characters: CharacterLookup, event: EndEvent) {
+	return ruled(game, characters, (r) =>
+		r.ends?.filter((e) => e.kind === 'condition' && e.event === event)
+	);
+}
+
+/** The name an end is shown under: the official kind it was written as, else `condition`. */
+export const endName = (rule: EndsGame): EndKind => rule.preset ?? 'condition';
+
+/**
+ * Who a condition says wins: its `winner`; else `own` (its player's team), `other` (the team
+ * its player is not on) or `opposing` (the team `subject` is not on).
+ */
+export function winnerFor(game: Game, seatId: SeatId, rule: EndsGame, subject?: SeatId): Alignment {
+	if (rule.winner) return rule.winner;
+	if (rule.wins === 'other') return losesFor(game, seatId);
+	if (rule.wins === 'opposing' && subject !== undefined) return losesFor(game, subject);
+	return alignmentOf(game, seatId) ?? 'good';
+}
+
+/** Every player whose true character has a hold that may lead to `then`, with the hold. */
+export function holdsOf(game: Game, characters: CharacterLookup, then: HoldThen) {
+	return ruled(game, characters, (r) => r.holds?.filter((h) => h.then === then));
 }
 
 /** The character's wiki page, or the Glossary for a homebrew character. */
@@ -177,30 +205,30 @@ export function isOn(
  * (the Alsaahir: https://wiki.bloodontheclocktower.com/Alsaahir).
  */
 export function guessesEvilTeam(game: Game, characters: CharacterLookup): GameEnd[] {
-	const evil = game.seating.filter((id) => {
-		const type = typeOf(game, id, characters);
-		return type === 'demon' || type === 'minion';
-	});
-	if (evil.length === 0) return [];
 	const rightGuess = (id: SeatId, guess: CharacterId | undefined) =>
 		guess !== undefined && characters.get(guess)?.type === typeOf(game, id, characters);
 	const out: GameEnd[] = [];
-	for (const { seatId, characterId, rule } of endsOf(game, characters, 'guesses-evil-team')) {
+	for (const { seatId, characterId, rule } of eventsOf(game, characters, 'guessed')) {
+		const team = game.seating.filter((id) => {
+			const type = typeOf(game, id, characters);
+			return type !== undefined && (rule.types?.includes(type) ?? false);
+		});
+		if (team.length === 0) continue;
 		const right = days(game)
 			.flatMap((log) => log.entries)
 			.find((entry) => {
 				if (entry.kind !== 'note' || entry.characterId !== characterId) return false;
 				if (entry.seatId !== seatId || !entry.guesses?.length) return false;
 				const guessed = new Map(entry.guesses.map((g) => [g.seatId, g.characterId]));
-				return guessed.size === evil.length && evil.every((id) => rightGuess(id, guessed.get(id)));
+				return guessed.size === team.length && team.every((id) => rightGuess(id, guessed.get(id)));
 			});
 		if (!right) continue;
 		out.push({
-			key: `guesses-evil-team:${right.entryId}`,
-			rule: 'guesses-evil-team',
-			winner: rule.winner!,
+			key: `${endName(rule)}:${right.entryId}`,
+			rule: endName(rule),
+			winner: winnerFor(game, seatId, rule),
 			characterId,
-			seats: [seatId, ...evil],
+			seats: [seatId, ...team],
 			wiki: wikiOf(characterId, characters),
 			holds: impaired(game, seatId, characterId, characters)
 		});

@@ -71,7 +71,9 @@ export function storytellerNominee(game: Game, characters: CharacterLookup): boo
 
 /** Whether a character lets the Storyteller be executed (`storyteller-executed`, the Atheist). */
 function endsOnStorytellerExecution(id: CharacterId, characters: CharacterLookup): boolean {
-	return !!rulesOf(id, characters)?.gameEnd?.ends?.some((e) => e.kind === 'storyteller-executed');
+	return !!rulesOf(id, characters)?.gameEnd?.ends?.some(
+		(e) => e.kind === 'condition' && e.event === 'storyteller-executed'
+	);
 }
 
 /** The players who nominated the Storyteller today. */

@@ -772,6 +772,54 @@ describe('custom characters', () => {
 		);
 	});
 
+	// A homebrew Townsfolk built from the Klutz's event with its own outcome (M78): choosing
+	// the Demon wins it for their team (https://wiki.bloodontheclocktower.com/Klutz).
+	it('end the game on an ability used, with an outcome of their own', () => {
+		const hunter = {
+			id: 'hunter',
+			name: 'Hunter',
+			team: 'townsfolk',
+			ability: 'Once per game, publicly choose a player: if they are the Demon, good wins.',
+			rules: {
+				gameEnd: { ends: [{ kind: 'condition', event: 'ability-used', on: 'demon', wins: 'own' }] }
+			}
+		};
+		const cast = ['hunter', 'chef', 'empath', 'imp'];
+		const use =
+			(on: number) =>
+			(s: string[]): Command => ({
+				type: 'UseAbility',
+				seatId: s[0],
+				characterId: 'hunter',
+				on: s[on]
+			});
+		const miss = custom(hunter, cast, use(1));
+		expect(gameEnds(miss.game, miss.all)).toEqual([]);
+		const { game, seats, all } = custom(hunter, cast, use(3));
+		expect(gameEnds(game, all)).toMatchObject([
+			{ rule: 'condition', characterId: 'hunter', winner: 'good', seats: [seats[3], seats[0]] }
+		]);
+	});
+
+	// A homebrew Minion built from the Evil Twin's hold (M78) with no twin: while it lives, good
+	// can't win (https://wiki.bloodontheclocktower.com/Evil_Twin).
+	it('keep the game going through a hold of their own', () => {
+		const anchor = {
+			id: 'anchor',
+			name: 'Anchor',
+			team: 'minion',
+			ability: 'While you live, good cannot win.',
+			rules: { gameEnd: { holds: [{ kind: 'condition', then: 'blocks-good', whileAlive: true }] } }
+		};
+		const { game, seats, all } = custom(anchor, ['anchor', 'chef', 'empath', 'imp'], execute(3));
+		expect(gameEnds(game, all)).toMatchObject([
+			{
+				rule: 'demon-dead',
+				holds: [{ rule: 'marked-alive', characterId: 'anchor', seats: [seats[0]] }]
+			}
+		]);
+	});
+
 	it('read the official kinds as presets of a condition, and check a condition', () => {
 		const issues = new Issues();
 		const mayor = parseCharacter(

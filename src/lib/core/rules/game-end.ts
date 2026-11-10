@@ -24,7 +24,7 @@
  * Rules checked "at dusk" (Vortox, Mayor, Leviathan's day 5) use `dayEnded` for today, and
  * every day closed by Dawn ("New day") before it.
  */
-import type { EndKind, HoldKind } from '#lib/core/data/game-end-rules.ts';
+import type { EndKind } from '#lib/core/data/game-end-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -46,7 +46,8 @@ import {
 	demonSeats,
 	guessesEvilTeam,
 	endedDays,
-	endsOf,
+	endName,
+	eventsOf,
 	executedOn,
 	holdsOf,
 	impaired,
@@ -54,7 +55,8 @@ import {
 	losesFor,
 	other,
 	ruled,
-	wikiOf
+	wikiOf,
+	winnerFor
 } from './game-end-helpers.ts';
 import { storytellerExecuted } from './storyteller-end.ts';
 
@@ -106,7 +108,8 @@ export type GameEndRule =
  *   Al-Hadikhia chooses 3 good players with the Mastermind alive), so the Storyteller ends the
  *   game by that night's choice; `characterId` is the Demon's, `seats` the Mastermind's player.
  */
-export type GameHoldRule = HoldKind | 'extra-day' | 'jinx-night' | 'impaired';
+export type GameHoldRule =
+	'marked-alive' | 'becomes-demon' | 'death-passes' | 'extra-day' | 'jinx-night' | 'impaired';
 
 export interface GameHold {
 	rule: GameHoldRule;
@@ -183,15 +186,18 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	// still keeps it going (https://wiki.bloodontheclocktower.com/Hindu; Trevor, 2026-10-31).
 	const rebirth = demons.map((id) => rebirthOf(game, id, characters)).find((id) => id);
 	const holds: GameHold[] = [];
+	const enough = (n: number | undefined) =>
+		n === undefined || aliveNonTravellers(game, characters).length >= n;
 
 	// Good can't win while its player and the player with its token both live (the Evil
 	// Twin: https://wiki.bloodontheclocktower.com/Evil_Twin).
-	for (const { seatId, characterId, rule } of holdsOf(game, characters, 'marked-alive')) {
-		if (!aliveForEnd(game, seatId, characters)) continue;
-		const pair = carrying(game, characterId, rule.token!).filter((id) =>
-			aliveForEnd(game, id, characters)
-		);
-		if (pair.length === 0) continue;
+	for (const { seatId, characterId, rule } of holdsOf(game, characters, 'blocks-good')) {
+		if (rule.whileAlive && !aliveForEnd(game, seatId, characters)) continue;
+		const pair = rule.token
+			? carrying(game, characterId, rule.token).filter((id) => aliveForEnd(game, id, characters))
+			: [];
+		if (rule.token && pair.length === 0) continue;
+		if (!enough(rule.aliveAtLeast)) continue;
 		holds.push({
 			rule: 'marked-alive',
 			characterId,
@@ -204,8 +210,13 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	// Its player may become the Demon while enough live (the Scarlet Woman: 5 or more just
 	// before the Demon died, so 4 or more now; https://wiki.bloodontheclocktower.com/Scarlet_Woman).
 	for (const { seatId, characterId, rule } of holdsOf(game, characters, 'becomes-demon')) {
-		if (!aliveForEnd(game, seatId, characters)) continue;
-		if (aliveNonTravellers(game, characters).length < rule.aliveAtLeast!) continue;
+		if (rule.whileAlive && !aliveForEnd(game, seatId, characters)) continue;
+		if (
+			rule.token &&
+			!carrying(game, characterId, rule.token).some((id) => aliveForEnd(game, id, characters))
+		)
+			continue;
+		if (!enough(rule.aliveAtLeast)) continue;
 		holds.push({
 			rule: 'becomes-demon',
 			characterId,
@@ -218,12 +229,13 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	// A Demon that died by its own kill passes on to a living player of a type (the Imp to a
 	// Minion, https://wiki.bloodontheclocktower.com/Imp; the Fang Gu to an Outsider, once,
 	// https://wiki.bloodontheclocktower.com/Fang_Gu, its "Once" reminder saying it happened).
-	for (const { seatId, characterId, rule } of holdsOf(game, characters, 'death-passes')) {
+	for (const { seatId, characterId, rule } of holdsOf(game, characters, 'demon-passes')) {
 		if (!demons.includes(seatId)) continue;
 		const cause = game.seats[seatId].deathCause;
-		if (cause !== 'demon' && cause !== characterId) continue;
+		if (rule.ownKill && cause !== 'demon' && cause !== characterId) continue;
 		if (rule.spentToken && spentBefore(game, seatId, characterId, rule.spentToken, characters))
 			continue;
+		if (!enough(rule.aliveAtLeast)) continue;
 		const heirs = game.seating.filter(
 			(id) => aliveForEnd(game, id, characters) && typeOf(game, id, characters) === rule.to
 		);
@@ -270,7 +282,9 @@ function extraDay(
 	options: GameEndOptions,
 	end: GameEnd
 ): GameEnd | GameHold | undefined {
-	const minds = endsOf(game, characters, 'extra-day');
+	const minds = eventsOf(game, characters, 'demon-executed').filter(
+		({ rule }) => rule.then === 'extra-day'
+	);
 	if (minds.length === 0) return undefined;
 	const logs = days(game);
 	// The execution that ended it is the last: a Zombuul's first, survived one didn't
@@ -335,29 +349,31 @@ function twoAlive(game: Game, characters: CharacterLookup): GameEnd[] {
 }
 
 /**
- * Of its player and the player with its token, the one not on the winning team was executed
- * while the other lives: the good twin, who is whichever twin is good, even a good-aligned Evil
- * Twin (https://wiki.bloodontheclocktower.com/Evil_Twin).
+ * Of its player and the player with its token, one of `alignment` was executed while, with
+ * `otherAlive`, the other lives (`subject: 'either'`). The Evil Twin: the good twin is
+ * whichever twin is good, even a good-aligned Evil Twin
+ * (https://wiki.bloodontheclocktower.com/Evil_Twin).
  */
 function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 	const out: GameEnd[] = [];
-	for (const { seatId, characterId, rule } of endsOf(game, characters, 'marked-executed')) {
+	for (const { seatId, characterId, rule } of eventsOf(game, characters, 'executed')) {
+		if (rule.subject !== 'either') continue;
 		for (const marked of carrying(game, characterId, rule.token!)) {
 			const pair = [marked, seatId];
 			const executed = pair.find(
 				(id) =>
 					game.seats[id].dead &&
 					isExecution(game.seats[id].deathCause, characters) &&
-					alignmentOf(game, id) === other(rule.winner!)
+					(!rule.alignment || alignmentOf(game, id) === rule.alignment)
 			);
 			if (executed === undefined) continue;
 			// A dead player has no ability: the other twin must be alive.
 			const twin = executed === marked ? seatId : marked;
-			if (!aliveForEnd(game, twin, characters)) continue;
+			if (rule.otherAlive && !aliveForEnd(game, twin, characters)) continue;
 			out.push({
-				key: `marked-executed:${executed}`,
-				rule: 'marked-executed',
-				winner: rule.winner!,
+				key: `${endName(rule)}:${executed}`,
+				rule: endName(rule),
+				winner: winnerFor(game, seatId, rule, executed),
 				characterId,
 				seats: [executed, twin],
 				wiki: wikiOf(characterId, characters),
@@ -375,7 +391,7 @@ function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
  * form, so that holds it (the Storyteller's call).
  */
 function cultJoined(game: Game, characters: CharacterLookup): GameEnd[] {
-	return endsOf(game, characters, 'cult-joined').flatMap(({ seatId, characterId }) => {
+	return eventsOf(game, characters, 'vote-passed').flatMap(({ seatId, characterId, rule }) => {
 		const passed = game.today.entries.some(
 			(e) =>
 				e.kind === 'ability' &&
@@ -386,9 +402,9 @@ function cultJoined(game: Game, characters: CharacterLookup): GameEnd[] {
 		if (!passed) return [];
 		return [
 			{
-				key: `cult-joined:${seatId}:${game.pastDays.length}`,
-				rule: 'cult-joined' as const,
-				winner: alignmentOf(game, seatId) ?? 'good',
+				key: `${endName(rule)}:${seatId}:${game.pastDays.length}`,
+				rule: endName(rule),
+				winner: winnerFor(game, seatId, rule),
 				characterId,
 				seats: [seatId],
 				day: game.pastDays.length,
@@ -415,7 +431,9 @@ function usedOnLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 			if (entry.kind !== 'ability' || entry.on === undefined) continue;
 			const { seatId, characterId, on } = entry;
 			const rules = rulesOf(characterId, characters);
-			const rule = rules?.gameEnd?.ends?.find((e) => e.kind === 'used-on-loses');
+			const rule = rules?.gameEnd?.ends?.find(
+				(e) => e.kind === 'condition' && e.event === 'ability-used'
+			);
 			if (!rule || !game.seats[seatId] || !game.seats[on]) continue;
 			const use = `${seatId}:${characterId}`;
 			if (counted.has(use)) continue;
@@ -425,9 +443,9 @@ function usedOnLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 			if (spends && entry.reminderId === undefined) continue;
 			if (!isOn(game, on, rule.on!, characters)) continue;
 			out.push({
-				key: `used-on-loses:${entry.entryId}`,
-				rule: 'used-on-loses',
-				winner: losesFor(game, seatId),
+				key: `${endName(rule)}:${entry.entryId}`,
+				rule: endName(rule),
+				winner: winnerFor(game, seatId, rule, on),
 				characterId,
 				seats: [on, seatId],
 				wiki: wikiOf(characterId, characters),
@@ -457,7 +475,8 @@ function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string
 	);
 	if (seats.length === 0) return [];
 	// The rule's page lets an ability such as the Mastermind's keep the game going.
-	const holds: GameHold[] = endsOf(game, characters, 'extra-day')
+	const holds: GameHold[] = eventsOf(game, characters, 'demon-executed')
+		.filter(({ rule }) => rule.then === 'extra-day')
 		.filter(({ seatId }) => aliveForEnd(game, seatId, characters))
 		.flatMap(({ seatId, characterId }) => [
 			{
@@ -496,7 +515,7 @@ export function gameEnds(
 	if (game.seating.every((id) => game.seats[id].characterId === undefined)) return [];
 
 	const out: GameEnd[] = [
-		...storytellerExecuted(days(game), endsOf(game, characters, 'storyteller-executed'), (id) =>
+		...storytellerExecuted(days(game), eventsOf(game, characters, 'storyteller-executed'), (id) =>
 			wikiOf(id, characters)
 		),
 		...(options.demonExecutedBy ? demonExecuted(game, characters, options.demonExecutedBy) : [])
