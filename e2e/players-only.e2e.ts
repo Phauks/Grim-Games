@@ -98,4 +98,17 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	await expect(page.getByTestId('grim-seat')).toHaveCount(6);
+
+	// A new game on the same script starts on a clear board (Trevor, 2026-11-10: the old
+	// town stayed "not even making a new game").
+	await page.goto('/new');
+	await page.getByRole('combobox', { name: 'Host' }).tap();
+	await page.getByRole('option', { name: /^Local Grim/ }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/play$/);
+	const fresh = page.getByTestId('grim-seat');
+	await expect(fresh).toHaveCount(7);
+	await expect(fresh.nth(0)).not.toHaveAttribute('aria-label', /dead/);
+	await page.goto('/join');
+	await expect(page.getByTestId('players-only-games').getByRole('button')).toContainText('7 seats');
 });

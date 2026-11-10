@@ -10,9 +10,25 @@ import {
 	startingTown,
 	type LocalTown
 } from '#lib/core/town/local-town.ts';
+import type { LoadedScript } from '#lib/core/data/index.ts';
+import type { SavedScript } from '#lib/features/scripts/saved-scripts.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
+import { forgetGuesses } from './grim-guesses.ts';
+import { scriptKey } from './notebook.ts';
+import { forgetPlayerReminders } from './player-reminders.ts';
+import { forgetSeatNotes } from './seat-notes.svelte.ts';
 
 const storeKey = (key: string) => `grim-games:play:town:${key}`;
+
+/**
+ * The notebook key /play keeps a script's notes and players-only town under, with no room:
+ * official editions by id, saved scripts by their library id.
+ */
+export function localNotesKey(script: LoadedScript, saved: SavedScript | undefined): string {
+	return !script.edition && saved && saved.scriptId !== 'unsaved'
+		? `saved:${saved.scriptId}`
+		: scriptKey(script);
+}
 
 /** The towns changed since they were read, so every reader follows them. */
 const changed: Record<string, LocalTown> = $state({});
@@ -99,6 +115,20 @@ export function recordLocalVisit(visit: LocalTownVisit): void {
 	const rest = localTownVisits().filter((v) => v.key !== visit.key);
 	visits = [visit, ...rest].slice(0, MAX_VISITS);
 	writeStored(VISITS_KEY, visits);
+}
+
+/**
+ * A new players-only game on `notesKey`'s script: a clear board of seven empty seats, with the
+ * last game's guesses, reminders and seat notes taken off (Trevor, 2026-11-10: a new game on
+ * the same script kept the old board). The Notes tab's written notes stay, as they are the
+ * script's.
+ */
+export function startLocalTown(notesKey: string): void {
+	const kept = localGuessKey(notesKey);
+	forgetGuesses(kept);
+	forgetPlayerReminders(kept);
+	forgetSeatNotes(kept);
+	saveLocalTown(notesKey, startingTown());
 }
 
 /** Opened from New game or Join game: /play turns to its Grim tab, where the town is. */

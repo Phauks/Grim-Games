@@ -123,7 +123,7 @@
 		saveDraft({ edition, players });
 		try {
 			const loaded = loadScriptChoice(choice, await loadOfficialData());
-			await openPlayersOnly(loaded, scriptChoiceSource(choice));
+			await openPlayersOnly(loaded, scriptChoiceSource(choice), { fresh: true });
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {

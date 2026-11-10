@@ -42,6 +42,7 @@
 	import { startingTown } from '#lib/core/town/local-town.ts';
 	import {
 		keptLocalTown,
+		localNotesKey,
 		openOnGrim,
 		recordLocalVisit,
 		saveLocalTown
@@ -222,10 +223,10 @@
 	const key = $derived.by(() => {
 		if (!script) return undefined;
 		if (inRoom && inRoom === lastRoom() && roomTable.gameId) return `game:${gameKey(inRoom)}`;
-		const saved = currentScript.current === script ? currentScript.saved : undefined;
-		return !script.edition && saved && saved.scriptId !== 'unsaved'
-			? `saved:${saved.scriptId}`
-			: scriptKey(script);
+		return localNotesKey(
+			script,
+			currentScript.current === script ? currentScript.saved : undefined
+		);
 	});
 
 	// With no room, the Grim tab is the player's own town (plan M55): Join game lists it, so it
