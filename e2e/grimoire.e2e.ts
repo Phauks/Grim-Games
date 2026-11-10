@@ -7178,6 +7178,15 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 			.tap();
 		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+		if (number === 3) {
+			// Skip the Sweetheart's "Put Drunk on" question; Drunk is placed by hand below.
+			const choose = page
+				.getByRole('dialog')
+				.filter({ has: page.getByRole('heading', { name: /^Put\b.*\bDrunk\b.*\bon$/ }) });
+			await expect(choose).toBeVisible();
+			await page.keyboard.press('Escape');
+			await expect(choose).toBeHidden();
+		}
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
