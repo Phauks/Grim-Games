@@ -57,6 +57,9 @@
 		grimoire.firstDeathAsk = undefined;
 	}
 
+	// eslint-disable-next-line grim/names-as-badges -- accessible name only; the heading snippet shows the token
+	const chooseTitle = $derived(`Put ${ask?.token ?? ''} on`);
+
 	function useAbility() {
 		if (!ask) return;
 		const { seatId, characterId, token, places } = ask;
@@ -73,7 +76,7 @@
 {#if ask?.chosen && character}
 	<SeatChooser
 		bind:open={chooseOpen}
-		title={`Put ${ask.token} on`}
+		title={chooseTitle}
 		game={grimoire.game}
 		characters={grimoire.open.characters}
 		onChoose={placeOn}
