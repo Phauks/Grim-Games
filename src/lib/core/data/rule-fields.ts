@@ -414,7 +414,12 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		{ label: 'Times a game', has: 'perGame', spec: obj({ perGame: COUNT }) }
 	),
 	nominationsAfterExecution: COUNT,
-	onDeath: obj({ by: oneOf(['demon', 'other', 'any']), night: opt(T), places: opt(TOKEN) }),
+	onDeath: obj({
+		by: oneOf(['demon', 'other', 'any']),
+		night: opt(T),
+		places: opt(TOKEN),
+		placesOn: opt(oneOf(['chosen']))
+	}),
 	onNominated: obj({
 		by: opt(TYPES),
 		carrier: opt(TOKEN),
