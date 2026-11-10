@@ -288,6 +288,7 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 					winner: opt(ALIGNMENT),
 					alive: opt(NUM),
 					alignment: opt(ALIGNMENT),
+					types: opt(SOME_TYPES),
 					count: opt(NUM),
 					day: opt(NUM),
 					night: opt(NUM),

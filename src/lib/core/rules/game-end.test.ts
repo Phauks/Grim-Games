@@ -727,6 +727,51 @@ describe('custom characters', () => {
 		expect(gameEnds(game, all)).toEqual([]);
 	});
 
+	// A homebrew Minion that counts by character type (M78), as Legion counts by alignment
+	// (https://wiki.bloodontheclocktower.com/Legion): two Outsiders executed win it for evil.
+	it('end the game on a count of a character type', () => {
+		const hangman = {
+			id: 'hangman',
+			name: 'Hangman',
+			team: 'minion',
+			ability: 'If 2 Outsiders are executed, evil wins.',
+			rules: {
+				gameEnd: {
+					ends: [
+						{
+							kind: 'condition',
+							event: 'always',
+							types: ['outsider'],
+							executions: 2,
+							winner: 'evil'
+						}
+					]
+				}
+			}
+		};
+		const cast = ['hangman', 'butler', 'saint', 'imp', 'chef'];
+		const one = custom(hangman, cast, execute(1));
+		expect(gameEnds(one.game, one.all).filter((e) => e.characterId === 'hangman')).toEqual([]);
+		// An Outsider and a Townsfolk executed: not yet.
+		const mixed = custom(hangman, cast, execute(1), newDay, execute(4));
+		expect(gameEnds(mixed.game, mixed.all).filter((e) => e.characterId === 'hangman')).toEqual([]);
+		const two = custom(
+			hangman,
+			['hangman', 'butler', 'recluse', 'imp', 'chef'],
+			execute(1),
+			newDay,
+			execute(2)
+		);
+		expect(gameEnds(two.game, two.all)).toContainEqual(
+			expect.objectContaining({
+				rule: 'condition',
+				characterId: 'hangman',
+				winner: 'evil',
+				seats: [two.seats[1], two.seats[2]]
+			})
+		);
+	});
+
 	it('read the official kinds as presets of a condition, and check a condition', () => {
 		const issues = new Issues();
 		const mayor = parseCharacter(
@@ -764,6 +809,26 @@ describe('custom characters', () => {
 		);
 		expect(issues.list).toEqual([
 			'[0].rules.gameEnd.ends[0].wins: `opposing` is about who was executed'
+		]);
+		const counts = new Issues();
+		parseCharacter(
+			{
+				id: 'vague',
+				name: 'Vague',
+				team: 'minion',
+				ability: 'x',
+				rules: {
+					gameEnd: {
+						ends: [{ kind: 'condition', event: 'always', aliveAtMost: 0, winner: 'evil' }]
+					}
+				}
+			},
+			'[0]',
+			counts,
+			{ strict: false, scriptFields: true }
+		);
+		expect(counts.list).toEqual([
+			'[0].rules.gameEnd.ends[0]: a count needs who it counts: `alignment` or `types`'
 		]);
 	});
 
