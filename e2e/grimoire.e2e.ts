@@ -6114,19 +6114,16 @@ test('"+ New token" makes a reusable ∞ token whose copies carry its look', asy
 });
 
 test('an ∞ token is edited beside a live preview of it', async ({ page }, testInfo) => {
-	// Trevor (2026-10-24): two panes, the preview on the left; on a phone it is on top.
+	// Trevor (2026-11-10, option B Tabs): a small preview beside the text, so everything fits
+	// one phone screen with the keyboard up.
 	await startGame(page);
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	await bank.getByRole('button', { name: 'New token' }).tap();
 	const dialog = page.getByRole('dialog', { name: /token/ });
 	const preview = dialog.getByTestId('generic-token-preview');
-	const previewBox = (await dialog.getByTestId('dialog-aside').boundingBox())!;
-	const fieldsBox = (await dialog.getByTestId('dialog-pane').boundingBox())!;
-	if (testInfo.project.name === 'tablet') {
-		expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(fieldsBox.x);
-	} else {
-		expect(previewBox.y + previewBox.height).toBeLessThanOrEqual(fieldsBox.y);
-	}
+	const previewBox = (await preview.boundingBox())!;
+	const textBox = (await page.getByTestId('reminder-note').boundingBox())!;
+	expect(previewBox.x + previewBox.width).toBeLessThanOrEqual(textBox.x);
 
 	// Each change shows at once, the text while it is typed, before Enter saves it.
 	const token = preview.getByTestId('board-reminder');
@@ -6253,7 +6250,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	expect(colours.rim).not.toBe(colours.face);
 	expect(colours.band).toContain(colours.rim);
 
-	// An icon symbol takes a colour from the theme's own, and Default gives it back its ink.
+	// An icon symbol takes a colour from the theme's own, and tapping it again its ink.
 	await openSeat(page, 1);
 	await page.getByRole('button', { name: 'Actions for Chose Sam' }).tap();
 	await pickLook(page, 'Star');
@@ -6271,10 +6268,11 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 		return value;
 	});
 	await expect(icon).toHaveCSS('color', evil);
-	await pickLook(page, 'Default');
+	// Red again gives it back its ink (Trevor, 2026-11-10: no Default, tap to clear).
+	await pickLook(page, 'Red');
 	await expect(icon).toHaveCSS('color', ink);
-	// None takes the symbol off again.
-	await pickLook(page, 'None');
+	// Star again takes the symbol off.
+	await pickLook(page, 'Star');
 	await expect(placed.locator('[data-symbol]')).toHaveCount(0);
 	await expect(colour).toBeDisabled();
 });

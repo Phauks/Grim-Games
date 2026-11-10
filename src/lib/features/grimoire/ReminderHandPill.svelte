@@ -90,6 +90,7 @@
 		if (held?.kind === 'bank')
 			return heldTokenActions(grimoire, held.item, {
 				edit: (tokenId) => gestures.editToken(tokenId),
+				duplicate: (tokenId) => gestures.duplicateToken(tokenId),
 				remove: (tokenId) => gestures.askDelete(tokenId),
 				putDown
 			});

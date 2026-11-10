@@ -53,6 +53,7 @@ export const player = {
 	'player.grim.pictureReported': 'Picture reported',
 	'player.grim.addGeneric': 'Add a generic token',
 	'player.grim.deleteGeneric': 'Delete token',
+	'player.grim.duplicateToken': 'Duplicate token',
 	'player.grim.yourGuesses': 'Your guesses',
 	'player.grim.onTheScript': 'On the script',
 	'player.local.title': 'Players only',

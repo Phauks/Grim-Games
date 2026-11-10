@@ -8,7 +8,7 @@ import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/counter-rules.ts
 import {
 	GENERIC_REMINDER_ID,
 	REMINDER_NUMBER_MAX,
-	SYMBOL_COLOURS,
+	isSymbolColour,
 	numberSymbol,
 	symbolNumber,
 	type GenericLook,
@@ -55,7 +55,7 @@ function genericLook(r: Record<string, unknown>): GenericLook {
 	const look: GenericLook = {};
 	if (typeof r.note === 'string' && r.note.trim()) look.note = r.note.slice(0, MAX_NOTE);
 	if (typeof r.symbol === 'string' && r.symbol) look.symbol = r.symbol;
-	if (SYMBOL_COLOURS.includes(r.symbolColour as never))
+	if (isSymbolColour(r.symbolColour))
 		look.symbolColour = r.symbolColour as GenericLook['symbolColour'];
 	if (r.symbolFill === true) look.symbolFill = true;
 	// A copy of a character's reminder, with its art (dragged onto "+ New token").

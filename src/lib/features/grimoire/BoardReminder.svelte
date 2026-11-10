@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { symbolNumber, type SymbolColour } from '#lib/core/model/index.ts';
-	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
+	import { symbolCharacter, symbolNumber, type SymbolColour } from '#lib/core/model/index.ts';
+	import { contextCharacters } from '#lib/features/characters/character-context.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { symbolColourCss } from './symbol-colour.ts';
 	import { isFixedLabel } from '#lib/core/rules/reminder-movement.ts';
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
@@ -109,7 +111,20 @@
 	);
 	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
 	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
-	const artSrc = $derived(art && !symbol ? reminderIconUrl(art, undefined) : undefined);
+	// A character's icon as its symbol (Trevor, 2026-11-10), from the game's characters or,
+	// off a game, the official ones.
+	const characters = contextCharacters();
+	const iconOf = $derived(symbolCharacter(symbol));
+	const iconCharacter = $derived(
+		iconOf && (characters?.()?.get(iconOf) ?? officialData.current?.byId.get(iconOf))
+	);
+	const artSrc = $derived(
+		iconCharacter
+			? reminderIconUrl(iconCharacter, undefined)
+			: art && !symbol
+				? reminderIconUrl(art, undefined)
+				: undefined
+	);
 	const holderSrc = $derived(holder ? reminderIconUrl(holder, alignment) : undefined);
 	// A number token's number (plan M35), or the bank's # token's #.
 	const shownNumber = $derived(symbol === '#' ? '#' : symbolNumber(symbol));
@@ -295,18 +310,20 @@
 		{#if infinite}{#if shownNumber !== undefined}<span
 					class="symbol number"
 					data-symbol={symbol}
-					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
+					style:color={symbolColourCss(symbolColour)}
 					aria-hidden="true">{shownNumber}</span
 				>{:else if symbol.startsWith('ph:')}<span
 					class="symbol"
 					data-symbol={symbol}
-					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
+					style:color={symbolColourCss(symbolColour)}
 					><IconGlyph
 						id={withWeight(symbol, symbolFill ? 'fill' : weight)}
 						set={symbolFill ? 'ph-fill' : set}
 					/></span
-				>{:else if symbol}<span class="symbol emoji" data-symbol={symbol} aria-hidden="true"
-					>{symbol}</span
+				>{:else if symbol && !iconOf}<span
+					class="symbol emoji"
+					data-symbol={symbol}
+					aria-hidden="true">{symbol}</span
 				>{:else if artSrc}<img
 					src={artSrc}
 					alt=""

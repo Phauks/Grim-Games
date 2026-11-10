@@ -13,7 +13,8 @@ import {
 	GENERIC_REMINDER_ID,
 	REMINDER_NUMBER_MAX,
 	REMINDER_NUMBER_MIN,
-	SYMBOL_COLOURS,
+	isSymbolColour,
+	symbolCharacter,
 	isNumberSymbol,
 	symbolNumber,
 	getSeat,
@@ -73,6 +74,8 @@ export const BLUFFS_PER_SET = 3;
 export const MAX_BLUFF_SET_NAME = 40;
 /** Longest generic reminder symbol, in UTF-16 units: one emoji, flags and joined ones too. */
 export const MAX_REMINDER_SYMBOL = 16;
+/** The longest character id a character-icon symbol (`@id`) may name. */
+const MAX_CHARACTER_ID = 64;
 
 /** Base setup covers 5 to 15 players; more join as Travellers (https://wiki.bloodontheclocktower.com/Setup). */
 export const MIN_PLAYERS = 5;
@@ -199,7 +202,7 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
 		out.symbol = symbol;
 	}
 	if (look?.symbolColour !== undefined) {
-		if (!SYMBOL_COLOURS.includes(look.symbolColour))
+		if (!isSymbolColour(look.symbolColour))
 			refuse('invalid-colour', `no symbol colour ${look.symbolColour}`);
 		out.symbolColour = look.symbolColour;
 	}
@@ -220,6 +223,12 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
  * show (`symbolNumber`).
  */
 export function checkSymbol(symbol: string): void {
+	const character = symbolCharacter(symbol);
+	if (character !== undefined) {
+		if (character.length > MAX_CHARACTER_ID)
+			refuse('invalid-symbol', `a character id is at most ${MAX_CHARACTER_ID} characters`);
+		return;
+	}
 	if (symbol.length > MAX_REMINDER_SYMBOL)
 		refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
 	if (isNumberSymbol(symbol) && symbolNumber(symbol) === undefined)
