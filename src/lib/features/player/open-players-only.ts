@@ -6,15 +6,24 @@ import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import type { LoadedScript } from '#lib/core/data/index.ts';
 import { leaveLastRoom } from '#lib/features/room/player.svelte.ts';
-import { chooseScript } from '#lib/features/scripts/current-script.svelte.ts';
+import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
 import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
-import { openOnGrim } from './local-town.svelte.ts';
+import { localNotesKey, openOnGrim, startLocalTown } from './local-town.svelte.ts';
 
-export async function openPlayersOnly(script: LoadedScript, source: ScriptSource): Promise<void> {
+/**
+ * `fresh` (from New game) starts a new game on a clear board, even on a script whose town is
+ * kept (Trevor, 2026-11-10); Join game opens the kept one as it was.
+ */
+export async function openPlayersOnly(
+	script: LoadedScript,
+	source: ScriptSource,
+	{ fresh = false }: { fresh?: boolean } = {}
+): Promise<void> {
 	// A room's town would take the Grim tab's place, so the phone stops following it (it
 	// stays in Join game's As player).
 	leaveLastRoom();
 	await chooseScript(script, source);
+	if (fresh) startLocalTown(localNotesKey(currentScript.current ?? script, currentScript.saved));
 	openOnGrim.request();
 	await goto(resolve('/play'));
 }

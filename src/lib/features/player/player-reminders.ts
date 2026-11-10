@@ -104,6 +104,15 @@ export function writePlayerReminders(room: string, reminders: PlayerReminders): 
 	writeStored(key(room), reminders);
 }
 
+/**
+ * Takes every reminder off a game's seats, as a new game on the same board. The tray's own
+ * ∞ tokens stay: they are the player's, not the board's.
+ */
+export function forgetPlayerReminders(room: string): void {
+	writeStored(key(room), undefined);
+	writeStored(`grim-games:play:counted:${room}`, undefined);
+}
+
 export function remindersOn(reminders: PlayerReminders, seatId: string): readonly PlayerReminder[] {
 	return reminders[seatId] ?? [];
 }
