@@ -74,7 +74,7 @@ export async function tapToSeat(page: Page, token: Locator, seat: number | strin
 
 /** Picks a row of the held token's ⋯. */
 export async function heldAction(page: Page, row: string) {
-	// Edit and the trash are the pill's own buttons (Trevor, 2026-11-10, option B).
+	// Edit is the pill's own button (Trevor, 2026-11-10, option B); the trash is under ⋯.
 	if (PILL_BUTTONS.includes(row)) {
 		await inHand(page).getByRole('button', { name: row, exact: true }).tap();
 		return;
@@ -82,11 +82,29 @@ export async function heldAction(page: Page, row: string) {
 	await inHand(page).getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('menuitem', { name: row, exact: true }).tap();
 }
-const PILL_BUTTONS = ['Edit token', 'Remove reminder', 'Remove copy', 'Delete token'];
+const PILL_BUTTONS = ['Edit token'];
 
-/** Picks an ∞ token's symbol or colour in its editor's grid (GenericLookFields). */
+/**
+ * Picks an ∞ token's symbol or colour in its editor (GenericLookFields), opening the symbol tab
+ * that holds it (Symbols, Emoji or Characters; Trevor, 2026-11-10, option B). Tapping the one
+ * already chosen clears it.
+ */
 export async function pickLook(page: Page, name: string) {
-	await page.getByRole('radio', { name, exact: true }).locator('..').tap();
+	const radio = page.getByRole('radio', { name, exact: true });
+	for (const tab of ['Symbols', 'Emoji', 'Characters']) {
+		if (await radio.isVisible()) break;
+		await page.getByRole('tab', { name: tab, exact: true }).tap();
+	}
+	await radio.locator('..').tap();
+}
+
+/** Opens the ⋯ of an ∞ token's editor (GenericLookDialog) and picks a row. */
+export async function editorAction(page: Page, row: string) {
+	await page
+		.getByRole('dialog', { name: /token/ })
+		.getByRole('button', { name: 'More token actions' })
+		.tap();
+	await page.getByRole('menuitem', { name: row, exact: true }).tap();
 }
 
 /** Saves an ∞ token's editor (GenericLookDialog): Confirm. */

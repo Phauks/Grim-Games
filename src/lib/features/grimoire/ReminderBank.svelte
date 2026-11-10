@@ -238,6 +238,7 @@
 	fresh={gestures.fresh}
 	onConfirm={() => gestures.confirmed()}
 	onDelete={(tokenId) => gestures.askDelete(tokenId)}
+	onDuplicate={(look) => gestures.duplicate(look)}
 />
 <DeleteTokenConfirm
 	bind:open={gestures.deleteOpen}

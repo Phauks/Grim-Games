@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { GenericLook } from '#lib/core/model/index.ts';
+	import { scriptCharacterIds, type GenericLook } from '#lib/core/model/index.ts';
 	import GenericLookDialog from './GenericLookDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -18,6 +18,8 @@
 		onConfirm?: () => void;
 		/** Its trash: asks first (DeleteTokenConfirm); a token just made goes at once. */
 		onDelete: (tokenId: string) => void;
+		/** ⋯ Duplicate: a new token with this look. */
+		onDuplicate?: (look: GenericLook) => void;
 	}
 
 	let {
@@ -26,9 +28,16 @@
 		tokenId,
 		fresh = false,
 		onConfirm,
-		onDelete
+		onDelete,
+		onDuplicate
 	}: Props = $props();
 
+	const scriptCharacters = $derived(
+		scriptCharacterIds(grimoire.game.script).flatMap((id) => {
+			const character = grimoire.open.characters.get(id);
+			return character ? [character] : [];
+		})
+	);
 	const token = $derived(grimoire.game.genericTokens?.find((t) => t.tokenId === tokenId));
 
 	function set(change: GenericLook) {
@@ -52,4 +61,6 @@
 	deleteLabel="Delete token"
 	{fresh}
 	{onConfirm}
+	{onDuplicate}
+	{scriptCharacters}
 />

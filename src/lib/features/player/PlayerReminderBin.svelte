@@ -161,9 +161,9 @@
 		subject && !subjectGeneric ? characterOf(subject.reminder.characterId) : undefined
 	);
 	/**
-	 * The pill's ✎ and trash (Trevor, 2026-11-10, option B): one of the tray's own ∞ tokens is
-	 * edited or deleted itself, as the bank's; a token on a seat is edited (an ∞ one) or taken
-	 * off there.
+	 * The pill's ✎, and under ⋯ Duplicate and the trash (Trevor, 2026-11-10): one of the tray's
+	 * own ∞ tokens is edited, copied or deleted itself, as the bank's; a token on a seat is
+	 * edited (an ∞ one) or taken off there.
 	 */
 	const actions = $derived.by(() => {
 		const label = t('player.grim.editToken');
@@ -171,6 +171,11 @@
 		if (tokenId)
 			return [
 				{ value: 'edit', label, onSelect: () => gestures.editToken(tokenId) },
+				{
+					value: 'duplicate',
+					label: t('player.grim.duplicateToken'),
+					onSelect: () => gestures.duplicateToken(tokenId)
+				},
 				{
 					value: 'delete',
 					label: t('player.grim.deleteGeneric'),
@@ -321,6 +326,7 @@
 	tokenKey={subject?.reminder.id ?? 'tray'}
 	art={subject?.reminder.like ? characterOf(subject.reminder.like.characterId) : undefined}
 	onCountsUp={now ? (countsUp) => setLook({ countsUp }) : undefined}
+	scriptCharacters={characters}
 />
 
 <GenericLookDialog
@@ -333,6 +339,8 @@
 	art={editedToken?.like ? characterOf(editedToken.like.characterId) : undefined}
 	fresh={gestures.fresh}
 	onConfirm={() => gestures.confirmed()}
+	onDuplicate={(look) => gestures.duplicate(look)}
+	scriptCharacters={characters}
 />
 
 <DeleteTokenConfirm
