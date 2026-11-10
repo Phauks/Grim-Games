@@ -285,8 +285,8 @@ test('picks where a character wakes from the night stages', async ({ page }) => 
 });
 
 // A Rules section (M62, Trevor picked "Add a rule", 2026-11-09): rules are added one at a time
-// from a drop-down, with a field for a simple rule and rules text for one with several
-// settings, each checked as a script would load it; a row's ⋯ changes or removes it.
+// from a drop-down and filled in with fields made for each rule, or written as rules text, each
+// checked as a script would load it; a row's ⋯ changes or removes it.
 test('rules are added, changed and removed one at a time', async ({ page }) => {
 	await page.goto('/build-character');
 	await page.getByTestId('character-name').fill('Lamplighter');
@@ -302,30 +302,42 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	let dialog = page.getByRole('dialog', { name: 'Add a rule' });
 	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
 	await page.getByRole('option', { name: /^Curses/ }).tap();
-	await expect(dialog.getByRole('combobox', { name: 'Value' })).toHaveText(/Lit/);
+	await expect(dialog.getByRole('combobox', { name: 'Curses' })).toHaveText(/Lit/);
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(rules).toContainText('Curses');
 	await expect(rules).toContainText('Lit');
 
-	// A rule with several settings is written as rules text, checked as it is typed.
+	// A rule with several settings gets a field for each, checked as they are filled in.
 	await page.getByTestId('add-rule').tap();
 	dialog = page.getByRole('dialog', { name: 'Add a rule' });
 	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
 	await page.getByRole('option', { name: /^Protects/ }).tap();
-	const text = dialog.getByRole('textbox', { name: 'Rules text' });
-	await text.fill('{ "who": "marked", "token": "Safe", "from": "any" }');
-	await expect(dialog.getByTestId('rule-problems')).toContainText('rules.protects.token');
-	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await text.fill('{ "who": "marked", "token": "Lit", "from": "any", "night": true }');
+	const confirm = dialog.getByRole('button', { name: 'Confirm' });
+	await expect(confirm).toBeDisabled();
+	await dialog.getByRole('combobox', { name: 'Who' }).tap();
+	await page.getByRole('option', { name: 'marked', exact: true }).tap();
+	await dialog.getByRole('combobox', { name: 'Reminder', exact: true }).tap();
+	await page.getByRole('option', { name: 'Lit', exact: true }).tap();
+	await dialog.getByRole('combobox', { name: 'From' }).tap();
+	await page.getByRole('option', { name: 'any', exact: true }).tap();
+	await dialog.getByRole('checkbox', { name: 'Night', includeHidden: true }).check({ force: true });
 	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
-	await dialog.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(rules).toContainText('Protects');
+	await confirm.tap();
+	await expect(rules).toContainText('Who marked · Reminder Lit · From any · Night');
 
-	// Change: the ⋯ opens the rule with its value.
+	// Change: the ⋯ opens the rule with its settings; Rules text shows the same rule as text.
 	await rules.getByRole('button', { name: 'Protects options' }).tap();
 	await page.getByRole('menuitem', { name: 'Change' }).tap();
 	dialog = page.getByRole('dialog', { name: 'Change a rule' });
-	await expect(dialog.getByRole('textbox', { name: 'Rules text' })).toHaveValue(/"night": true/);
+	await expect(dialog.getByRole('combobox', { name: 'Who' })).toHaveText(/marked/);
+	await dialog
+		.getByRole('checkbox', { name: 'Rules text', includeHidden: true })
+		.check({ force: true });
+	const text = dialog.getByRole('textbox', { name: 'Rules text' });
+	await expect(text).toHaveValue(/"night": true/);
+	await text.fill('{ "who": "marked", "token": "Safe", "from": "any" }');
+	await expect(dialog.getByTestId('rule-problems')).toContainText('rules.protects.token');
+	await expect(dialog.getByRole('button', { name: 'Confirm' })).toBeDisabled();
 	await dialog.getByRole('button', { name: 'Cancel' }).tap();
 
 	// The rules go with the saved character and survive a reload.

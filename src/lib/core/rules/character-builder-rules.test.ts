@@ -9,6 +9,7 @@ import { characterEntry, emptyCharacterFields, type CharacterFields } from './ch
 import {
 	BUILDER_RULES,
 	builderRule,
+	fitsFields,
 	readRuleText,
 	ruleProblems,
 	ruleRows,
@@ -31,15 +32,26 @@ describe('BUILDER_RULES', () => {
 		expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
 	});
 
-	it('gives the simple parts a field and the rest none', () => {
+	it('gives every rule fields of its own', () => {
 		expect(builderRule('wish').field).toEqual({ kind: 'true' });
-		expect(builderRule('protects').field).toBeUndefined();
-		const simple = BUILDER_RULES.filter((r) => r.field).length;
-		expect(simple).toBeGreaterThanOrEqual(25);
+		expect(builderRule('protects').field.kind).toBe('object');
+		expect(BUILDER_RULES.filter((r) => r.field.kind === 'text')).toEqual([]);
 	});
 
 	it('reads a key no part has as text', () => {
-		expect(builderRule('typo')).toEqual({ key: 'typo', label: 'typo', description: '' });
+		expect(builderRule('typo')).toEqual({
+			key: 'typo',
+			label: 'typo',
+			description: '',
+			field: { kind: 'text' }
+		});
+	});
+
+	it('edits a value with fields only when they hold all of it', () => {
+		const protects = builderRule('protects');
+		expect(fitsFields(protects, { who: 'self', from: 'demon' })).toBe(true);
+		expect(fitsFields(protects, { who: 'self', from: 'demon', later: true })).toBe(false);
+		expect(fitsFields(builderRule('typo'), true)).toBe(false);
 	});
 });
 

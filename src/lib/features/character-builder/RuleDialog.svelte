@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { ReminderLabel } from '#lib/core/data/index.ts';
 	import {
 		BUILDER_RULES,
 		builderRule,
+		emptyFor,
+		fitsFields,
 		readRuleText,
 		ruleProblems,
 		ruleText,
@@ -12,17 +15,17 @@
 	} from '#lib/core/rules/index.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import RuleValueField from './RuleValueField.svelte';
 
 	/**
 	 * Adds one rule to a custom character, or changes one it has (M62, Trevor picked "Add a
 	 * rule", 2026-11-09). Like Add a setup change: the rule is picked from a drop-down with its
-	 * description, and every control is always there with only the one the rule uses enabled,
-	 * so choosing a different rule moves nothing. A rule with several settings is written as
-	 * its rules text until it gets fields of its own.
+	 * description, then its settings are filled in with fields made for that rule
+	 * (`RuleValueField`). "Rules text" writes the same rule as text instead, and is where a rule
+	 * the fields can't hold whole (a setting they don't list) is changed, so nothing is lost.
 	 */
 	interface Props {
 		open: boolean;
@@ -46,58 +49,61 @@
 	);
 
 	let key = $state('');
-	let on = $state(true);
-	let choice = $state<string>();
-	let count = $state(1);
-	let text = $state('');
+	let value = $state<unknown>();
+	let asText = $state(false);
 	let rulesText = $state('');
 
 	const rule = $derived<BuilderRule | undefined>(key ? builderRule(key) : undefined);
-	const kind = $derived(rule?.field?.kind ?? 'text');
-	const choices = $derived(
-		rule?.field?.kind === 'enum'
-			? rule.field.values
-			: rule?.field?.kind === 'token'
-				? reminders
-				: []
-	);
 
-	/** The controls set to `value` as the rule `next` reads it. */
-	function load(next: string, value: unknown) {
+	/** A new rule's starting value: the first choice of a drop-down, else empty. */
+	function initial(picked: BuilderRule): unknown {
+		const field = picked.field;
+		if (field.kind === 'enum') return field.values[0];
+		if (field.kind === 'token') return reminders[0];
+		if (field.kind === 'count') return 1;
+		if (field.kind === 'boolean') return true;
+		return emptyFor(field);
+	}
+
+	function load(next: string, current: unknown) {
 		key = next;
-		const field = builderRule(next).field;
-		on = typeof value === 'boolean' ? value : true;
-		count = typeof value === 'number' ? value : 1;
-		text = field?.kind === 'string' && typeof value === 'string' ? value : '';
-		const options =
-			field?.kind === 'enum' ? field.values : field?.kind === 'token' ? reminders : [];
-		choice = typeof value === 'string' && options.includes(value) ? value : options[0];
-		rulesText = field ? '' : ruleText(value);
+		const picked = builderRule(next);
+		value = current === undefined ? initial(picked) : current;
+		// A local, not `asText`: reading state here would make the opening effect depend on it.
+		const text = !fitsFields(picked, current);
+		asText = text;
+		rulesText = text ? ruleText(current) : '';
 	}
 
 	$effect(() => {
 		if (!open) return;
-		if (editing) load(editing.key, editing.value);
-		else load(available[0]?.key ?? '', undefined);
+		const start = editing;
+		const first = available[0]?.key ?? '';
+		untrack(() => (start ? load(start.key, start.value) : load(first, undefined)));
 	});
 
 	const read = $derived.by((): { value: unknown } | { error: string } | undefined => {
 		if (!rule) return undefined;
-		switch (kind) {
-			case 'true':
-				return { value: true };
-			case 'boolean':
-				return { value: on };
-			case 'count':
-				return { value: count };
-			case 'string':
-				return text.trim() ? { value: text.trim() } : undefined;
-			case 'enum':
-			case 'token':
-				return choice === undefined ? undefined : { value: choice };
-		}
-		return rulesText.trim() ? readRuleText(rulesText) : undefined;
+		if (asText) return rulesText.trim() ? readRuleText(rulesText) : undefined;
+		return value === undefined ? undefined : { value };
 	});
+
+	/** Whether the text can go back to fields: it reads, and the fields hold all of it. */
+	const backToFields = $derived(
+		!!rule &&
+			rule.field.kind !== 'text' &&
+			(!rulesText.trim() || (!!read && 'value' in read && fitsFields(rule, read.value)))
+	);
+
+	function setText(on: boolean) {
+		if (on) {
+			rulesText = ruleText(value);
+		} else {
+			if (!backToFields) return;
+			value = read && 'value' in read ? read.value : undefined;
+		}
+		asText = on;
+	}
 
 	const problems = $derived.by((): string[] => {
 		if (!read) return [];
@@ -108,7 +114,6 @@
 	const ruleOptions = $derived(
 		available.map((r) => ({ value: r.key, label: r.label, description: r.description }))
 	);
-	const choiceOptions = $derived(choices.map((value) => ({ value, label: value })));
 
 	function save() {
 		if (!read || 'error' in read || problems.length) return;
@@ -134,46 +139,32 @@
 		/>
 		<p class="description">{rule?.description || t('common.none')}</p>
 		<Toggle
-			label={t('character-builder.ruleOn')}
-			checked={kind === 'boolean' ? on : kind === 'true'}
-			disabled={kind !== 'boolean'}
-			onChange={(value) => (on = value)}
-		/>
-		<Select
-			label={t('character-builder.ruleValue')}
-			value={kind === 'enum' || kind === 'token' ? choice : undefined}
-			options={choiceOptions}
-			disabled={kind !== 'enum' && kind !== 'token'}
-			placeholder={t('common.none')}
-			testid="rule-value"
-			onChange={(value: string) => (choice = value)}
-		/>
-		<div class="number">
-			<span class="label" aria-hidden="true">{t('character-builder.number')}</span>
-			<NumberSelect
-				bind:value={count}
-				min={1}
-				max={20}
-				label={t('character-builder.number')}
-				hideLabel
-				disabled={kind !== 'count'}
-				testid="rule-count"
-			/>
-		</div>
-		<TextField
-			label={t('character-builder.setupText')}
-			bind:value={text}
-			disabled={kind !== 'string'}
-			testid="rule-text"
-		/>
-		<TextField
 			label={t('character-builder.rulesText')}
-			multiline
-			rows={6}
-			bind:value={rulesText}
-			disabled={kind !== 'text'}
-			testid="rule-json"
+			checked={asText}
+			disabled={!rule || (asText && !backToFields)}
+			onChange={setText}
 		/>
+		{#if rule && asText}
+			<TextField
+				label={t('character-builder.rulesText')}
+				hideLabel
+				multiline
+				rows={8}
+				bind:value={rulesText}
+				testid="rule-json"
+			/>
+		{:else if rule}
+			<div class="settings" data-testid="rule-settings">
+				<RuleValueField
+					spec={rule.field}
+					{value}
+					onchange={(v) => (value = v)}
+					label={rule.label}
+					{reminders}
+					top
+				/>
+			</div>
+		{/if}
 		<!-- Reserved room at the foot: problems come and go as it is typed, so nothing moves. -->
 		<ul class="problems" role="status" data-testid="rule-problems">
 			{#each problems as problem (problem)}
@@ -199,13 +190,9 @@
 		margin: 0;
 		font-style: italic;
 	}
-	.number {
-		display: flex;
-		align-items: center;
+	.settings {
+		display: grid;
 		gap: var(--space-3);
-	}
-	.label {
-		font-weight: 600;
 	}
 	.problems {
 		display: grid;
