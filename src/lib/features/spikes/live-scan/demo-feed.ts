@@ -31,9 +31,9 @@ const MOVE_MS = 1600;
 const POSE_MS = 5600;
 
 /** The sheet's colours: a drawn photo of paper on a wooden table, not theme colours. */
-const PAPER = '#efe6cf'; // colour-ok: a drawn photo of a printed sheet
-const INK = '#26201a'; // colour-ok: a drawn photo of a printed sheet
-const TABLE = '#4a3a2b'; // colour-ok: a drawn photo of a wooden table
+const PAPER = 'rgb(239, 230, 207)'; // colour-ok: a drawn photo of a printed sheet
+const INK = 'rgb(38, 32, 26)'; // colour-ok: a drawn photo of a printed sheet
+const TABLE = 'rgb(74, 58, 43)'; // colour-ok: a drawn photo of a wooden table
 
 /** Draws the sheet once, at print size: the title, then each character's name and ability. */
 function drawSheet(title: string, rows: readonly SheetRow[]): HTMLCanvasElement {
