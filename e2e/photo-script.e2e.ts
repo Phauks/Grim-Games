@@ -77,7 +77,7 @@ test('a photo of Trouble Brewing is read on the device and added as the script i
 		if (url.protocol.startsWith('http') && url.origin !== own) elsewhere.push(url.origin);
 	});
 	const dialog = await takePhoto(page, sheet);
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Trouble Brewing', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Trouble Brewing', {
 		timeout: 90_000
 	});
 	for (const r of tb) await expect(dialog.locator(`[data-character="${r.id}"]`)).toBeVisible();
@@ -104,17 +104,20 @@ test('a custom sheet keeps only what is ticked and names it from its title', asy
 	// The byline names the author (Trevor, 2026-11-06: "By: XXX should recognize as the author").
 	rows.unshift({ name: 'By: Trevor', ability: '' });
 	const dialog = await takePhoto(page, await photo(browser, 'Storm Front', rows));
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Storm Front by Trevor', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Storm Front', {
 		timeout: 90_000
 	});
+	await expect(dialog.getByRole('textbox', { name: 'Author' })).toHaveValue('Trevor');
+	// A misread name, author or version is fixed here (Trevor, 2026-11-10).
+	await dialog.getByRole('textbox', { name: 'Name' }).fill('Storm Front Remix');
 	await expect(dialog.getByTestId('photo-pick')).toBeVisible();
 	await expect(dialog.getByText('Read: "Lamplighter"')).toBeVisible();
 	// Untick the Monk: it stays in the list, ticked off, and is left out of the script.
 	await dialog.locator('[data-character="monk"]').getByRole('button').first().tap();
 	await dialog.getByRole('button', { name: 'Add script' }).tap();
 	const opened = page
-		.getByRole('dialog', { name: 'Storm Front' })
-		.or(page.getByRole('region', { name: 'Storm Front' }));
+		.getByRole('dialog', { name: 'Storm Front Remix' })
+		.or(page.getByRole('region', { name: 'Storm Front Remix' }));
 	await expect(opened).toBeVisible();
 	await expect(opened.getByText('Chef', { exact: true }).first()).toBeVisible();
 	await expect(opened.getByText('Monk', { exact: true })).toHaveCount(0);
@@ -149,7 +152,7 @@ test('a player with no script yet starts from a photo on the play screen', async
 	await expect(choose.getByRole('button', { name: 'Take a Photo' })).toBeVisible();
 	await expect(choose.getByRole('button', { name: 'Choose a Photo' })).toBeVisible();
 	const dialog = await readPhoto(page, sheet);
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Trouble Brewing', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Trouble Brewing', {
 		timeout: 90_000
 	});
 	await dialog.getByRole('button', { name: 'Add script' }).tap();
@@ -175,7 +178,7 @@ test("a script sheet's PDF is read from its own text, through Upload File", asyn
 		.getByLabel('Script file', { exact: true })
 		.setInputFiles({ name: 'script.pdf', mimeType: 'application/pdf', buffer: pdf });
 	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Trouble Brewing', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Trouble Brewing', {
 		timeout: 60_000
 	});
 	for (const r of tb) await expect(dialog.locator(`[data-character="${r.id}"]`)).toBeVisible();
@@ -211,7 +214,7 @@ test('Choose a Photo reads a saved picture, and Read Log tells each step', async
 		buffer: sheet
 	});
 	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Trouble Brewing', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Trouble Brewing', {
 		timeout: 90_000
 	});
 	await dialog.getByRole('button', { name: 'Read Log' }).tap();
@@ -243,7 +246,7 @@ test('a picture of a sheet given to Upload File is read like a photo', async ({
 		.getByLabel('Script file', { exact: true })
 		.setInputFiles({ name: 'sheet.jpg', mimeType: 'image/jpeg', buffer: sheet });
 	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Trouble Brewing', {
+	await expect(dialog.getByRole('textbox', { name: 'Name' })).toHaveValue('Trouble Brewing', {
 		timeout: 90_000
 	});
 });
