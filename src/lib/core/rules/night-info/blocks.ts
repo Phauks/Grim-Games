@@ -15,7 +15,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
-import { carries } from './token-carriers.ts';
+import { carries, lastShown } from './token-carriers.ts';
 import { mostPairs, neighbourPairs } from './neighbour-pairs.ts';
 import type { InfoOption } from './picker.ts';
 
@@ -42,22 +42,39 @@ export function choose<T>(items: readonly T[], k: number): T[][] {
 	return [...choose(rest, k - 1).map((c) => [first, ...c]), ...choose(rest, k)];
 }
 
-/** Whether a player counts: they register as everything the block names, or carry its token. */
-function matcher(spec: BlockSpec, { game, characterId, world }: BlockContext) {
-	const named = spec.alignment || spec.types || spec.woke;
-	return (s: SeatId) => {
+/**
+ * Whether a player counts: they register as everything the block names, or carry its token.
+ * With `differsFromToken`, their type differs from every type of the players last shown
+ * (those carrying that token). With `killer`, only the players who match and whose character
+ * the waking player's death is recorded as, when any (the Demon that killed them).
+ */
+function matcher(spec: BlockSpec, ctx: BlockContext) {
+	const { game, seatId, characterId, characters, world } = ctx;
+	const named = spec.alignment || spec.types || spec.woke || spec.differsFromToken;
+	const before = spec.differsFromToken
+		? lastShown(game, seatId, characterId, spec.differsFromToken).map((s) => world.type(s))
+		: [];
+	const base = (s: SeatId) => {
 		if (spec.token && carries(game, s, characterId, spec.token)) return true;
 		if (!named) return false;
 		const type = world.type(s);
 		return (
 			(!spec.alignment || world.alignment(s) === spec.alignment) &&
 			(!spec.types || (type !== undefined && spec.types.includes(type))) &&
-			(!spec.woke || (spec.wokeSeats?.has(s) ?? false))
+			(!spec.woke || (spec.wokeSeats?.has(s) ?? false)) &&
+			(!spec.differsFromToken || !before.includes(type))
 		);
 	};
+	const cause = spec.killer ? game.seats[seatId]?.deathCause : undefined;
+	if (cause === undefined) return base;
+	const killers = game.seating.filter(
+		(s) => s !== seatId && base(s) && trueCharacter(game, s, characters) === cause
+	);
+	return killers.length > 0 ? (s: SeatId) => killers.includes(s) : base;
 }
 
-const namesWho = (spec: BlockSpec) => !!(spec.alignment || spec.types || spec.woke || spec.token);
+const namesWho = (spec: BlockSpec) =>
+	!!(spec.alignment || spec.types || spec.woke || spec.token || spec.differsFromToken);
 
 /**
  * The players a block chooses or shows from: the others (or everyone), only those who register
@@ -109,7 +126,7 @@ export function blockOptions(spec: BlockSpec, ctx: BlockContext): InfoOption[] {
 			const wanted = spec.matching ?? n;
 			return choose(pool(spec, ctx), n).flatMap((seats) => {
 				const matched = seats.filter(match);
-				if (matched.length !== wanted) return [];
+				if (spec.atLeast ? matched.length < wanted : matched.length !== wanted) return [];
 				return [{ seats, ...(matched.length === 1 ? { pivot: matched[0] } : {}) }];
 			});
 		}
@@ -218,6 +235,9 @@ function neighboursOf({ game, seatId, characters }: BlockContext): SeatId[] {
  */
 export function blockFacts(spec: BlockSpec, ctx: BlockContext): SeatId[] {
 	if (spec.scope === 'alive-neighbours') return neighboursOf(ctx);
+	// The players last shown, whose types the ones shown now must differ from.
+	if (spec.differsFromToken)
+		return lastShown(ctx.game, ctx.seatId, ctx.characterId, spec.differsFromToken);
 	const match = matcher(spec, ctx);
 	switch (spec.measure) {
 		case 'alignment':

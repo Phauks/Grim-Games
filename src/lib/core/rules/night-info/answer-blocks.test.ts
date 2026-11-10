@@ -4,7 +4,11 @@
  * presets of them. A custom character asks what no official character does. Rules sources:
  * - https://wiki.bloodontheclocktower.com/Town_Crier (whether a Minion nominated today)
  * - https://wiki.bloodontheclocktower.com/Undertaker (the character of the player executed today)
- * - https://wiki.bloodontheclocktower.com/Godfather (which Outsiders are in play)
+ * - https://wiki.bloodontheclocktower.com/Godfather (which Outsiders are in play; whether an
+ *   Outsider died today)
+ * - https://wiki.bloodontheclocktower.com/Juggler (how many guesses were correct)
+ * - https://wiki.bloodontheclocktower.com/Gossip (whether the statement was true)
+ * - https://wiki.bloodontheclocktower.com/General (which team is winning)
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
@@ -56,6 +60,27 @@ describe('answers building blocks', () => {
 			among: 'executed',
 			preset: 'executed-character'
 		});
+		expect(read({ question: 'outsider-died' })).toEqual({
+			question: 'any',
+			among: 'died',
+			types: ['outsider'],
+			onlyYes: true,
+			preset: 'outsider-died'
+		});
+		expect(read({ question: 'correct-guesses' })).toEqual({
+			question: 'count',
+			among: 'guessed',
+			preset: 'correct-guesses'
+		});
+		expect(read({ question: 'statement-true' })).toEqual({
+			question: 'statement',
+			preset: 'statement-true'
+		});
+		expect(read({ question: 'winning-alignment' })).toEqual({
+			question: 'storyteller',
+			choices: ['good', 'evil', 'neither'],
+			preset: 'winning-alignment'
+		});
 	});
 
 	it('refuses a group that does not fit what is asked', () => {
@@ -75,6 +100,42 @@ describe('answers building blocks', () => {
 		]);
 		expect(issues({ question: 'count', among: 'dead', mark: 'demon-voted' })).toEqual([
 			'x.answers.mark: only `any` takes it'
+		]);
+		expect(issues({ question: 'any', among: 'guessed' })).toEqual([
+			'x.answers.among: only a `count` looks at `guessed`'
+		]);
+		expect(issues({ question: 'count', among: 'dead', onlyYes: true })).toEqual([
+			'x.answers.onlyYes: only `any` takes it'
+		]);
+		expect(issues({ question: 'storyteller' })).toEqual(['x.answers.choices: missing']);
+		expect(issues({ question: 'storyteller', choices: ['good'] })).toEqual([
+			'x.answers.choices: expected two or more of `good`, `evil` and `neither`'
+		]);
+		expect(issues({ question: 'statement', among: 'dead' })).toEqual([
+			'x.answers: only a block that looks at a group takes `among`, `alignment`, `types`, `mark` and `onlyYes`'
+		]);
+	});
+
+	it('learns only a yes when a Minion died today, as the Godfather does an Outsider', () => {
+		// Wiki (Godfather): "If 1 died today, choose a player tonight: they die."
+		const asked = { question: 'any', among: 'died', types: ['minion'], onlyYes: true };
+		const died = seated(asked, ['imp', 'poisoner', 'chef'], (s) => ({
+			type: 'Execute',
+			seatId: s[2]
+		}));
+		expect(died.answer).toMatchObject({ kind: 'yes-no', value: true });
+		const not = seated(asked, ['imp', 'poisoner', 'chef'], (s) => ({
+			type: 'Execute',
+			seatId: s[3]
+		}));
+		expect(not.answer).toMatchObject({ kind: 'none', reason: 'No Minion died today' });
+	});
+
+	it('offers a Storyteller choice of good or evil only', () => {
+		const { answer } = seated({ question: 'storyteller', choices: ['good', 'evil'] }, ['imp']);
+		expect(answer.choices).toEqual([
+			{ kind: 'alignment', value: 'good' },
+			{ kind: 'alignment', value: 'evil' }
 		]);
 	});
 

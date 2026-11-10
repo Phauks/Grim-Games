@@ -34,6 +34,11 @@
 		};
 		/** A players-only game's seat count (plan M55), first in the row. */
 		seats?: Snippet;
+		/**
+		 * The board's shape button; a players-only game has no Storyteller's board to fit, so
+		 * none at all there (Trevor, 2026-11-10).
+		 */
+		matchShape?: boolean;
 		/** Placed in the town's top right itself, for a town without Full screen's corner. */
 		placed?: boolean;
 		/** Placed, the row's size, measured, so the ring of seats keeps clear of it. */
@@ -48,6 +53,7 @@
 		onFinal,
 		info,
 		seats,
+		matchShape = true,
 		placed = false,
 		width = $bindable(0),
 		height = $bindable(0)
@@ -81,7 +87,7 @@
 					onclick={() => (infoOpen = true)}
 				/></span
 			>{/if}
-		<span class="corner-button"><MatchShapeButton disabled={!shaped} /></span>
+		{#if matchShape}<span class="corner-button"><MatchShapeButton disabled={!shaped} /></span>{/if}
 	</div>{/snippet}
 {#if info}<TownGameInfo
 		bind:open={infoOpen}

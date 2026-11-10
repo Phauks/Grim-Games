@@ -9,8 +9,9 @@
 
 	/**
 	 * A seat's guesses in its sheet on the player's Grim, front first (Trevor, 2026-10-25): its
-	 * guesses and, once it has one, the player's avatar (2026-10-26). The front one is pressed;
-	 * a tap on another brings it to the front.
+	 * guesses and, once it has one, the player's avatar (2026-10-26). The front one is pressed.
+	 * What a tap does is the sheet's: a guess comes off (2026-11-10), the avatar comes to the
+	 * front.
 	 */
 	interface Props {
 		entries: readonly {

@@ -56,6 +56,8 @@ const ANSWER_NAMES = [
 	'any',
 	'character',
 	'characters',
+	'statement',
+	'storyteller',
 	'outsider-died',
 	'correct-guesses',
 	'statement-true',
@@ -71,11 +73,23 @@ const ANSWER_NAMES = [
 const ASKED = {
 	question: oneOf(ANSWER_NAMES),
 	among: opt(
-		oneOf(['dead', 'marked', 'abnormal', 'nominators', 'voters', 'executed', 'died', 'everyone'])
+		oneOf([
+			'dead',
+			'marked',
+			'abnormal',
+			'guessed',
+			'nominators',
+			'voters',
+			'executed',
+			'died',
+			'everyone'
+		])
 	),
 	alignment: opt(ALIGNMENT),
 	types: opt(SOME_TYPES),
-	mark: opt(oneOf(['minion-nominated', 'demon-voted']))
+	mark: opt(oneOf(['minion-nominated', 'demon-voted'])),
+	onlyYes: opt(T),
+	choices: opt(anyOf(['good', 'evil', 'neither']))
 };
 const INFO_TOKEN = obj({
 	characters: STRS,
@@ -417,7 +431,10 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		choose: opt(COUNT),
 		matching: opt(COUNT),
 		woke: opt(T),
-		to: opt(SOME_TYPES)
+		to: opt(SOME_TYPES),
+		atLeast: opt(T),
+		killer: opt(T),
+		differsFromToken: opt(TOKEN)
 	}),
 	madAs: obj({
 		token: TOKEN,

@@ -328,9 +328,27 @@ export function readScriptLines(
 	return {
 		found: [...found.values()],
 		unmatched: unmatched.filter((u) => u !== titleText),
-		title: titleText,
+		title: titleOf(titleText),
 		author
 	};
+}
+
+const letterCount = (text: string) => text.replace(/[^\p{L}]/gu, '').length;
+
+/**
+ * A title line cleaned of what the reader picks up beside it: a printed rule running from the
+ * title to a type heading reads as dashes ("—Kingfishing———— (ww", Trevor's sheet,
+ * 2026-11-10), so the part with the most letters between runs of rule characters is kept, a
+ * type heading in it is dropped, and stray marks at its ends are trimmed.
+ */
+export function titleOf(text: string): string {
+	const parts = text.split(/[-–—_=~.·•|]{3,}/);
+	const best = parts.reduce((a, b) => (letterCount(b) > letterCount(a) ? b : a), '');
+	return best
+		.replace(/\b(townsfolk|outsiders?|minions?|demons?|travell?ers?|fabled)\b/gi, ' ')
+		.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}!?)'’]+$/gu, '')
+		.replace(/\s+/g, ' ')
+		.trim();
 }
 
 /**
