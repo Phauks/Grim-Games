@@ -15,18 +15,17 @@
 		type SymbolColour,
 		type SymbolColourPreset
 	} from '#lib/core/model/index.ts';
-	import type { Character, CharacterId, Script } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import { foldForSearch, matchesSearch } from '#lib/features/characters/character-search.ts';
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
-	import CharacterPicker from './CharacterPicker.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { named, TILE_EMOJI, TILE_SYMBOLS } from '#lib/features/setup/tile-face.ts';
 	import TileMarkFace from '#lib/features/setup/TileMarkFace.svelte';
@@ -36,10 +35,11 @@
 	 * (ReminderNoteField) and for the ∞ tokens of the bank and a player's tray
 	 * (GenericLookDialog). Everything fits one phone screen with the keyboard up (Trevor,
 	 * 2026-11-10, option B "Tabs"): the text beside a small preview (`lead`), then the symbol
-	 * in three tabs of one height (Symbols, Emoji and Characters, a character's icon from the
-	 * script or, through the picker, off it), then the colour (presets or any colour picked)
-	 * and the fill. Nothing has a None: a tap on the chosen symbol or colour clears it (Trevor,
-	 * 2026-11-10). A number token (plan M35) has its Number instead of a symbol.
+	 * in tabs of one height (Symbols, Emoji, Characters from the script, and Search over all
+	 * three and every character on or off the script). Each icon is drawn bare, without a
+	 * token behind it (Trevor, 2026-11-10). The colour (presets or any colour picked) and the
+	 * fill sit in the Symbols tab, the only one they change. Nothing has a None: a tap on the
+	 * chosen symbol or colour clears it. A number token (plan M35) has its Number instead.
 	 */
 	interface Props {
 		look: GenericLook;
@@ -103,19 +103,35 @@
 			...scriptCharacters.map((c) => [c.id, c] as const)
 		])
 	);
-	const script: Script = $derived({
-		entries: scriptCharacters.map((c) => ({ kind: 'official' as const, id: c.id }))
-	});
 	const iconCharacter = $derived(iconCharacterId && lookup.get(iconCharacterId));
-	// A character off the script, picked through the picker, shows first in its tab.
+	// A character off the script, picked through Search, shows first in its tab.
 	const characterIcons = $derived(
 		iconCharacter && !scriptCharacters.some((c) => c.id === iconCharacter.id)
 			? [{ value: characterSymbol(iconCharacter.id), label: iconCharacter.name }, ...scriptIcons]
 			: scriptIcons
 	);
-	let picking = $state(false);
+	// Search: every symbol and emoji by name, and every character by name or ability, the
+	// script's first. An empty search lists them all.
+	let query = $state('');
+	const allCharacters = $derived([
+		...scriptCharacters,
+		...[...lookup.values()]
+			.filter((c) => !scriptCharacters.some((s) => s.id === c.id))
+			.sort((a, b) => a.name.localeCompare(b.name))
+	]);
+	const found = $derived.by(() => {
+		const words = foldForSearch(query).split(/\s+/).filter(Boolean);
+		const named = (o: { label: string }) => words.every((w) => foldForSearch(o.label).includes(w));
+		return [
+			...symbols.filter(named),
+			...emoji.filter(named),
+			...allCharacters
+				.filter((c) => matchesSearch(c, query))
+				.map((c) => ({ value: characterSymbol(c.id), label: c.name }))
+		];
+	});
 
-	type SymbolTab = 'symbols' | 'emoji' | 'characters';
+	type SymbolTab = 'symbols' | 'emoji' | 'characters' | 'search';
 	const shownTab = (s: string): SymbolTab =>
 		symbolCharacter(s) ? 'characters' : s && !s.startsWith('ph:') ? 'emoji' : 'symbols';
 	// Opens on the tab of the symbol it has.
@@ -178,105 +194,107 @@
 		/>
 	{/if}
 {:else}
-	<!-- Three tabs of one height, each scrolling on its own (no reflow). -->
+	<!-- Tabs of one height, each scrolling on its own (no reflow). -->
 	<div class="symbols" data-testid="symbol-choices">
 		<Tabs
 			bind:value={tab}
 			steady
+			dense
 			label="Symbol"
 			tabs={[
 				{ value: 'symbols', label: 'Symbols' },
 				{ value: 'emoji', label: 'Emoji' },
-				{ value: 'characters', label: 'Characters' }
+				{ value: 'characters', label: 'Characters' },
+				{ value: 'search', label: 'Search', icon: 'search', iconOnly: true }
 			]}
 		>
 			{#snippet panel(v)}
-				<div class="grid">
-					<!-- First, so it is in view without scrolling the icons. -->
-					{#if v === 'characters'}
-						<IconButton
-							icon="search"
-							label="More characters"
-							outlined
-							onclick={() => (picking = true)}
-						/>
+				<div class="panel">
+					{#if v === 'search'}
+						<TextField label="Search" hideLabel type="search" bind:value={query} />
 					{/if}
-					<ChoiceGroup
-						label={v === 'symbols' ? 'Symbols' : v === 'emoji' ? 'Emoji' : 'Characters'}
-						hideLabel
-						layout="row"
-						clearable
-						value={symbol}
-						options={v === 'symbols' ? symbols : v === 'emoji' ? emoji : characterIcons}
-						onChange={onSymbol}
-					>
-						{#snippet item(option)}{@render choice(option)}{/snippet}
-					</ChoiceGroup>
+					<div class="grid" data-fill={v !== 'symbols' || undefined}>
+						{#if v === 'search' && found.length === 0}<span class="none">None</span>{/if}
+						<ChoiceGroup
+							label={v === 'symbols'
+								? 'Symbols'
+								: v === 'emoji'
+									? 'Emoji'
+									: v === 'characters'
+										? 'Characters'
+										: 'Found'}
+							hideLabel
+							layout="row"
+							clearable
+							value={symbol}
+							options={v === 'symbols'
+								? symbols
+								: v === 'emoji'
+									? emoji
+									: v === 'characters'
+										? characterIcons
+										: found}
+							onChange={onSymbol}
+						>
+							{#snippet item(option)}{@render choice(option)}{/snippet}
+						</ChoiceGroup>
+					</div>
+					{#if v === 'symbols'}{@render colourRow()}{@render fillToggle()}{/if}
 				</div>
 			{/snippet}
 		</Tabs>
 	</div>
 {/if}
 
-<div class="colours">
-	<ChoiceGroup
-		label={number !== undefined ? 'Colour' : 'Symbol colour'}
-		layout="row"
-		clearable
-		value={colour !== undefined && isPresetColour(colour) ? colour : ''}
-		options={colours}
-		onChange={(v) => onColour(v ? (v as SymbolColour) : undefined)}
-		disabled={!colourable}
-	>
-		{#snippet item(option)}{@render swatch(option)}{/snippet}
-	</ChoiceGroup>
-	<!-- Any colour (Trevor, 2026-11-10: "at least option for full custom"), in the browser's
-		 own colour picker, as Settings' colours are (SettingColor). -->
-	<label
-		class="custom"
-		data-chosen={custom !== undefined || undefined}
-		data-disabled={!colourable || undefined}
-		title="Custom colour"
-	>
-		<span class="visually-hidden">Custom colour</span>
-		<span class="swatch wheel" style:background={custom}></span>
-		<input
-			type="color"
-			value={custom}
-			disabled={!colourable}
-			onclick={customTap}
-			oninput={(event) => {
-				const picked = event.currentTarget.value.toLowerCase();
-				if (isSymbolColour(picked)) onColour(picked);
-			}}
-			data-testid="custom-colour"
-		/>
-	</label>
-</div>
+{#if number !== undefined}{@render colourRow()}{/if}
 
-<!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. A
-	 number is never drawn filled. -->
-{#if number === undefined}
+{#snippet colourRow()}
+	<div class="colours">
+		<ChoiceGroup
+			label={number !== undefined ? 'Colour' : 'Symbol colour'}
+			layout="row"
+			clearable
+			value={colour !== undefined && isPresetColour(colour) ? colour : ''}
+			options={colours}
+			onChange={(v) => onColour(v ? (v as SymbolColour) : undefined)}
+			disabled={!colourable}
+		>
+			{#snippet item(option)}{@render swatch(option)}{/snippet}
+		</ChoiceGroup>
+		<!-- Any colour (Trevor, 2026-11-10: "at least option for full custom"), in the browser's
+		 own colour picker, as Settings' colours are (SettingColor). -->
+		<label
+			class="custom"
+			data-chosen={custom !== undefined || undefined}
+			data-disabled={!colourable || undefined}
+			title="Custom colour"
+		>
+			<span class="visually-hidden">Custom colour</span>
+			<span class="swatch wheel" style:background={custom}></span>
+			<input
+				type="color"
+				value={custom}
+				disabled={!colourable}
+				onclick={customTap}
+				oninput={(event) => {
+					const picked = event.currentTarget.value.toLowerCase();
+					if (isSymbolColour(picked)) onColour(picked);
+				}}
+				data-testid="custom-colour"
+			/>
+		</label>
+	</div>
+{/snippet}
+
+{#snippet fillToggle()}
+	<!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. -->
 	<Toggle
 		label="Filled symbol"
 		checked={!!look.symbolFill}
 		onChange={onFill}
 		disabled={!iconSymbol}
 	/>
-{/if}
-
-<CharacterPicker
-	bind:open={picking}
-	title="Character icon"
-	characters={lookup}
-	{script}
-	types={['townsfolk', 'outsider', 'minion', 'demon', 'traveller', 'fabled', 'loric']}
-	current={iconCharacterId}
-	onPick={(id) => {
-		onSymbol(characterSymbol(id));
-		picking = false;
-	}}
-/>
+{/snippet}
 
 {#snippet swatch(option: { value: string; label: string })}
 	<span
@@ -289,9 +307,10 @@
 {#snippet choice(option: { value: string; label: string })}
 	{@const character = symbolCharacter(option.value)}
 	<span class="face" title={option.label}
-		>{#if character && lookup.get(character)}<CharacterToken
-				character={lookup.get(character)!}
-				size={30}
+		>{#if character && lookup.get(character)}<CharacterPiece
+				template="icon"
+				character={lookup.get(character)}
+				label=""
 			/>{:else if option.value.startsWith('ph:')}<TileMarkFace
 				mark={{ kind: 'symbol', icon: option.value, name: option.label }}
 			/>{:else}<TileMarkFace
@@ -318,6 +337,17 @@
 	.face :global(.mark) {
 		font-size: 0.75em;
 	}
+	/* A character's icon alone, the size of a symbol, with no token behind it. */
+	.face {
+		--character-icon-size: 1.6em;
+	}
+	/* Every tab as tall as Symbols (its icons, colour and fill); the others' icons fill it. */
+	.panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		height: 100%;
+	}
 	/* About two and a half rows in view under the tabs; the rest scroll inside. */
 	.grid {
 		display: flex;
@@ -329,7 +359,11 @@
 		overscroll-behavior: contain;
 		padding: calc(0.25 * var(--u));
 	}
-	/* The options and More characters flow as one run of cells. */
+	.grid[data-fill] {
+		flex: 1 1 0;
+		height: 0;
+		max-height: none;
+	}
 	/* Doubled, to win over ChoiceGroup's own row layout. */
 	.grid.grid :global([data-scope='radio-group'][data-part='root']),
 	.grid.grid :global([data-scope='radio-group'] .options) {

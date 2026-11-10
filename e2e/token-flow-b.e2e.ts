@@ -123,7 +123,7 @@ test("the Storyteller's new ∞ token goes into the hand on Confirm, and the pil
 	await expect(placed).toHaveCount(1);
 });
 
-test('the editor fits above the keyboard: tabs, a character icon, any colour, tap again to clear', async ({
+test('the editor fits above the keyboard: tabs, a bare character icon, search, any colour, tap again to clear', async ({
 	page
 }) => {
 	const { tray, make } = await playerGrim(page);
@@ -143,15 +143,24 @@ test('the editor fits above the keyboard: tabs, a character icon, any colour, ta
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 	});
 	await expect(preview.locator('[data-symbol^="ph:"]')).toHaveCSS('color', 'rgb(58, 127, 92)');
-	// A character's icon, from the script or, through the picker, off it.
+	// The colour and fill are only under Symbols.
+	await editor.getByRole('tab', { name: 'Emoji', exact: true }).tap();
+	await expect(editor.getByTestId('custom-colour')).toBeHidden();
+	await expect(editor.getByRole('checkbox', { name: 'Filled symbol' })).toBeHidden();
+	// A character's icon, bare (no token behind it), from the script or, through Search
+	// (which also finds symbols and emoji), off it.
 	await editor.getByRole('tab', { name: 'Characters', exact: true }).tap();
-	await editor.getByRole('button', { name: 'More characters' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Character icon' });
-	await picker.getByText('Include characters not on the script').tap();
-	await picker.getByRole('searchbox').fill('Vortox');
-	await picker.getByRole('button', { name: 'Vortox' }).tap();
-	await expect(picker).toBeHidden();
+	await expect(
+		editor.getByRole('radio', { name: 'Washerwoman' }).locator('..').locator('img')
+	).toBeVisible();
+	await editor.getByRole('tab', { name: 'Search', exact: true }).tap();
+	const search = editor.getByRole('searchbox', { name: 'Search' });
+	await search.fill('heart');
+	await expect(editor.getByRole('radio', { name: 'Heart', exact: true })).toBeVisible();
+	await search.fill('Vortox');
+	await editor.getByRole('radio', { name: 'Vortox' }).locator('..').tap();
 	await expect(preview.locator('img')).toBeVisible();
+	await editor.getByRole('tab', { name: 'Characters', exact: true }).tap();
 	await expect(editor.getByRole('radio', { name: 'Vortox' })).toBeChecked();
 	// Everything is on screen with the keyboard taking the lower part (a phone held upright).
 	await page.evaluate(() =>

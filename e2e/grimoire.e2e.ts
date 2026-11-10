@@ -6217,9 +6217,11 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await text.press('Enter');
 	// Its own symbol (Trevor, 2026-10-19: chosen per token); none by default.
 	await pickLook(page, 'Owl');
-	// Its symbol's colour (Trevor, 2026-10-20: per token): kept in place, but an emoji keeps
-	// its own colours, so it waits for an icon symbol.
+	// Its symbol's colour (Trevor, 2026-10-20: per token): only under Symbols (Trevor,
+	// 2026-11-10), and an emoji keeps its own colours, so it waits for an icon symbol.
 	const colour = page.getByRole('radio', { name: 'Red', exact: true });
+	await expect(colour).toBeHidden();
+	await page.getByRole('tab', { name: 'Symbols', exact: true }).tap();
 	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);

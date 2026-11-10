@@ -12,8 +12,11 @@
 
 	interface Props {
 		value?: T;
-		/** `icon` draws over the label in a bottom bar. */
-		tabs: { value: T; label: string; icon?: IconSlot }[];
+		/**
+		 * `icon` draws over the label in a bottom bar; with `iconOnly`, in place of the label on
+		 * a top row, the label then only read out (a Search tab beside named ones).
+		 */
+		tabs: { value: T; label: string; icon?: IconSlot; iconOnly?: boolean }[];
 		/** Renders the panel for one tab. */
 		panel: Snippet<[T]>;
 		label?: string;
@@ -29,6 +32,11 @@
 		 * line or pill.
 		 */
 		placement?: 'top' | 'bottom';
+		/**
+		 * Less space either side of each tab's name, so more tabs fit on the row before any
+		 * move into ⋯ (the token editor's four on a phone). The tabs still share the row.
+		 */
+		dense?: boolean;
 	}
 
 	let {
@@ -37,7 +45,8 @@
 		panel,
 		label,
 		steady = false,
-		placement = 'top'
+		placement = 'top',
+		dense = false
 	}: Props = $props();
 	const bottom = $derived(placement === 'bottom');
 
@@ -99,7 +108,7 @@
 {/snippet}
 
 <Tabs.Root
-	class={bottom ? 'bottom' : undefined}
+	class={[bottom && 'bottom', dense && 'dense']}
 	value={selected}
 	onValueChange={(details) => (value = details.value as T)}
 	lazyMount={!steady}
@@ -107,12 +116,14 @@
 	<div class="bar" bind:this={bar} data-bottom-bar={bottom ? '' : undefined}>
 		<Tabs.List aria-label={label}>
 			{#each onRow as tab (tab.value)}
-				<Tabs.Trigger value={tab.value}>
+				<Tabs.Trigger value={tab.value} data-icon-only={(!bottom && tab.iconOnly) || undefined}>
 					{#if bottom && tab.icon}
 						<span class="tab-icon">
 							<Icon name={tab.icon} weight={tab.value === selected ? 'fill' : undefined} />
 						</span>
-					{/if}<span>{tab.label}</span>
+					{/if}{#if !bottom && tab.icon && tab.iconOnly}<Icon name={tab.icon} /><span
+							class="visually-hidden">{tab.label}</span
+						>{:else}<span>{tab.label}</span>{/if}
 				</Tabs.Trigger>
 			{/each}
 			{#if !bottom}<Tabs.Indicator />{/if}
@@ -128,11 +139,16 @@
 			/>
 		{/if}
 		<!-- The tabs' natural widths, unseen, to tell how many fit. -->
-		<div class="sizes" aria-hidden="true">
+		<div class="sizes" aria-hidden="true" data-dense={dense || undefined}>
 			<div class="faces" bind:this={measure}>
-				{#each tabs as tab (tab.value)}<span class="face" data-face
+				{#each tabs as tab (tab.value)}<span
+						class="face"
+						data-face
+						data-icon-only={(!bottom && tab.iconOnly) || undefined}
 						>{#if bottom && tab.icon}<span class="tab-icon"><Icon name={tab.icon} /></span
-							>{/if}{tab.label}</span
+							>{/if}{#if !bottom && tab.icon && tab.iconOnly}<Icon
+								name={tab.icon}
+							/>{:else}{tab.label}{/if}</span
 					>{/each}
 				<span class="more" data-more></span>
 			</div>
@@ -211,6 +227,15 @@
 	}
 	.face {
 		flex: none;
+	}
+	:global(.dense) :global([data-scope='tabs'][data-part='trigger']),
+	.sizes[data-dense] .face {
+		padding-inline: var(--space-1);
+	}
+	/* An icon alone is still a whole tap target wide. */
+	:global([data-scope='tabs'][data-part='trigger'][data-icon-only]),
+	.face[data-icon-only] {
+		min-width: var(--tap-target);
 	}
 	.more {
 		flex: none;
