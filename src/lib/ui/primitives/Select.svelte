@@ -140,7 +140,8 @@
 			return;
 		}
 		if (multiple) onValuesChange?.(next);
-		else if (next[0]) onChange?.(next[0]);
+		// An option may be '' (a "None" row), so only an empty pick is skipped.
+		else if (next[0] !== undefined) onChange?.(next[0]);
 	}
 	const items = $derived([
 		...(onClear && !multiple ? [{ value: NONE, label: t('common.none') }] : []),
