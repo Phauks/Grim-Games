@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { openBin } from './reminder-bank.ts';
 
@@ -53,4 +53,47 @@ test("the Storyteller's bank has the player's tray's search", async ({ page }) =
 	await expect(bin.getByTestId('board-reminder')).toHaveCount(0);
 	await search.fill('');
 	await expect(bin.getByTestId('board-reminder').first()).toBeVisible();
+});
+
+// Trevor (2026-11-10, phone): searching the bank found the tokens, but under the on-screen
+// keyboard. The keyboard is played by `--keyboard-inset` (keyboard-inset.ts), as in setup.e2e.ts:
+// over the lower 45% of the screen, the tokens found and the tray's foot stay above it.
+async function searchOverKeyboard(page: Page, bin: Locator) {
+	const search = bin.getByRole('searchbox', { name: 'Search reminders' });
+	await search.focus();
+	const height = page.viewportSize()!.height;
+	await page.evaluate(
+		(inset) => document.documentElement.style.setProperty('--keyboard-inset', `${inset}px`),
+		Math.round(height * 0.45)
+	);
+	await search.fill('poison');
+	const found = bin.getByRole('button', { name: 'Poisoned reminder' });
+	await expect(found).toBeVisible();
+	for (const box of [await found.boundingBox(), await bin.boundingBox()]) {
+		expect(box!.y + box!.height).toBeLessThanOrEqual(height * 0.55 + 1);
+	}
+	expect((await search.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+}
+
+test("the tokens the Storyteller's bank search finds stay above the keyboard", async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await searchOverKeyboard(page, await openBin(page));
+});
+
+test("the tokens a player's tray search finds stay above the keyboard", async ({ page }) => {
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await searchOverKeyboard(page, await openBin(page));
 });

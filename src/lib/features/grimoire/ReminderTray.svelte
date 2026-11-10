@@ -116,6 +116,24 @@
 		// A short pull is enough either way: up opens it, down closes it.
 		if (open ? up < -PULL : up > PULL) open = !open;
 	}
+	/**
+	 * Pulled up, how far its foot sits above the bottom of the page, in px. Typing in its search
+	 * on a phone, the on-screen keyboard covers the page's foot and the tokens with it (Trevor,
+	 * 2026-11-10), so it rises clear of the keyboard (`--keyboard-inset`, keyboard-inset.ts) by
+	 * as much as the keyboard reaches past this.
+	 */
+	let below = $state(0);
+	function measureBelow() {
+		// Measured where it docks, not where it has risen to.
+		if (!el || el.matches(':focus-within')) return;
+		below = Math.max(0, Math.round(window.innerHeight - el.getBoundingClientRect().bottom));
+	}
+	$effect(() => {
+		if (!tall) return;
+		measureBelow();
+		window.addEventListener('resize', measureBelow);
+		return () => window.removeEventListener('resize', measureBelow);
+	});
 	const binGroups = $derived(groups.filter((g) => g.items.length > 0));
 	/**
 	 * A token dragged out of it pulled up: let go, it stays down in its closed state (Trevor,
@@ -274,6 +292,7 @@
 	data-tray
 	bind:this={el}
 	style:--reach={tall ? `${pullH ?? openH}px` : undefined}
+	style:--below={tall ? `${below}px` : undefined}
 	style:--tray-h={inside ? `${inside.height}px` : undefined}
 >
 	<!-- Every caption measured from the start, hidden, so each stretch has its room before its
@@ -386,6 +405,18 @@
 		max-height: calc(var(--tray-h) + var(--reach));
 		background: var(--surface-raised);
 		box-shadow: var(--shadow);
+	}
+	/* Searching with the on-screen keyboard up: it rises clear of the keyboard, so the tokens
+	   found stay in view (Trevor, 2026-11-10), and is no taller than what is left above it. */
+	.tray.tall:focus-within {
+		translate: 0 calc(-1 * max(0rem, var(--keyboard-inset, 0rem) - var(--below, 0rem)));
+		max-height: min(
+			calc(var(--tray-h) + var(--reach)),
+			calc(
+				100dvh - max(var(--below, 0rem), var(--keyboard-inset, 0rem)) - var(--keyboard-top, 0rem) -
+					var(--space-2)
+			)
+		);
 	}
 	/* Pulled by its handle: it follows the finger. */
 	.tray.pulling {
