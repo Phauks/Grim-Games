@@ -95,6 +95,19 @@ export class TrayGestures {
 		)
 	);
 
+	/**
+	 * The token in hand, dragged or held, as it would go down: what a player's grim marks its
+	 * seats for (hand-marks.ts), as the board's SeatHints does.
+	 */
+	get inHand(): TrayTokenFace | undefined {
+		const places = this.#places();
+		if (this.trayDrag) return this.face(this.trayDrag.item);
+		if (this.placedDrag) return places.placed(this.placedDrag.reminderId);
+		const held = this.hand.held;
+		if (held?.kind === 'placed') return places.placed(held.reminderId);
+		return held && this.face(held.item);
+	}
+
 	// ── The tray's own ∞ tokens: the editor and Delete's question ──
 	editing = $state<string>();
 	editorOpen = $state(false);
