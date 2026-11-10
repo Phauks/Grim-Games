@@ -2,11 +2,18 @@
  * Night information: answers worked out from the day log and the grimoire, one per
  * `answers` question in a character's rules block. Part of `night-info.ts`.
  */
-import type { Answers } from '#lib/core/data/character-rules.ts';
+import type { AnswerGroup, Answers } from '#lib/core/data/character-rules.ts';
+import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { getSeat, registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import {
+	alignmentOf,
+	getSeat,
+	registersAsDead,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type {
 	AbnormalCause,
 	CharacterGuess,
@@ -35,146 +42,6 @@ function entriesOf<K extends DayEntry['kind']>(game: Game, kind: K) {
 }
 
 /**
- * Town Crier: whether a Minion nominated today, and who
- * (https://wiki.bloodontheclocktower.com/Town_Crier). Uses each nominator's true character;
- * a Recluse who nominated might register as a Minion and a Spy might not (`possible`).
- *
- * The Storyteller's Minion nominated mark (`dayMark`), when set and not the same as the
- * nominations recorded, is the answer. Otherwise it comes from the nominations recorded today (seat sheet or day view). With none
- * recorded the app can't tell a day without nominations from one nobody recorded, so it
- * gives no answer rather than "no" (Trevor, 2026-10-23).
- */
-function minionNominated(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup
-): NightAnswer {
-	const nominators = entriesOf(game, 'nomination')
-		.map((e) => e.nominator)
-		.filter((s, i, all) => all.indexOf(s) === i);
-	const marked = game.today.marks?.['minion-nominated'];
-	// A mark that agrees with the nominations recorded (a Minion's nomination marks it) keeps
-	// the answer from those nominations, with who might register otherwise.
-	const recorded = nominators.some((s) => typeOf(game, s, characters) === 'minion');
-	if (marked !== undefined && (nominators.length === 0 || marked !== recorded)) {
-		const minions = game.seating.filter((s) => typeOf(game, s, characters) === 'minion');
-		return answer(
-			game,
-			seatId,
-			characterId,
-			characters,
-			{ kind: 'yes-no', value: marked },
-			marked ? minions.filter((s) => nominators.includes(s)) : [],
-			{ facts: minions.map((s) => fact(game, s, characters)) }
-		);
-	}
-	if (nominators.length === 0) {
-		return answer(
-			game,
-			seatId,
-			characterId,
-			characters,
-			{ kind: 'none', reason: 'No nominations recorded today' },
-			[],
-			{ relevant: [] }
-		);
-	}
-	const w = byWorld(game, seatId, characters, (world) => ({
-		kind: 'yes-no',
-		value: nominators.some((s) => world.type(s) === 'minion')
-	}));
-	const [base] = w.worlds;
-	const minions = nominators.filter((s) => base.type(s) === 'minion');
-	return answer(
-		game,
-		seatId,
-		characterId,
-		characters,
-		{ kind: 'yes-no', value: minions.length > 0 },
-		minions,
-		{
-			possible: w.possible,
-			relevant: w.relevant,
-			facts: nominators.map((s) => fact(game, s, characters, base)),
-			alternatives: w.alternatives
-		}
-	);
-}
-
-/**
- * Flowergirl: whether the Demon voted today (https://wiki.bloodontheclocktower.com/Flowergirl).
- * Votes are not tracked, so this is the Storyteller's "Demon voted" mark.
- */
-function demonVoted(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup
-): NightAnswer {
-	const demons = game.seating.filter((s) => typeOf(game, s, characters) === 'demon');
-	const voted = game.today.marks?.['demon-voted'];
-	return answer(
-		game,
-		seatId,
-		characterId,
-		characters,
-		voted === undefined
-			? { kind: 'none', reason: 'Mark whether the Demon voted today' }
-			: { kind: 'yes-no', value: voted },
-		voted ? demons : [],
-		// Votes are not tracked, so anyone who may register as the Demon stays relevant.
-		{ facts: demons.map((s) => fact(game, s, characters)) }
-	);
-}
-
-/**
- * Undertaker: the character of the player who died by execution today
- * (https://wiki.bloodontheclocktower.com/Undertaker). The grimoire's true character: the
- * Drunk shows as the Drunk. Nobody died by execution: the Undertaker learns nothing.
- *
- * Today's execution comes from the day log; when the log has none (the Storyteller ran the
- * day without the day screen), from the dead player carrying the Undertaker's "Died Today"
- * reminder, which is how the Storyteller marks it on the board (it comes off at dawn,
- * `reminderEnds`, so one left from an earlier day never counts). With two executions today
- * (outside Trouble Brewing), the Storyteller picks which character to show: the answer names
- * the latest, both are its reasons, and each is a `possible` answer.
- */
-function executedCharacter(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup,
-	rule: Answers
-): NightAnswer {
-	const logged = entriesOf(game, 'execution')
-		.filter((e) => e.died && getSeat(game, e.seatId)?.dead)
-		.map((e) => e.seatId);
-	const token =
-		logged.length === 0 && rule.token ? marked(game, characterId, rule.token) : undefined;
-	const executed = [...new Set(token ? [token.seatId] : logged)];
-	const latest = executed.at(-1);
-	const id = latest === undefined ? undefined : trueCharacter(game, latest, characters);
-	return answer(
-		game,
-		seatId,
-		characterId,
-		characters,
-		id === undefined
-			? { kind: 'none', reason: 'Nobody died by execution today' }
-			: { kind: 'character', value: id },
-		executed,
-		{
-			relevant: executed,
-			facts: executed.map((s) => fact(game, s, characters)),
-			possible: [
-				...new Set([...executed].reverse().flatMap((s) => trueCharacter(game, s, characters) ?? []))
-			].map((value): AnswerValue => ({ kind: 'character', value }))
-		}
-	);
-}
-
-/**
  * What happened today that the game alone does not hold, from the log (`diedToday` in the
  * engine): who died since the most recent New day.
  */
@@ -182,6 +49,278 @@ export interface NightToday {
 	died: readonly SeatId[];
 	/** Revived since the New day: a first-night-only character wakes again (the Professor's). */
 	revived?: readonly SeatId[];
+}
+
+/** Why a building block has nothing to answer, by the group it looks at. */
+const EMPTY: Readonly<Record<AnswerGroup['among'], string>> = {
+	dead: 'Nobody is dead',
+	marked: 'Nobody carries its reminders',
+	abnormal: 'No abnormal abilities recorded',
+	nominators: 'No nominations recorded today',
+	voters: 'Votes are not recorded',
+	executed: 'Nobody died by execution today',
+	died: 'Nobody died today',
+	everyone: 'No players'
+};
+
+/** What the Storyteller marks for a day mark nobody has set yet. */
+const UNMARKED: Readonly<Record<DayMark, string>> = {
+	'demon-voted': 'Mark whether the Demon voted today',
+	'minion-nominated': 'Mark whether a Minion nominated today'
+};
+
+type BlockRule = Answers & AnswerGroup;
+
+/**
+ * The players a building block looks at (`AnswerGroup.among`), or undefined for a group the app
+ * does not record (`voters`). Not for `abnormal`, which `abnormalAbilities` counts.
+ */
+function groupOf(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: BlockRule,
+	today?: NightToday
+): SeatId[] | undefined {
+	const carrying = (s: SeatId) =>
+		rule.token !== undefined &&
+		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === rule.token);
+	switch (rule.among) {
+		case 'dead':
+			return game.seating.filter((s) => registersAsDead(game, s, characters));
+		case 'marked':
+			return markedSeats(game, characterId);
+		case 'nominators':
+			return entriesOf(game, 'nomination')
+				.map((e) => e.nominator)
+				.filter((s, i, all) => all.indexOf(s) === i);
+		case 'voters':
+		case 'abnormal':
+			return undefined;
+		case 'executed': {
+			// Today's executions from the day log; when the log has none (the Storyteller ran the
+			// day without the day screen), the dead player carrying `token`, which is how the
+			// Storyteller marks it on the board (it comes off at dawn, `reminderEnds`).
+			const logged = entriesOf(game, 'execution')
+				.filter((e) => e.died && getSeat(game, e.seatId)?.dead)
+				.map((e) => e.seatId);
+			const token =
+				logged.length === 0 && rule.token ? marked(game, characterId, rule.token) : undefined;
+			return [...new Set(token ? [token.seatId] : logged)];
+		}
+		case 'died': {
+			const died = new Set([
+				...(today?.died ?? []),
+				...[...entriesOf(game, 'execution'), ...entriesOf(game, 'exile')]
+					.filter((e) => e.died)
+					.map((e) => e.seatId),
+				...game.seating.filter(carrying)
+			]);
+			return game.seating.filter((s) => died.has(s) && getSeat(game, s)?.dead);
+		}
+		case 'everyone':
+			return [...game.seating];
+	}
+}
+
+/** Whether a player truly is what the block looks for: their true character type and alignment. */
+function trulyMatches(game: Game, s: SeatId, rule: BlockRule, characters: CharacterLookup) {
+	const type = typeOf(game, s, characters);
+	return (
+		(!rule.types || (type !== undefined && rule.types.includes(type))) &&
+		(!rule.alignment || alignmentOf(game, s) === rule.alignment)
+	);
+}
+
+/** Whether a player registers as what the block looks for, when players register as `world` says. */
+function registersAs(world: RegistrationWorld, s: SeatId, rule: BlockRule) {
+	const type = world.type(s);
+	return (
+		(!rule.types || (type !== undefined && rule.types.includes(type))) &&
+		(!rule.alignment || world.alignment(s) === rule.alignment)
+	);
+}
+
+/**
+ * `any`: whether any player of the group matches. The Town Crier learns whether a Minion
+ * nominated today (https://wiki.bloodontheclocktower.com/Town_Crier), the Flowergirl whether
+ * the Demon voted today (https://wiki.bloodontheclocktower.com/Flowergirl). Who matches goes by
+ * how players register: a Recluse who nominated might register as a Minion and a Spy might not
+ * (`possible`).
+ *
+ * The Storyteller's day mark (`mark`), when set and not the same as the group recorded, is the
+ * answer; for a group the app does not record (votes), it is the only answer. With nobody
+ * recorded in the group the app can't tell a day without nominations from one nobody
+ * recorded, so it gives no answer rather than "no" (Trevor, 2026-10-23).
+ */
+function anyAnswer(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: Answers,
+	today?: NightToday
+): NightAnswer {
+	const block = rule as BlockRule;
+	const group = groupOf(game, characterId, characters, block, today);
+	const truly = (s: SeatId) => trulyMatches(game, s, block, characters);
+	const marked = block.mark ? game.today.marks?.[block.mark] : undefined;
+	// A mark that agrees with the group recorded keeps the answer from that group, with who
+	// might register otherwise.
+	const recorded = group?.some(truly) ?? false;
+	if (marked !== undefined && (!group || group.length === 0 || marked !== recorded)) {
+		const matching = game.seating.filter(truly);
+		return answer(
+			game,
+			seatId,
+			characterId,
+			characters,
+			{ kind: 'yes-no', value: marked },
+			marked ? (group ? matching.filter((s) => group.includes(s)) : matching) : [],
+			{ facts: matching.map((s) => fact(game, s, characters)) }
+		);
+	}
+	if (!group) {
+		// Votes are not recorded, so anyone who may register as wanted stays relevant.
+		const matching = game.seating.filter(truly);
+		return answer(
+			game,
+			seatId,
+			characterId,
+			characters,
+			{ kind: 'none', reason: block.mark ? UNMARKED[block.mark] : EMPTY[block.among] },
+			[],
+			{ facts: matching.map((s) => fact(game, s, characters)) }
+		);
+	}
+	if (group.length === 0) {
+		return answer(
+			game,
+			seatId,
+			characterId,
+			characters,
+			{ kind: 'none', reason: EMPTY[block.among] },
+			[],
+			{ relevant: [] }
+		);
+	}
+	const w = byWorld(game, seatId, characters, (world) => ({
+		kind: 'yes-no',
+		value: group.some((s) => registersAs(world, s, block))
+	}));
+	const [base] = w.worlds;
+	const matching = group.filter((s) => registersAs(base, s, block));
+	return answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		{ kind: 'yes-no', value: matching.length > 0 },
+		matching,
+		{
+			possible: w.possible,
+			relevant: w.relevant,
+			facts: group.map((s) => fact(game, s, characters, base)),
+			alternatives: w.alternatives
+		}
+	);
+}
+
+/**
+ * `character`: the character of the latest player in the group who matches. The Undertaker
+ * learns the character of the player who died by execution today
+ * (https://wiki.bloodontheclocktower.com/Undertaker). The grimoire's true character: the Drunk
+ * shows as the Drunk. Nobody in the group: nothing is learnt. With two in it (two executions
+ * outside Trouble Brewing), the Storyteller picks which to show: the answer names the latest,
+ * both are its reasons, and each is a `possible` answer.
+ */
+function characterAnswer(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: Answers,
+	today?: NightToday
+): NightAnswer {
+	const block = rule as BlockRule;
+	const group = (groupOf(game, characterId, characters, block, today) ?? []).filter((s) =>
+		trulyMatches(game, s, block, characters)
+	);
+	const latest = group.at(-1);
+	const id = latest === undefined ? undefined : trueCharacter(game, latest, characters);
+	return answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		id === undefined
+			? { kind: 'none', reason: EMPTY[block.among] }
+			: { kind: 'character', value: id },
+		group,
+		{
+			relevant: group,
+			facts: group.map((s) => fact(game, s, characters)),
+			possible: [
+				...new Set([...group].reverse().flatMap((s) => trueCharacter(game, s, characters) ?? []))
+			].map((value): AnswerValue => ({ kind: 'character', value }))
+		}
+	);
+}
+
+/**
+ * `characters`: the characters of the one type in `types` among the group. The Godfather starts
+ * knowing which Outsiders are in play (https://wiki.bloodontheclocktower.com/Godfather): the
+ * Storyteller shows the character tokens of every Outsider in play. Worked out from each
+ * player's true character:
+ * - a Drunk is an Outsider though their token is a Townsfolk, so the Drunk is shown
+ *   (https://wiki.bloodontheclocktower.com/Drunk), and an Outsider whose player is drunk or
+ *   poisoned is still in play;
+ * - dead players' characters are still in play
+ *   (https://wiki.bloodontheclocktower.com/Glossary, "In play");
+ * - with none in play the answer is no characters: knowing which are in play includes
+ *   knowing there are none (our reading of the ability; the wiki page doesn't say);
+ * - registration changes what detecting abilities learn (Glossary, "Register"): a Recluse
+ *   registering as a Minion or Demon may be left out
+ *   (https://wiki.bloodontheclocktower.com/Recluse), and a Spy registering as an Outsider
+ *   adds one Outsider of the Storyteller's choice (`more`,
+ *   https://wiki.bloodontheclocktower.com/Spy). Each is an allowed answer, the true one first.
+ * A drunk or poisoned Godfather may be shown anything (`unreliable`, Glossary, "Drunk").
+ */
+function charactersAnswer(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: Answers,
+	today?: NightToday
+): NightAnswer {
+	const block = rule as BlockRule;
+	const type = block.types![0];
+	const group = groupOf(game, characterId, characters, block, today) ?? [];
+	const valueIn = (world: RegistrationWorld): AnswerValue => {
+		const ids: CharacterId[] = [];
+		let more = 0;
+		for (const s of group) {
+			if (!registersAs(world, s, block)) continue;
+			const id = trueCharacter(game, s, characters);
+			if (typeOf(game, s, characters) !== type || !id) more++;
+			else if (!ids.includes(id)) ids.push(id);
+		}
+		return {
+			kind: 'characters',
+			type,
+			value: ids,
+			...(more > 0 ? { more: { count: more, type } } : {})
+		};
+	};
+	const w = byWorld(game, seatId, characters, valueIn);
+	const holders = group.filter((s) => trulyMatches(game, s, block, characters));
+	return answer(game, seatId, characterId, characters, valueIn(w.worlds[0]), holders, {
+		possible: w.possible,
+		relevant: w.relevant,
+		facts: holders.map((s) => fact(game, s, characters)),
+		alternatives: w.alternatives
+	});
 }
 
 /**
@@ -223,56 +362,6 @@ function outsiderDied(
 		outsiders,
 		{ relevant: outsiders, facts: outsiders.map((s) => fact(game, s, characters)) }
 	);
-}
-
-/**
- * Godfather, first night: "You start knowing which Outsiders are in play"
- * (https://wiki.bloodontheclocktower.com/Godfather): the Storyteller shows the character
- * tokens of every Outsider in play. Worked out from each player's true character:
- * - a Drunk is an Outsider though their token is a Townsfolk, so the Drunk is shown
- *   (https://wiki.bloodontheclocktower.com/Drunk), and an Outsider whose player is drunk or
- *   poisoned is still in play;
- * - dead players' characters are still in play
- *   (https://wiki.bloodontheclocktower.com/Glossary, "In play");
- * - with none in play the answer is no characters: knowing which are in play includes
- *   knowing there are none (our reading of the ability; the wiki page doesn't say);
- * - registration changes what detecting abilities learn (Glossary, "Register"): a Recluse
- *   registering as a Minion or Demon may be left out
- *   (https://wiki.bloodontheclocktower.com/Recluse), and a Spy registering as an Outsider
- *   adds one Outsider of the Storyteller's choice (`more`,
- *   https://wiki.bloodontheclocktower.com/Spy). Each is an allowed answer, the true one first.
- * A drunk or poisoned Godfather may be shown anything (`unreliable`, Glossary, "Drunk").
- */
-function outsidersInPlay(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup
-): NightAnswer {
-	const valueIn = (world: RegistrationWorld): AnswerValue => {
-		const ids: CharacterId[] = [];
-		let more = 0;
-		for (const s of game.seating) {
-			if (world.type(s) !== 'outsider') continue;
-			const id = trueCharacter(game, s, characters);
-			if (typeOf(game, s, characters) !== 'outsider' || !id) more++;
-			else if (!ids.includes(id)) ids.push(id);
-		}
-		return {
-			kind: 'characters',
-			type: 'outsider',
-			value: ids,
-			...(more > 0 ? { more: { count: more, type: 'outsider' as const } } : {})
-		};
-	};
-	const w = byWorld(game, seatId, characters, valueIn);
-	const holders = game.seating.filter((s) => typeOf(game, s, characters) === 'outsider');
-	return answer(game, seatId, characterId, characters, valueIn(w.worlds[0]), holders, {
-		possible: w.possible,
-		relevant: w.relevant,
-		facts: holders.map((s) => fact(game, s, characters)),
-		alternatives: w.alternatives
-	});
 }
 
 /** The dead player carrying a character's reminder, as `{ seatId }`. */
@@ -415,12 +504,8 @@ function countAnswer(
 	if (rule.question !== 'count') throw new Error('not a count');
 	if (rule.among === 'abnormal')
 		return abnormalAbilities(game, seatId, characterId, characters, rule, today);
-	const group =
-		rule.among === 'dead'
-			? game.seating.filter((s) => registersAsDead(game, s, characters))
-			: markedSeats(game, characterId);
-	const matchIn = (w: RegistrationWorld) =>
-		group.filter((s) => rule.alignment === undefined || w.alignment(s) === rule.alignment);
+	const group = groupOf(game, characterId, characters, rule, today) ?? [];
+	const matchIn = (w: RegistrationWorld) => group.filter((s) => registersAs(w, s, rule));
 	const w = byWorld(game, seatId, characters, (world) => ({
 		kind: 'number',
 		value: matchIn(world).length
@@ -529,17 +614,15 @@ type AnswerFn = (
 
 /** How each `answers` question is worked out. */
 const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
-	'minion-nominated': minionNominated,
-	'demon-voted': demonVoted,
-	'executed-character': executedCharacter,
+	count: countAnswer,
+	any: anyAnswer,
+	character: characterAnswer,
+	characters: charactersAnswer,
 	'outsider-died': outsiderDied,
 	'correct-guesses': correctGuesses,
 	'statement-true': statementTrue,
-	'outsiders-in-play': (game, seatId, characterId, characters) =>
-		outsidersInPlay(game, seatId, characterId, characters),
 	'winning-alignment': (game, seatId, characterId, characters) =>
-		winningAlignment(game, seatId, characterId, characters),
-	count: countAnswer
+		winningAlignment(game, seatId, characterId, characters)
 };
 
 /**
@@ -693,9 +776,6 @@ function answerValue(a: NightAnswer): AnswerValue {
 function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
 	const rule = rulesOf(characterId, characters)?.answers;
 	if (rule?.question === 'correct-guesses') return 5;
-	if (rule?.question !== 'count') return game.seating.length;
-	if (rule.among === 'dead')
-		return game.seating.filter((s) => registersAsDead(game, s, characters)).length;
-	if (rule.among === 'marked') return markedSeats(game, characterId).length;
-	return game.seating.length;
+	if (rule?.question !== 'count' || rule.among === 'abnormal') return game.seating.length;
+	return (groupOf(game, characterId, characters, rule) ?? game.seating).length;
 }
