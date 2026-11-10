@@ -27,7 +27,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { demoFeed } from './demo-feed.ts';
+	import { demoFeed, drawSheet, pictureSheet } from './demo-feed.ts';
 
 	/**
 	 * Live script scan, mockup C built for real so the two ways of keeping its marks on the
@@ -47,7 +47,7 @@
 	 *   read").
 	 */
 
-	type Source = 'demo' | 'camera';
+	type Source = 'demo' | 'picture' | 'camera';
 	type MarkKind = 'character' | 'ability' | 'title' | 'unknown';
 	interface Mark {
 		/** The line's four corners in the read frame, in picture pixels. */
@@ -109,9 +109,16 @@
 		found.clear();
 		unknown = [];
 		title = '';
+		titles.clear();
 		reads = 0;
 		reading = undefined;
+		round++;
 	}
+
+	/** Each title read, and how many reads gave it. */
+	const titles = new SvelteMap<string, number>();
+	/** Bumped by Start over, so a read already under way when the sheet changes is dropped. */
+	let round = 0;
 
 	let reading: Reading | undefined;
 	let feed: ReturnType<typeof demoFeed> | undefined;
@@ -133,13 +140,34 @@
 		} catch (error) {
 			problem = `The camera did not start (${(error as Error).name}).`;
 			source = 'demo';
+			feed = drawn;
 		}
 	}
 
+	let drawn: ReturnType<typeof demoFeed> | undefined;
+	let chooser: HTMLInputElement | undefined = $state();
+
 	function useDemo() {
 		source = 'demo';
+		feed = drawn;
 		problem = '';
 		startOver();
+	}
+
+	/** A picture of any sheet, moved about like the drawn one. */
+	async function usePicture(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		try {
+			feed = demoFeed(await pictureSheet(file));
+			source = 'picture';
+			problem = '';
+			startOver();
+		} catch (error) {
+			problem = `That picture did not open (${(error as Error).message}).`;
+		}
 	}
 
 	/** The picture to look at now, and its size, or undefined while there is none. */
@@ -170,7 +198,9 @@
 		corners?: Point[]
 	) {
 		const started = performance.now();
+		const begun = round;
 		const lines: PlacedLine[] = await reader.read(frame);
+		if (begun !== round) return;
 		readMs = performance.now() - started;
 		reads++;
 		const traces: PhotoLineTrace[] = [];
@@ -193,7 +223,11 @@
 		reading = { marks, gray, corners };
 		for (const f of result.found) found.set(f.character.id, f.character);
 		unknown = [...new Set([...unknown, ...result.unmatched])];
-		title ||= result.title;
+		if (result.title) {
+			// One read can catch the title under glare or blur: show the one read most often.
+			titles.set(result.title, (titles.get(result.title) ?? 0) + 1);
+			title = [...titles].reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+		}
 	}
 
 	/**
@@ -279,10 +313,13 @@
 			const data = await loadOfficialData();
 			pool = data.characters.filter((c) => c.edition);
 			const tb = editionScript('tb', data)!;
-			feed = demoFeed(
-				tb.name,
-				tb.characters.map((c) => ({ name: c.name, ability: c.ability }))
+			drawn = demoFeed(
+				drawSheet(
+					tb.name,
+					tb.characters.map((c) => ({ name: c.name, ability: c.ability }))
+				)
 			);
+			if (source === 'demo') feed = drawn;
 			try {
 				reader = await openTextReader();
 				if (stopped) return void reader.close();
@@ -455,7 +492,21 @@
 <div class="spike">
 	<div class="controls">
 		<Button variant={source === 'demo' ? 'accent' : 'solid'} onclick={useDemo}>Demo sheet</Button>
+		<Button variant={source === 'picture' ? 'accent' : 'solid'} onclick={() => chooser?.click()}
+			>Picture</Button
+		>
 		<Button variant={source === 'camera' ? 'accent' : 'solid'} onclick={useCamera}>Camera</Button>
+		<input
+			bind:this={chooser}
+			class="file"
+			type="file"
+			accept="image/*"
+			aria-label="Picture"
+			aria-hidden="true"
+			tabindex="-1"
+			data-testid="live-scan-picture"
+			onchange={usePicture}
+		/>
 		<Toggle
 			label="Corner tracking"
 			checked={tracking}
@@ -511,6 +562,13 @@
 </Dialog>
 
 <style>
+	.file {
+		position: absolute;
+		width: 1px; /* px-ok: an offscreen file input, as Add script's */
+		height: 1px; /* px-ok: an offscreen file input, as Add script's */
+		opacity: 0;
+		pointer-events: none;
+	}
 	.spike {
 		display: flex;
 		flex-direction: column;

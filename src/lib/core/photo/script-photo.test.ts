@@ -7,6 +7,7 @@ import {
 	likeness,
 	plainText,
 	readScriptLines,
+	titleOf,
 	type PhotoLine,
 	type PhotoLineTrace
 } from './script-photo.ts';
@@ -187,5 +188,16 @@ describe('the author', () => {
 
 	it('is empty when the sheet has no byline', () => {
 		expect(readScriptLines([{ text: 'Empath' }], official).author).toBe('');
+	});
+});
+
+describe('the title', () => {
+	it('is kept apart from a printed rule and a type heading on its line', () => {
+		// Trevor's Kingfishing sheet (2026-11-10): the title sits on a rule that runs to a
+		// "TOWNSFOLK" pill, read as dashes and a few stray letters.
+		expect(titleOf('—Kingfishing———————————————— (ww')).toBe('Kingfishing');
+		expect(titleOf('Kingfishing ———————— TOWNSFOLK')).toBe('Kingfishing');
+		expect(titleOf('Trouble Brewing')).toBe('Trouble Brewing');
+		expect(titleOf("Tom's Script!")).toBe("Tom's Script!");
 	});
 });
