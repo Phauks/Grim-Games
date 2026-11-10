@@ -614,15 +614,19 @@
 	lead={chosen?.avatar ? seatAvatar : undefined}
 >
 	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
-	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
-	     note, a row of its own, so the two never read as one. -->
+	     it has one, the player's avatar (2026-10-26). A tap on a guess takes it off, the same
+	     toggle as the picker below (Trevor, 2026-11-10); a tap on the avatar brings it to the
+	     front. Then the note, a row of its own, so the two never read as one. -->
 	<!-- A players-only game: what the town knows about this seat, marked by the player (plan M55). -->
 	{#if local && current}<LocalSeatRows notesKey={local} seat={current} {script} />{/if}
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
 		<SeatGuessChips
 			entries={chosen ? listed(chosen.seatId) : []}
-			onPick={(id) => chosen && save(mainGuess(guesses, chosen.seatId, id, withAvatar(chosen)))}
+			onPick={(id) =>
+				id === AVATAR_GUESS
+					? chosen && save(mainGuess(guesses, chosen.seatId, id, withAvatar(chosen)))
+					: guess(id)}
 		/>
 	</div>
 	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap on one
