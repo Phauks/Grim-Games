@@ -35,7 +35,7 @@ export function storytellerExecuted(
 	return [
 		{
 			key,
-			rule: 'storyteller-executed',
+			rule: first.rule.preset ?? 'condition',
 			winner: first.rule.winner ?? 'good',
 			characterId: first.characterId,
 			seats: found.map((f) => f.seatId),

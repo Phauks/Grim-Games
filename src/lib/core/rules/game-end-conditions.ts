@@ -20,8 +20,8 @@ import {
 	endsOf,
 	executedOn,
 	impaired,
-	losesFor,
-	wikiOf
+	wikiOf,
+	winnerFor
 } from './game-end-helpers.ts';
 
 interface Found {
@@ -75,6 +75,8 @@ function found(
 	const logs = days(game);
 	switch (rule.event) {
 		case 'executed':
+			// Either of a pair is `markedExecuted`'s, in `game-end.ts`.
+			if (rule.subject === 'either') return [];
 			return executedSubjects(game, seatId, characterId, rule, characters);
 		case 'day-ends': {
 			const day = endedDays(game, options).find(
@@ -133,9 +135,7 @@ function counted(
 }
 
 function winnerOf(game: Game, seatId: SeatId, rule: EndsGame, hit: Found): Alignment {
-	if (rule.winner) return rule.winner;
-	if (rule.wins === 'opposing' && hit.subject !== undefined) return losesFor(game, hit.subject);
-	return alignmentOf(game, seatId) ?? 'good';
+	return winnerFor(game, seatId, rule, hit.subject);
 }
 
 /**

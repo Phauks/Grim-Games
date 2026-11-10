@@ -59,19 +59,32 @@ import { readTypes } from './target-rules.ts';
  *   `winner` wins (the Atheist). With no such character in play, evil wins
  *   (https://wiki.bloodontheclocktower.com/Atheist).
  *
- * `condition` is the building block (M60): an `event`, what must hold, and who wins.
- * - `event`: `executed` (its `subject` dies by execution: its own player, or a player with its
- *   `token`), `day-ends` (a day ends), `dusk` (today ends) or `always` (whenever it holds);
+ * `condition` is the building block (M60, M78): an `event`, what must hold, and what happens.
+ * Every kind above is a preset that expands to one (`presetCondition`), keeping its name.
+ * - `event`:
+ *   - `executed`: its `subject` dies by execution: its own player (`self`), a player with its
+ *     `token` (`marked`), or either of the two (`either`, with `otherAlive`: the other one lives);
+ *   - `day-ends`: a day ends; `dusk`: today ends; `always`: whenever it holds;
+ *   - `ability-used`: its ability is first logged as used, naming a player who is `on` (an
+ *     alignment or character type); with its own spent token (`dayUse.spentToken`), only the
+ *     use that placed it;
+ *   - `vote-passed`: its player's vote passed today (`dayUse.vote`, marked when its use is);
+ *   - `guessed`: its player's logged guesses name every player of `types` as their character
+ *     type, and nobody else;
+ *   - `storyteller-executed`: the Storyteller is executed while it is in play, even dead;
+ *   - `no-demon`: there is no Demon and every player of it is dead, or `night` is over;
+ *   - `demon-executed`: a Demon's execution would end the game (with `then: 'extra-day'`).
  * - what must hold: `carries` (the executed player carries its `token`), `nominatedBySelf` (its
- *   player nominated them), `whileAlive` (its player lives), `noExecution` (none that day),
- *   `aliveTotal` (exactly so many players alive, Travellers count), `onDay` (that day),
- *   `executions` (so many players executed so far), `aliveAtMost` (at most so many players
- *   alive, Travellers not counted). The players `executions` and `aliveAtMost` count are those
- *   of `alignment` and of one of `types` (M78), each when given: "no Demon alive" is
- *   `aliveAtMost: 0` with `types: ["demon"]`;
- * - who wins: `winner`, a team, or `wins`: `own` (its player's team) or `opposing` (the team
- *   the executed player is not on).
- * The kinds above that are such a condition are presets that expand to it (`presetCondition`).
+ *   player nominated them), `alignment` (the executed player is of it), `whileAlive` (its
+ *   player lives), `noExecution` (none that day), `aliveTotal` (exactly so many players alive,
+ *   Travellers count), `onDay` (that day), `executions` (so many players executed so far),
+ *   `aliveAtMost` (at most so many players alive, Travellers not counted). The players
+ *   `executions` and `aliveAtMost` count are those of `alignment` and of one of `types` (M78),
+ *   each when given: "no Demon alive" is `aliveAtMost: 0` with `types: ["demon"]`;
+ * - what happens: `winner`, a team, or `wins`: `own` (its player's team), `other` (the team its
+ *   player is not on) or `opposing` (the team the executed player is not on); or `then:
+ *   'extra-day'`: play one more day, then whoever is executed loses for their team, and nobody
+ *   executed means good wins.
  */
 const END_KINDS = [
 	'condition',
@@ -92,9 +105,22 @@ const END_KINDS = [
 	'storyteller-executed'
 ] as const;
 export type EndKind = (typeof END_KINDS)[number];
-const END_EVENTS = ['executed', 'day-ends', 'dusk', 'always'] as const;
-const END_SUBJECTS = ['self', 'marked'] as const;
-const END_WINS = ['own', 'opposing'] as const;
+const END_EVENTS = [
+	'executed',
+	'day-ends',
+	'dusk',
+	'always',
+	'ability-used',
+	'vote-passed',
+	'guessed',
+	'storyteller-executed',
+	'no-demon',
+	'demon-executed'
+] as const;
+export type EndEvent = (typeof END_EVENTS)[number];
+const END_SUBJECTS = ['self', 'marked', 'either'] as const;
+const END_WINS = ['own', 'other', 'opposing'] as const;
+const END_THEN = ['extra-day'] as const;
 export interface EndsGame {
 	kind: EndKind;
 	/** For a `condition` written as an official kind, that kind. */
@@ -103,6 +129,8 @@ export interface EndsGame {
 	subject?: (typeof END_SUBJECTS)[number];
 	carries?: true;
 	nominatedBySelf?: true;
+	/** For `subject: 'either'`: the one not executed lives. */
+	otherAlive?: true;
 	whileAlive?: true;
 	noExecution?: true;
 	aliveTotal?: number;
@@ -110,6 +138,7 @@ export interface EndsGame {
 	executions?: number;
 	aliveAtMost?: number;
 	wins?: (typeof END_WINS)[number];
+	then?: (typeof END_THEN)[number];
 	token?: ReminderLabel;
 	winner?: Alignment;
 	alive?: number;
@@ -123,7 +152,14 @@ export interface EndsGame {
 }
 
 /**
- * Ways an ability may keep the game going once every Demon is dead:
+ * Ways an ability may keep the game going once every Demon is dead. `condition` is the
+ * building block (M78): what must hold, then what may happen.
+ * - what must hold: `whileAlive` (its player lives), `token` (the player with its token lives
+ *   too), `aliveAtLeast` (so many players, not Travellers, still alive), `ownKill` (this Demon
+ *   died by its own kill), `spentToken` (unless its token marks that it already happened);
+ * - `then`: `blocks-good` (good can't win), `becomes-demon` (its player may become the Demon)
+ *   or `demon-passes` (a living player of type `to` may become this Demon).
+ * The official kinds are presets that expand to one (`presetHold`), keeping their name:
  * - `marked-alive`: its living player and the player with its `token` are both alive, so good
  *   can't win (the Evil Twin);
  * - `becomes-demon`: its living player may become the Demon while `aliveAtLeast` players
@@ -132,14 +168,73 @@ export interface EndsGame {
  *   until its `spentToken` marks that it happened (the Imp to a Minion; the Fang Gu to an
  *   Outsider, once).
  */
-const HOLD_KINDS = ['marked-alive', 'becomes-demon', 'death-passes'] as const;
+const HOLD_KINDS = ['condition', 'marked-alive', 'becomes-demon', 'death-passes'] as const;
 export type HoldKind = (typeof HOLD_KINDS)[number];
+const HOLD_THEN = ['blocks-good', 'becomes-demon', 'demon-passes'] as const;
+export type HoldThen = (typeof HOLD_THEN)[number];
 export interface HoldsGame {
 	kind: HoldKind;
+	/** For a `condition` written as an official kind, that kind. */
+	preset?: HoldKind;
+	then?: HoldThen;
+	whileAlive?: true;
+	ownKill?: true;
 	token?: ReminderLabel;
 	aliveAtLeast?: number;
 	to?: CharacterType;
 	spentToken?: ReminderLabel;
+}
+
+/** The `condition` an official hold is, with that kind as its preset. */
+function presetHold(h: HoldsGame): HoldsGame {
+	const base = { kind: 'condition' as const, preset: h.kind };
+	switch (h.kind) {
+		case 'marked-alive':
+			return { ...base, then: 'blocks-good', whileAlive: true, token: h.token };
+		case 'becomes-demon':
+			return { ...base, then: 'becomes-demon', whileAlive: true, aliveAtLeast: h.aliveAtLeast };
+		case 'death-passes':
+			return {
+				...base,
+				then: 'demon-passes',
+				ownKill: true,
+				to: h.to,
+				...(h.spentToken ? { spentToken: h.spentToken } : {})
+			};
+		default:
+			return h;
+	}
+}
+
+/** A `condition` hold: what must hold, then what may happen. */
+function readHoldCondition(
+	raw: Record<string, unknown>,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): HoldsGame | undefined {
+	checkKeys(
+		raw,
+		['kind', 'then', 'whileAlive', 'ownKill', 'token', 'aliveAtLeast', 'to', 'spentToken'],
+		path,
+		issues
+	);
+	const then = readEnum(raw, 'then', HOLD_THEN, path, issues, true);
+	const token = readToken(raw, 'token', path, issues, reminders);
+	const spentToken = readToken(raw, 'spentToken', path, issues, reminders);
+	const to = readEnum(raw, 'to', CHARACTER_TYPES, path, issues, false);
+	const aliveAtLeast = readNumber(raw, 'aliveAtLeast', path, issues);
+	if (!then) return undefined;
+	const out: HoldsGame = { kind: 'condition', then };
+	if (readBoolean(raw, 'whileAlive', path, issues)) out.whileAlive = true;
+	if (readBoolean(raw, 'ownKill', path, issues)) out.ownKill = true;
+	if (token) out.token = token;
+	if (spentToken) out.spentToken = spentToken;
+	if (to) out.to = to;
+	if (aliveAtLeast !== undefined) out.aliveAtLeast = aliveAtLeast;
+	if (then === 'demon-passes' && !to) issues.add(`${path}.to`, 'missing');
+	if (to && then !== 'demon-passes') issues.add(`${path}.to`, 'only `demon-passes` takes it');
+	return out;
 }
 
 /**
@@ -197,6 +292,7 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 /** Parameters a kind may leave out. */
 const OPTIONAL: ReadonlySet<string> = new Set(['spentToken', 'night']);
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
+	condition: [],
 	'marked-alive': ['token'],
 	'becomes-demon': ['aliveAtLeast'],
 	'death-passes': ['to']
@@ -237,7 +333,12 @@ function readKind<K extends string, T extends { kind: K }>(
 	}
 	const kind = readEnum(raw, 'kind', kinds, path, issues, true);
 	if (!kind) return undefined;
-	if (kind === 'condition') return readCondition(raw, path, issues, reminders) as T | undefined;
+	if (kind === 'condition') {
+		const read = kinds.includes('marked-alive' as K)
+			? readHoldCondition(raw, path, issues, reminders)
+			: readCondition(raw, path, issues, reminders);
+		return read as T | undefined;
+	}
 	checkKeys(raw, ['kind', ...needs[kind]], path, issues);
 	const out: Record<string, unknown> = { kind };
 	for (const key of needs[kind]) {
@@ -256,8 +357,14 @@ function readKind<K extends string, T extends { kind: K }>(
 	return out as T;
 }
 
-const CONDITION_FLAGS = ['carries', 'nominatedBySelf', 'whileAlive', 'noExecution'] as const;
-const CONDITION_COUNTS = ['aliveTotal', 'onDay', 'executions', 'aliveAtMost'] as const;
+const CONDITION_FLAGS = [
+	'carries',
+	'nominatedBySelf',
+	'otherAlive',
+	'whileAlive',
+	'noExecution'
+] as const;
+const CONDITION_COUNTS = ['aliveTotal', 'onDay', 'executions', 'aliveAtMost', 'night'] as const;
 
 /** A `condition` end: its event, what must hold and who wins. */
 function readCondition(
@@ -277,6 +384,8 @@ function readCondition(
 			'types',
 			'winner',
 			'wins',
+			'then',
+			'on',
 			...CONDITION_FLAGS,
 			...CONDITION_COUNTS
 		],
@@ -291,8 +400,12 @@ function readCondition(
 	const types = readTypes(raw, 'types', path, issues);
 	const winner = readEnum(raw, 'winner', ALIGNMENTS, path, issues, false);
 	const wins = readEnum(raw, 'wins', END_WINS, path, issues, false);
+	const then = readEnum(raw, 'then', END_THEN, path, issues, false);
+	const on = readEnum(raw, 'on', [...ALIGNMENTS, ...CHARACTER_TYPES], path, issues, false);
 	if (!event) return undefined;
 	if (types) out.types = types;
+	if (then) out.then = then;
+	if (on) out.on = on;
 	out.event = event;
 	if (subject) out.subject = subject;
 	if (token) out.token = token;
@@ -315,15 +428,29 @@ function checkCondition(c: EndsGame, path: string, issues: Issues) {
 	if (!executed && c.subject) issues.add(`${path}.subject`, 'only an `executed` event has one');
 	if (!executed && (c.carries || c.nominatedBySelf))
 		issues.add(path, '`carries` and `nominatedBySelf` are about who was executed');
-	if ((c.subject === 'marked' || c.carries) && !c.token) issues.add(`${path}.token`, 'missing');
+	if ((c.subject === 'marked' || c.subject === 'either' || c.carries) && !c.token)
+		issues.add(`${path}.token`, 'missing');
+	if (c.otherAlive && c.subject !== 'either')
+		issues.add(`${path}.otherAlive`, 'only with `subject: "either"`');
 	const counts = c.executions !== undefined || c.aliveAtMost !== undefined;
 	if (counts && !c.alignment && !c.types)
 		issues.add(path, 'a count needs who it counts: `alignment` or `types`');
-	if (c.types && !counts)
-		issues.add(`${path}.types`, 'only `executions` and `aliveAtMost` take it');
-	if (c.event === 'always' && c.executions === undefined && c.aliveAtMost === undefined)
+	if (c.types && !counts && c.event !== 'guessed')
+		issues.add(`${path}.types`, 'only `executions`, `aliveAtMost` and `guessed` take it');
+	if (c.event === 'guessed' && !c.types) issues.add(`${path}.types`, 'missing');
+	if (c.alignment && !counts && !executed)
+		issues.add(`${path}.alignment`, 'only a count or an `executed` event takes it');
+	if (c.event === 'always' && !counts)
 		issues.add(path, 'an `always` event needs `executions` or `aliveAtMost`');
-	if (!c.winner === !c.wins) issues.add(path, 'needs one of `winner` and `wins`');
+	if (c.event === 'ability-used' && !c.on) issues.add(`${path}.on`, 'missing');
+	if (c.on && c.event !== 'ability-used') issues.add(`${path}.on`, 'only `ability-used` takes it');
+	if (c.night !== undefined && c.event !== 'no-demon')
+		issues.add(`${path}.night`, 'only `no-demon` takes it');
+	if (c.event === 'demon-executed' && !c.then) issues.add(`${path}.then`, 'missing');
+	if (c.then && c.event !== 'demon-executed')
+		issues.add(`${path}.then`, 'only `demon-executed` takes it');
+	if (!c.then && !c.winner === !c.wins) issues.add(path, 'needs one of `winner` and `wins`');
+	if (c.then && (c.winner || c.wins)) issues.add(path, '`then` says who wins');
 	if (c.wins === 'opposing' && !executed)
 		issues.add(`${path}.wins`, '`opposing` is about who was executed');
 }
@@ -384,6 +511,33 @@ function presetCondition(e: EndsGame): EndsGame | undefined {
 				aliveAtMost: e.alive,
 				...team
 			};
+		case 'marked-executed':
+			return {
+				...base,
+				event: 'executed',
+				subject: 'either',
+				token: e.token,
+				alignment: e.winner === 'good' ? 'evil' : 'good',
+				otherAlive: true,
+				...team
+			};
+		case 'dead-without-demon':
+			return {
+				...base,
+				event: 'no-demon',
+				...(e.night !== undefined ? { night: e.night } : {}),
+				...team
+			};
+		case 'extra-day':
+			return { ...base, event: 'demon-executed', then: 'extra-day' };
+		case 'used-on-loses':
+			return { ...base, event: 'ability-used', on: e.on, wins: 'other' };
+		case 'guesses-evil-team':
+			return { ...base, event: 'guessed', types: ['demon', 'minion'], ...team };
+		case 'cult-joined':
+			return { ...base, event: 'vote-passed', wins: 'own' };
+		case 'storyteller-executed':
+			return { ...base, event: 'storyteller-executed', ...team };
 		default:
 			return undefined;
 	}
@@ -445,7 +599,10 @@ export function readGameEnd(
 			out.ends = read
 				.filter((e): e is EndsGame => e !== undefined)
 				.map((e) => presetCondition(e as EndsGame) ?? (e as EndsGame));
-		else out.holds = read.filter((e): e is HoldsGame => e !== undefined);
+		else
+			out.holds = read
+				.filter((e): e is HoldsGame => e !== undefined)
+				.map((h) => presetHold(h as HoldsGame));
 	}
 	if (raw.aliveWhileDead !== undefined) {
 		const at = `${path}.aliveWhileDead`;

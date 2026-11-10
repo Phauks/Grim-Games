@@ -7,7 +7,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import type { GameEnd } from './game-end.ts';
-import { aliveForEnd, demonSeats, endsOf, wikiOf } from './game-end-helpers.ts';
+import { aliveForEnd, demonSeats, endName, eventsOf, wikiOf } from './game-end-helpers.ts';
 import { gainedEnd } from './jinx-effects.ts';
 import { dayNumber } from './night-order.ts';
 
@@ -25,7 +25,7 @@ export function deadWithoutDemon(game: Game, characters: CharacterLookup): GameE
 	const gained = game.seating.flatMap((seatId) => {
 		const jinx = gainedEnd(game, seatId, characters);
 		const ends = jinx ? rulesOf(jinx.partner, characters)?.gameEnd?.ends : undefined;
-		const end = ends?.find((e) => e.kind === 'dead-without-demon');
+		const end = ends?.find((e) => e.kind === 'condition' && e.event === 'no-demon');
 		return jinx && end
 			? [
 					{
@@ -36,7 +36,7 @@ export function deadWithoutDemon(game: Game, characters: CharacterLookup): GameE
 				]
 			: [];
 	});
-	const found = [...endsOf(game, characters, 'dead-without-demon'), ...gained];
+	const found = [...eventsOf(game, characters, 'no-demon'), ...gained];
 	const over = ({ seatId, rule }: (typeof found)[number]) =>
 		!aliveForEnd(game, seatId, characters) ||
 		(rule.night !== undefined && dayNumber(game) >= rule.night);
@@ -47,8 +47,8 @@ export function deadWithoutDemon(game: Game, characters: CharacterLookup): GameE
 	const alive = seats.some((id) => aliveForEnd(game, id, characters));
 	return [
 		{
-			key: `dead-without-demon:${seats.join(',')}${alive ? ':night' : ''}`,
-			rule: 'dead-without-demon',
+			key: `${endName(rule)}:${seats.join(',')}${alive ? ':night' : ''}`,
+			rule: endName(rule),
 			winner: rule.winner!,
 			characterId,
 			seats,
