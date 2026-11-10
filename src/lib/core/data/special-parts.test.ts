@@ -57,4 +57,24 @@ describe('TPI special hooks as parts', () => {
 		};
 		expect(rulesOf(wraith)).toEqual({ wakesWithEvil: true });
 	});
+
+	it('reads giving out the characters before the game as a setup with no bag', () => {
+		// Wiki (Gardener): "The Storyteller assigns all players' characters."
+		const gardener = {
+			...pickpocket,
+			reminders: [],
+			special: [{ type: 'ability', name: 'distribute-roles', time: 'pregame' }]
+		};
+		expect(rulesOf(gardener)).toEqual({
+			setupModifier: {
+				summary: 'Storyteller assigns characters',
+				ops: [],
+				notes: ['No bag: the Storyteller chooses each player’s character.']
+			}
+		});
+		// Its own [brackets] are read instead.
+		expect(
+			rulesOf({ ...gardener, ability: 'x [+1 Outsider]', setup: true })?.setupModifier
+		).toBeUndefined();
+	});
 });
