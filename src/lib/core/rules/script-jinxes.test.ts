@@ -736,6 +736,51 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 		});
 	});
 
+	it('H11b: the same end written as a condition: the Saint executed after the Lamplighter nominated', () => {
+		// Wiki (Saint): "If the Saint dies by execution, the game ends."
+		const entries = [
+			lamplighter({
+				jinxes: [
+					jinx('saint', 'If the Lamplighter nominates and executes the Saint, good wins.', {
+						endsGame: {
+							kind: 'condition',
+							event: 'executed',
+							subject: 'partner',
+							nominatedBySelf: true,
+							winner: 'good'
+						}
+					})
+				]
+			}),
+			'saint',
+			'imp',
+			'empath',
+			'poisoner'
+		];
+		const players = ['lamplighter', 'saint', 'imp', 'empath', 'poisoner'];
+		const cast = castWith({ script: clean(entries).script });
+		const ends = (game: Game, characters: CharacterLookup) =>
+			gameEnds(game, characters)
+				.filter((e) => e.jinxedWith === 'saint')
+				.map((e) => [e.rule, e.winner, e.seats]);
+		const nominated = cast(
+			players,
+			{ type: 'NewDay' },
+			(s) => ({ type: 'Nominate', nominator: s[0], nominee: s[1] }),
+			(s) => ({ type: 'Execute', seatId: s[1] })
+		);
+		expect(ends(nominated.game, nominated.ctx.characters)).toEqual([
+			['jinx-executed', 'good', [nominated.seats[1], nominated.seats[0]]]
+		]);
+		const other = cast(
+			players,
+			{ type: 'NewDay' },
+			(s) => ({ type: 'Nominate', nominator: s[3], nominee: s[1] }),
+			(s) => ({ type: 'Execute', seatId: s[1] })
+		);
+		expect(ends(other.game, other.ctx.characters)).toEqual([]);
+	});
+
 	it('H12: the Lamplighter and the Mayor alive on the final day with no execution, good wins', () => {
 		// Wiki (Mayor): "If only 3 players live & no execution occurs, your team wins."
 		const { script } = clean([

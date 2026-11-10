@@ -22,6 +22,7 @@ import {
 	scriptJinxes
 } from './jinxes.ts';
 import { readJinxRules } from '#lib/core/data/jinx-read.ts';
+import { presetJinxEnd, type JinxEnd } from '#lib/core/data/jinx-rules.ts';
 import { jinxPartnerIssues } from '#lib/core/data/jinx-needs.ts';
 import { Issues, type Json } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';
@@ -338,7 +339,13 @@ describe('jinx rules data', () => {
 				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
 			}
 		};
-		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		const expanded = Object.fromEntries(
+			Object.entries(good).map(([id, rules]) => [
+				id,
+				'endsGame' in rules ? { endsGame: presetJinxEnd(rules.endsGame as JinxEnd) } : rules
+			])
+		);
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(expanded);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
@@ -380,7 +387,13 @@ describe('jinx rules data', () => {
 			},
 			c: { noExecuteNow: { player: 'marked', token: 'Fear' } }
 		};
-		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		const expanded = Object.fromEntries(
+			Object.entries(good).map(([id, rules]) => [
+				id,
+				'endsGame' in rules ? { endsGame: presetJinxEnd(rules.endsGame as JinxEnd) } : rules
+			])
+		);
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(expanded);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
@@ -410,7 +423,13 @@ describe('jinx rules data', () => {
 			c: { carriedBy: { marked: 'Is The Demon' } },
 			d: { diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] } }
 		};
-		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		const expanded = Object.fromEntries(
+			Object.entries(good).map(([id, rules]) => [
+				id,
+				'endsGame' in rules ? { endsGame: presetJinxEnd(rules.endsGame as JinxEnd) } : rules
+			])
+		);
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(expanded);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
@@ -438,7 +457,13 @@ describe('jinx rules data', () => {
 			a: { nightChoice: { chooses: 'good', partner: 'acts' } },
 			b: { nightChoice: { chooses: 'any', partner: 'dies' } }
 		};
-		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		const expanded = Object.fromEntries(
+			Object.entries(good).map(([id, rules]) => [
+				id,
+				'endsGame' in rules ? { endsGame: presetJinxEnd(rules.endsGame as JinxEnd) } : rules
+			])
+		);
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(expanded);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(

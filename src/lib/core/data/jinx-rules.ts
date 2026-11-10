@@ -155,7 +155,12 @@
  *   character type listed (with `partner-in-play`, the Spy's and the Widow's Magician and
  *   Demon);
  * - `endsGame`: a game end with the partner, worked out in `rules/jinx-ends.ts` (the
- *   Leviathan's and Riot's), its `when` checked at the moment of its event:
+ *   Leviathan's and Riot's), its `when` checked at the moment of its event. A `condition`
+ *   (M78) is built from parts: an `event` (`executed`, `day-ends`, `ability-used`), whose
+ *   players it is about (`subject`: `self`, `partner`, or `marked`, the one carrying the
+ *   partner's `token`), what must hold (`nominatedBySelf`, `died`, `noExecution`, `bothAlive`,
+ *   `stops`, `day`, `alive`) and `winner`. The official kinds below are presets of it
+ *   (`presetJinxEnd`), read into a `condition` with their name kept as `preset`:
  *   `nominated-marked-executed`, the subject's player nominates the player with the partner's
  *   `token` (optional: with none, the partner's own player) and they are executed, so `winner`
  *   wins; `marked-executed`, while the subject is in play the player with the partner's
@@ -422,6 +427,7 @@ export interface GrimoireRule extends JinxEffect {
 }
 
 export const JINX_END_KINDS = [
+	'condition',
 	'nominated-marked-executed',
 	'marked-executed',
 	'day-without-execution',
@@ -431,6 +437,19 @@ export const JINX_END_KINDS = [
 	'executed'
 ] as const;
 export type JinxEndKind = (typeof JINX_END_KINDS)[number];
+/** The official end kinds that are presets of a `condition` (`presetJinxEnd`). */
+export const JINX_END_PRESETS = [
+	'nominated-marked-executed',
+	'marked-executed',
+	'day-without-execution',
+	'ability-stopped',
+	'executed'
+] as const;
+export type JinxEndPreset = (typeof JINX_END_PRESETS)[number];
+/** What a jinx `condition` end waits for. */
+export const JINX_END_EVENTS = ['executed', 'day-ends', 'ability-used'] as const;
+/** Whose players a jinx `condition` end is about: its own, the partner's, or the partner's `token`'s. */
+export const JINX_END_SUBJECTS = ['self', 'partner', 'marked'] as const;
 /** The partner's own game ends a `gained-end` may carry to a player with its ability. */
 export const GAINED_ENDS = ['dead-without-demon'] as const;
 
@@ -451,6 +470,50 @@ export interface JinxEnd extends JinxEffect {
 	alive?: number;
 	/** Whose player's execution ends it (`executed`): the subject's, the default, or the partner's. */
 	player?: JinxWho;
+	/** The official kind a `condition` was written as. */
+	preset?: JinxEndPreset;
+	/** For a `condition`: what it waits for. */
+	event?: (typeof JINX_END_EVENTS)[number];
+	/** For a `condition`: whose players it is about (`marked`: the one carrying `token`). */
+	subject?: (typeof JINX_END_SUBJECTS)[number];
+	/** For `executed`: the subject's own player nominated them. */
+	nominatedBySelf?: true;
+	/** For `executed`: the player died of it, whenever it was, logged or not (the Grandchild). */
+	died?: true;
+	/** For `day-ends`: only a day with no execution. */
+	noExecution?: true;
+	/** For `day-ends`: both its and the partner's players are alive; it replaces its own end that day. */
+	bothAlive?: true;
+	/** For `ability-used`: the use stops its ability (`stops`). */
+	stops?: true;
+}
+
+/** A jinx end of an official kind as the `condition` it is a preset of. */
+export function presetJinxEnd(end: JinxEnd): JinxEnd {
+	const { kind, ...rest } = end;
+	const base = { ...rest, kind: 'condition' as const };
+	switch (kind) {
+		case 'nominated-marked-executed':
+			return {
+				...base,
+				preset: kind,
+				event: 'executed',
+				subject: end.token ? 'marked' : 'partner',
+				nominatedBySelf: true
+			};
+		case 'marked-executed':
+			return { ...base, preset: kind, event: 'executed', subject: 'marked', died: true };
+		case 'executed': {
+			const { player, ...own } = base;
+			return { ...own, preset: kind, event: 'executed', subject: player ?? 'self' };
+		}
+		case 'day-without-execution':
+			return { ...base, preset: kind, event: 'day-ends', noExecution: true, bothAlive: true };
+		case 'ability-stopped':
+			return { ...base, preset: kind, event: 'ability-used', subject: 'partner', stops: true };
+		default:
+			return end;
+	}
 }
 
 export interface DeadAtLeast extends JinxEffect {

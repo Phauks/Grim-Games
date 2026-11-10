@@ -60,7 +60,14 @@ describe('Riot + Soldier jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'riot', 'soldier', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'nominated-marked-executed', winner: 'good' }
+				endsGame: {
+					kind: 'condition',
+					preset: 'nominated-marked-executed',
+					event: 'executed',
+					subject: 'partner',
+					nominatedBySelf: true,
+					winner: 'good'
+				}
 			});
 		});
 

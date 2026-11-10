@@ -64,7 +64,15 @@ describe('Grandmother + Leviathan jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'grandmother', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'marked-executed', winner: 'evil', token: 'Grandchild' }
+				endsGame: {
+					kind: 'condition',
+					preset: 'marked-executed',
+					event: 'executed',
+					subject: 'marked',
+					died: true,
+					winner: 'evil',
+					token: 'Grandchild'
+				}
 			});
 		});
 

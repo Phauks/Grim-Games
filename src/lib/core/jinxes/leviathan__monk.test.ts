@@ -68,7 +68,15 @@ describe('Leviathan + Monk jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'monk', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'nominated-marked-executed', winner: 'good', token: 'Safe' }
+				endsGame: {
+					kind: 'condition',
+					preset: 'nominated-marked-executed',
+					event: 'executed',
+					subject: 'marked',
+					nominatedBySelf: true,
+					winner: 'good',
+					token: 'Safe'
+				}
 			});
 		});
 

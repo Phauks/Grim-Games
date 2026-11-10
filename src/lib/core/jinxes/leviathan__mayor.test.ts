@@ -60,7 +60,15 @@ describe('Leviathan + Mayor jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'mayor', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'day-without-execution', winner: 'good', day: 5 }
+				endsGame: {
+					kind: 'condition',
+					preset: 'day-without-execution',
+					event: 'day-ends',
+					noExecution: true,
+					bothAlive: true,
+					winner: 'good',
+					day: 5
+				}
 			});
 		});
 
