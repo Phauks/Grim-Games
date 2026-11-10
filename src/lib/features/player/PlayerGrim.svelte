@@ -679,7 +679,7 @@
 			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder, i (i)}<BoardReminder
 					{...playerLook(reminder, characterOf)}
 					onTap={() => chosen && bin?.showAbout(chosen.seatId, reminder)}
-				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</ReminderTokenRow
+				/>{:else}<span class="none">{t('common.none')}</span>{/each}</ReminderTokenRow
 		>
 	</div>
 	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26), each
@@ -729,9 +729,6 @@
 	.row-label {
 		font-family: var(--font-control);
 		font-weight: 600;
-	}
-	.row-none {
-		color: var(--on-surface-muted);
 	}
 	/* Over the finished grimoire: its switch alone, at the end. */
 	.tools {
