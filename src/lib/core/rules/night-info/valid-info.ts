@@ -62,9 +62,7 @@ export interface ValidInfo {
 function highestNumber(game: Game, picker: InfoPicker, loose: ValidReason): number {
 	if (loose !== 'vortox' && picker.mostTrue !== undefined) return picker.mostTrue;
 	const n = game.seating.length;
-	if (picker.highest !== undefined) return picker.highest;
-	if (picker.measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
-	return n;
+	return picker.highest ?? n;
 }
 
 /**
@@ -94,11 +92,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 		if (picker.kind === 'number') {
 			const taken = new Set(truthful.map((v) => v.number));
 			const notTrue = new Set(picker.options.map((o) => o.number));
-			for (
-				let n = picker.measure === 'demon-minion-steps' ? 1 : 0;
-				n <= highestNumber(game, picker, loose);
-				n++
-			) {
+			for (let n = picker.lowest ?? 0; n <= highestNumber(game, picker, loose); n++) {
 				if (taken.has(n)) continue;
 				if (loose === 'vortox' && notTrue.has(n)) continue;
 				extra.push({ reason: loose, number: n, seats: [] });
