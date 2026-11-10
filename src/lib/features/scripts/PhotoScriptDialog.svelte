@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		editionScript,
 		loadScript,
-		OFFICIAL_EDITIONS,
 		type Character,
 		type CharacterId,
 		type GameData,
@@ -11,11 +9,8 @@
 	} from '#lib/core/data/index.ts';
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import {
-		knownScriptFor,
 		photoScriptJson,
 		readScriptLines,
-		SAME_SCRIPT,
-		type KnownScript,
 		type PhotoLine
 	} from '#lib/core/photo/script-photo.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -44,8 +39,9 @@
 	/**
 	 * A script read from photos of its printed sheet (plan M54, Trevor picked layout 3A on
 	 * 2026-11-05): what was found, by type, each row ticked to keep it; a close match marked
-	 * "?"; a name the app doesn't know as a row to pick a character for. When the characters
-	 * are a script the device already knows, that script loads, custom characters and all.
+	 * "?"; a name the app doesn't know as a row to pick a character for. The script is what
+	 * was read and kept, named from the sheet's title: never swapped for a script the device
+	 * knows, since a sheet may differ slightly from it (Trevor, 2026-11-10).
 	 */
 	interface Props {
 		open?: boolean;
@@ -69,28 +65,19 @@
 
 	const LEAVE_OUT = '';
 
-	/** Scripts the photo may be: the official editions, then the user's own. */
-	const known = $derived.by((): KnownScript<LoadedScript>[] => {
+	/** The user's own scripts, whose custom characters a line may also name. */
+	const own = $derived.by((): LoadedScript[] => {
 		if (!data) return [];
-		const editions = OFFICIAL_EDITIONS.map((e) => editionScript(e.id, data!)!);
-		const own = recentScripts.list
+		return recentScripts.list
 			.filter((s) => !s.edition)
 			.map((s) => reloadSavedScript(s, data!))
-			.filter((s): s is LoadedScript => !!s && s.name !== '');
-		return [...editions, ...own].map((script) => ({
-			key: script,
-			name: script.name,
-			characters: script.characters.map((c) => c.id)
-		}));
+			.filter((s): s is LoadedScript => !!s);
 	});
 
 	/** Characters a line may name: every official one, and the custom ones on the user's scripts. */
 	const pool = $derived.by((): Character[] => {
 		if (!data) return [];
-		const all = [
-			...data.characters.filter((c) => c.edition),
-			...known.flatMap((k) => k.key.characters)
-		];
+		const all = [...data.characters.filter((c) => c.edition), ...own.flatMap((s) => s.characters)];
 		return all.filter((c, i) => all.findIndex((o) => o.id === c.id) === i);
 	});
 
@@ -105,13 +92,6 @@
 		const all = [...kept.map((f) => f.character), ...picked];
 		return all.filter((c, i) => all.findIndex((o) => o.id === c.id) === i);
 	});
-	const match = $derived(
-		knownScriptFor(
-			chosen.map((c) => c.id),
-			result.title,
-			known
-		)
-	);
 	const groups = $derived(groupByType(result.found.map((f) => f.character)));
 	const closeCount = $derived(result.found.filter((f) => f.kind === 'close').length);
 	const kinds = $derived(new Map(result.found.map((f) => [f.character.id, f.kind])));
@@ -197,20 +177,13 @@
 		}
 	}
 
-	/** Logs how every line read so far was matched, and the script the sheet looks like. */
+	/** Logs how every line read so far was matched. */
 	function logReading(): void {
 		importLog.add(`Matching ${lines.length} lines against ${pool.length} characters`);
 		const reading = readScriptLines(lines, pool, (l) => logLine(l, lines[l.index]?.confidence));
 		const close = reading.found.filter((f) => f.kind === 'close').length;
 		importLog.add(
 			`Found ${reading.found.length} (${close} close), ${reading.unmatched.length} not matched, title "${reading.title}", author "${reading.author}"`
-		);
-		const ids = reading.found.map((f) => f.character.id);
-		const same = knownScriptFor(ids, reading.title, known);
-		importLog.add(
-			same
-				? `Looks like ${same.name}`
-				: `No known script holds all of them with ${Math.round(SAME_SCRIPT * 100)}% read`
 		);
 	}
 
@@ -237,11 +210,6 @@
 	function confirm() {
 		if (!data) return;
 		open = false;
-		if (match) {
-			importLog.add(`Confirmed: loading ${match.name}`);
-			onconfirm(match.key);
-			return;
-		}
 		const name = result.title;
 		const json = photoScriptJson(name, chosen, result.author);
 		const loaded = loadScript(json, data);
@@ -259,14 +227,12 @@
 			? t('scripts.photo.reading', { percent: Math.round(progress * 100) })
 			: failed
 				? t('scripts.photo.failed')
-				: match
-					? t('scripts.photo.looksLike', { name: match.name })
-					: result.author
-						? t('scripts.photo.titleBy', {
-								title: result.title || t('common.none'),
-								author: result.author
-							})
-						: result.title || t('common.none')
+				: result.author
+					? t('scripts.photo.titleBy', {
+							title: result.title || t('common.none'),
+							author: result.author
+						})
+					: result.title || t('common.none')
 	);
 	const summary = $derived(
 		t('scripts.photo.summary', { found: result.found.length, check: closeCount })
@@ -347,7 +313,7 @@
 			onCancel={() => (open = false)}
 			onConfirm={confirm}
 			disabled={reading || chosen.length === 0}
-			confirmLabel={match ? t('scripts.photo.load', { name: match.name }) : t('scripts.picker.add')}
+			confirmLabel={t('scripts.picker.add')}
 		>
 			{#snippet start()}
 				<Button variant="quiet" icon="photo" disabled={reading} onclick={() => fileInput?.click()}

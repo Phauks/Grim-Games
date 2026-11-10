@@ -12,8 +12,11 @@ import {
 } from '#lib/core/town/local-town.ts';
 import type { LoadedScript } from '#lib/core/data/index.ts';
 import type { SavedScript } from '#lib/features/scripts/saved-scripts.ts';
+import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { removePads } from '#lib/ui/scratch/scratch-store.svelte.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { forgetGuesses } from './grim-guesses.ts';
+import { deleteNotebook } from './notebook-store.svelte.ts';
 import { scriptKey } from './notebook.ts';
 import { forgetPlayerReminders } from './player-reminders.ts';
 import { forgetSeatNotes } from './seat-notes.svelte.ts';
@@ -120,15 +123,20 @@ export function recordLocalVisit(visit: LocalTownVisit): void {
 /**
  * A new players-only game on `notesKey`'s script: a clear board of seven empty seats, with the
  * last game's guesses, reminders and seat notes taken off (Trevor, 2026-11-10: a new game on
- * the same script kept the old board). The Notes tab's written notes stay, as they are the
- * script's.
+ * the same script kept the old board). The Notes tab's notes and scratch pads go too ("they
+ * are usually associated with actions in a game").
  */
-export function startLocalTown(notesKey: string): void {
+export async function startLocalTown(notesKey: string): Promise<void> {
 	const kept = localGuessKey(notesKey);
 	forgetGuesses(kept);
 	forgetPlayerReminders(kept);
 	forgetSeatNotes(kept);
 	saveLocalTown(notesKey, startingTown());
+	for (const result of await Promise.allSettled([
+		deleteNotebook(notesKey),
+		removePads(`player:${notesKey}`)
+	]))
+		if (result.status === 'rejected') reportError(result.reason, { area: 'play', notify: false });
 }
 
 /** Opened from New game or Join game: /play turns to its Grim tab, where the town is. */

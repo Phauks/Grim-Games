@@ -23,7 +23,8 @@ export async function openPlayersOnly(
 	// stays in Join game's As player).
 	leaveLastRoom();
 	await chooseScript(script, source);
-	if (fresh) startLocalTown(localNotesKey(currentScript.current ?? script, currentScript.saved));
+	if (fresh)
+		await startLocalTown(localNotesKey(currentScript.current ?? script, currentScript.saved));
 	openOnGrim.request();
 	await goto(resolve('/play'));
 }
