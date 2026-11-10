@@ -306,7 +306,7 @@
 			>{/if}{/each}
 	{#if tall}
 		<div class="every" aria-label={binLabel} role="region" data-testid="reminder-bin">
-			{@render header?.()}
+			{#if header}<div class="head">{@render header()}</div>{/if}
 			<ReminderGroups label={binLabel} groups={binGroups} {keyOf} item={binToken} {size} />
 		</div>
 	{/if}
@@ -452,8 +452,14 @@
 	}
 	/* The tokens to its left, so the last row sits beside it. */
 	.tray.tall .every {
-		min-height: calc(var(--tray-h) * 2);
+		/* With no tokens found, the full-width search still clears the run button below it. */
+		min-height: calc(var(--tray-h) * 2 + var(--space-2));
 		padding-inline-end: calc(var(--run-w, 0rem) + var(--space-2));
+	}
+	/* The search runs the tray's whole width (Trevor, 2026-11-10): only the tokens' rows keep
+	   clear of the run button, which sits below it at the foot. */
+	.tray.tall .head {
+		margin-inline-end: calc(-1 * var(--run-w, 0rem));
 	}
 	/* The handle bar, centred on its top edge, half over the board (Trevor, 2026-10-30). */
 	.grab {

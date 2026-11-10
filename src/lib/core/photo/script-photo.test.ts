@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { editionScript, loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/script.ts';
+import { editionScript, loadScript } from '#lib/core/data/script.ts';
 import {
 	bylineAuthor,
-	knownScriptFor,
 	photoScriptJson,
 	likeness,
 	plainText,
@@ -15,10 +14,6 @@ import {
 const data = committedGameData();
 const official = data.characters.filter((c) => c.edition);
 const tb = editionScript('tb', data)!;
-const known = OFFICIAL_EDITIONS.map((e) => {
-	const script = editionScript(e.id, data)!;
-	return { key: e.id, name: e.name, characters: script.characters.map((c) => c.id) };
-});
 
 /** A sheet as a reader returns it: the title, then each character's name and ability on one line. */
 function sheet(
@@ -101,28 +96,6 @@ describe('readScriptLines', () => {
 		);
 		expect(reading.found).toEqual([]);
 		expect(reading.unmatched).toEqual([]);
-	});
-});
-
-describe('knownScriptFor', () => {
-	const ids = tb.characters.map((c) => c.id);
-
-	it('names the official edition when the characters are its own', () => {
-		expect(knownScriptFor(ids, '', known)?.key).toBe('tb');
-	});
-
-	it('still names it with one character missed', () => {
-		expect(knownScriptFor(ids.slice(1), '', known)?.key).toBe('tb');
-	});
-
-	it('names none when one character read is not on it', () => {
-		const swapped = [...ids.slice(1), known[1].characters[0]];
-		expect(knownScriptFor(swapped, 'Trouble Brewing', known)).toBeUndefined();
-	});
-
-	it('names none for a script that shares only some characters', () => {
-		const mixed = [...ids.slice(0, 12), ...known[1].characters.slice(0, 10)];
-		expect(knownScriptFor(mixed, 'Trouble Brewing', known)).toBeUndefined();
 	});
 });
 
