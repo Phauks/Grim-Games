@@ -54,10 +54,13 @@ describe('Recluse + Sage jinx', () => {
 		it("offers the Recluse as the Demon in the Sage's pair, as a registration", () => {
 			const { game, ctx, seats } = cast(['sage', 'recluse', 'imp', 'chef', 'empath']);
 			const picker = infoPicker(game, seats[0], 'sage', ctx.characters)!;
-			const recluse = picker.options.filter((o) => o.seats[0] === seats[1]);
+			// A pair without the Imp needs the Recluse to register as the Demon.
+			const recluse = picker.options.filter(
+				(o) => o.seats.includes(seats[1]) && !o.seats.includes(seats[2])
+			);
 			expect(recluse.length).toBeGreaterThan(0);
 			expect(recluse.every((o) => o.registered?.includes(seats[1]))).toBe(true);
-			expect(picker.options.some((o) => o.seats[0] === seats[2] && !o.registered)).toBe(true);
+			expect(picker.options.some((o) => o.seats.includes(seats[2]) && !o.registered)).toBe(true);
 		});
 
 		it('does not when the Recluse is poisoned', () => {
@@ -68,7 +71,7 @@ describe('Recluse + Sage jinx', () => {
 				reminder: { characterId: 'poisoner', label: 'Poisoned' }
 			});
 			const picker = infoPicker(game, seats[0], 'sage', ctx.characters)!;
-			expect(picker.options.some((o) => o.seats[0] === seats[1])).toBe(false);
+			expect(picker.options.every((o) => o.seats.includes(seats[2]))).toBe(true);
 		});
 	});
 });

@@ -2,7 +2,8 @@
  * A pretend camera for the live scan spike: a printed script sheet on a table, moved about
  * the way a hand holds a phone (a second or two of moving, then a few seconds held still),
  * with a small constant shake and a patch of glare that shifts as it moves, like a laminated sheet under a lamp
- * (Trevor, 2026-11-10). It lets the spike be tried on a computer with no camera.
+ * (Trevor, 2026-11-10). It lets the spike be tried on a computer with no camera, with a drawn
+ * sheet or any picture of one (Trevor, 2026-11-10: "Test with this").
  */
 
 /** A character row on the drawn sheet. */
@@ -36,7 +37,7 @@ const INK = 'rgb(38, 32, 26)'; // colour-ok: a drawn photo of a printed sheet
 const TABLE = 'rgb(74, 58, 43)'; // colour-ok: a drawn photo of a wooden table
 
 /** Draws the sheet once, at print size: the title, then each character's name and ability. */
-function drawSheet(title: string, rows: readonly SheetRow[]): HTMLCanvasElement {
+export function drawSheet(title: string, rows: readonly SheetRow[]): HTMLCanvasElement {
 	const width = 960;
 	const sheet = document.createElement('canvas');
 	const measure = sheet.getContext('2d')!;
@@ -79,13 +80,23 @@ function drawSheet(title: string, rows: readonly SheetRow[]): HTMLCanvasElement 
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
+/** A picture of a sheet (a photo or a scan) as a sheet to move about. */
+export async function pictureSheet(file: Blob): Promise<HTMLCanvasElement> {
+	const bitmap = await createImageBitmap(file);
+	const sheet = document.createElement('canvas');
+	sheet.width = bitmap.width;
+	sheet.height = bitmap.height;
+	sheet.getContext('2d')!.drawImage(bitmap, 0, 0);
+	bitmap.close();
+	return sheet;
+}
+
 /** The pretend camera: `draw(now)` paints the frame for that moment on `canvas`. */
-export function demoFeed(title: string, rows: readonly SheetRow[]) {
+export function demoFeed(sheet: HTMLCanvasElement) {
 	const canvas = document.createElement('canvas');
 	canvas.width = 900;
 	canvas.height = 1200;
 	const ctx = canvas.getContext('2d')!;
-	const sheet = drawSheet(title, rows);
 	const started = performance.now();
 	return {
 		canvas,
