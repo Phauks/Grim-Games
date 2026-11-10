@@ -18,7 +18,11 @@
 	import ReminderAbout from '#lib/features/grimoire/ReminderAbout.svelte';
 	import ReminderInHand from '#lib/features/grimoire/ReminderInHand.svelte';
 	import ReminderTray from '#lib/features/grimoire/ReminderTray.svelte';
-	import { overNewToken } from '#lib/features/grimoire/reminder-drag.svelte.ts';
+	import {
+		newTokenGlow,
+		overNewToken,
+		overTray
+	} from '#lib/features/grimoire/reminder-drag.svelte.ts';
 	import { dropOnTap } from '#lib/features/grimoire/reminder-in-hand.ts';
 	import { copiedLook } from '#lib/features/grimoire/reminders.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -154,7 +158,11 @@
 
 	// ── Drag a token onto a seat, or onto "+ New token" ──
 	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean }>();
-	const glow = $derived(drag?.overNew ? 'over' : drag ? 'ready' : undefined);
+	/** A token on a seat being dragged: over "+ New token" or not. */
+	let placedDrag = $state<{ overNew: boolean }>();
+	const glow = $derived(
+		newTokenGlow(!!drag || !!placedDrag, !!drag?.overNew || !!placedDrag?.overNew)
+	);
 	function seatAt(at: SeatPoint): PublicSeat | undefined {
 		if (!town) return undefined;
 		const { width, height } = town.getBoundingClientRect();
@@ -234,15 +242,27 @@
 		return true;
 	}
 	/**
-	 * A token on a seat dragged and let go (Trevor, 2026-11-01: as on the board): onto another
-	 * seat it moves there; onto "+ New token" it stays and a new ∞ token like it is made; onto
-	 * the tray it comes off.
+	 * A token on a seat dragged, as on the board (Trevor, 2026-11-01): "+ New token" glows, and
+	 * once let go, onto another seat it moves there; onto "+ New token" it stays and a new ∞
+	 * token like it is made; onto the tray it comes off (Trevor, 2026-11-10: as the bank takes
+	 * back a board token, the same test, `overTray`).
 	 */
-	export function dropPlaced(from: string, reminder: PlayerReminder, x: number, y: number): void {
+	export function dragPlaced(
+		from: string,
+		reminder: PlayerReminder,
+		x: number,
+		y: number,
+		end: boolean
+	): void {
 		held = undefined;
-		if (overNewToken(x, y)) return newTokenLike(reminder);
-		const under = document.elementFromPoint(x, y);
-		if (under && trayEl?.contains(under)) return reminders.move(from, reminder);
+		const overNew = overNewToken(x, y);
+		if (!end) {
+			placedDrag = { overNew };
+			return;
+		}
+		placedDrag = undefined;
+		if (overNew) return newTokenLike(reminder);
+		if (overTray(x, y)) return reminders.move(from, reminder);
 		if (!town) return;
 		const rect = town.getBoundingClientRect();
 		const seat = seatAt({
@@ -250,6 +270,10 @@
 			y: ((y - rect.top) / rect.height) * 100
 		});
 		if (seat && seat.seatId !== from) reminders.move(from, reminder, seat.seatId);
+	}
+	/** A seat's token's drag given up (another finger, the browser took it). */
+	export function cancelPlaced(): void {
+		placedDrag = undefined;
 	}
 	// The eye hides the player's reminders: nothing stays in hand.
 	$effect(() => {
