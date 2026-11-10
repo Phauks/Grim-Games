@@ -4,6 +4,7 @@
  */
 import { readTypes } from './target-rules.ts';
 import { readToken } from './reminder-fields.ts';
+import { DAY_MARKS, type DayMark } from './day-mark-rules.ts';
 import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
@@ -149,22 +150,36 @@ export interface Learns {
 }
 
 /**
- * What an `answers` character learns, each worked out in `rules/night-info.ts`:
- * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
- * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `statement-true`
- * (Gossip, from the statement logged by day, L58), `outsiders-in-play` (the Outsider characters
- * in play), `winning-alignment` (General: which team the Storyteller believes is winning, good,
- * evil or neither, their judgement, so all three are offered).
- * `count` is the building block (M77): how many players of a group match, the group `among`:
+ * What an `answers` character learns, worked out in `rules/night-info/answers.ts`.
+ *
+ * The building blocks (M77, M78) look at a group of players, the group `among`:
  * - `dead`: those who register as dead;
  * - `marked`: those carrying this character's reminders, the waking player included;
- * - `abnormal`: those whose ability worked abnormally since dawn because of another
- *   character, from the info recorded as abnormal; once the Storyteller has put this
- *   character's `token` on players, those carrying it (their call).
- * A player matches when they register as `alignment`, every one of the group when left out.
- * The official names below that are such a count are presets that expand to it
- * (`ANSWER_PRESETS`): `evil-dead` (Oracle), `evil-marked` (the Duchess's visitors) and
- * `abnormal-abilities` (Mathematician).
+ * - `abnormal` (for `count` only): those whose ability worked abnormally since dawn because of
+ *   another character, from the info recorded as abnormal; once the Storyteller has put this
+ *   character's `token` on players, those carrying it (their call);
+ * - `nominators`: those who nominated today, from the nominations recorded;
+ * - `voters`: those who voted today, which the app does not record, so only `mark` answers;
+ * - `executed`: those who died by execution today, from the day log, else the dead player
+ *   carrying this character's `token`;
+ * - `died`: those who died today, from the log, today's executions and exiles, and dead
+ *   players carrying this character's `token`;
+ * - `everyone`: every player.
+ * A player matches when they register as `alignment` and as one of `types`, every one of the
+ * group when neither is given. What is learnt about the group:
+ * - `count`: how many match;
+ * - `any`: yes when any matches. `mark` is the Storyteller's day mark (`day-mark-rules.ts`)
+ *   that answers it when set and the group recorded today says otherwise, or says nothing;
+ * - `character`: the character of the latest player in the group who matches;
+ * - `characters`: the characters in play of the one character type in `types`.
+ * The official names below that are a block are presets that expand to it (`ANSWER_PRESETS`):
+ * `evil-dead` (Oracle), `evil-marked` (the Duchess's visitors), `abnormal-abilities`
+ * (Mathematician), `minion-nominated` (Town Crier), `demon-voted` (Flowergirl),
+ * `executed-character` (Undertaker) and `outsiders-in-play` (Godfather, first night).
+ * The rest are worked out one by one, each for a single character: `outsider-died` (Godfather),
+ * `correct-guesses` (Juggler), `statement-true` (Gossip, from the statement logged by day, L58)
+ * and `winning-alignment` (General: which team the Storyteller believes is winning, good, evil
+ * or neither, their judgement, so all three are offered).
  * `token` is the character's reminder that marks the answer on the board ("Died Today",
  * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
  * character that learns something else then (the Godfather starts knowing which Outsiders
@@ -174,41 +189,66 @@ export interface Learns {
  * `falseToken` is the reminder whose player must get false information (the Duchess's
  * "False Info").
  */
-const ANSWER_QUESTIONS = [
-	'minion-nominated',
-	'demon-voted',
-	'executed-character',
+const ANSWER_BLOCKS = ['count', 'any', 'character', 'characters'] as const;
+const ANSWER_ONE_OFFS = [
 	'outsider-died',
 	'correct-guesses',
 	'statement-true',
-	'outsiders-in-play',
-	'winning-alignment',
-	'count'
+	'winning-alignment'
 ] as const;
-const ANSWER_PRESET_NAMES = ['evil-dead', 'evil-marked', 'abnormal-abilities'] as const;
-const ANSWER_NAMES = [...ANSWER_QUESTIONS, ...ANSWER_PRESET_NAMES] as const;
-const COUNT_AMONG = ['dead', 'marked', 'abnormal'] as const;
+const ANSWER_PRESET_NAMES = [
+	'evil-dead',
+	'evil-marked',
+	'abnormal-abilities',
+	'minion-nominated',
+	'demon-voted',
+	'executed-character',
+	'outsiders-in-play'
+] as const;
+const ANSWER_NAMES = [...ANSWER_BLOCKS, ...ANSWER_ONE_OFFS, ...ANSWER_PRESET_NAMES] as const;
+const ANSWER_GROUPS = [
+	'dead',
+	'marked',
+	'abnormal',
+	'nominators',
+	'voters',
+	'executed',
+	'died',
+	'everyone'
+] as const;
 const ANSWER_WAKES = ['marked'] as const;
-type AnswerQuestion = (typeof ANSWER_QUESTIONS)[number];
+type AnswerBlock = (typeof ANSWER_BLOCKS)[number];
+type AnswerOneOff = (typeof ANSWER_ONE_OFFS)[number];
 type AnswerPreset = (typeof ANSWER_PRESET_NAMES)[number];
 
-/** A `count` answer: how many players of a group match. */
-export interface AnswerCount {
-	among: (typeof COUNT_AMONG)[number];
+/** The group a building block looks at, and who in it matches. */
+export interface AnswerGroup {
+	among: (typeof ANSWER_GROUPS)[number];
 	alignment?: Alignment;
+	types?: readonly CharacterType[];
+	/** For `any`: the Storyteller's day mark that answers it. */
+	mark?: DayMark;
 }
 
-/** The official names that are a `count`, and the count each expands to. */
-const ANSWER_PRESETS: Readonly<Record<AnswerPreset, AnswerCount>> = {
-	'evil-dead': { among: 'dead', alignment: 'evil' },
-	'evil-marked': { among: 'marked', alignment: 'evil' },
-	'abnormal-abilities': { among: 'abnormal' }
+/** The official names that are a block, and the block each expands to. */
+const ANSWER_PRESETS: Readonly<Record<AnswerPreset, { question: AnswerBlock } & AnswerGroup>> = {
+	'evil-dead': { question: 'count', among: 'dead', alignment: 'evil' },
+	'evil-marked': { question: 'count', among: 'marked', alignment: 'evil' },
+	'abnormal-abilities': { question: 'count', among: 'abnormal' },
+	'minion-nominated': {
+		question: 'any',
+		among: 'nominators',
+		types: ['minion'],
+		mark: 'minion-nominated'
+	},
+	'demon-voted': { question: 'any', among: 'voters', types: ['demon'], mark: 'demon-voted' },
+	'executed-character': { question: 'character', among: 'executed' },
+	'outsiders-in-play': { question: 'characters', among: 'everyone', types: ['outsider'] }
 };
 
-/** A question as asked: one worked out on its own, or a `count`. */
+/** A question as asked: one worked out on its own, or a building block. */
 export type AnswerAsked =
-	| { question: Exclude<AnswerQuestion, 'count'> }
-	| ({ question: 'count'; preset?: AnswerPreset } & AnswerCount);
+	{ question: AnswerOneOff } | ({ question: AnswerBlock; preset?: AnswerPreset } & AnswerGroup);
 
 export type Answers = AnswerAsked & {
 	token?: ReminderLabel;
@@ -217,14 +257,17 @@ export type Answers = AnswerAsked & {
 	falseToken?: ReminderLabel;
 };
 
-/** `name` as asked: a preset expanded to its `count`. */
-function asked(name: (typeof ANSWER_NAMES)[number], count?: AnswerCount): AnswerAsked {
-	if (name === 'count') return { question: 'count', ...(count as AnswerCount) };
+const isAnswerBlock = (name: string): name is AnswerBlock =>
+	(ANSWER_BLOCKS as readonly string[]).includes(name);
+
+/** `name` as asked: a preset expanded to its block. */
+function asked(name: (typeof ANSWER_NAMES)[number], group?: AnswerGroup): AnswerAsked {
+	if (isAnswerBlock(name)) return { question: name, ...(group as AnswerGroup) };
 	if (name in ANSWER_PRESETS) {
 		const preset = name as AnswerPreset;
-		return { question: 'count', ...ANSWER_PRESETS[preset], preset };
+		return { ...ANSWER_PRESETS[preset], preset };
 	}
-	return { question: name as Exclude<AnswerQuestion, 'count'> };
+	return { question: name as AnswerOneOff };
 }
 
 export function readLearns(
@@ -375,40 +418,76 @@ export function readAnswers(
 	}
 	checkKeys(
 		raw,
-		['question', 'among', 'alignment', 'token', 'firstNight', 'wakes', 'falseToken'],
+		[
+			'question',
+			'among',
+			'alignment',
+			'types',
+			'mark',
+			'token',
+			'firstNight',
+			'wakes',
+			'falseToken'
+		],
 		path,
 		issues
 	);
 	const question = readEnum(raw, 'question', ANSWER_NAMES, path, issues, true);
-	const among = readEnum(raw, 'among', COUNT_AMONG, path, issues, false);
+	const among = readEnum(raw, 'among', ANSWER_GROUPS, path, issues, false);
 	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
+	const types = readTypes(raw, 'types', path, issues);
+	const mark = readEnum(raw, 'mark', DAY_MARKS, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const firstNight = readEnum(raw, 'firstNight', ANSWER_NAMES, path, issues, false);
 	const wakes = readEnum(raw, 'wakes', ANSWER_WAKES, path, issues, false);
 	const falseToken = readToken(raw, 'falseToken', path, issues, reminders);
 	if (!question) return undefined;
-	if (question === 'count') {
+	let group: AnswerGroup | undefined;
+	if (isAnswerBlock(question)) {
 		if (!among) {
 			issues.add(`${path}.among`, 'missing');
 			return undefined;
 		}
-		if (among === 'abnormal' && alignment) {
-			issues.add(`${path}.alignment`, 'not with `among: "abnormal"`');
-			return undefined;
-		}
-	} else if (among || alignment) {
-		issues.add(path, 'only a `count` takes `among` and `alignment`');
+		group = {
+			among,
+			...(alignment ? { alignment } : {}),
+			...(types ? { types } : {}),
+			...(mark ? { mark } : {})
+		};
+		if (!checkAnswerBlock(question, group, path, issues)) return undefined;
+	} else if (among || alignment || types || mark) {
+		issues.add(path, 'only a building block takes `among`, `alignment`, `types` and `mark`');
 		return undefined;
 	}
-	if (firstNight === 'count') {
-		issues.add(`${path}.firstNight`, 'a `count` needs its own fields: name a preset');
+	if (firstNight && isAnswerBlock(firstNight)) {
+		issues.add(`${path}.firstNight`, `a \`${firstNight}\` needs its own fields: name a preset`);
 		return undefined;
 	}
 	return {
-		...asked(question, among ? { among, ...(alignment ? { alignment } : {}) } : undefined),
+		...asked(question, group),
 		...(token ? { token } : {}),
 		...(firstNight ? { firstNight: asked(firstNight) } : {}),
 		...(wakes ? { wakes } : {}),
 		...(falseToken ? { falseToken } : {})
 	};
+}
+
+/** Whether a block's group fits what it asks. */
+function checkAnswerBlock(
+	question: AnswerBlock,
+	group: AnswerGroup,
+	path: string,
+	issues: Issues
+): boolean {
+	const before = issues.list.length;
+	if (group.among === 'abnormal' && question !== 'count')
+		issues.add(`${path}.among`, 'only a `count` looks at `abnormal`');
+	if (group.among === 'abnormal' && (group.alignment || group.types))
+		issues.add(path, 'not with `among: "abnormal"`: it counts every one');
+	if (group.among === 'voters' && !group.mark)
+		issues.add(`${path}.mark`, 'votes are not recorded: `voters` needs a `mark`');
+	if (group.mark && question !== 'any') issues.add(`${path}.mark`, 'only `any` takes it');
+	if (question === 'characters' && group.types?.length !== 1)
+		issues.add(`${path}.types`, 'a `characters` shows one character type');
+	return issues.list.length === before;
 }

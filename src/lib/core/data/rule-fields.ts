@@ -52,23 +52,30 @@ const DAY_GROUPS = oneOf([
 	'announcement'
 ]);
 const ANSWER_NAMES = [
-	'minion-nominated',
-	'demon-voted',
-	'executed-character',
+	'count',
+	'any',
+	'character',
+	'characters',
 	'outsider-died',
 	'correct-guesses',
 	'statement-true',
-	'outsiders-in-play',
 	'winning-alignment',
-	'count',
 	'evil-dead',
 	'evil-marked',
-	'abnormal-abilities'
+	'abnormal-abilities',
+	'minion-nominated',
+	'demon-voted',
+	'executed-character',
+	'outsiders-in-play'
 ];
 const ASKED = {
 	question: oneOf(ANSWER_NAMES),
-	among: opt(oneOf(['dead', 'marked', 'abnormal'])),
-	alignment: opt(ALIGNMENT)
+	among: opt(
+		oneOf(['dead', 'marked', 'abnormal', 'nominators', 'voters', 'executed', 'died', 'everyone'])
+	),
+	alignment: opt(ALIGNMENT),
+	types: opt(SOME_TYPES),
+	mark: opt(oneOf(['minion-nominated', 'demon-voted']))
 };
 const INFO_TOKEN = obj({
 	characters: STRS,

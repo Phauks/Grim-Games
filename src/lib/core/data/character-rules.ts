@@ -28,7 +28,7 @@ export { PROTECTS_FROM, type Protects } from './parts/protects.ts';
 export type { ShownTo } from './parts/shown-to.ts';
 export type { Registers, RegistersAs, TokenRegisters } from './registers-as-rules.ts';
 export type { ImpairmentReason, Impairs, TokenImpairment } from './impairs-rules.ts';
-export type { Answers, Learns, LearnsBlock } from './night-info-rules.ts';
+export type { AnswerGroup, Answers, Learns, LearnsBlock } from './night-info-rules.ts';
 export { isLearnsBlock } from './night-info-rules.ts';
 
 type PartKey = keyof typeof PARTS;
