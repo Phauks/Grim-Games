@@ -5,6 +5,12 @@ import { reminderChip } from './player-reminders.ts';
 export const TRAY_EXTRA = 30;
 /** Its gaps above and below inside the town, in px. */
 const TRAY_GAPS = 16;
+/**
+ * How far the tray's handle, a tap target centred on the tray's top edge, reaches above it,
+ * in px: the ring keeps clear of it too, so the seat at the foot is never under it (Trevor,
+ * 2026-11-10).
+ */
+const HANDLE_OVER = 22;
 
 /**
  * A player's ring of seats above the reminder tray docked at the town's foot (Trevor,
@@ -38,7 +44,7 @@ export function ringAboveTray(
 		scale
 	);
 	const trayH = chip + TRAY_EXTRA;
-	const foot = tray ? trayH + TRAY_GAPS : 0;
+	const foot = tray ? trayH + TRAY_GAPS + HANDLE_OVER : 0;
 	const ring = { width: board.width, height: Math.max(0, board.height - foot) };
 	const { size, points: ringPoints } = sharedSeats(
 		seats,

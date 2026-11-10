@@ -213,6 +213,11 @@
 	let toolsW = $state(0);
 	let toolsH = $state(0);
 	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
+	// The player's reminders keep clear of them too (Trevor, 2026-11-10: the buttons over the
+	// Oracle's Know), as the board's keep clear of its timer (keepClear).
+	const toolsClear = $derived(
+		tools && toolsW > 0 ? [{ x: width - tools.w / 2, y: tools.h / 2, w: tools.w, h: tools.h }] : []
+	);
 	const fit = $derived(matchesShape(display));
 	const placement = $derived(
 		ringAboveTray({ seats, layout, board, aspect, fit, tools, tray: !display }, preferences.current)
@@ -510,6 +515,7 @@
 				{notes}
 				{characterOf}
 				bind:held
+				clear={toolsClear}
 				town={townEl}
 				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
 				onDrop={(seat, r, x, y) => bin?.dropPlaced(seat.seatId, r, x, y)}

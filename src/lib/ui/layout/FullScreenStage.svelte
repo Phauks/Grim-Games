@@ -18,7 +18,12 @@
 		 */
 		corner?: Snippet<[boolean]>;
 		testid?: string;
-		/** The corner's size, measured, for a board that keeps its seats clear of it. */
+		/**
+		 * How far the corner reaches in from the stage's right edge and down from its top,
+		 * its gutters included, for a board that keeps its seats clear of it. Full screen
+		 * steps the corner down past the camera, so its own height alone falls short (Trevor's
+		 * Pixel, 2026-11-10: the buttons over the top seat and its reminder).
+		 */
 		cornerWidth?: number;
 		cornerHeight?: number;
 	}
@@ -27,26 +32,41 @@
 		children,
 		corner,
 		testid,
+		// eslint-disable-next-line no-useless-assignment -- bindable: the board reads it
 		cornerWidth = $bindable(0),
+		// eslint-disable-next-line no-useless-assignment -- bindable: the board reads it
 		cornerHeight = $bindable(0)
 	}: Props = $props();
 
 	let stage = $state<HTMLDivElement>();
+	let cornerBox = $state<HTMLDivElement>();
+	function measure() {
+		if (!cornerBox || !stage) return;
+		cornerWidth = stage.clientWidth - cornerBox.offsetLeft;
+		cornerHeight = cornerBox.offsetTop + cornerBox.offsetHeight;
+	}
+	$effect(() => {
+		if (!cornerBox || !stage) return;
+		const sizes = new ResizeObserver(measure);
+		sizes.observe(cornerBox);
+		sizes.observe(stage);
+		return () => sizes.disconnect();
+	});
 	const filled = $derived(!!stage && fullScreenPart.current === stage);
 	// Gone from the page, it fills nothing.
 	$effect(() => () => {
 		if (stage && fullScreenPart.current === stage) fullScreenPart.current = undefined;
 	});
+	// Filling the screen moves the corner down past the camera without resizing it.
+	$effect(() => {
+		void filled;
+		measure();
+	});
 </script>
 
 <div class="stage" bind:this={stage} data-filled={filled ? '' : undefined} data-testid={testid}>
 	{@render children()}
-	{#if stage}<div
-			class="corner"
-			data-testid="full-screen-corner"
-			bind:clientWidth={cornerWidth}
-			bind:clientHeight={cornerHeight}
-		>
+	{#if stage}<div class="corner" data-testid="full-screen-corner" bind:this={cornerBox}>
 			{@render corner?.(filled)}
 			<span class="corner-button"><FullScreenButton target={stage} /></span>
 		</div>{/if}
