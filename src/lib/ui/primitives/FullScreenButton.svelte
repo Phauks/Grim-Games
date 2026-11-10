@@ -11,7 +11,7 @@
 	 * has no address bar, and full screen would only take the clock and status bar he wants to
 	 * keep. A part of the page fills the screen everywhere (Trevor, 2026-10-26, on his phone:
 	 * "don't see full screen button to enlarge town grim"), hiding the browser's bars too where
-	 * it can. The symbol says on or off, one button either way, so nothing beside it moves (two
+	 * it can, except in the installed app, where it fills the window (2026-11-10). The symbol says on or off, one button either way, so nothing beside it moves (two
 	 * states = a toggle).
 	 */
 	interface Props {
@@ -44,7 +44,9 @@
 			if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
 		} else {
 			fullScreenPart.current = target;
-			if (document.fullscreenEnabled && !document.fullscreenElement)
+			// Not in the installed app: it has no address bar to hide, and Chrome's own "drag
+			// from the top to exit" notice would be all it added (Trevor, 2026-11-10).
+			if (appFullScreen.available && !document.fullscreenElement)
 				void document.documentElement.requestFullscreen().catch(() => {});
 		}
 	}

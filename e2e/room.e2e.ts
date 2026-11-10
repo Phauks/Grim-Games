@@ -2050,6 +2050,36 @@ test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
 	await phoneContext.close();
 });
 
+test("in the installed app a player's Grim fills the window without the browser's full screen", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-11-10): Chrome's "drag from the top to exit full screen" notice is all the
+	// browser's full screen adds in the installed app, which has no address bar to hide.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.addInitScript(() => {
+		const real = window.matchMedia.bind(window);
+		window.matchMedia = (query: string) =>
+			query.includes('display-mode: standalone')
+				? ({ ...real(query), matches: true, media: query } as MediaQueryList)
+				: real(query);
+	});
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const fullScreen = phone.getByRole('button', { name: 'Full screen', exact: true });
+	await fullScreen.tap();
+	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');
+	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	expect(Math.round(town.height)).toBe(phone.viewportSize()!.height);
+	expect(await phone.evaluate(() => document.fullscreenElement)).toBeNull();
+	await phoneContext.close();
+});
+
 test("a player's Grim fills the screen from its own corner, and a seat's sheet opens over it", async ({
 	page,
 	browser
