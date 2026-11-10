@@ -45,8 +45,10 @@
 		localNotesKey,
 		openOnGrim,
 		recordLocalVisit,
-		saveLocalTown
+		saveLocalTown,
+		startLocalTown
 	} from './local-town.svelte.ts';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
@@ -275,6 +277,20 @@
 		};
 	}
 
+	/** A Local Grim game this phone keeps: the header offers New game (Trevor, 2026-11-10). */
+	const localGame = $derived(
+		!!script && !inRoom && !join && !!key && !!keptLocalTown(key)?.seats.length
+	);
+	let newGameOpen = $state(false);
+	/** Counts the games started here, so the tabs open the new, empty one. */
+	let localGeneration = $state(0);
+	async function startNewLocalGame() {
+		if (!key) return;
+		await startLocalTown(key);
+		localGeneration += 1;
+		tab = 'grim';
+	}
+
 	/** The script came from an offline code and no room sent it: the game is offline. */
 	const offline = $derived(!!script && !inRoom && !join && offlineScript.key === scriptKey(script));
 
@@ -313,6 +329,7 @@
 			joined={joinedRoom}
 			rules={roomTable.rules}
 			cog={!join || !!joinedRoom}
+			newGame={localGame ? () => (newGameOpen = true) : undefined}
 		/>
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
@@ -382,15 +399,15 @@
 		<!-- The same screen the Storyteller's player view shows (PlayerScreen). -->
 		<!-- In a room, the table's own column of the Players breakdown is picked for the player
 		     (Trevor, 2026-10-26: "so players don't have to think"). -->
-		<PlayerScreen
-			{script}
-			players={inRoom === lastRoom() ? roomTable.players : undefined}
-			travellers={roomTable.travellers}
-			rules={roomTable.rules}
-			ruleCharacters={roomTable.ruleCharacters}
-			notesKey={key}
-			bind:tab
-		/>
+		{#key localGeneration}<PlayerScreen
+				{script}
+				players={inRoom === lastRoom() ? roomTable.players : undefined}
+				travellers={roomTable.travellers}
+				rules={roomTable.rules}
+				ruleCharacters={roomTable.ruleCharacters}
+				notesKey={key}
+				bind:tab
+			/>{/key}
 	{/if}
 </Page>
 
@@ -404,6 +421,13 @@
 	card={leaveCard}
 	within={(url) => url.pathname === resolve('/play') || url.pathname.startsWith(resolve('/join'))}
 	unload={false}
+/>
+<ConfirmDialog
+	bind:open={newGameOpen}
+	title={t('player.local.newGameTitle')}
+	description={t('player.local.newGameBody')}
+	danger
+	onConfirm={() => void startNewLocalGame()}
 />
 <ScriptCheckDialog
 	bind:open={checkOpen}
