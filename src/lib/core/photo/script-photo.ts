@@ -8,8 +8,8 @@
  * A line is a name when one of its first few words reads like a character's name (edit
  * distance, forgiving case, accents and punctuation), or when it carries most of a
  * character's ability text, which every printed script shows beside the name. The script is
- * named by comparing the characters found with the scripts already known (the official
- * editions and the user's own), then by the sheet's title.
+ * named by the sheet's title, never matched to a known script (Trevor, 2026-11-10: a sheet
+ * may differ slightly from it).
  */
 import { scriptToJson } from '#lib/core/data/script.ts';
 import type { Character, CharacterId, CharacterName } from '#lib/core/data/index.ts';
@@ -331,41 +331,6 @@ export function readScriptLines(
 		title: titleText,
 		author
 	};
-}
-
-/** A script the app already knows, by its characters. */
-export interface KnownScript<K> {
-	key: K;
-	name: string;
-	characters: readonly CharacterId[];
-}
-
-/** At least this share of a known script's characters read, and the photo is that script. */
-export const SAME_SCRIPT = 0.9;
-
-/**
- * The known script the photo shows: one holding every character read, of which at least
- * `SAME_SCRIPT` were read (a missed line or two still names it; one character it doesn't
- * have, and the sheet is a different script). The most fully read wins, then one the title
- * names.
- */
-export function knownScriptFor<K>(
-	found: readonly CharacterId[],
-	title: string,
-	known: readonly KnownScript<K>[]
-): KnownScript<K> | undefined {
-	const plainTitle = plainText(title);
-	let best: { script: KnownScript<K>; score: number } | undefined;
-	for (const script of known) {
-		const theirs = new Set(script.characters);
-		if (theirs.size === 0 || !found.every((id) => theirs.has(id))) continue;
-		const share = new Set(found).size / theirs.size;
-		if (share < SAME_SCRIPT) continue;
-		const named = plainTitle !== '' && likeness(plainTitle, plainText(script.name)) >= MATCHED;
-		const score = share + (named ? 0.001 : 0);
-		if (!best || score > best.score) best = { script, score };
-	}
-	return best?.script;
 }
 
 /**
