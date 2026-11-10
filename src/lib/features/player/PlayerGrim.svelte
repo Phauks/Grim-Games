@@ -77,7 +77,9 @@
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
-	import { localGuessKey, localSeats } from './local-town.svelte.ts';
+	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
+	import { setTraveller } from '#lib/core/town/local-town.ts';
+	import type { Character } from '#lib/core/data/index.ts';
 	import LocalSeatCount from './LocalSeatCount.svelte';
 	import LocalSeatRows from './LocalSeatRows.svelte';
 
@@ -319,6 +321,42 @@
 				? travellerGuess(guesses, chosen.seatId, characterId)
 				: toggleGuess(guesses, chosen.seatId, characterId, withAvatar(chosen))
 		);
+	}
+	/**
+	 * A players-only game's seat picker lists the Travellers as a character type of their own
+	 * (Trevor, 2026-11-10): the script's first, then every other official one, since a Traveller
+	 * can join any game.
+	 */
+	const pickable = $derived.by((): readonly Character[] => {
+		if (!local) return script.characters;
+		const listed = new Set(script.characters.map((c) => c.id));
+		const others = (officialData.current?.characters ?? []).filter(
+			(c) => c.type === 'traveller' && !listed.has(c.id)
+		);
+		return [...script.characters, ...others];
+	});
+	/** What the seat picker shows as chosen: a Traveller's seat its Traveller, else the guesses. */
+	const picked = $derived(
+		!chosen
+			? []
+			: local && current?.traveller
+				? [current.traveller]
+				: guessesOf(guesses, chosen.seatId)
+	);
+	/**
+	 * A tap in a players-only game's picker: a Traveller is what the town was told, so it marks
+	 * the seat as that Traveller, and a second tap takes it off again; any other character takes
+	 * the Traveller off and is a guess.
+	 */
+	function pick(characterId: CharacterId) {
+		if (!chosen) return;
+		if (!local) return guess(characterId);
+		const seatId = chosen.seatId;
+		const traveller = pickable.find((c) => c.id === characterId)?.type === 'traveller';
+		const next = traveller && current?.traveller !== characterId ? characterId : undefined;
+		if (traveller || current?.traveller)
+			saveLocalTown(local, setTraveller(localTown(local), seatId, next));
+		if (!traveller) save(toggleGuess(guesses, seatId, characterId, withAvatar(chosen)));
 	}
 	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
 	const guessChoices = $derived(
@@ -582,6 +620,7 @@
 {#snippet grimTools(placed: boolean)}<PlayerGrimTools
 		{placed}
 		seats={local ? townSeatCount : undefined}
+		matchShape={!local}
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
@@ -617,7 +656,7 @@
 	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
 	     note, a row of its own, so the two never read as one. -->
 	<!-- A players-only game: what the town knows about this seat, marked by the player (plan M55). -->
-	{#if local && current}<LocalSeatRows notesKey={local} seat={current} {script} />{/if}
+	{#if local && current}<LocalSeatRows notesKey={local} seat={current} />{/if}
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
 		<SeatGuessChips
@@ -643,17 +682,18 @@
 		onDelete={(noteId) => kept && chosen && deleteSeatNote(kept, chosen.seatId, noteId)}
 	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
-	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
+	     characters; a Traveller's seat has only Good and Evil, and no characters, except in a
+	     players-only game, where the player marks the Traveller there (Trevor, 2026-11-10). -->
 	<GenericGuessGrid
 		choices={guessChoices}
 		label={genericLabel}
 		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
 		onGuess={guess}
 	/>
-	{#if !current?.traveller}<CharacterPicker
-			characters={script.characters}
-			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
-			onSelect={(id) => guess(id)}
+	{#if local || !current?.traveller}<CharacterPicker
+			characters={pickable}
+			selected={picked}
+			onSelect={pick}
 		/>{/if}
 </BottomSheet>
 
