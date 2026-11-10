@@ -43,6 +43,22 @@ export function difference(a: Gray, b: Gray): number {
 	return sum / a.values.length;
 }
 
+/**
+ * How sharp a frame is: the mean squared change in brightness between neighbouring pixels.
+ * Motion blur smears edges, so the same sheet held still scores higher than while it moves.
+ */
+export function sharpness(gray: Gray): number {
+	const { width, height, values } = gray;
+	let sum = 0;
+	for (let y = 0; y < height - 1; y++) {
+		for (let x = 0; x < width - 1; x++) {
+			const i = y * width + x;
+			sum += (values[i + 1] - values[i]) ** 2 + (values[i + width] - values[i]) ** 2;
+		}
+	}
+	return sum / Math.max(1, (width - 1) * (height - 1));
+}
+
 /** A pixel this bright, and nearly colourless, is glare rather than paper. */
 const GLARE_LEVEL = 245;
 const GLARE_GREY = 24;

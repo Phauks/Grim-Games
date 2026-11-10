@@ -14,7 +14,8 @@
 		warp,
 		type Gray,
 		type Point,
-		type Rect
+		type Rect,
+		sharpness
 	} from '#lib/core/photo/frame-checks.ts';
 	import { readScriptLines, type PhotoLineTrace } from '#lib/core/photo/script-photo.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -73,7 +74,12 @@
 	/** Corners that moved less than this share of the sheet's size since the last check are steady. */
 	const STEADY = 0.03;
 	/** Corners steady this long before a read starts. */
-	const STEADY_MS = 200;
+	const STEADY_MS = 800;
+	/**
+	 * A grab waits for a frame this sharp beside the sharpest of the hold (Trevor, 2026-11-10:
+	 * it "takes picture too fast, so it is blurry"): a frame mid-shake scores lower.
+	 */
+	const SHARP_SHARE = 0.9;
 	/** The straightened page's long side: about 145 dots an inch on Letter, plenty for 9 point type. */
 	const PAGE_SIDE = 1600;
 	/** The corners are found again on a frame this wide before straightening, for a tighter fit. */
@@ -88,6 +94,20 @@
 	let cornersFound = $state(false);
 	let title = $state('');
 	let reviewOpen = $state(false);
+	/**
+	 * One grab per scan (Trevor, 2026-11-10: "have the picture auto-grab. hold it, and only
+	 * recommend rescanning if it notices certain issues"): once read, the frame stays held.
+	 */
+	let grabbed = $state(false);
+	/** Set by the shutter button: take the picture now, steady or not. */
+	let shutter = false;
+	/** What looked wrong with the grab, each a reason to scan again; empty when it looked fine. */
+	let issues = $state.raw<string[]>([]);
+	/** The frame held while it is read, and after the grab. */
+	let frozen: HTMLCanvasElement | undefined;
+	let frozenQuad: Point[] | undefined;
+	/** The corners found by the quick check when the frame was frozen. */
+	let frozenCorners: Point[] | undefined;
 	let glareShown = $state(false);
 	let page: HTMLCanvasElement | undefined = $state();
 	let pageShown = $state(false);
@@ -112,6 +132,12 @@
 		titles.clear();
 		reads = 0;
 		reading = undefined;
+		grabbed = false;
+		issues = [];
+		reviewOpen = false;
+		frozen = undefined;
+		frozenQuad = undefined;
+		frozenCorners = undefined;
 		round++;
 	}
 
@@ -270,6 +296,33 @@
 		return { page: out, quad, toFrame: (p: Point) => mapPoint(h, p) };
 	}
 
+	/** Whether any glare patch (in quick-check pixels) lies over the sheet's corners' box. */
+	function onSheet(glare: Rect[], toView: number, corners?: Point[]): boolean {
+		if (!corners) return glare.length > 0;
+		const xs = corners.map((c) => c.x / toView);
+		const ys = corners.map((c) => c.y / toView);
+		const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+		return glare.some((g) => g.x0 < x1 && g.x1 > x0 && g.y0 < y1 && g.y1 > y0);
+	}
+
+	/** Holds the read frame and lists what looked wrong with it, each a reason to scan again. */
+	function grab(glareOnSheet: boolean, noCorners = false) {
+		const types = new Set([...found.values()].map((c) => c.type));
+		const problems = [
+			glareOnSheet && 'Glare was on the sheet, so lines under it may be missing.',
+			noCorners && "The sheet's corners were not all in view, so it was not straightened.",
+			found.size < 5 && `Only ${found.size} ${found.size === 1 ? 'character' : 'characters'} read.`,
+			found.size >= 5 && !types.has('demon') && 'No Demon read.',
+			found.size >= 5 && !types.has('townsfolk') && 'No Townsfolk read.',
+			unknown.length > 0 &&
+				`${unknown.length} ${unknown.length === 1 ? 'line' : 'lines'} not matched to a character.`,
+			!title && 'No title read.'
+		];
+		issues = problems.filter((i): i is string => !!i);
+		grabbed = true;
+		reviewOpen = true;
+	}
+
 	/** The colour of each kind of mark, from the theme. */
 	function palette() {
 		const css = getComputedStyle(document.documentElement);
@@ -297,11 +350,8 @@
 		let previous: Gray | undefined;
 		let stillSince = performance.now();
 		let steadySince = performance.now();
-		/** While a straightened read runs, the frozen frame shown in place of the camera. */
-		let frozen: HTMLCanvasElement | undefined;
-		let frozenQuad: Point[] | undefined;
-		/** The corners found by the quick check when the frame was frozen. */
-		let frozenCorners: Point[] | undefined;
+		/** The sharpest frame's score since the corners last moved. */
+		let sharpest = 0;
 		let lastCheck = 0;
 		let glare: Rect[] = [];
 		let corners: Point[] | undefined;
@@ -369,29 +419,55 @@
 					!!last &&
 					Math.max(...corners.map((c, i) => Math.hypot(c.x - last[i].x, c.y - last[i].y))) <
 						STEADY * size;
-				if (!steady) steadySince = now;
+				const sharp = sharpness(gray);
+				if (!steady) {
+					steadySince = now;
+					sharpest = sharp;
+				} else sharpest = Math.max(sharpest, sharp);
 				colours = palette();
-				if (!reader) status = 'Starting the text reader';
+				if (grabbed) status = issues.length ? 'Read, with problems below' : 'Read';
+				else if (!reader) status = 'Starting the text reader';
 				else if (busy) status = tracking ? 'Frozen, reading the straightened page' : 'Reading';
-				else if (tracking) status = corners ? 'Steady the sheet' : 'Show all four corners';
+				else if (tracking)
+					status = !corners
+						? 'Show all four corners'
+						: now - steadySince > STEADY_MS / 2
+							? 'Hold it there'
+							: 'Steady the sheet';
 				else if (moving) status = 'Moving, marks hidden';
 				else status = 'Hold still';
 
-				if (reader && !busy && tracking && corners && now - steadySince > STEADY_MS) {
+				const auto = tracking
+					? !!corners && now - steadySince > STEADY_MS && sharp >= SHARP_SHARE * sharpest
+					: now - stillSince > STILL_MS;
+				if (grabbed || !reader || busy || !(shutter || auto)) {
+					// Held after a grab, or not ready: nothing is read.
+				} else {
+					const manual = shutter;
+					shutter = false;
 					busy = true;
-					status = 'Frozen, reading the straightened page';
 					const still = document.createElement('canvas');
 					still.width = shot.w;
 					still.height = shot.h;
 					still.getContext('2d')!.drawImage(shot.el, 0, 0, shot.w, shot.h);
 					frozen = still;
 					frozenCorners = corners;
-					const flat = straighten(still);
+					const flat = tracking && corners ? straighten(still) : undefined;
 					frozenQuad = flat?.quad;
-					if (!flat) {
-						frozen = undefined;
+					const glareAtGrab = onSheet(glare, toView, corners);
+					const begun = round;
+					const done = () => {
 						busy = false;
-					} else {
+						if (!grabbed) {
+							frozen = undefined;
+							frozenQuad = undefined;
+						}
+						steadySince = performance.now();
+					};
+					const failed = (error: unknown) =>
+						(problem = `A read failed (${(error as Error).message}).`);
+					if (flat) {
+						status = 'Frozen, reading the straightened page';
 						if (page) {
 							page.width = flat.page.width;
 							page.height = flat.page.height;
@@ -399,25 +475,22 @@
 							pageShown = true;
 						}
 						void read(reader, flat.page, flat.toFrame, gray, corners)
-							.catch((error) => (problem = `A read failed (${(error as Error).message}).`))
-							.finally(() => {
-								busy = false;
-								frozen = undefined;
-								frozenQuad = undefined;
-								steadySince = performance.now();
-							});
-					}
-				} else if (reader && !busy && !tracking && now - stillSince > STILL_MS) {
-					busy = true;
-					status = 'Reading';
-					const scale = Math.min(1.5, READ_SIDE / Math.max(shot.w, shot.h));
-					const frame = document.createElement('canvas');
-					frame.width = Math.round(shot.w * scale);
-					frame.height = Math.round(shot.h * scale);
-					frame.getContext('2d')!.drawImage(shot.el, 0, 0, frame.width, frame.height);
-					void read(reader, frame, (p) => ({ x: p.x / scale, y: p.y / scale }), gray, corners)
-						.catch((error) => (problem = `A read failed (${(error as Error).message}).`))
-						.finally(() => (busy = false));
+							.then(() => begun === round && grab(glareAtGrab, !corners))
+							.catch(failed)
+							.finally(done);
+					} else if (manual || !tracking) {
+						// A picture taken by hand is read as it is when its corners can't be found.
+						status = 'Reading';
+						const scale = Math.min(1.5, READ_SIDE / Math.max(shot.w, shot.h));
+						const frame = document.createElement('canvas');
+						frame.width = Math.round(shot.w * scale);
+						frame.height = Math.round(shot.h * scale);
+						frame.getContext('2d')!.drawImage(still, 0, 0, frame.width, frame.height);
+						void read(reader, frame, (p) => ({ x: p.x / scale, y: p.y / scale }), gray, corners)
+							.then(() => begun === round && grab(glareAtGrab, tracking && !corners))
+							.catch(failed)
+							.finally(done);
+					} else done();
 				}
 			}
 
@@ -512,7 +585,7 @@
 			checked={tracking}
 			onChange={(on) => (tracking = on)}
 			description={tracking
-				? 'Marks follow the sheet by its corners; each read freezes and straightens the page'
+				? 'Marks follow the sheet by its corners; the grab is straightened before it is read'
 				: 'Off: marks fade while the picture moves'}
 		/>
 	</div>
@@ -531,6 +604,7 @@
 
 	<div class="result">
 		<p class="banner" data-testid="live-scan-banner">{banner}</p>
+		<Button icon="photo" disabled={grabbed} onclick={() => (shutter = true)}>Take picture</Button>
 		<Button onclick={() => (reviewOpen = true)} disabled={!found.size}>Review {found.size}</Button>
 	</div>
 	<p class="stats">
@@ -538,7 +612,7 @@
 			? 'found'
 			: 'not found'}
 	</p>
-	<Button variant="quiet" onclick={startOver}>Start over</Button>
+	<Button variant="quiet" onclick={startOver}>Scan again</Button>
 	<figure class="page" hidden={!pageShown}>
 		<canvas bind:this={page} data-testid="live-scan-page" aria-label="The last page straightened"
 		></canvas>
@@ -547,6 +621,14 @@
 </div>
 
 <Dialog bind:open={reviewOpen} title={title || 'Script from a scan'}>
+	{#if issues.length}
+		<div class="issues" role="alert" data-testid="live-scan-issues">
+			<ul>
+				{#each issues as issue (issue)}<li>{issue}</li>{/each}
+			</ul>
+			<Button onclick={startOver}>Scan again</Button>
+		</div>
+	{/if}
 	{#each groups as group (group.type)}
 		<h3>{group.type}</h3>
 		<ul>
@@ -568,6 +650,15 @@
 		height: 1px; /* px-ok: an offscreen file input, as Add script's */
 		opacity: 0;
 		pointer-events: none;
+	}
+	.issues {
+		padding: var(--space-2) var(--space-3);
+		border: calc(0.125 * var(--u)) solid var(--evil);
+		border-radius: var(--radius-md);
+	}
+	.issues ul {
+		margin: 0 0 var(--space-2);
+		padding-inline-start: var(--space-4);
 	}
 	.spike {
 		display: flex;
