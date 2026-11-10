@@ -181,3 +181,37 @@ test('New game in the header clears a Local Grim board and its notes', async ({ 
 	await expect.poll(noteSummaries(notes)).not.toContain('Sam claims Chef');
 	expect(await storedNotes(page)()).not.toContain('Sam claims Chef');
 });
+
+test('a Local Grim seat takes a Traveller from the character list, and gives it back', async ({
+	page
+}) => {
+	// Trevor, 2026-11-10: a Traveller "should show up as a character type, not above", and
+	// must come off again once set.
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	// No Storyteller's board to fit (Trevor, 2026-11-10): the shape button isn't there at all.
+	await expect(page.getByTestId('grim-tools')).toBeVisible();
+	await expect(page.getByTestId('match-shape')).toHaveCount(0);
+
+	const seat = page.getByTestId('grim-seat').nth(3);
+	await seat.tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 4/ });
+	// No separate Traveller drop-down over the seat's rows.
+	await expect(sheet.getByRole('combobox', { name: 'Traveller' })).toHaveCount(0);
+	const townsfolk = sheet.locator('[data-guess-key="type:townsfolk"]');
+	await expect(townsfolk).toBeVisible();
+
+	// The script's Travellers, and any other one, sit in the list as their own type.
+	await expect(sheet.getByRole('button', { name: 'Barista', exact: true })).toBeAttached();
+	const scapegoat = sheet.getByRole('button', { name: 'Scapegoat', exact: true });
+	await scapegoat.scrollIntoViewIfNeeded();
+	await scapegoat.tap();
+	await expect(seat).toHaveAttribute('aria-label', /Traveller: Scapegoat/);
+	// A Traveller's seat takes only Good or Evil.
+	await expect(townsfolk).toHaveCount(0);
+
+	// A second tap takes the Traveller off again.
+	await scapegoat.tap();
+	await expect(seat).not.toHaveAttribute('aria-label', /Traveller/);
+	await expect(townsfolk).toBeVisible();
+});
