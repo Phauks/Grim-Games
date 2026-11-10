@@ -16,6 +16,7 @@
 import {
 	drawLaurel,
 	LAUREL_COLOURS,
+	leafPaths,
 	LAUREL_FACE_RADIUS,
 	LAUREL_FORM_NAMES,
 	LAUREL_FORMS,
@@ -143,26 +144,119 @@ function clockFace([, light]: Material): FrameShape[] {
 	];
 }
 
-function scalloped([base]: Material): FrameShape[] {
-	return Array.from({ length: 24 }, (_, i) => {
-		const [cx, cy] = at(46, i * 15);
-		return { shape: 'circle', cx, cy, r: 3.6, fill: base };
-	});
+/** Part of a circle of radius `r`, clockwise from `from` to `to` degrees. */
+function arc(r: number, from: number, to: number): string {
+	const [x0, y0] = at(r, from);
+	const [x1, y1] = at(r, to);
+	return `M${x0} ${y0}A${r} ${r} 0 ${Math.abs(to - from) > 180 ? 1 : 0} 1 ${x1} ${y1}`;
 }
 
-function vines([base, light]: Material): FrameShape[] {
-	const points = Array.from({ length: 145 }, (_, i) => {
-		const degrees = i * 2.5;
-		return at(46 + 1.8 * Math.sin((degrees * 12 * Math.PI) / 180), degrees);
+/** A metal band lit from the top left: dark outline, base, a light arc above, a dark arc below. */
+function bevelBand(r: number, w: number, [base, light, dark, ink]: Material): FrameShape[] {
+	return [
+		{ shape: 'circle', cx: 50, cy: 50, r, stroke: ink, width: round(w + 1.4) },
+		{ shape: 'circle', cx: 50, cy: 50, r, stroke: base, width: w },
+		{
+			shape: 'path',
+			d: arc(round(r + w * 0.22), 250, 430),
+			stroke: light,
+			width: round(w * 0.35),
+			opacity: 0.9
+		},
+		{
+			shape: 'path',
+			d: arc(round(r - w * 0.22), 70, 250),
+			stroke: dark,
+			width: round(w * 0.35),
+			opacity: 0.7
+		}
+	];
+}
+
+/**
+ * Two bands with a dark gap and eight studs between them (Trevor, 2026-11-09: liked it beside
+ * Double ring, so it is its own frame).
+ */
+function studded(material: Material): FrameShape[] {
+	const [, light, dark, ink] = material;
+	const studs = Array.from({ length: 8 }, (_, i): FrameShape => {
+		const [cx, cy] = at(46.2, i * 45 + 22.5);
+		return { shape: 'circle', cx, cy, r: 1.5, fill: light, stroke: ink, width: 0.6 };
 	});
-	const d = points.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join('') + 'Z';
-	// A leaf on every crest of the vine, pointing along it.
-	const leaves = Array.from({ length: 12 }, (_, i): FrameShape => {
-		const degrees = i * 30 + 7.5;
-		const [cx, cy] = at(47.4, degrees);
-		return { shape: 'ellipse', cx, cy, rx: 2.6, ry: 1.2, rotate: degrees + 30, fill: light };
-	});
-	return [{ shape: 'path', d, stroke: base, width: 1.4 }, ...leaves];
+	return [
+		{ shape: 'circle', cx: 50, cy: 50, r: 46.2, stroke: ink, width: 7.6 },
+		{ shape: 'circle', cx: 50, cy: 50, r: 46.2, stroke: dark, width: 5.4, opacity: 0.6 },
+		...bevelBand(48.3, 2, material),
+		...bevelBand(44.1, 1.6, material),
+		...studs
+	];
+}
+
+/** One solid scalloped rim, like a coin or a seal, with a dark ring inside it. */
+function scalloped([base, , dark, ink]: Material): FrameShape[] {
+	const count = 18;
+	const span = 360 / count;
+	let d = '';
+	for (let i = 0; i < count; i++) {
+		const from = i * span;
+		const [x0, y0] = at(45.6, from);
+		const [ax, ay] = at(50, from + span * 0.32);
+		const [bx, by] = at(50, from + span * 0.68);
+		const [x1, y1] = at(45.6, from + span);
+		d += `${i ? 'L' : 'M'}${x0} ${y0}C${ax} ${ay} ${bx} ${by} ${x1} ${y1}`;
+	}
+	return [
+		{ shape: 'path', d: `${d}Z`, fill: base, stroke: ink, width: 1.4 },
+		{ shape: 'circle', cx: 50, cy: 50, r: 43.6, stroke: dark, width: 2.6 }
+	];
+}
+
+/** Two strands twisting round the face, leaves on alternate sides and a few curled tendrils. */
+function vines([base, light, dark, ink]: Material): FrameShape[] {
+	const strand = (phase: number) => {
+		const points = Array.from({ length: 180 }, (_, i) =>
+			at(46.2 + 1.7 * Math.sin(((i * 16 + phase) * Math.PI) / 180), i * 2)
+		);
+		return `M${points.map(([x, y]) => `${x} ${y}`).join('L')}Z`;
+	};
+	let full = '';
+	let half = '';
+	let rib = '';
+	let curls = '';
+	for (let i = 0; i < 16; i++) {
+		const degrees = i * 22.5 + 5;
+		const side = i % 2 ? 1 : -1;
+		const from = at(46.2, degrees);
+		const a = (degrees * Math.PI) / 180;
+		const along: [number, number] = [Math.cos(a), Math.sin(a)];
+		const out: [number, number] = [Math.sin(a), -Math.cos(a)];
+		const lean = (40 * Math.PI) / 180;
+		const dir: [number, number] = [
+			along[0] * Math.cos(lean) + side * out[0] * Math.sin(lean),
+			along[1] * Math.cos(lean) + side * out[1] * Math.sin(lean)
+		];
+		const length = side > 0 ? 5.6 : 4.6;
+		const leaf = leafPaths('laurel', from, dir, length, length * 0.42);
+		full += leaf.full;
+		half += leaf.half;
+		rib += leaf.rib;
+		if (i % 4 === 2) {
+			const [x, y] = at(50, degrees + 9);
+			curls += `M${at(47.5, degrees + 6).join(' ')}Q${at(51, degrees + 8).join(' ')} ${x} ${y}`;
+			curls += `Q${round(x - 0.8)} ${round(y - 1.2)} ${round(x - 1.6)} ${y}`;
+		}
+	}
+	return [
+		{ shape: 'path', d: strand(0) + strand(180), stroke: ink, width: 2.4 },
+		{ shape: 'path', d: strand(0), stroke: dark, width: 1.2 },
+		{ shape: 'path', d: strand(180), stroke: base, width: 1.2 },
+		{ shape: 'path', d: curls, stroke: ink, width: 1.4 },
+		{ shape: 'path', d: curls, stroke: light, width: 0.6 },
+		{ shape: 'path', d: full, fill: ink, stroke: ink, width: 1.1 },
+		{ shape: 'path', d: full, fill: base },
+		{ shape: 'path', d: half, fill: light, opacity: 0.9 },
+		{ shape: 'path', d: rib, stroke: dark, width: 0.4 }
+	];
 }
 
 /** A soft light round the face: rings fading outwards, no line. */
@@ -208,6 +302,7 @@ export const FRAME_FORMS: readonly FrameForm[] = [
 			{ shape: 'circle', cx: 50, cy: 50, r: 44, stroke: base, width: 1.6 }
 		])
 	},
+	{ id: 'studded', name: 'Studded ring', colour: 'gold', draw: painted(studded) },
 	{ id: 'clock', name: 'Clock face', colour: 'silver', draw: painted(clockFace) },
 	{ id: 'scalloped', name: 'Scalloped', colour: 'demon', draw: painted(scalloped) },
 	{ id: 'vines', name: 'Vines', colour: 'green', draw: painted(vines) },
