@@ -156,14 +156,13 @@ test('the page head sits on a raised band that ends above the content', async ({
 	const main = page.getByRole('main');
 	const band = main.locator('.head-band');
 	const look = await band.evaluate((node) => {
-		const before = getComputedStyle(node, '::before');
-		const after = getComputedStyle(node, '::after');
+		const style = getComputedStyle(node);
 		const probe = document.createElement('i');
 		probe.style.color = 'var(--surface-raised)';
 		node.append(probe);
 		const raised = getComputedStyle(probe).color;
 		probe.remove();
-		return { fill: before.backgroundColor, raised, line: after.height };
+		return { fill: style.backgroundColor, raised, line: style.borderBottomWidth };
 	});
 	expect(look.fill).toBe(look.raised);
 	expect(look.line).toBe('1px');

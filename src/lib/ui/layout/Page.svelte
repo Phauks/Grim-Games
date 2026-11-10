@@ -161,9 +161,6 @@
 		margin: 0 auto;
 		/* The title row starts level with the hamburger and the sidebar's name row. */
 		padding: var(--menu-inset) var(--page-gutter) var(--space-6);
-		/* The head's band paints under the page's text and the hamburger, never under the
-		   window behind the page. */
-		isolation: isolate;
 	}
 	.page.wide {
 		max-width: none;
@@ -194,36 +191,17 @@
 	/*
 	 * The page's head (its buttons, title and byline) on a raised band with a line along its
 	 * foot, set apart from the content as the bottom tab bar is (Trevor, 2026-11-10: C2). The
-	 * band starts at the page's top and ends halfway down the gap under the head, so nothing
-	 * moves; it scrolls away with the page. The colour reaches the screen's sides through the
-	 * gutter to the page's edges as the tab bar's does (Tabs.svelte), clipped at its own top and foot.
-	 * On a wrapper rather than the head itself: Chrome can leave an absolute ::before of a size
-	 * container unpainted (the Library on a computer).
+	 * band reaches out over the page's top padding, its gutters and half the gap under the
+	 * head, with padding to match, so nothing moves; it scrolls away with the page. Its own
+	 * background, not a layer: no stacking context, so a full-screen stage or a menu inside
+	 * the page still rises over the status bar's strip, and the hamburger sits over the band.
 	 */
-	.head-band {
-		position: relative;
-	}
-	.head-band:not(.visually-hidden)::before,
-	.head-band:not(.visually-hidden)::after {
-		content: '';
-		position: absolute;
-		inset-inline: 0;
-		pointer-events: none;
-	}
-	.head-band:not(.visually-hidden)::before {
-		z-index: var(--z-under);
-		top: calc(-1 * var(--menu-inset));
-		bottom: calc(-0.5 * var(--space-4));
+	.head-band:not(.visually-hidden) {
+		--band-foot: calc(0.5 * var(--space-4));
+		margin: calc(-1 * var(--menu-inset)) calc(-1 * var(--page-gutter)) calc(-1 * var(--band-foot)); /* overlap-ok: the band takes the page's padding and half the gap, and gives it back as padding */
+		padding: var(--menu-inset) var(--page-gutter) calc(var(--band-foot) - 1px); /* px-ok: the hairline below */
+		border-bottom: 1px solid var(--border); /* px-ok: a hairline, as the tab bar's */
 		background: var(--surface-raised);
-		box-shadow: 0 0 0 100vmax var(--surface-raised);
-		clip-path: inset(0 calc(-1 * var(--page-gutter)));
-	}
-	.head-band:not(.visually-hidden)::after {
-		bottom: calc(-0.5 * var(--space-4));
-		height: 1px; /* px-ok: a hairline, as the tab bar's */
-		background: var(--border);
-		box-shadow: 0 0 0 100vmax var(--border);
-		clip-path: inset(0 calc(-1 * var(--page-gutter)));
 	}
 	/*
 	 * A narrow page (phones): the actions get their own row under the title, so a wide button
