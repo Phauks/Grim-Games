@@ -5,6 +5,8 @@ import {
 	grayOf,
 	homography,
 	mapPoint,
+	pageSize,
+	warp,
 	sheetCorners,
 	type Point
 } from './frame-checks.ts';
@@ -94,5 +96,36 @@ describe('frame checks', () => {
 		);
 		expect(difference(a, a)).toBe(0);
 		expect(difference(a, b)).toBeCloseTo(10, 0);
+	});
+});
+
+describe('straightening a sheet', () => {
+	it('takes a nearly Letter-shaped sheet as Letter, and a long thin one as it is', () => {
+		const letterish = [
+			{ x: 10, y: 10 },
+			{ x: 95, y: 14 },
+			{ x: 92, y: 122 },
+			{ x: 12, y: 118 }
+		];
+		expect(pageSize(letterish, 1600)).toEqual({
+			width: Math.round(1600 / (11 / 8.5)),
+			height: 1600
+		});
+		const strip = [
+			{ x: 0, y: 0 },
+			{ x: 100, y: 0 },
+			{ x: 100, y: 300 },
+			{ x: 0, y: 300 }
+		];
+		expect(pageSize(strip, 900)).toEqual({ width: 300, height: 900 });
+	});
+
+	it('warps a picture by a map, reading each pixel where the map puts it', () => {
+		const source = frame(4, 4, (x, y) => [x * 60, y * 60, 0]);
+		// Result pixel (x, y) reads source pixel (x + 1, y + 1).
+		const shift = [1, 0, 1, 0, 1, 1, 0, 0, 1];
+		const out = warp(source, 4, 4, shift, 2, 2);
+		expect([...out.slice(0, 4)]).toEqual([60, 60, 0, 255]);
+		expect([...out.slice(12, 16)]).toEqual([120, 120, 0, 255]);
 	});
 });
