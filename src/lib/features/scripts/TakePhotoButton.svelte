@@ -94,8 +94,7 @@
 <PhotoScriptDialog
 	bind:this={dialog}
 	bind:open
-	onconfirm={(script) =>
-		onconfirm(script, script.edition ? { kind: 'edition' } : { kind: 'photo' })}
+	onconfirm={(script) => onconfirm(script, { kind: 'photo' })}
 />
 
 <style>
