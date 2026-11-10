@@ -9,7 +9,9 @@
 		grayOf,
 		homography,
 		mapPoint,
+		pageSize,
 		sheetCorners,
+		warp,
 		type Gray,
 		type Point,
 		type Rect
@@ -38,13 +40,18 @@
 	 * - Fade while moving: marks stay where the read frame had them, and fade out as the
 	 *   picture moves away from that frame.
 	 * - Corner tracking: the sheet's four corners are found in every frame and the marks are
-	 *   moved with them.
+	 *   moved with them. A read starts once the corners are steady (a hand's shake is fine,
+	 *   Trevor 2026-11-10: "I can't stay super still"); the picture is frozen, the sheet is
+	 *   straightened into a flat page of paper's shape, and the flat page is read (Trevor,
+	 *   2026-11-10: "get the corners, freeze it, align and straighten ... then attempts to
+	 *   read").
 	 */
 
 	type Source = 'demo' | 'camera';
 	type MarkKind = 'character' | 'ability' | 'title' | 'unknown';
 	interface Mark {
-		box: Rect;
+		/** The line's four corners in the read frame, in picture pixels. */
+		points: Point[];
 		kind: MarkKind;
 	}
 	interface Reading {
@@ -63,9 +70,17 @@
 	const MOVING = 3;
 	/** Held still this long before a read starts. */
 	const STILL_MS = 350;
+	/** Corners that moved less than this share of the sheet's size since the last check are steady. */
+	const STEADY = 0.03;
+	/** Corners steady this long before a read starts. */
+	const STEADY_MS = 200;
+	/** The straightened page's long side: about 145 dots an inch on Letter, plenty for 9 point type. */
+	const PAGE_SIDE = 1600;
+	/** The corners are found again on a frame this wide before straightening, for a tighter fit. */
+	const FINE = 480;
 
 	let source = $state<Source>('demo');
-	let tracking = $state(false);
+	let tracking = $state(true);
 	let status = $state('Starting the text reader');
 	let problem = $state('');
 	let readMs = $state(0);
@@ -74,6 +89,8 @@
 	let title = $state('');
 	let reviewOpen = $state(false);
 	let glareShown = $state(false);
+	let page: HTMLCanvasElement | undefined = $state();
+	let pageShown = $state(false);
 	let pool = $state.raw<Character[]>([]);
 	const found = new SvelteMap<CharacterId, Character>();
 	let unknown = $state.raw<string[]>([]);
@@ -148,7 +165,7 @@
 	async function read(
 		reader: TextReader,
 		frame: HTMLCanvasElement,
-		scale: number,
+		toFrame: (p: Point) => Point,
 		gray: Gray,
 		corners?: Point[]
 	) {
@@ -165,13 +182,58 @@
 			if (!kind || !box) continue;
 			marks.push({
 				kind,
-				box: { x0: box.x0 / scale, y0: box.y0 / scale, x1: box.x1 / scale, y1: box.y1 / scale }
+				points: [
+					{ x: box.x0, y: box.y0 },
+					{ x: box.x1, y: box.y0 },
+					{ x: box.x1, y: box.y1 },
+					{ x: box.x0, y: box.y1 }
+				].map(toFrame)
 			});
 		}
 		reading = { marks, gray, corners };
 		for (const f of result.found) found.set(f.character.id, f.character);
 		unknown = [...new Set([...unknown, ...result.unmatched])];
 		title ||= result.title;
+	}
+
+	/**
+	 * The frozen frame's sheet straightened into a flat page, and the map from page pixels back
+	 * to frame pixels; undefined when its corners can't be found again.
+	 */
+	function straighten(frozen: HTMLCanvasElement) {
+		const fine = document.createElement('canvas');
+		fine.width = FINE;
+		fine.height = Math.round((frozen.height * FINE) / frozen.width);
+		const fineCtx = fine.getContext('2d', { willReadFrequently: true })!;
+		fineCtx.drawImage(frozen, 0, 0, fine.width, fine.height);
+		const rgba = fineCtx.getImageData(0, 0, fine.width, fine.height).data;
+		const seen = sheetCorners(grayOf(rgba, fine.width, fine.height));
+		if (!seen) return undefined;
+		const k = frozen.width / FINE;
+		const quad = seen.map((p) => ({ x: (p.x + 0.5) * k, y: (p.y + 0.5) * k }));
+		const { width, height } = pageSize(quad, PAGE_SIDE);
+		const flat = [
+			{ x: 0, y: 0 },
+			{ x: width, y: 0 },
+			{ x: width, y: height },
+			{ x: 0, y: height }
+		];
+		const h = homography(flat, quad);
+		if (!h) return undefined;
+		const source = frozen
+			.getContext('2d', { willReadFrequently: true })!
+			.getImageData(0, 0, frozen.width, frozen.height).data;
+		const out = document.createElement('canvas');
+		out.width = width;
+		out.height = height;
+		out
+			.getContext('2d')!
+			.putImageData(
+				new ImageData(warp(source, frozen.width, frozen.height, h, width, height), width, height),
+				0,
+				0
+			);
+		return { page: out, quad, toFrame: (p: Point) => mapPoint(h, p) };
 	}
 
 	/** The colour of each kind of mark, from the theme. */
@@ -200,6 +262,12 @@
 		let busy = false;
 		let previous: Gray | undefined;
 		let stillSince = performance.now();
+		let steadySince = performance.now();
+		/** While a straightened read runs, the frozen frame shown in place of the camera. */
+		let frozen: HTMLCanvasElement | undefined;
+		let frozenQuad: Point[] | undefined;
+		/** The corners found by the quick check when the frame was frozen. */
+		let frozenCorners: Point[] | undefined;
 		let lastCheck = 0;
 		let glare: Rect[] = [];
 		let corners: Point[] | undefined;
@@ -236,7 +304,7 @@
 				reading = undefined;
 			}
 			const ctx = view.getContext('2d')!;
-			ctx.drawImage(shot.el, 0, 0, shot.w, shot.h);
+			ctx.drawImage(frozen ?? shot.el, 0, 0, shot.w, shot.h);
 			const toView = shot.w / SMALL;
 
 			// The quick checks, about 15 times a second.
@@ -253,15 +321,56 @@
 				glare = glareRects(rgba, small.width, small.height);
 				glareShown = glare.length > 0;
 				const seen = sheetCorners(gray);
+				const last = corners;
 				corners = seen?.map((p) => ({ x: p.x * toView, y: p.y * toView }));
 				cornersFound = !!corners;
+				const size = corners
+					? Math.hypot(corners[0].x - corners[2].x, corners[0].y - corners[2].y)
+					: 1;
+				const steady =
+					!!corners &&
+					!!last &&
+					Math.max(...corners.map((c, i) => Math.hypot(c.x - last[i].x, c.y - last[i].y))) <
+						STEADY * size;
+				if (!steady) steadySince = now;
 				colours = palette();
 				if (!reader) status = 'Starting the text reader';
-				else if (busy) status = 'Reading';
-				else if (moving) status = tracking ? 'Moving' : 'Moving, marks hidden';
+				else if (busy) status = tracking ? 'Frozen, reading the straightened page' : 'Reading';
+				else if (tracking) status = corners ? 'Steady the sheet' : 'Show all four corners';
+				else if (moving) status = 'Moving, marks hidden';
 				else status = 'Hold still';
 
-				if (reader && !busy && now - stillSince > STILL_MS) {
+				if (reader && !busy && tracking && corners && now - steadySince > STEADY_MS) {
+					busy = true;
+					status = 'Frozen, reading the straightened page';
+					const still = document.createElement('canvas');
+					still.width = shot.w;
+					still.height = shot.h;
+					still.getContext('2d')!.drawImage(shot.el, 0, 0, shot.w, shot.h);
+					frozen = still;
+					frozenCorners = corners;
+					const flat = straighten(still);
+					frozenQuad = flat?.quad;
+					if (!flat) {
+						frozen = undefined;
+						busy = false;
+					} else {
+						if (page) {
+							page.width = flat.page.width;
+							page.height = flat.page.height;
+							page.getContext('2d')!.drawImage(flat.page, 0, 0);
+							pageShown = true;
+						}
+						void read(reader, flat.page, flat.toFrame, gray, corners)
+							.catch((error) => (problem = `A read failed (${(error as Error).message}).`))
+							.finally(() => {
+								busy = false;
+								frozen = undefined;
+								frozenQuad = undefined;
+								steadySince = performance.now();
+							});
+					}
+				} else if (reader && !busy && !tracking && now - stillSince > STILL_MS) {
 					busy = true;
 					status = 'Reading';
 					const scale = Math.min(1.5, READ_SIDE / Math.max(shot.w, shot.h));
@@ -269,7 +378,7 @@
 					frame.width = Math.round(shot.w * scale);
 					frame.height = Math.round(shot.h * scale);
 					frame.getContext('2d')!.drawImage(shot.el, 0, 0, frame.width, frame.height);
-					void read(reader, frame, scale, gray, corners)
+					void read(reader, frame, (p) => ({ x: p.x / scale, y: p.y / scale }), gray, corners)
 						.catch((error) => (problem = `A read failed (${(error as Error).message}).`))
 						.finally(() => (busy = false));
 				}
@@ -282,8 +391,10 @@
 			if (reading && previous) {
 				let map: ((p: Point) => Point) | undefined;
 				let alpha = 1;
+				// While frozen, the marks of the read before are moved onto the frozen frame.
+				const target = frozen ? frozenCorners : corners;
 				const h =
-					tracking && reading.corners && corners ? homography(reading.corners, corners) : undefined;
+					tracking && reading.corners && target ? homography(reading.corners, target) : undefined;
 				if (h) map = (p) => mapPoint(h, p);
 				else {
 					const drift = difference(previous, reading.gray);
@@ -293,16 +404,7 @@
 				if (alpha > 0) {
 					ctx.globalAlpha = alpha;
 					for (const mark of reading.marks) {
-						const { x0, y0, x1, y1 } = mark.box;
-						outline(
-							ctx,
-							[
-								{ x: x0, y: y0 },
-								{ x: x1, y: y0 },
-								{ x: x1, y: y1 },
-								{ x: x0, y: y1 }
-							].map(map)
-						);
+						outline(ctx, mark.points.map(map));
 						ctx.strokeStyle = colours[mark.kind];
 						ctx.globalAlpha = alpha * (mark.kind === 'ability' ? 0.45 : 1);
 						ctx.stroke();
@@ -330,11 +432,12 @@
 			}
 			ctx.setLineDash([]);
 
-			// The sheet's edge as tracking sees it.
-			if (tracking && corners) {
-				ctx.strokeStyle = colours.sheet;
-				ctx.globalAlpha = 0.6;
-				outline(ctx, corners);
+			// The sheet's edge as tracking sees it, or as the frozen read straightens it.
+			const edge = frozenQuad ?? (tracking ? corners : undefined);
+			if (edge) {
+				ctx.strokeStyle = frozenQuad ? colours.title : colours.sheet;
+				ctx.globalAlpha = frozenQuad ? 1 : 0.6;
+				outline(ctx, edge);
 				ctx.stroke();
 				ctx.globalAlpha = 1;
 			}
@@ -358,7 +461,7 @@
 			checked={tracking}
 			onChange={(on) => (tracking = on)}
 			description={tracking
-				? 'Marks follow the sheet by its corners'
+				? 'Marks follow the sheet by its corners; each read freezes and straightens the page'
 				: 'Off: marks fade while the picture moves'}
 		/>
 	</div>
@@ -385,6 +488,11 @@
 			: 'not found'}
 	</p>
 	<Button variant="quiet" onclick={startOver}>Start over</Button>
+	<figure class="page" hidden={!pageShown}>
+		<canvas bind:this={page} data-testid="live-scan-page" aria-label="The last page straightened"
+		></canvas>
+		<figcaption>The last page straightened and read</figcaption>
+	</figure>
 </div>
 
 <Dialog bind:open={reviewOpen} title={title || 'Script from a scan'}>
@@ -461,6 +569,18 @@
 	.banner {
 		margin: 0;
 		font-weight: 700;
+	}
+	.page {
+		margin: 0;
+		display: grid;
+		gap: var(--space-1);
+		justify-items: start;
+		color: var(--on-surface-muted);
+	}
+	.page canvas {
+		width: 60%;
+		height: auto;
+		border-radius: var(--radius-md);
 	}
 	.stats {
 		margin: 0;

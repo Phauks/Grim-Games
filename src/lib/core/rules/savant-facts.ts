@@ -233,11 +233,11 @@ export function demonCanPass(f: Facts, w: RegistrationWorld): boolean | undefine
 	const others = alive(f).filter((s) => s !== d);
 	const living = (t: CharacterType) => others.some((s) => w.type(s) === t);
 	return (
-		holds(d).some((h) => h.kind === 'death-passes' && h.to !== undefined && living(h.to)) ||
+		holds(d).some((h) => h.then === 'demon-passes' && h.to !== undefined && living(h.to)) ||
 		alive(f).some(
 			(s) =>
 				rulesAt(s)?.createsDemon === true ||
-				holds(s).some((h) => h.kind === 'becomes-demon' && others.length >= (h.aliveAtLeast ?? 0))
+				holds(s).some((h) => h.then === 'becomes-demon' && others.length >= (h.aliveAtLeast ?? 0))
 		)
 	);
 }

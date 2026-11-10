@@ -273,9 +273,23 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 						'cult-joined',
 						'storyteller-executed'
 					]),
-					event: opt(oneOf(['executed', 'day-ends', 'dusk', 'always'])),
-					subject: opt(oneOf(['self', 'marked'])),
+					event: opt(
+						oneOf([
+							'executed',
+							'day-ends',
+							'dusk',
+							'always',
+							'ability-used',
+							'vote-passed',
+							'guessed',
+							'storyteller-executed',
+							'no-demon',
+							'demon-executed'
+						])
+					),
+					subject: opt(oneOf(['self', 'marked', 'either'])),
 					carries: opt(T),
+					otherAlive: opt(T),
 					nominatedBySelf: opt(T),
 					whileAlive: opt(T),
 					noExecution: opt(T),
@@ -283,11 +297,13 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 					onDay: opt(NUM),
 					executions: opt(NUM),
 					aliveAtMost: opt(NUM),
-					wins: opt(oneOf(['own', 'opposing'])),
+					wins: opt(oneOf(['own', 'other', 'opposing'])),
+					then: opt(oneOf(['extra-day'])),
 					token: opt(TOKEN),
 					winner: opt(ALIGNMENT),
 					alive: opt(NUM),
 					alignment: opt(ALIGNMENT),
+					types: opt(SOME_TYPES),
 					count: opt(NUM),
 					day: opt(NUM),
 					night: opt(NUM),
@@ -298,7 +314,10 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		holds: opt(
 			list(
 				obj({
-					kind: oneOf(['marked-alive', 'becomes-demon', 'death-passes']),
+					kind: oneOf(['condition', 'marked-alive', 'becomes-demon', 'death-passes']),
+					then: opt(oneOf(['blocks-good', 'becomes-demon', 'demon-passes'])),
+					whileAlive: opt(T),
+					ownKill: opt(T),
 					token: opt(TOKEN),
 					aliveAtLeast: opt(NUM),
 					to: opt(TYPES),

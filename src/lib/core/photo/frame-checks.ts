@@ -207,3 +207,66 @@ export function mapPoint(h: readonly number[], { x, y }: Point): Point {
 	const w = h[6] * x + h[7] * y + h[8];
 	return { x: (h[0] * x + h[1] * y + h[2]) / w, y: (h[3] * x + h[4] * y + h[5]) / w };
 }
+
+/** Paper shapes a script sheet is printed on, long side over short: US Letter and A4. */
+const PAPER = [11 / 8.5, 297 / 210];
+/** A measured shape this close to a paper shape is taken to be that paper. */
+const PAPER_SLACK = 0.12;
+
+/**
+ * The size of the flat page to straighten a sheet into, from its corners (top left, top right,
+ * bottom right, bottom left): its long side `longSide`, its shape the nearest paper shape
+ * (Trevor, 2026-11-10: straighten it "so that it conforms to a sheet of paper"), or the shape
+ * the corners measure when it is like no paper.
+ */
+export function pageSize(corners: readonly Point[], longSide: number) {
+	const length = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+	const [tl, tr, br, bl] = corners;
+	const wide = (length(tl, tr) + length(bl, br)) / 2;
+	const tall = (length(tl, bl) + length(tr, br)) / 2;
+	const measured = Math.max(wide, tall) / Math.max(1, Math.min(wide, tall));
+	const paper = PAPER.reduce((a, b) => (Math.abs(b - measured) < Math.abs(a - measured) ? b : a));
+	const shape = Math.abs(paper - measured) / paper <= PAPER_SLACK ? paper : measured;
+	const short = Math.round(longSide / shape);
+	return tall >= wide ? { width: short, height: longSide } : { width: longSide, height: short };
+}
+
+/**
+ * Straightens a picture: each pixel of the `width` by `height` result is read from the source
+ * picture where `h` (result pixels to source pixels) puts it, blended from the four nearest.
+ */
+export function warp(
+	source: Uint8ClampedArray,
+	sourceWidth: number,
+	sourceHeight: number,
+	h: readonly number[],
+	width: number,
+	height: number
+): Uint8ClampedArray<ArrayBuffer> {
+	const out = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			const w = h[6] * x + h[7] * y + h[8];
+			const sx = (h[0] * x + h[1] * y + h[2]) / w;
+			const sy = (h[3] * x + h[4] * y + h[5]) / w;
+			const o = (y * width + x) * 4;
+			const x0 = Math.floor(sx);
+			const y0 = Math.floor(sy);
+			if (x0 < 0 || y0 < 0 || x0 + 1 >= sourceWidth || y0 + 1 >= sourceHeight) {
+				out[o + 3] = 255;
+				continue;
+			}
+			const fx = sx - x0;
+			const fy = sy - y0;
+			const p = (y0 * sourceWidth + x0) * 4;
+			const q = p + sourceWidth * 4;
+			for (let c = 0; c < 3; c++) {
+				const top = source[p + c] * (1 - fx) + source[p + 4 + c] * fx;
+				const bottom = source[q + c] * (1 - fx) + source[q + 4 + c] * fx;
+				out[o + c] = top * (1 - fy) + bottom * fy;
+			}
+			out[o + 3] = 255;
+		}
+	}
+	return out;
+}

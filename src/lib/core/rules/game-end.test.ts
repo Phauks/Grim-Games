@@ -727,6 +727,99 @@ describe('custom characters', () => {
 		expect(gameEnds(game, all)).toEqual([]);
 	});
 
+	// A homebrew Minion that counts by character type (M78), as Legion counts by alignment
+	// (https://wiki.bloodontheclocktower.com/Legion): two Outsiders executed win it for evil.
+	it('end the game on a count of a character type', () => {
+		const hangman = {
+			id: 'hangman',
+			name: 'Hangman',
+			team: 'minion',
+			ability: 'If 2 Outsiders are executed, evil wins.',
+			rules: {
+				gameEnd: {
+					ends: [
+						{
+							kind: 'condition',
+							event: 'always',
+							types: ['outsider'],
+							executions: 2,
+							winner: 'evil'
+						}
+					]
+				}
+			}
+		};
+		const cast = ['hangman', 'butler', 'saint', 'imp', 'chef'];
+		const one = custom(hangman, cast, execute(1));
+		expect(gameEnds(one.game, one.all).filter((e) => e.characterId === 'hangman')).toEqual([]);
+		// An Outsider and a Townsfolk executed: not yet.
+		const mixed = custom(hangman, cast, execute(1), newDay, execute(4));
+		expect(gameEnds(mixed.game, mixed.all).filter((e) => e.characterId === 'hangman')).toEqual([]);
+		const two = custom(
+			hangman,
+			['hangman', 'butler', 'recluse', 'imp', 'chef'],
+			execute(1),
+			newDay,
+			execute(2)
+		);
+		expect(gameEnds(two.game, two.all)).toContainEqual(
+			expect.objectContaining({
+				rule: 'condition',
+				characterId: 'hangman',
+				winner: 'evil',
+				seats: [two.seats[1], two.seats[2]]
+			})
+		);
+	});
+
+	// A homebrew Townsfolk built from the Klutz's event with its own outcome (M78): choosing
+	// the Demon wins it for their team (https://wiki.bloodontheclocktower.com/Klutz).
+	it('end the game on an ability used, with an outcome of their own', () => {
+		const hunter = {
+			id: 'hunter',
+			name: 'Hunter',
+			team: 'townsfolk',
+			ability: 'Once per game, publicly choose a player: if they are the Demon, good wins.',
+			rules: {
+				gameEnd: { ends: [{ kind: 'condition', event: 'ability-used', on: 'demon', wins: 'own' }] }
+			}
+		};
+		const cast = ['hunter', 'chef', 'empath', 'imp'];
+		const use =
+			(on: number) =>
+			(s: string[]): Command => ({
+				type: 'UseAbility',
+				seatId: s[0],
+				characterId: 'hunter',
+				on: s[on]
+			});
+		const miss = custom(hunter, cast, use(1));
+		expect(gameEnds(miss.game, miss.all)).toEqual([]);
+		const { game, seats, all } = custom(hunter, cast, use(3));
+		expect(gameEnds(game, all)).toMatchObject([
+			{ rule: 'condition', characterId: 'hunter', winner: 'good', seats: [seats[3], seats[0]] }
+		]);
+	});
+
+	// A homebrew Minion built from the Evil Twin's hold (M78) with no twin: while it lives, good
+	// can't win (https://wiki.bloodontheclocktower.com/Evil_Twin).
+	it('keep the game going through a hold of their own', () => {
+		const anchor = {
+			id: 'anchor',
+			name: 'Anchor',
+			team: 'minion',
+			ability: 'While you live, good cannot win.',
+			rules: { gameEnd: { holds: [{ kind: 'condition', then: 'blocks-good', whileAlive: true }] } }
+		};
+		const { game, seats, all } = custom(anchor, ['anchor', 'chef', 'empath', 'imp'], execute(3));
+		expect(gameEnds(game, all)).toMatchObject([
+			{
+				rule: 'demon-dead',
+				holds: [{ rule: 'marked-alive', characterId: 'anchor', seats: [seats[0]] }]
+			}
+		]);
+	});
+
 	it('read the official kinds as presets of a condition, and check a condition', () => {
 		const issues = new Issues();
 		const mayor = parseCharacter(
@@ -764,6 +857,26 @@ describe('custom characters', () => {
 		);
 		expect(issues.list).toEqual([
 			'[0].rules.gameEnd.ends[0].wins: `opposing` is about who was executed'
+		]);
+		const counts = new Issues();
+		parseCharacter(
+			{
+				id: 'vague',
+				name: 'Vague',
+				team: 'minion',
+				ability: 'x',
+				rules: {
+					gameEnd: {
+						ends: [{ kind: 'condition', event: 'always', aliveAtMost: 0, winner: 'evil' }]
+					}
+				}
+			},
+			'[0]',
+			counts,
+			{ strict: false, scriptFields: true }
+		);
+		expect(counts.list).toEqual([
+			'[0].rules.gameEnd.ends[0]: a count needs who it counts: `alignment` or `types`'
 		]);
 	});
 

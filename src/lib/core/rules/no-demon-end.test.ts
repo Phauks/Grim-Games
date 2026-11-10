@@ -56,7 +56,17 @@ describe('dead-without-demon with night', () => {
 				issues,
 				undefined
 			)
-		).toEqual({ ends: [{ kind: 'dead-without-demon', winner: 'good', night: 3 }] });
+		).toEqual({
+			ends: [
+				{
+					kind: 'condition',
+					preset: 'dead-without-demon',
+					event: 'no-demon',
+					night: 3,
+					winner: 'good'
+				}
+			]
+		});
 		readGameEnd(
 			{ ends: [{ kind: 'dead-without-demon', winner: 'good' }] },
 			'gameEnd',
