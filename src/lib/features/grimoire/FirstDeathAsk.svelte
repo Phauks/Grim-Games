@@ -5,6 +5,8 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import SeatChooser from './SeatChooser.svelte';
+	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -17,6 +19,10 @@
 	 * A death that sets off the ability by placing its reminder (`places`, Trevor 2026-11-06):
 	 * the Barber's "Haircuts Tonight" (https://wiki.bloodontheclocktower.com/Barber). Confirm
 	 * places it on the dead player; Cancel leaves it off. Rules: `deathReminder` in core.
+	 *
+	 * With `chosen` (Trevor, 2026-11-10), the reminder goes on a player the Storyteller picks:
+	 * the Sweetheart's Drunk (https://wiki.bloodontheclocktower.com/Sweetheart). The seat
+	 * chooser opens straight away; closing it leaves the token off.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -30,13 +36,29 @@
 	const title = $derived(`Use the ${character?.name ?? ''}’s ability?`);
 
 	let open = $state(false);
+	let chooseOpen = $state(false);
 	$effect(() => {
-		if (ask) open = true;
+		if (ask?.chosen) chooseOpen = true;
+		else if (ask) open = true;
 	});
 	// Closed any way (Cancel, Escape, the close button): the question is answered.
 	$effect(() => {
-		if (!open) grimoire.firstDeathAsk = undefined;
+		if (!open && !chooseOpen) grimoire.firstDeathAsk = undefined;
 	});
+
+	function placeOn(on: SeatId) {
+		if (!ask) return;
+		grimoire.run({
+			type: 'AddReminder',
+			seatId: on,
+			reminder: { characterId: ask.characterId, label: ask.token }
+		});
+		chooseOpen = false;
+		grimoire.firstDeathAsk = undefined;
+	}
+
+	// eslint-disable-next-line grim/names-as-badges -- accessible name only; the heading snippet shows the token
+	const chooseTitle = $derived(`Put ${ask?.token ?? ''} on`);
 
 	function useAbility() {
 		if (!ask) return;
@@ -50,6 +72,22 @@
 		grimoire.firstDeathAsk = undefined;
 	}
 </script>
+
+{#if ask?.chosen && character}
+	<SeatChooser
+		bind:open={chooseOpen}
+		title={chooseTitle}
+		game={grimoire.game}
+		characters={grimoire.open.characters}
+		onChoose={placeOn}
+	>
+		{#snippet heading()}Put <BoardReminder
+				label={ask.token}
+				{character}
+				alignment={alignmentOf(grimoire.game, ask.seatId)}
+			/> on{/snippet}
+	</SeatChooser>
+{/if}
 
 <ConfirmDialog
 	bind:open

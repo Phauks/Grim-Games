@@ -1991,6 +1991,14 @@ test('a dead player whose ability has ended moves their reminders to the end of 
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+		if (number === 3) {
+			// The Sweetheart's death asks whom to make drunk.
+			const choose = page
+				.getByRole('dialog')
+				.filter({ has: page.getByRole('heading', { name: /^Put\b.*\bDrunk\b.*\bon$/ }) });
+			await choose.getByRole('button', { name: /Seat 2$/ }).tap();
+			await expect(choose).toBeHidden();
+		}
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
@@ -7170,6 +7178,15 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 			.tap();
 		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+		if (number === 3) {
+			// Skip the Sweetheart's "Put Drunk on" question; Drunk is placed by hand below.
+			const choose = page
+				.getByRole('dialog')
+				.filter({ has: page.getByRole('heading', { name: /^Put\b.*\bDrunk\b.*\bon$/ }) });
+			await expect(choose).toBeVisible();
+			await page.keyboard.press('Escape');
+			await expect(choose).toBeHidden();
+		}
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
@@ -7295,6 +7312,42 @@ test('a Barber marked dead is offered Haircuts Tonight, staying dead', async ({ 
 	const barber = seatLabelled(page, 'Seat 1: no name, Barber');
 	await expect(barber).toHaveAttribute('aria-label', /dead/);
 	await expect(barber).toHaveAttribute('aria-label', /1 reminder/);
+});
+
+test('a Sweetheart marked dead asks whom to make drunk', async ({ page }) => {
+	// Trevor (2026-11-10): "If the Sweetheart dies, you choose any one player to become drunk"
+	// (https://wiki.bloodontheclocktower.com/Sweetheart), when it dies, not at its night step.
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Sweetheart'],
+		[2, 'Vortox'],
+		[3, 'Clockmaker']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+	const choose = page
+		.getByRole('dialog')
+		.filter({ has: page.getByRole('heading', { name: /^Put\b.*\bDrunk\b.*\bon$/ }) });
+	await choose.getByRole('button', { name: /Seat 3$/ }).tap();
+	await expect(choose).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Sweetheart')).toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+	await expect(seatLabelled(page, 'Seat 3: no name, Clockmaker')).toHaveAttribute(
+		'aria-label',
+		/1 reminder/
+	);
 });
 
 test('with the Hindu, a player who dies is reincarnated as a Traveller', async ({ page }) => {

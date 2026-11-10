@@ -11,7 +11,9 @@ export type KilledBy = (typeof KILLED_BY)[number];
  * The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage); with
  * `night`, only a death at night, never an execution (the Ravenkeeper's "if you die at night").
  * With `places`, one of its reminders, the death is when that reminder goes on its player (the
- * Barber's "Haircuts Tonight"): the board asks to place it once the player is marked dead.
+ * Barber's "Haircuts Tonight"): the board asks to place it once the player is marked dead. With
+ * `placesOn: chosen` as well, it goes on a player the Storyteller picks instead (the
+ * Sweetheart's Drunk, "you choose any one player to become drunk").
  */
 export const onDeath = objectPart(
 	'On death',
@@ -21,16 +23,23 @@ export const onDeath = objectPart(
 		path,
 		issues,
 		reminders
-	): { by: KilledBy; night?: true; places?: ReminderLabel } | undefined => {
+	): { by: KilledBy; night?: true; places?: ReminderLabel; placesOn?: 'chosen' } | undefined => {
 		if (!isObject(raw)) {
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['by', 'night', 'places'], path, issues);
+		checkKeys(raw, ['by', 'night', 'places', 'placesOn'], path, issues);
 		const by = readEnum(raw, 'by', KILLED_BY, path, issues, true);
 		const night = readBoolean(raw, 'night', path, issues);
 		const places = readToken(raw, 'places', path, issues, reminders);
+		const placesOn = readEnum(raw, 'placesOn', ['chosen'] as const, path, issues, false);
+		if (placesOn && !places) issues.add(`${path}.placesOn`, 'only with "places"');
 		if (!by) return undefined;
-		return { by, ...(night ? { night } : {}), ...(places ? { places } : {}) };
+		return {
+			by,
+			...(night ? { night } : {}),
+			...(places ? { places } : {}),
+			...(places && placesOn ? { placesOn } : {})
+		};
 	}
 );
