@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { CharacterId } from '#lib/core/data/index.ts';
-	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import BankToken from './BankToken.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -12,25 +10,21 @@
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
-	import { copiedLook, isGeneric, looksLike, onBoard, type StepReminders } from './reminders.ts';
+	import { isGeneric, looksLike, onBoard, type StepReminders } from './reminders.ts';
 	import DeleteTokenConfirm from './DeleteTokenConfirm.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
-	import type { ReminderHand } from './reminder-hand.svelte.ts';
-	import type { ReminderDragging } from './reminder-drag.svelte.ts';
+	import type { TrayGestures } from './tray-gestures.svelte.ts';
 	import ReminderHandPill from './ReminderHandPill.svelte';
 	import ReminderTray from './ReminderTray.svelte';
 	import { traySeats } from './setup-tray.ts';
 	import {
 		BANK_CAPTIONS,
-		bankLabel,
 		searchBank,
 		bankItems,
-		bankLook,
 		bankView,
 		type BankGroup,
 		type BankItem
 	} from './bank-items.ts';
-	import { newTokenGlow, overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
@@ -41,12 +35,11 @@
 	 */
 	interface Props {
 		grimoire: Grimoire;
-		/** The token in hand, shared with the board's tokens (reminder-hand.svelte.ts). */
-		hand: ReminderHand;
-		/** Drops a board token in hand where the board is tapped (ReminderHandPill). */
-		remDrag: ReminderDragging;
-		/** Takes a board token in hand off the board (ReminderMoveConfirm). */
-		onRemove: (reminderId: ReminderId) => void;
+		/**
+		 * What the bank does with a finger, shared with a player's tray (tray-gestures.svelte.ts):
+		 * its token in hand, drags, "+ New token", the ∞ token editor and Delete's question.
+		 */
+		gestures: TrayGestures;
 		board: HTMLElement | undefined;
 		/** Token diameter in px. */
 		size: number;
@@ -54,35 +47,15 @@
 		focus?: StepReminders;
 		/** How `focus` is shown (step-focus.svelte.ts). */
 		focusMode?: StepFocus['mode'];
-		/** The seat under a point (in % of the board), if any. */
-		seatAt: (at: SeatPoint, onToken?: boolean) => SeatId | undefined;
-		/** The Fabled or Loric under a client point, if any. */
-		ruleAt: (x: number, y: number, reminder: Reminder) => CharacterId | undefined;
-		/**
-		 * Gives a Fabled or Loric a new reminder (asking first when it isn't theirs); `tokenId`
-		 * when it is a copy of one of the bank's ∞ tokens.
-		 */
-		onRule: (
-			reminder: Reminder,
-			characterId: CharacterId,
-			tokenId?: string,
-			look?: GenericLook
-		) => void;
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
+		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
+		disabled?: boolean;
 		/**
 		 * At the bank's right end (Trevor, 2026-10-18): the game's next phase (Set up, Start game,
 		 * End night, End day, or Run night to pick a stopped walk-through up). Always there, so the
 		 * bank never moves. `hint`: a count; each rise lights it up for a moment.
 		 */
-		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
-		disabled?: boolean;
-		/**
-		 * A reminder on the board is being dragged, and whether it is over "+ New token", which
-		 * glows to say it takes it (Trevor, 2026-10-27).
-		 */
-		dropping?: boolean;
-		dropOver?: boolean;
 		run?: {
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
@@ -98,32 +71,21 @@
 
 	let {
 		grimoire,
-		remDrag,
-		onRemove,
-		hand,
+		gestures,
 		board,
 		size,
 		focus,
 		focusMode = 'front',
-		seatAt,
-		ruleAt,
-		onRule,
 		onHints,
 		run: runButton,
 		disabled = false,
-		dropping = false,
-		dropOver = false,
 		children
 	}: Props = $props();
 
+	const hand = $derived(gestures.hand);
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 
-	/**
-	 * The bank pulled up by its handle bar (Trevor, 2026-10-30: "a drag up with a handle bar",
-	 * one area, not a caret and a second sheet): every token at once (ReminderTray).
-	 */
-	let binOpen = $state(false);
 	/** Pulled up, a search narrows it, as a player's tray (Trevor, 2026-11-06: one tray). */
 	let query = $state('');
 	const all = $derived(
@@ -163,81 +125,13 @@
 		target,
 		reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
 	});
-
-	function place(
-		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token' | 'number'>,
-		seatId: SeatId,
-		/** The number a held # token was given in its pill (plan M48); a dragged one shows 1. */
-		number?: number
-	) {
-		const { characterId, ownerSeatId, token } = item;
-		// A copy of an ∞ or # token takes its words from its look, not as a label.
-		const label = bankLabel(item);
-		return grimoire.run({
-			type: 'AddReminder',
-			seatId,
-			reminder: { characterId, label, ownerSeatId },
-			tokenId: token?.tokenId,
-			look: bankLook(item, number)
-		});
+	/** Marks the seats for a bank token dragged (GrimoireBoard's `TrayPlaces.hint`). */
+	export function hint(item: BankItem | undefined, target?: SeatId): void {
+		onHints(item ? hintsFor(item, target) : { seats: [] });
 	}
 
-	// ── Drag a token from the bank onto a seat ──
-	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean } | undefined>();
-	/** "+ New token" glows while a reminder is dragged, brighter under it (Trevor, 2026-10-27). */
-	const newGlow = $derived(newTokenGlow(!!drag || dropping, !!drag?.overNew || dropOver));
-	function dragItem(item: BankItem, x: number, y: number, end: boolean, tap = false) {
-		if (!board) return;
-		const rect = board.getBoundingClientRect();
-		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const overNew = overNewToken(x, y);
-		const target = overNew ? undefined : seatAt(at, tap);
-		if (!end) {
-			hand.putDown();
-			drag = { item, at, overNew };
-			onHints(overNew ? { seats: [] } : hintsFor(item, target));
-			return;
-		}
-		drag = undefined;
-		onHints({ seats: [] });
-		const number = tap ? hand.number : undefined;
-		// On "+ New token": a new ∞ token like it; the reminder stays in the bank.
-		if (overNew) return newTokenLike(item, number);
-		const tokenId = item.token?.tokenId;
-		const reminder = {
-			characterId: item.characterId,
-			label: bankLabel(item),
-			ownerSeatId: item.ownerSeatId
-		};
-		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
-		const rule = ruleAt(x, y, reminder);
-		if (rule) return onRule(reminder, rule, tokenId, bankLook(item, number));
-		if (!target) return;
-		// Any seat will do: the Storyteller can override the suggestion.
-		place(item, target, number);
-	}
-	function newTokenLike(item: BankItem, number?: number) {
-		const { characterId, label, token } = item;
-		hand.putDown();
-		const look = token ?? bankLook(item, number);
-		grimoire.run({ type: 'AddGenericToken', look: copiedLook({ characterId, label, ...look }) });
-	}
-	function cancelDrag() {
-		drag = undefined;
-		onHints({ seats: [] });
-	}
-
-	// ── Tap: the token is held, and goes where the board is tapped next (Trevor, 2026-10-30) ──
 	/** The bank token in hand, if the hand holds one (ReminderHandPill shows it). */
 	const held = $derived(hand.held?.kind === 'bank' ? hand.held.item : undefined);
-	function tap(item: BankItem) {
-		// Taken from the pulled-up bank, it lowers to its row, its tokens still there to see.
-		binOpen = false;
-		if (!item.makesToken) hand.toggle({ kind: 'bank', item });
-		// Holding a reminder, "+ New token" takes it as a drop there does.
-		else if (held) newTokenLike(held, hand.number);
-		else makeToken();
-	}
 	/**
 	 * A night step's reminder taken from the step (Trevor, 2026-11-06: back to the board, not a
 	 * list of players): its bank token in hand, as if tapped here. False when the bank has none.
@@ -248,73 +142,25 @@
 			mine.find((i) => i.label === reminder.label) ??
 			mine.find((i) => i.run?.includes(reminder.label));
 		if (!item) return false;
-		binOpen = false;
-		hand.held = { kind: 'bank', item };
+		gestures.open = false;
+		hand.hold({ kind: 'bank', item });
 		return true;
 	}
 	/** Marks the seats for the token in hand, as for one dragged; a board token's are the board's. */
 	$effect(() => {
-		if (drag || hand.held?.kind === 'placed') return;
+		if (gestures.trayDrag || hand.held?.kind === 'placed') return;
 		onHints(held ? hintsFor(held) : { seats: [] });
 	});
 	// A held token that leaves the bank (dragged out, removed, the game moved on) is let go.
 	$effect(() => {
 		if (held && !all.some((i) => i.key === held.key)) hand.putDown();
 	});
-	/** A held bank token dropped where the board was tapped, as a drag let go there. */
-	function dropAt(item: BankItem, x: number, y: number) {
-		dragItem(item, x, y, true, true);
-	}
-	/** Right-click (desktop): the token in hand, its ⋯ open. Touch keeps hold-to-drag. */
-	function menuFor(item: BankItem) {
-		if (item.makesToken) return;
-		hand.held = { kind: 'bank', item };
-		hand.menuOpen = true;
-	}
 
-	// ── The bank's reusable ∞ tokens (plan B9) ──
-	let editing = $state<string | undefined>();
-	let editorOpen = $state(false);
-	/** The token in the editor was just made: Cancel deletes it, Confirm puts it in hand. */
-	let fresh = $state(false);
-	/** Opens an ∞ token's editor (its ✎ in the hand). */
-	function editToken(tokenId: string) {
-		editing = tokenId;
-		fresh = false;
-		editorOpen = true;
-	}
-	/** A new ∞ token at the end of the others, opened to set its look. */
-	function makeToken() {
-		if (!grimoire.run({ type: 'AddGenericToken' })) return;
-		editing = grimoire.game.genericTokens?.at(-1)?.tokenId;
-		fresh = true;
-		editorOpen = true;
-	}
-	/** Confirmed, a new token is in hand for the seat tapped next (Trevor, 2026-11-10, B). */
-	function confirmed() {
-		if (!fresh) return;
-		const item = all.find((i) => i.token?.tokenId === editing);
-		if (item) hand.held = { kind: 'bank', item };
-	}
-
-	// ── Deleting one, and its copies still on the board if wanted ──
-	let deleting = $state<string>();
-	let deleteOpen = $state(false);
-	const deletingToken = $derived(game.genericTokens?.find((t) => t.tokenId === deleting));
+	// ── Deleting one of its ∞ tokens: how many copies are on the board ──
+	const deletingToken = $derived(game.genericTokens?.find((t) => t.tokenId === gestures.deleting));
 	const deletingCopies = $derived(
 		deletingToken ? onBoard(game).filter((r) => isGeneric(r) && looksLike(r, deletingToken)) : []
 	);
-	function deleteToken(tokenId: string) {
-		deleting = tokenId;
-		deleteOpen = true;
-	}
-	function deleteConfirmed(withCopies: boolean) {
-		if (!deleting) return;
-		if (withCopies)
-			for (const copy of deletingCopies)
-				grimoire.run({ type: 'RemoveReminder', reminderId: copy.reminderId });
-		grimoire.run({ type: 'RemoveGenericToken', tokenId: deleting });
-	}
 </script>
 
 <!-- A token that only shows, while dragged. -->
@@ -333,12 +179,12 @@
 		placing={item.makesToken ? undefined : reminderPlacing(game, item, characters)}
 		{size}
 		{disabled}
-		glow={newGlow}
-		onNew={() => tap(item)}
-		onTap={() => tap(item)}
-		onMenu={() => menuFor(item)}
-		onDrag={(x, y, end) => dragItem(item, x, y, end)}
-		onCancel={cancelDrag}
+		glow={gestures.glow}
+		onNew={() => gestures.tap(item)}
+		onTap={() => gestures.tap(item)}
+		onMenu={() => gestures.menuFor(item)}
+		onDrag={(x, y, end) => gestures.dragTray(item, x, y, end)}
+		onCancel={() => gestures.cancel()}
 		{panX}
 	/>
 {/snippet}
@@ -351,17 +197,18 @@
 	keyOf={(item) => item.key}
 	item={token}
 	flags={(item) => ({
-		lifted: held?.key === item.key || (drag?.item.key === item.key && item.count === 1),
+		lifted:
+			held?.key === item.key || (gestures.trayDrag?.item.key === item.key && item.count === 1),
 		extra: item.extra,
 		now: item.now,
 		dim: dimRest && !item.now
 	})}
 	{size}
-	bind:open={binOpen}
+	bind:open={gestures.open}
 	bind:row={list}
 	over={board}
-	busy={!!drag || !!held}
-	lowered={!!drag}
+	busy={!!gestures.trayDrag || !!held}
+	lowered={!!gestures.trayDrag}
 	onEscape={() => {
 		if (!hand.held) return false;
 		hand.putDown();
@@ -373,21 +220,12 @@
 			bind:value={query}
 		/>{/snippet}
 	{#snippet run()}{#if runButton}<BankRunButton run={runButton} />{/if}{/snippet}
-	<ReminderHandPill
-		{grimoire}
-		{hand}
-		{board}
-		{remDrag}
-		dropBank={dropAt}
-		{editToken}
-		{deleteToken}
-		{onRemove}
-		{onHints}
-	/>
+	<ReminderHandPill {grimoire} {gestures} {board} {onHints} />
 	{@render children?.()}
 </ReminderTray>
 
-{#if drag}
+{#if gestures.trayDrag}
+	{@const drag = gestures.trayDrag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
 		{@render still(drag.item)}
 	</div>
@@ -395,17 +233,17 @@
 
 <GenericTokenDialog
 	{grimoire}
-	bind:open={editorOpen}
-	tokenId={editing}
-	{fresh}
-	onConfirm={confirmed}
-	onDelete={deleteToken}
+	bind:open={gestures.editorOpen}
+	tokenId={gestures.editing}
+	fresh={gestures.fresh}
+	onConfirm={() => gestures.confirmed()}
+	onDelete={(tokenId) => gestures.askDelete(tokenId)}
 />
 <DeleteTokenConfirm
-	bind:open={deleteOpen}
+	bind:open={gestures.deleteOpen}
 	look={deletingToken}
 	copies={deletingCopies.length}
-	onConfirm={deleteConfirmed}
+	onConfirm={(withCopies) => gestures.deleteConfirmed(withCopies)}
 />
 
 <style>

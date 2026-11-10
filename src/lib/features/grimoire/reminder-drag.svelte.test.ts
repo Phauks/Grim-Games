@@ -5,6 +5,8 @@ import type { Game } from '#lib/core/model/index.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import { onBoard } from './reminders.ts';
 import { ReminderDragging } from './reminder-drag.svelte.ts';
+import { boardTrayPlaces } from './board-tray-places.ts';
+import { TrayGestures } from './tray-gestures.svelte.ts';
 
 /** Runs in the browser project, which can't read the data files: one hand-made character. */
 const poisoner = {
@@ -62,18 +64,30 @@ function setup(g = game()) {
 	const element = document.createElement('div');
 	element.getBoundingClientRect = () => new DOMRect(0, 0, 500, 500);
 	const points = g.seating.map((_, i) => ({ x: 10 + i * 20, y: 50 }));
-	const dragging = new ReminderDragging(() => ({
-		grimoire: {
-			run: (command: unknown) => calls.push(['run', command])
-		} as unknown as Grimoire,
+	const grimoire = {
 		game: g,
-		characters,
-		points,
-		size: 40,
-		board: { width: 500, height: 500 },
-		element,
-		confirm: confirm as never
-	}));
+		run: (command: unknown) => calls.push(['run', command])
+	} as unknown as Grimoire;
+	// The board's side of the bank's gestures (board-tray-places.ts), which drop the token.
+	const gestures: TrayGestures = new TrayGestures(() =>
+		boardTrayPlaces(() => ({
+			grimoire,
+			board: element,
+			remDrag: dragging,
+			confirm: confirm as never,
+			hint: () => {}
+		}))
+	);
+	const dragging: ReminderDragging = new ReminderDragging(
+		() => ({
+			game: g,
+			characters,
+			points,
+			size: 40,
+			board: { width: 500, height: 500 }
+		}),
+		() => gestures
+	);
 	const reminder = onBoard(g)[0];
 	return { g, dragging, calls, reminder };
 }
@@ -100,6 +114,7 @@ describe('ReminderDragging', () => {
 			reminderId: reminder.reminderId,
 			from: g.seating[1],
 			at: { x: 50, y: 50 },
+			overNew: false,
 			target: g.seating[2]
 		});
 		expect(dragging.origin?.reminder).toBe(reminder);

@@ -99,6 +99,25 @@ describe("a player's reminder tray and the Storyteller's bank", () => {
 		expect(tray).toContain('<GenericLookDialog');
 	});
 
+	// Trevor (2026-11-10): "Why is this implemented twice. I just want them to be the same".
+	// Dragging a token back to the tray worked on the board only, as each side had its own drop
+	// code. What a finger does lives in tray-gestures.svelte.ts; each side only keeps its tokens.
+	it('handles every tap, drag and drop with the same gestures', () => {
+		const seats = source('features/player/PlayerSeatReminders.svelte');
+		const drag = source('features/grimoire/reminder-drag.svelte.ts');
+		for (const side of [bank, tray]) {
+			for (const call of ['gestures.tap(', 'gestures.dragTray(', 'gestures.menuFor('])
+				expect(side).toContain(call);
+			expect(side).toMatch(/gestures\.(confirmed|askDelete|deleteConfirmed)\(/);
+			// Never its own drop: where a token lands is decided in one place.
+			expect(side).not.toMatch(/\b(overNewToken|overTray|copiedLook|newTokenGlow)\b/);
+		}
+		expect(seats).toContain('gestures.dragPlaced(');
+		expect(drag).toContain('dragPlaced(');
+		expect(pill).toContain('gestures.drop(');
+		expect(tray).toContain('gestures.drop(');
+	});
+
 	it("gives a player's tray every bank token feature but the Storyteller's own", () => {
 		const fields = fieldsOf(bankItemsSource, 'BankItem');
 		expect(fields.length).toBeGreaterThan(5);

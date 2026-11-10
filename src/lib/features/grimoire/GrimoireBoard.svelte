@@ -95,7 +95,8 @@
 	import { stepFocus } from './step-focus.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import BankReminderDialog from './BankReminderDialog.svelte';
-	import { ReminderHand } from './reminder-hand.svelte.ts';
+	import { TrayGestures } from './tray-gestures.svelte.ts';
+	import { boardTrayPlaces } from './board-tray-places.ts';
 	import BoardCorner from './BoardCorner.svelte';
 	import GameNotesButton from './GameNotesButton.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
@@ -299,19 +300,25 @@
 
 	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	/** The token in hand, from the bank or the board (Trevor, 2026-10-30). */
-	const hand = new ReminderHand();
 	let bank = $state<ReturnType<typeof ReminderBank>>();
-	const remDrag = new ReminderDragging(() => ({
-		grimoire,
-		game,
-		characters,
-		points,
-		size,
-		board: boardSize,
-		element: board,
-		confirm: moveConfirm
-	}));
+	/**
+	 * What the bank and the board's tokens do with a finger, the same code as a player's tray
+	 * (tray-gestures.svelte.ts); the token in hand is its `hand` (Trevor, 2026-10-30).
+	 */
+	const gestures: TrayGestures = new TrayGestures(() =>
+		boardTrayPlaces(() => ({
+			grimoire,
+			board,
+			remDrag,
+			confirm: moveConfirm,
+			hint: (item, target) => bank?.hint(item, target)
+		}))
+	);
+	const hand = gestures.hand;
+	const remDrag: ReminderDragging = new ReminderDragging(
+		() => ({ game, characters, points, size, board: boardSize }),
+		() => gestures
+	);
 	const dragOrigin = $derived(remDrag.origin);
 	const heldDrag = $derived(remDrag.held);
 
@@ -878,23 +885,15 @@
 		{:else}
 			<ReminderBank
 				bind:this={bank}
-				{hand}
+				{gestures}
 				{grimoire}
 				{board}
 				size={chip}
 				focus={nw.walk && nw.step ? stepFocusOf(nw.step, nw.walk.night, characters) : undefined}
 				focusMode={stepFocus.current.mode}
-				seatAt={remDrag.seatAt}
-				ruleAt={remDrag.ruleAt}
-				dropping={remDrag.drag !== undefined}
-				dropOver={!!remDrag.drag?.overNew}
-				onRule={(reminder, characterId, tokenId, look) =>
-					moveConfirm?.requestRule(reminder, characterId, tokenId, look)}
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
-				{remDrag}
-				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			>
 				{#if flow.picking}<ExecutionPickBar {flow} {game} {characters} />{/if}
 			</ReminderBank>
