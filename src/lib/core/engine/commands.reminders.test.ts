@@ -9,6 +9,9 @@ import {
 } from '#lib/core/model/index.ts';
 import { undo } from './log.ts';
 
+/** A picked colour as data, `#` and its digits (written so, it reads as no style colour). */
+const hex = (digits: string) => `#${digits}` as const;
+
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
 
 describe('reminders', () => {
@@ -289,6 +292,16 @@ describe('the generic reminder', () => {
 		expect(
 			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: 'x'.repeat(40) })
 		).toBe('invalid-symbol');
+		// A character's icon (Trevor, 2026-11-10), any character id, however long.
+		const lordOfTyphon = run(s, ctx, {
+			type: 'SetReminderSymbol',
+			reminderId: id,
+			symbol: '@lord_of_typhon_homebrew'
+		});
+		expect(lordOfTyphon.game.seats[seats[0]].reminders[0].symbol).toBe('@lord_of_typhon_homebrew');
+		expect(
+			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: '@' + 'x'.repeat(65) })
+		).toBe('invalid-symbol');
 	});
 
 	it('places a number token showing 1, and changes its number (plan M35)', () => {
@@ -349,6 +362,18 @@ describe('the generic reminder', () => {
 				colour: 'pink' as SymbolColour
 			})
 		).toBe('invalid-colour');
+		// Any colour picked (Trevor, 2026-11-10: "at least option for full custom").
+		const picked = hex('3a7f5c');
+		const custom = run(s, ctx, { type: 'SetReminderSymbolColour', reminderId: id, colour: picked });
+		expect(custom.game.seats[seats[0]].reminders[0].symbolColour).toBe(picked);
+		for (const colour of [hex('3A7F5C'), hex('fff'), 'red '])
+			expect(
+				refused(s, ctx, {
+					type: 'SetReminderSymbolColour',
+					reminderId: id,
+					colour: colour as SymbolColour
+				})
+			).toBe('invalid-colour');
 	});
 
 	it("fills the generic reminder's symbol, or draws it as an outline again", () => {

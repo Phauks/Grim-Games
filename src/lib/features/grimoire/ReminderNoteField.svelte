@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { reminderHolder, type ReminderInstance } from '#lib/core/model/index.ts';
+	import {
+		reminderHolder,
+		scriptCharacterIds,
+		type ReminderInstance
+	} from '#lib/core/model/index.ts';
 	import GenericLookFields from './GenericLookFields.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -12,10 +16,17 @@
 	let { grimoire, reminder }: Props = $props();
 	// Already taken off the board: nothing to save it on.
 	const held = () => !!reminderHolder(grimoire.game, reminder.reminderId);
+	const scriptCharacters = $derived(
+		scriptCharacterIds(grimoire.game.script).flatMap((id) => {
+			const character = grimoire.open.characters.get(id);
+			return character ? [character] : [];
+		})
+	);
 </script>
 
 <GenericLookFields
 	look={reminder}
+	{scriptCharacters}
 	onNote={(note) => {
 		if (held()) grimoire.run({ type: 'SetReminderNote', reminderId: reminder.reminderId, note });
 	}}
