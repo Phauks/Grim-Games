@@ -128,9 +128,9 @@ describe('generic guesses (Trevor, 2026-10-24)', () => {
 		expect(GENERIC_GUESSES.map((g) => g.key)).toEqual([
 			'type:townsfolk',
 			'type:outsider',
+			'team:good',
 			'type:minion',
 			'type:demon',
-			'team:good',
 			'team:evil'
 		]);
 	});
