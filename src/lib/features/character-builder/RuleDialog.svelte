@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { ReminderLabel } from '#lib/core/data/index.ts';
+	import type { Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import {
 		BUILDER_RULES,
 		builderRule,
-		emptyFor,
+		startFor,
 		fitsFields,
 		readRuleText,
 		ruleProblems,
@@ -30,12 +30,14 @@
 	interface Props {
 		open: boolean;
 		fields: CharacterFields;
+		/** Characters a rule can name (a jinx's partner). */
+		characters: readonly Character[];
 		/** The rule being changed; absent: a new rule. */
 		editing?: { key: string; value: unknown };
 		onSave: (key: string, value: unknown) => void;
 	}
 
-	let { open = $bindable(), fields, editing, onSave }: Props = $props();
+	let { open = $bindable(), fields, characters, editing, onSave }: Props = $props();
 
 	const reminders = $derived(
 		fields.reminders.map((r) => r.trim()).filter(Boolean) as ReminderLabel[]
@@ -62,7 +64,7 @@
 		if (field.kind === 'token') return reminders[0];
 		if (field.kind === 'count') return 1;
 		if (field.kind === 'boolean') return true;
-		return emptyFor(field);
+		return startFor(field);
 	}
 
 	function load(next: string, current: unknown) {
@@ -161,6 +163,7 @@
 					onchange={(v) => (value = v)}
 					label={rule.label}
 					{reminders}
+					{characters}
 					top
 				/>
 			</div>

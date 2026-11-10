@@ -18,7 +18,8 @@ export interface ObjectField {
 export interface Variant {
 	label: string;
 	has?: string;
-	is?: 'array' | 'string' | 'object';
+	/** `true`: the value `true`, a rule switched on with nothing more said. */
+	is?: 'array' | 'string' | 'number' | 'true' | 'object';
 	spec: FieldSpec;
 }
 
@@ -44,13 +45,21 @@ export type FieldSpec =
 	| { kind: 'strings' }
 	/** A list of whole numbers, which may be below 0. */
 	| { kind: 'numbers' }
-	| { kind: 'object'; fields: readonly ObjectField[] }
+	/**
+	 * An object with these settings. With `pick`, its settings are all optional and only those
+	 * set are shown, each added from a drop-down (many settings, few used: a jinx's effects).
+	 */
+	| { kind: 'object'; fields: readonly ObjectField[]; pick?: true }
 	| { kind: 'variants'; variants: readonly Variant[] }
 	| { kind: 'list'; of: FieldSpec }
 	/** An object keyed by the character's own reminders. */
 	| { kind: 'byToken'; of: FieldSpec }
-	/** An object keyed by any text, such as a character id. */
+	/** An object keyed by any text. */
 	| { kind: 'byKey'; of: FieldSpec }
+	/** One character, by id: official or custom (a jinx's partner, M79). */
+	| { kind: 'character' }
+	/** An object keyed by character id (a character's jinxes, one entry per partner, M79). */
+	| { kind: 'byCharacter'; of: FieldSpec }
 	/** Written as rules text: a shape too open for fields. */
 	| { kind: 'text' };
 
@@ -75,6 +84,8 @@ export const anyOf = (values: readonly string[]): FieldSpec => ({ kind: 'enums',
 export const list = (of: FieldSpec): FieldSpec => ({ kind: 'list', of });
 export const byToken = (of: FieldSpec): FieldSpec => ({ kind: 'byToken', of });
 export const byKey = (of: FieldSpec): FieldSpec => ({ kind: 'byKey', of });
+export const CHARACTER: FieldSpec = { kind: 'character' };
+export const byCharacter = (of: FieldSpec): FieldSpec => ({ kind: 'byCharacter', of });
 export const variants = (...options: Variant[]): FieldSpec => ({
 	kind: 'variants',
 	variants: options
@@ -91,6 +102,11 @@ export function obj(fields: Record<string, FieldSpec | Optional>): FieldSpec {
 			OPTIONAL in field ? { key, spec: field.spec, optional: true } : { key, spec: field }
 		)
 	};
+}
+
+/** An object of many optional settings, of which only those set are shown. */
+export function someOf(fields: Record<string, FieldSpec>): FieldSpec {
+	return { ...(optObj(fields) as Extract<FieldSpec, { kind: 'object' }>), pick: true };
 }
 
 /** An object whose settings may all be left out. */
@@ -127,6 +143,7 @@ export function emptyFor(spec: FieldSpec): unknown {
 		case 'object':
 		case 'byToken':
 		case 'byKey':
+		case 'byCharacter':
 			return {};
 		case 'list':
 		case 'enums':
@@ -141,12 +158,43 @@ export function emptyFor(spec: FieldSpec): unknown {
 	}
 }
 
+/**
+ * The value a setting starts with when it is added or its kind is picked: the first choice of
+ * a drop-down, 1 for a count, 0 for a number, the first kind of a value with kinds, otherwise
+ * empty ({@link emptyFor}).
+ */
+export function startFor(spec: FieldSpec): unknown {
+	switch (spec.kind) {
+		case 'enum':
+			return spec.values[0];
+		case 'count':
+			return 1;
+		case 'number':
+		case 'integer':
+			return 0;
+		case 'variants':
+			return spec.variants[0] ? startVariant(spec.variants[0]) : undefined;
+		default:
+			return emptyFor(spec);
+	}
+}
+
+/** A new value of `variant`, carrying the key that tells it apart from the others. */
+export function startVariant(variant: Variant): unknown {
+	if (!variant.has || variant.spec.kind !== 'object') return startFor(variant.spec);
+	const field = variant.spec.fields.find((f) => f.key === variant.has);
+	const first = field ? startFor(field.spec) : undefined;
+	return { ...(emptyFor(variant.spec) as object), [variant.has]: first ?? '' };
+}
+
 /** Which of `spec`'s variants `value` is; -1 when none fits. */
 export function variantOf(spec: Extract<FieldSpec, { kind: 'variants' }>, value: unknown): number {
 	return spec.variants.findIndex((v) => {
 		if (v.has) return isRecord(value) && value[v.has] !== undefined;
 		if (v.is === 'array') return Array.isArray(value);
 		if (v.is === 'string') return typeof value === 'string';
+		if (v.is === 'number') return typeof value === 'number';
+		if (v.is === 'true') return value === true;
 		return isRecord(value);
 	});
 }
@@ -175,6 +223,7 @@ export function uncovered(spec: FieldSpec, value: unknown, path = ''): string[] 
 			return isWhole(value) ? [] : bad;
 		case 'string':
 		case 'token':
+		case 'character':
 			return typeof value === 'string' ? [] : bad;
 		case 'enum':
 			return typeof value === 'string' && spec.values.includes(value) ? [] : bad;
@@ -191,6 +240,7 @@ export function uncovered(spec: FieldSpec, value: unknown, path = ''): string[] 
 				: bad;
 		case 'byToken':
 		case 'byKey':
+		case 'byCharacter':
 			return isRecord(value)
 				? Object.entries(value).flatMap(([k, v]) => uncovered(spec.of, v, `${path}.${k}`))
 				: bad;

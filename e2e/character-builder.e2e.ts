@@ -348,3 +348,32 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	await expect(rules).not.toContainText('Curses');
 	await expect(rules).toContainText('Protects');
 });
+
+test('a jinx is built with its partner and effects as fields (M79)', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Lamplighter');
+	await page.getByTestId('character-ability').fill('Each night*, choose a player: they can’t die.');
+
+	await page.getByTestId('add-rule').tap();
+	const dialog = page.getByRole('dialog', { name: 'Add a rule' });
+	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
+	await page.getByRole('option', { name: /^Jinxes/ }).tap();
+
+	// The partner is picked with the character picker, not typed as an id.
+	await dialog.getByRole('button', { name: 'Add to Jinxes' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await expect(dialog.getByRole('button', { name: 'Change Empath' })).toBeVisible();
+
+	// Effects are added one at a time from the jinx verbs, each with its own fields.
+	await dialog.getByRole('combobox', { name: 'Add to Empath' }).tap();
+	await page.getByRole('option', { name: 'Impairs', exact: true }).tap();
+	await expect(dialog.getByRole('combobox', { name: 'Impairs', exact: true })).toHaveText(
+		/poisoned/
+	);
+	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('rules')).toContainText('Empath Impairs poisoned');
+});
