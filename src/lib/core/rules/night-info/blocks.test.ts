@@ -11,7 +11,8 @@
  *   which), /Ravenkeeper (a player's character), /Seamstress (whether two players are the same
  *   alignment), /Village_Idiot (a player's alignment), /Shugenja (the closest evil player's
  *   direction), /Clockmaker (steps from the Demon to its nearest Minion), /High_Priestess (a
- *   player the Storyteller picks): the blocks added in M78.
+ *   player the Storyteller picks), /Sage (a pair, at least one the Demon that killed it):
+ *   the blocks added in M78.
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
@@ -123,6 +124,33 @@ describe('learns building blocks', () => {
 describe('learns building blocks added in M78', () => {
 	const cast = ['imp', 'chef', 'poisoner', 'butler', 'empath'];
 
+	it('two players, at least one the Demon that killed it, is the Sage', () => {
+		// Wiki (Sage): "If the Demon kills you, you learn that it is 1 of 2 players."
+		const { theirs, mine } = both(
+			'sage',
+			{ measure: 'players', choose: 2, matching: 1, atLeast: true, types: ['demon'], killer: true },
+			cast
+		);
+		same(theirs, mine);
+		expect(mine.options.every((o) => o.seats.length === 2)).toBe(true);
+	});
+
+	it('`atLeast` shows pairs where both may match, which no official character does', () => {
+		const lamp = custom({
+			measure: 'players',
+			choose: 2,
+			matching: 1,
+			atLeast: true,
+			alignment: 'evil'
+		});
+		const all = new Map([...characters, [lamp.id, lamp]]);
+		const { game, seats } = castWith({ characters: all })([lamp.id, 'imp', 'poisoner', 'chef']);
+		const picker = infoPicker(game, seats[0], lamp.id, all)!;
+		const pairs = picker.options.map((o) => [...o.seats].sort());
+		expect(pairs).toContainEqual([seats[1], seats[2]].sort());
+		expect(pairs).not.toContainEqual([seats[0], seats[3]].sort());
+	});
+
 	it('a `character` of two players, one a Townsfolk, is the Washerwoman', () => {
 		const { theirs, mine } = both(
 			'washerwoman',
@@ -229,7 +257,7 @@ describe('reading a building block', () => {
 
 	it('needs who matches, how many are chosen, and a scope that fits', () => {
 		expect(parse({ measure: 'count', scope: 'everyone' }).issues).toEqual([
-			'rules.learns: needs who matches: `alignment`, `types`, `woke` or `token`'
+			'rules.learns: needs who matches: `alignment`, `types`, `woke`, `token` or `differsFromToken`'
 		]);
 		expect(parse({ measure: 'players', alignment: 'evil' }).issues).toEqual([
 			'rules.learns.choose: missing'
@@ -257,9 +285,6 @@ describe('reading a building block', () => {
 		]);
 		expect(parse({ measure: 'same-alignment', to: ['minion'] }).issues).toEqual([
 			'rules.learns.to: only `distance` takes it'
-		]);
-		expect(parse({ measure: 'demon-in-pair', choose: 2 }).issues).toEqual([
-			'rules.learns: only the building blocks take a scope or count'
 		]);
 	});
 });
