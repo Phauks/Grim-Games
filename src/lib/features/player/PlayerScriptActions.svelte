@@ -8,6 +8,8 @@
 	import PrintScriptButton from './PrintScriptButton.svelte';
 	import YouButton from '#lib/features/room/YouButton.svelte';
 	import MessageButton from '#lib/features/room/MessageButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * The light background switch, Print, Share and the player's settings cog: /play's title
@@ -38,6 +40,11 @@
 		 * sidebar already opens Settings there (Trevor, 2026-10-29).
 		 */
 		cog?: boolean;
+		/**
+		 * A Local Grim game on this phone (plan M55): New game clears its board and notes. In the
+		 * header, not on the Grim tab, since it touches both (Trevor, 2026-11-10).
+		 */
+		newGame?: () => void;
 	}
 
 	let {
@@ -48,7 +55,8 @@
 		joined,
 		storyteller = false,
 		rules,
-		cog = true
+		cog = true,
+		newGame
 	}: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
@@ -59,6 +67,12 @@
 
 <!-- A message to the Storyteller, first, while this phone is in a room (Trevor, 2026-10-27). -->
 <MessageButton room={storyteller ? room : joined} preview={storyteller} />
+{#if newGame}<IconButton
+		icon="reset"
+		label={t('player.local.newGame')}
+		data-testid="local-new-game"
+		onclick={newGame}
+	/>{/if}
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />

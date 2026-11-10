@@ -149,3 +149,35 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await page.goto('/join');
 	await expect(page.getByTestId('players-only-games').getByRole('button')).toContainText('7 seats');
 });
+
+test('New game in the header clears a Local Grim board and its notes', async ({ page }) => {
+	// Trevor, 2026-11-10: in the header, "because it affects notes and grim".
+	await page.goto('/play#e=tb');
+	// Only a script being read: no game yet, so no New game.
+	await expect(page.getByTestId('local-new-game')).toHaveCount(0);
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await page.getByTestId('grim-seat').nth(1).tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 2/ });
+	await sheet.getByRole('textbox', { name: 'Name' }).fill('Sam');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	const notes = page.getByRole('tabpanel');
+	await notes.getByTestId('new-note').first().tap();
+	await noteTitle(newNoteRow(notes)).fill('Sam claims Chef');
+	await leaveNote(page);
+	await expect.poll(storedNotes(page)).toContain('Sam claims Chef');
+
+	// The header's New game asks first, then opens the new game's empty town.
+	await page.getByTestId('local-new-game').tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start a new game?' });
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	const seats = page.getByTestId('grim-seat');
+	await expect(seats).toHaveCount(7);
+	await expect(seats.nth(1)).not.toHaveAttribute('aria-label', /Sam/);
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await expect(notes.getByTestId('new-note').first()).toBeVisible();
+	await expect.poll(noteSummaries(notes)).not.toContain('Sam claims Chef');
+	expect(await storedNotes(page)()).not.toContain('Sam claims Chef');
+});

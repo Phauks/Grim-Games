@@ -68,6 +68,9 @@ export const player = {
 		'You run the game on this device. Players can join on their phones.',
 	'player.local.localGrimHint':
 		'The Storyteller runs the game outside the app. Keep your own town on this phone.',
+	'player.local.newGame': 'New game',
+	'player.local.newGameTitle': 'Start a new game?',
+	'player.local.newGameBody': 'The board and your notes are cleared for a new game on this script.',
 	'player.grim.seats': 'Seats',
 	'player.grim.playerName': 'Name',
 	'player.grim.markDead': 'Dead',
