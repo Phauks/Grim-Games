@@ -20,6 +20,7 @@ import {
 	readString,
 	type Issues
 } from './validate.ts';
+import { readTypes } from './target-rules.ts';
 
 /**
  * Ways an ability ends the game, each worked out in `rules/game-end.ts`:
@@ -64,8 +65,10 @@ import {
  * - what must hold: `carries` (the executed player carries its `token`), `nominatedBySelf` (its
  *   player nominated them), `whileAlive` (its player lives), `noExecution` (none that day),
  *   `aliveTotal` (exactly so many players alive, Travellers count), `onDay` (that day),
- *   `executions` (so many players of `alignment` executed so far), `aliveAtMost` (at most so many
- *   players of `alignment` alive, Travellers not counted);
+ *   `executions` (so many players executed so far), `aliveAtMost` (at most so many players
+ *   alive, Travellers not counted). The players `executions` and `aliveAtMost` count are those
+ *   of `alignment` and of one of `types` (M78), each when given: "no Demon alive" is
+ *   `aliveAtMost: 0` with `types: ["demon"]`;
  * - who wins: `winner`, a team, or `wins`: `own` (its player's team) or `opposing` (the team
  *   the executed player is not on).
  * The kinds above that are such a condition are presets that expand to it (`presetCondition`).
@@ -111,6 +114,8 @@ export interface EndsGame {
 	winner?: Alignment;
 	alive?: number;
 	alignment?: Alignment;
+	/** For a `condition`'s counts: players of one of these character types. */
+	types?: readonly CharacterType[];
 	count?: number;
 	day?: number;
 	night?: number;
@@ -269,6 +274,7 @@ function readCondition(
 			'subject',
 			'token',
 			'alignment',
+			'types',
 			'winner',
 			'wins',
 			...CONDITION_FLAGS,
@@ -282,9 +288,11 @@ function readCondition(
 	const subject = readEnum(raw, 'subject', END_SUBJECTS, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
+	const types = readTypes(raw, 'types', path, issues);
 	const winner = readEnum(raw, 'winner', ALIGNMENTS, path, issues, false);
 	const wins = readEnum(raw, 'wins', END_WINS, path, issues, false);
 	if (!event) return undefined;
+	if (types) out.types = types;
 	out.event = event;
 	if (subject) out.subject = subject;
 	if (token) out.token = token;
@@ -308,8 +316,11 @@ function checkCondition(c: EndsGame, path: string, issues: Issues) {
 	if (!executed && (c.carries || c.nominatedBySelf))
 		issues.add(path, '`carries` and `nominatedBySelf` are about who was executed');
 	if ((c.subject === 'marked' || c.carries) && !c.token) issues.add(`${path}.token`, 'missing');
-	if ((c.executions !== undefined || c.aliveAtMost !== undefined) && !c.alignment)
-		issues.add(`${path}.alignment`, 'missing');
+	const counts = c.executions !== undefined || c.aliveAtMost !== undefined;
+	if (counts && !c.alignment && !c.types)
+		issues.add(path, 'a count needs who it counts: `alignment` or `types`');
+	if (c.types && !counts)
+		issues.add(`${path}.types`, 'only `executions` and `aliveAtMost` take it');
 	if (c.event === 'always' && c.executions === undefined && c.aliveAtMost === undefined)
 		issues.add(path, 'an `always` event needs `executions` or `aliveAtMost`');
 	if (!c.winner === !c.wins) issues.add(path, 'needs one of `winner` and `wins`');

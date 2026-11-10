@@ -7,7 +7,7 @@
 import type { EndsGame } from '#lib/core/data/game-end-rules.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
 import type { GameEnd, GameEndOptions } from './game-end.ts';
@@ -96,21 +96,40 @@ function found(
 			if (rule.executions !== undefined) {
 				const executed = logs
 					.flatMap(executedOn)
-					.filter((id) => alignmentOf(game, id) === rule.alignment)
+					.filter((id) => counted(game, id, rule, characters))
 					.slice(0, rule.executions);
 				if (executed.length < rule.executions) return [];
 				return [{ seats: executed, tag: executed.join(',') }];
 			}
 			const alive = aliveNonTravellers(game, characters);
-			// A living seat with no alignment yet (no character) is unknown, so this can't be judged.
-			if (alive.some((id) => alignmentOf(game, id) === undefined)) return [];
-			const left = alive.filter((id) => alignmentOf(game, id) === rule.alignment);
+			// A living seat with no character yet is unknown, so this can't be judged.
+			if (alive.some((id) => counted(game, id, rule, characters) === undefined)) return [];
+			const left = alive.filter((id) => counted(game, id, rule, characters));
 			if (left.length > (rule.aliveAtMost ?? Infinity)) return [];
 			return [{ seats: left, tag: left.join(',') }];
 		}
 		default:
 			return [];
 	}
+}
+
+/**
+ * Whether a player is one a condition counts: of its `alignment` and one of its `types`, each
+ * when given. Undefined when that can't be told yet (a seat with no character).
+ */
+function counted(
+	game: Game,
+	id: SeatId,
+	rule: EndsGame,
+	characters: CharacterLookup
+): boolean | undefined {
+	const alignment = alignmentOf(game, id);
+	const type = typeOf(game, id, characters);
+	if ((rule.alignment && alignment === undefined) || (rule.types && type === undefined))
+		return undefined;
+	return (
+		(!rule.alignment || alignment === rule.alignment) && (!rule.types || rule.types.includes(type!))
+	);
 }
 
 function winnerOf(game: Game, seatId: SeatId, rule: EndsGame, hit: Found): Alignment {
