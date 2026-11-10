@@ -5,6 +5,7 @@
  * new part is a new file and one line there. The Character builder's Rules section lists the
  * parts by `label` and `description`, and edits a part with a `field` through that field (M62).
  */
+import type { FieldSpec } from '../field-spec.ts';
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
 import {
@@ -19,18 +20,8 @@ import {
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
 
-/**
- * How the Character builder edits a part's value: on (`true`), on or off, one of `values`, a
- * whole number above 0, text, or one of the character's own reminders. A part without one
- * (several settings at once) is edited as its rules text until it gets fields of its own.
- */
-export type PartField =
-	| { kind: 'true' }
-	| { kind: 'boolean' }
-	| { kind: 'enum'; values: readonly string[] }
-	| { kind: 'count' }
-	| { kind: 'string' }
-	| { kind: 'token' };
+/** How the Character builder edits a part's value (`field-spec.ts`); absent: as rules text. */
+export type PartField = FieldSpec;
 
 export interface Part<T> {
 	/** A short name for the part. */
