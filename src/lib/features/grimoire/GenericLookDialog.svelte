@@ -3,16 +3,16 @@
 	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GenericLookFields from './GenericLookFields.svelte';
 
 	/**
-	 * A generic ∞ token's look (text, symbol, colour) in two panes (Trevor, 2026-10-24): the
-	 * token as it will look on the left, its fields on the right; on a phone the token stays on
-	 * top. The bank's reusable tokens (GenericTokenDialog) and a player's own generic reminders
+	 * A generic ∞ token's look (text, symbol, colour), the token as it will look beside its
+	 * text, all on one phone screen with the keyboard up (Trevor, 2026-11-10, option B). The
+	 * bank's reusable tokens (GenericTokenDialog) and a player's own generic reminders
 	 * (PlayerReminderBin) alike. Changes wait for Confirm (Trevor, 2026-11-10, option B);
 	 * Cancel, ✕ or Escape leave the token as it was, and a token just made goes again.
 	 */
@@ -34,6 +34,13 @@
 		fresh?: boolean;
 		/** After Confirm has saved it (a new token goes into the hand). */
 		onConfirm?: () => void;
+		/**
+		 * ⋯ Duplicate (Trevor, 2026-11-10): a new token with the look as it stands here, saved
+		 * first. Left out, ⋯ has only the delete row.
+		 */
+		onDuplicate?: (look: GenericLook) => void;
+		/** The script's characters: the Characters tab's icons (GenericLookFields). */
+		scriptCharacters?: readonly Character[];
 	}
 
 	let {
@@ -46,7 +53,9 @@
 		art,
 		onCountsUp,
 		fresh = false,
-		onConfirm
+		onConfirm,
+		onDuplicate,
+		scriptCharacters = []
 	}: Props = $props();
 
 	$effect(() => {
@@ -69,14 +78,21 @@
 	// The text as typed, so the preview shows it before Enter saves it.
 	let text = $state('');
 	let width = $state(0);
-	// Large enough to read, small enough to leave the fields room under it on a phone.
-	const size = $derived(Math.round(Math.min(width * 0.5, 128)));
+	const size = $derived(Math.round(width));
 	let fields = $state<HTMLElement>();
+
+	/**
+	 * A ⋯ row's work, just after the menu has closed: closing the dialog from inside zag's
+	 * select crashes Svelte (null batch), as Dialog's `dismissedByParent` says.
+	 */
+	const after = (work: () => void) => queueMicrotask(work);
+
+	/** The look as it stands, with the text as typed. */
+	const current = (): GenericLook => ({ ...draft, note: text.trim() || undefined });
 
 	function confirm() {
 		if (!look) return;
-		const note = text.trim() || undefined;
-		const next = { ...draft, note };
+		const next = current();
 		const change: GenericLook = {};
 		for (const key of ['note', 'symbol', 'symbolColour', 'symbolFill'] as const)
 			if (next[key] !== look[key]) Object.assign(change, { [key]: next[key] });
@@ -96,53 +112,77 @@
 	{#snippet heading()}
 		<ReminderToken label={(look?.note || '∞') as ReminderLabel} /> token
 	{/snippet}
-	{#snippet aside()}
-		<div
-			class="preview"
-			bind:clientWidth={width}
-			aria-hidden="true"
-			data-testid="generic-token-preview"
-		>
-			{#if look && size > 0}
-				<BoardReminder
-					label={text.trim() as ReminderLabel}
-					character={undefined}
-					infinite
-					symbol={draft.symbol}
-					symbolColour={draft.symbolColour}
-					symbolFill={draft.symbolFill}
-					{art}
-					{size}
-					disabled
-					onTap={() => {}}
-				/>
-			{/if}
-		</div>
-	{/snippet}
 	{#if look}
 		<div class="fields" bind:this={fields}>
 			{#key tokenKey}
 				<GenericLookFields
 					look={draft}
 					bind:text
+					{scriptCharacters}
 					onNote={(note) => (draft = { ...draft, note: note || undefined })}
 					onSymbol={(symbol) => (draft = { ...draft, symbol: symbol || undefined })}
 					onColour={(symbolColour) => (draft = { ...draft, symbolColour })}
 					onFill={(fill) => (draft = { ...draft, symbolFill: fill || undefined })}
 					onCountsUp={onCountsUp && ((countsUp) => (draft = { ...draft, countsUp }))}
 					onEnter={confirm}
-				/>
+				>
+					{#snippet lead()}
+						<div
+							class="preview"
+							bind:clientWidth={width}
+							aria-hidden="true"
+							data-testid="generic-token-preview"
+						>
+							{#if size > 0}
+								<BoardReminder
+									label={text.trim() as ReminderLabel}
+									character={undefined}
+									infinite
+									symbol={draft.symbol}
+									symbolColour={draft.symbolColour}
+									symbolFill={draft.symbolFill}
+									{art}
+									{size}
+									disabled
+									onTap={() => {}}
+								/>
+							{/if}
+						</div>
+					{/snippet}
+				</GenericLookFields>
 			{/key}
 		</div>
 	{/if}
 	{#snippet headActions()}
-		<DeleteButton
-			label={deleteLabel}
-			onclick={() => {
-				confirmed = true;
-				onDelete();
-				open = false;
-			}}
+		<Menu
+			label="More token actions"
+			items={[
+				...(onDuplicate
+					? [
+							{
+								value: 'duplicate',
+								label: 'Duplicate',
+								onSelect: () => {
+									const look = current();
+									after(() => {
+										confirm();
+										onDuplicate(look);
+									});
+								}
+							}
+						]
+					: []),
+				{
+					value: 'delete',
+					label: deleteLabel,
+					onSelect: () =>
+						after(() => {
+							confirmed = true;
+							onDelete();
+							open = false;
+						})
+				}
+			]}
 		/>
 	{/snippet}
 	{#snippet actions()}
@@ -151,15 +191,12 @@
 </Dialog>
 
 <style>
-	/* One card look for every preview, as Settings' (SettingGroup). */
+	/* Beside the text, as tall as its label and field together. */
 	.preview {
+		flex: none;
+		width: calc(1.75 * var(--tap-target));
 		display: grid;
 		place-items: center;
-		min-height: 100%;
-		padding: var(--space-3);
-		border: var(--card-border);
-		border-radius: var(--card-radius);
-		background: var(--card-background);
 	}
 	.fields {
 		display: flex;

@@ -157,9 +157,43 @@ export const isNumberSymbol = (symbol: string | undefined): boolean => !!symbol?
 /** The look of the bank's # token (plan M35): a copy lands showing 1. */
 export const NUMBER_TOKEN_LOOK: Readonly<GenericLook> = { symbol: numberSymbol(1) };
 
-/** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
+/** The preset colours a generic reminder's symbol can take, each one of the theme's own. */
 export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
-export type SymbolColour = (typeof SYMBOL_COLOURS)[number];
+export type SymbolColourPreset = (typeof SYMBOL_COLOURS)[number];
+/**
+ * A generic reminder's symbol colour: a preset, or any colour the person picks, as `#` and six
+ * lower-case hex digits (Trevor, 2026-11-10: "at least option for full custom").
+ */
+export type SymbolColour = SymbolColourPreset | `#${string}`;
+const CUSTOM_COLOUR = /^#[0-9a-f]{6}$/;
+
+/** Whether a value is a symbol colour a token can hold: a preset or a picked `#rrggbb`. */
+export function isSymbolColour(value: unknown): value is SymbolColour {
+	return (
+		SYMBOL_COLOURS.includes(value as SymbolColourPreset) ||
+		(typeof value === 'string' && CUSTOM_COLOUR.test(value))
+	);
+}
+
+/** Whether a symbol colour is one of the presets, not a picked one. */
+export const isPresetColour = (colour: SymbolColour | undefined): colour is SymbolColourPreset =>
+	SYMBOL_COLOURS.includes(colour as SymbolColourPreset);
+
+/**
+ * A character's icon as a generic reminder's symbol (Trevor, 2026-11-10: a custom token "can
+ * invoke character icons, from on script or off script"): `@` and the character's id.
+ */
+const CHARACTER_SYMBOL = '@';
+
+/** The symbol that shows this character's icon. */
+export const characterSymbol = (id: CharacterId): string => `${CHARACTER_SYMBOL}${id}`;
+
+/** The character whose icon a symbol shows; undefined for any other symbol. */
+export function symbolCharacter(symbol: string | undefined): CharacterId | undefined {
+	return symbol?.startsWith(CHARACTER_SYMBOL) && symbol.length > CHARACTER_SYMBOL.length
+		? (symbol.slice(CHARACTER_SYMBOL.length) as CharacterId)
+		: undefined;
+}
 
 /**
  * The generic ∞ reminder's `characterId` (Trevor, 2026-10-18: one plain reminder, as many as
