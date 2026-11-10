@@ -518,7 +518,8 @@
 				clear={toolsClear}
 				town={townEl}
 				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
-				onDrop={(seat, r, x, y) => bin?.dropPlaced(seat.seatId, r, x, y)}
+				onDrag={(seat, r, x, y, end) => bin?.dragPlaced(seat.seatId, r, x, y, end)}
+				onCancel={() => bin?.cancelPlaced()}
 			/>
 			{#if !display}<PlayerReminderBin
 					bind:this={bin}

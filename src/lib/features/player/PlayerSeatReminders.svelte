@@ -45,8 +45,19 @@
 		onTap: (seat: PublicSeat, reminder: PlayerReminder) => void;
 		/** The town, for where a dragged token is. */
 		town: HTMLElement | undefined;
-		/** A token dragged and let go at a client point (PlayerReminderBin `dropPlaced`). */
-		onDrop: (seat: PublicSeat, reminder: PlayerReminder, x: number, y: number) => void;
+		/**
+		 * A token dragged to a client point, `end` when let go (PlayerReminderBin `dragPlaced`, as
+		 * the board's ReminderDragging `move`).
+		 */
+		onDrag: (
+			seat: PublicSeat,
+			reminder: PlayerReminder,
+			x: number,
+			y: number,
+			end: boolean
+		) => void;
+		/** A token's drag given up. */
+		onCancel?: () => void;
 		/** The seat whose token or reminder a finger is on, for "While held" lines. */
 		held?: string;
 		/** Boxes every reminder keeps clear of, in px: the controls in the top right. */
@@ -63,7 +74,8 @@
 		notes,
 		characterOf,
 		onTap,
-		onDrop,
+		onDrag,
+		onCancel,
 		town,
 		held = $bindable(),
 		clear = []
@@ -79,10 +91,8 @@
 				y: ((y - rect.top) / rect.height) * 100
 			};
 			drag = { key: `${seat.seatId}/${placedKey(reminder)}`, at };
-			return;
-		}
-		drag = undefined;
-		if (end) onDrop(seat, reminder, x, y);
+		} else drag = undefined;
+		onDrag(seat, reminder, x, y, end);
 	}
 
 	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
@@ -142,7 +152,10 @@
 				dragging={dragged}
 				onTap={() => onTap(seat, reminder)}
 				onDrag={(x, y, end) => dragTo(seat, reminder, x, y, end)}
-				onCancel={() => (drag = undefined)}
+				onCancel={() => {
+					drag = undefined;
+					onCancel?.();
+				}}
 			/>
 		</div>
 	{/each}

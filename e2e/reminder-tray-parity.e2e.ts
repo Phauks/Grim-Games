@@ -111,3 +111,80 @@ test("the bank's search runs its whole width, clear of the run button", async ({
 	expect(field.x + field.width).toBeGreaterThan(run.x + run.width / 2);
 	expect(field.y + field.height).toBeLessThanOrEqual(run.y);
 });
+
+// Trevor (2026-11-10): "Should be able to remove tokens, either in player or storyteller, by
+// dragging back to token bank". Both views take a seat's token back the same way: dragged and
+// let go anywhere on the tray, off it comes, and "+ New token" glows while it moves.
+async function dragBackToTray(page: Page, token: Locator) {
+	const from = (await token.boundingBox())!;
+	const tray = (await page.locator('[data-tray]').boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(tray.x + 8, tray.y + tray.height / 2 - 30, { steps: 6 });
+	await expect(page.locator('.new-token').first()).toHaveAttribute('data-glow', 'ready');
+	await page.mouse.move(tray.x + 8, tray.y + tray.height / 2, { steps: 4 });
+	await page.mouse.up();
+}
+
+/** Makes a ∞ token called `words` and puts it on `seat`. */
+async function placeOwnToken(page: Page, seat: Locator, words: string) {
+	await openBin(page);
+	const make = page.locator('[data-tray]').getByRole('button', { name: 'New token' });
+	await make.scrollIntoViewIfNeeded();
+	await make.tap();
+	await page.getByTestId('reminder-note').fill(words);
+	await page.getByTestId('reminder-note').press('Enter');
+	await seat.tap();
+	// Taken from the pulled-up tray, it lowered to its row, in both views.
+	await expect(page.getByTestId('reminder-bin')).toBeHidden();
+}
+
+const onSeats = (page: Page, name: string) =>
+	page.locator(`[data-testid="board-reminder"][aria-label="${name}"]:not([data-tray] *)`);
+
+test("a player's token dragged back onto the tray comes off its seat", async ({ page }) => {
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const seat = page.getByTestId('grim-seat').nth(1);
+	await placeOwnToken(page, seat, 'Chose');
+	await expect(seat).toHaveAttribute('aria-label', /your reminders: Chose$/);
+	await dragBackToTray(page, onSeats(page, 'Generic reminder: Chose'));
+	await expect(seat).not.toHaveAttribute('aria-label', /your reminders/);
+	await expect(onSeats(page, 'Generic reminder: Chose')).toHaveCount(0);
+	// The tray keeps the token itself.
+	await expect(
+		page.locator('[data-tray]').getByRole('button', { name: 'Generic reminder: Chose' })
+	).toHaveCount(1);
+});
+
+test("the Storyteller's token dragged back onto the bank comes off its seat", async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await placeOwnToken(page, page.getByRole('button', { name: /^Seat 2:/ }), 'Chose');
+	await expect(onSeats(page, 'Generic reminder: Chose')).toHaveCount(1);
+	await dragBackToTray(page, onSeats(page, 'Generic reminder: Chose'));
+	await expect(onSeats(page, 'Generic reminder: Chose')).toHaveCount(0);
+	await expect(
+		page.locator('[data-tray]').getByRole('button', { name: 'Generic reminder: Chose' })
+	).toHaveCount(1);
+});
+
+test("holding a reminder, the bank's + New token takes it as a copy, as a player's tray does", async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const bin = await openBin(page);
+	const tray = page.locator('[data-tray]');
+	const before = await tray.getByRole('button', { name: /^Generic reminder/ }).count();
+	await bin.getByRole('button', { name: 'Generic reminder', exact: true }).first().tap();
+	await tray.getByRole('button', { name: 'New token' }).tap();
+	await expect(tray.getByRole('button', { name: /^Generic reminder/ })).toHaveCount(before + 1);
+	// A copy, not a blank token's editor; the bank lowered to its row.
+	await expect(page.getByTestId('reminder-note')).toBeHidden();
+	await expect(page.getByTestId('reminder-bin')).toBeHidden();
+});
