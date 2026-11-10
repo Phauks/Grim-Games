@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { Character } from '#lib/core/data/index.ts';
 	import {
 		ruleRows,
 		summaryOf,
@@ -19,10 +20,12 @@
 	 */
 	interface Props {
 		fields: CharacterFields;
+		/** Characters a rule can name (a jinx's partner). */
+		characters: readonly Character[];
 		onchange: (rules: Record<string, unknown> | undefined) => void;
 	}
 
-	let { fields, onchange }: Props = $props();
+	let { fields, characters, onchange }: Props = $props();
 
 	const rows = $derived(ruleRows(fields));
 
@@ -76,6 +79,7 @@
 <RuleDialog
 	bind:open
 	{fields}
+	{characters}
 	{editing}
 	onSave={(key, value) => onchange(withRule(fields, key, value))}
 />

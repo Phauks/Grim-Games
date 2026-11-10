@@ -119,6 +119,8 @@ export {
 	emptyFor,
 	fieldLabel,
 	optionLabel,
+	startFor,
+	startVariant,
 	summaryOf,
 	variantOf,
 	type FieldSpec,

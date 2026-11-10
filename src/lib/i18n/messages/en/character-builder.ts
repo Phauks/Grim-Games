@@ -75,6 +75,7 @@ export const characterBuilder = {
 	'character-builder.ruleKey': '{label} name',
 	'character-builder.addSetting': 'Add to {label}',
 	'character-builder.removeSetting': 'Remove {label} {number}',
+	'character-builder.changeCharacter': 'Change {name}',
 	'character-builder.changeRule': 'Change',
 	'character-builder.removeRule': 'Remove',
 	'character-builder.preview': 'Preview',

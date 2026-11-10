@@ -23,7 +23,6 @@ import {
 	STR,
 	STRS,
 	T,
-	TEXT,
 	TOKEN,
 	TOKENS,
 	variants,
@@ -33,6 +32,7 @@ import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
 import { DEATH_KINDS } from './death-cause-rules.ts';
 import { INFO_CARDS } from './choice-rules.ts';
 import { TURNS_PLAYERS } from './turns-players-rules.ts';
+import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
 import { REMINDER_ENDS } from './parts/reminder-ends.ts';
 import type * as PARTS from './parts/index.ts';
@@ -338,7 +338,7 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			{ label: 'Several steps', is: 'array', spec: list(INFO_TOKEN) }
 		)
 	),
-	jinxes: byKey(TEXT),
+	jinxes: JINX_FIELDS,
 	keepsAbility: obj({ token: TOKEN, type: opt(TYPES) }),
 	kills: obj({
 		by: oneOf(['demon', 'other']),

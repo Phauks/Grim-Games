@@ -1,14 +1,19 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import type { Character } from '#lib/core/data/index.ts';
 	import {
 		emptyFor,
 		fieldLabel,
 		optionLabel,
+		startFor,
+		startVariant,
 		variantOf,
-		type FieldSpec,
-		type Variant
+		type FieldSpec
 	} from '#lib/core/rules/index.ts';
+	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -31,11 +36,22 @@
 		optional?: boolean;
 		/** The character's own reminders, for a setting naming one. */
 		reminders: readonly string[];
+		/** Characters a setting naming one may pick (a jinx's partner). */
+		characters: readonly Character[];
 		/** The rule itself, whose settings are not set apart as a group. */
 		top?: boolean;
 	}
 
-	let { spec, value, onchange, label, optional = false, reminders, top = false }: Props = $props();
+	let {
+		spec,
+		value,
+		onchange,
+		label,
+		optional = false,
+		reminders,
+		characters,
+		top = false
+	}: Props = $props();
 
 	type Rec = Record<string, unknown>;
 	const isRec = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -94,22 +110,24 @@
 		return settle(parts.map((p) => (Number.isFinite(Number(p)) ? Number(p) : p)));
 	}
 
-	/** A new value of `variant`, carrying the key that tells it apart. */
-	function seed(variant: Variant): unknown {
-		const base = emptyFor(variant.spec);
-		if (!variant.has || !isRec(base) || variant.spec.kind !== 'object') return base;
-		const field = variant.spec.fields.find((f) => f.key === variant.has);
-		const first =
-			field?.spec.kind === 'enum'
-				? field.spec.values[0]
-				: field?.spec.kind === 'true'
-					? true
-					: field?.spec.kind === 'count'
-						? 1
-						: field?.spec.kind === 'number'
-							? 0
-							: '';
-		return { ...base, [variant.has]: first };
+	const characterOf = (id: string) => characters.find((c) => c.id === id);
+
+	/** Which character the picker is open for: the setting itself, or entry `i`'s key. */
+	let picking = $state<{ entry?: number }>({});
+	let pickerOpen = $state(false);
+
+	function pick(at: { entry?: number }) {
+		picking = at;
+		pickerOpen = true;
+	}
+
+	function picked(id: string) {
+		const at = picking;
+		pickerOpen = false;
+		if (at.entry === undefined) onchange(id);
+		else if (at.entry >= 0) renameKey(at.entry, id);
+		else if (!(id in rec(value)) && spec.kind === 'byCharacter')
+			onchange({ ...rec(value), [id]: startFor(spec.of) });
 	}
 
 	let jsonText = $state('');
@@ -201,7 +219,7 @@
 			options={spec.variants.map((v, i) => ({ value: String(i), label: v.label }))}
 			placeholder={t('common.none')}
 			onClear={optional ? () => onchange(undefined) : undefined}
-			onChange={(i: string) => onchange(seed(spec.variants[Number(i)]!))}
+			onChange={(i: string) => onchange(startVariant(spec.variants[Number(i)]!))}
 		/>
 		{#if index >= 0}
 			<RuleValueField
@@ -210,9 +228,50 @@
 				{onchange}
 				{label}
 				{reminders}
+				{characters}
 				top
 			/>
 		{/if}
+	</fieldset>
+{:else if spec.kind === 'object' && spec.pick}
+	{@const set = spec.fields.filter((f) => rec(value)[f.key] !== undefined)}
+	{@const unset = spec.fields.filter((f) => rec(value)[f.key] === undefined)}
+	<fieldset class:group={!top}>
+		<legend class:visually-hidden={top}>{label}</legend>
+		{#each set as field, i (field.key)}
+			<div class="entry">
+				<div class="entry-head">
+					<span>{fieldLabel(field.key)}</span>
+					<DeleteButton
+						label={t('character-builder.removeSetting', {
+							label: fieldLabel(field.key),
+							number: i + 1
+						})}
+						onclick={() => removeKey(field.key)}
+					/>
+				</div>
+				<RuleValueField
+					spec={field.spec}
+					value={rec(value)[field.key]}
+					onchange={(v) => setKey(field.key, v ?? startFor(field.spec))}
+					label={fieldLabel(field.key)}
+					{reminders}
+					{characters}
+					top
+				/>
+			</div>
+		{/each}
+		<Select
+			label={t('character-builder.addSetting', { label })}
+			value={undefined}
+			options={unset.map((f) => ({ value: f.key, label: fieldLabel(f.key) }))}
+			placeholder={t('common.none')}
+			disabled={!unset.length}
+			onChange={(key: string) => {
+				const field = unset.find((f) => f.key === key);
+				if (field) setKey(key, startFor(field.spec));
+			}}
+		/>
 	</fieldset>
 {:else if spec.kind === 'object'}
 	<fieldset class:group={!top}>
@@ -225,6 +284,7 @@
 				label={fieldLabel(field.key)}
 				optional={field.optional}
 				{reminders}
+				{characters}
 			/>
 		{/each}
 	</fieldset>
@@ -247,6 +307,7 @@
 					onchange={(v) => setItem(i, v)}
 					label={name}
 					{reminders}
+					{characters}
 					top
 				/>
 			</div>
@@ -295,6 +356,7 @@
 					onchange={(v) => setKey(key, v ?? emptyFor(spec.of))}
 					label={key || label}
 					{reminders}
+					{characters}
 					top
 				/>
 			</div>
@@ -312,6 +374,62 @@
 			>
 		</div>
 	</fieldset>
+{:else if spec.kind === 'character'}
+	<div class="character">
+		<span class="label">{label}</span>
+		<Button variant="field" onclick={() => pick({})}>{t('character-builder.chooseLinked')}</Button>
+		{#if typeof value === 'string' && value}
+			<CharacterPiece template="badge" characterId={value} character={characterOf(value)} />
+		{:else}
+			<span class="muted">{t('common.none')}</span>
+		{/if}
+	</div>
+{:else if spec.kind === 'byCharacter'}
+	<fieldset class:group={!top}>
+		<legend class:visually-hidden={top}>{label}</legend>
+		{#each Object.entries(rec(value)) as [key, item], i (key)}
+			{@const name = characterOf(key)?.name ?? key}
+			<div class="entry">
+				<div class="entry-head">
+					<Button
+						variant="field"
+						aria-label={t('character-builder.changeCharacter', { name })}
+						onclick={() => pick({ entry: i })}
+					>
+						<CharacterPiece template="badge" characterId={key} character={characterOf(key)} />
+					</Button>
+					<DeleteButton
+						label={t('character-builder.removeSetting', { label: name, number: i + 1 })}
+						onclick={() => removeKey(key)}
+					/>
+				</div>
+				<RuleValueField
+					spec={spec.of}
+					value={item}
+					onchange={(v) => setKey(key, v ?? emptyFor(spec.of))}
+					label={name}
+					{reminders}
+					{characters}
+					top
+				/>
+			</div>
+		{/each}
+		<div class="add">
+			<Button variant="quiet" icon="add" onclick={() => pick({ entry: -1 })}
+				>{t('character-builder.addSetting', { label })}</Button
+			>
+		</div>
+	</fieldset>
+{/if}
+
+{#if spec.kind === 'character' || spec.kind === 'byCharacter'}
+	<Dialog bind:open={pickerOpen} title={t('character-builder.chooseLinked')} size="full">
+		<CharacterPicker
+			{characters}
+			selected={typeof value === 'string' ? [value] : Object.keys(rec(value))}
+			onSelect={picked}
+		/>
+	</Dialog>
 {/if}
 
 <style>
@@ -348,5 +466,19 @@
 	}
 	.add {
 		justify-self: start;
+	}
+	.label {
+		flex-basis: 100%;
+		font-family: var(--font-control);
+		font-weight: 600;
+	}
+	.character {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.muted {
+		color: var(--on-surface-muted);
 	}
 </style>
