@@ -5,6 +5,8 @@
  */
 import * as PARTS from '#lib/core/data/parts/index.ts';
 import type { PartField, Reminders } from '#lib/core/data/parts/part.ts';
+import { RULE_FIELDS } from '#lib/core/data/rule-fields.ts';
+import { TEXT, uncovered } from '#lib/core/data/field-spec.ts';
 import { Issues, isObject } from '#lib/core/data/validate.ts';
 import type { CharacterFields } from './character-builder.ts';
 
@@ -14,8 +16,8 @@ export interface BuilderRule {
 	key: string;
 	label: string;
 	description: string;
-	/** How it is edited; absent: as rules text. */
-	field?: PartField;
+	/** How it is edited: its fields, or rules text. */
+	field: PartField;
 }
 
 /**
@@ -28,18 +30,19 @@ const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText']);
 /** Every part the Rules section can add, by label. */
 export const BUILDER_RULES: readonly BuilderRule[] = Object.entries(PARTS)
 	.filter(([key]) => !ELSEWHERE.has(key))
-	.map(([key, part]): BuilderRule => {
-		const rule: BuilderRule = { key, label: part.label, description: part.description };
-		if (part.field) rule.field = part.field;
-		return rule;
-	})
+	.map(([key, part]): BuilderRule => ({
+		key,
+		label: part.label,
+		description: part.description,
+		field: part.field ?? RULE_FIELDS[key as keyof typeof PARTS] ?? TEXT
+	}))
 	.sort((a, b) => a.label.localeCompare(b.label));
 
 const BY_KEY = new Map(BUILDER_RULES.map((rule) => [rule.key, rule]));
 
 /** The part `key` names; a key no part has (a typo, `optionalRule`) is edited as text. */
 export function builderRule(key: string): BuilderRule {
-	return BY_KEY.get(key) ?? { key, label: key, description: '' };
+	return BY_KEY.get(key) ?? { key, label: key, description: '', field: TEXT };
 }
 
 /** A row of the Rules section: one key of the block and its value as written. */
@@ -90,6 +93,13 @@ export function ruleProblems(
 	return issues.list;
 }
 
+/** Whether `value` can be edited with the rule's fields without losing any of it. */
+export function fitsFields(rule: BuilderRule, value: unknown): boolean {
+	return (
+		rule.field.kind !== 'text' && (value === undefined || !uncovered(rule.field, value).length)
+	);
+}
+
 /** A rule's value as rules text, to edit it. */
 export function ruleText(value: unknown): string {
 	return value === undefined ? '' : JSON.stringify(value, null, 2);
@@ -105,3 +115,13 @@ export function readRuleText(text: string): { value: unknown } | { error: string
 	}
 }
 export type { PartField } from '#lib/core/data/parts/part.ts';
+export {
+	emptyFor,
+	fieldLabel,
+	optionLabel,
+	summaryOf,
+	variantOf,
+	type FieldSpec,
+	type ObjectField,
+	type Variant
+} from '#lib/core/data/field-spec.ts';

@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { ruleRows, withRule, type CharacterFields, type RuleRow } from '#lib/core/rules/index.ts';
+	import {
+		ruleRows,
+		summaryOf,
+		withRule,
+		type CharacterFields,
+		type RuleRow
+	} from '#lib/core/rules/index.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
@@ -32,15 +38,6 @@
 		editing = { key: row.rule.key, value: row.value };
 		open = true;
 	}
-
-	/** How the row reads its value: on or off, the choice, or the rules text on one line. */
-	function summary(row: RuleRow): string {
-		const { value } = row;
-		if (typeof value === 'boolean')
-			return t(value ? 'character-builder.ruleIsOn' : 'character-builder.ruleIsOff');
-		if (typeof value === 'string' || typeof value === 'number') return String(value);
-		return JSON.stringify(value);
-	}
 </script>
 
 <PageSection title={t('character-builder.rules')}>
@@ -52,7 +49,7 @@
 			<li>
 				<div class="text">
 					<span class="label">{row.rule.label}</span>
-					<span class="value">{summary(row)}</span>
+					<span class="value">{summaryOf(row.value)}</span>
 				</div>
 				<Menu
 					label={t('character-builder.ruleMenu', { rule: row.rule.label })}

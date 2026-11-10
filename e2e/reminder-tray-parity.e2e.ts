@@ -95,3 +95,19 @@ test("the tokens a player's tray search finds stay above the keyboard", async ({
 	await page.getByRole('tab', { name: 'Grim' }).tap();
 	await searchOverKeyboard(page, await openBin(page));
 });
+
+// Trevor (2026-11-10): the search runs the bank's whole width, above the run button even when
+// nothing is found.
+test("the bank's search runs its whole width, clear of the run button", async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const bin = await openBin(page);
+	const search = bin.getByRole('searchbox', { name: 'Search reminders' });
+	await search.fill('zzz-no-match');
+	const field = (await page.locator('.search-field').first().boundingBox())!;
+	const run = (await page.locator('.run').first().boundingBox())!;
+	expect(field.x + field.width).toBeGreaterThan(run.x + run.width / 2);
+	expect(field.y + field.height).toBeLessThanOrEqual(run.y);
+});
