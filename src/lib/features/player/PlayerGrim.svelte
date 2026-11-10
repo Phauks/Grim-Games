@@ -84,6 +84,8 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import LocalSeatCount from './LocalSeatCount.svelte';
 	import LocalSeatRows from './LocalSeatRows.svelte';
+	import { seatLabel } from './seat-label.ts';
+	import { playerHandMarks, seatMarks } from './hand-seat-marks.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -399,31 +401,21 @@
 		});
 	};
 
-	/* eslint-disable grim/names-as-badges -- the seat button's accessible name (aria-label) only */
-	function label(seat: PublicSeat): string {
-		const parts = [`${t('common.seat', { number: seat.seatNumber })}: ${nameOf(seat)}`];
-		if (seat.seatId === mine) parts.push(t('player.grim.you'));
-		if (seat.dead) parts.push(t('player.grim.dead'));
-		if (seat.notInPlay) parts.push(t('common.notInPlay'));
-		if (seat.ghostVote === 'unused') parts.push(t('player.grim.voteUnused'));
-		if (seat.ghostVote === 'used') parts.push(t('player.grim.voteUsed'));
-		// No ghost vote to spend (the Banshee killed by the Demon), as the board says.
-		if (seat.votes !== undefined) parts.push(t('player.grim.votes', { count: seat.votes }));
-		const traveller = characterOf(seat.traveller);
-		if (traveller) parts.push(t('player.grim.traveller', { name: traveller.name }));
-		const guessed = hiding
-			? []
-			: listed(seat.seatId)
-					.map((g) => guessName(g.id))
-					.filter(Boolean);
-		if (guessed.length) parts.push(t('player.grim.guess', { name: guessed.join(', ') }));
-		const placed = remindersOn(visible, seat.seatId);
-		if (placed.length)
-			parts.push(t('player.grim.hasReminders', { labels: placed.map(reminderWords).join(', ') }));
-		if (notes[seat.seatId]) parts.push(t('player.grim.hasNote'));
-		return parts.join(', ');
-	}
-	/* eslint-enable grim/names-as-badges */
+	/** The seats marked for the token in hand, as on the board, by the characters they show. */
+	const inHandMarks = $derived(
+		playerHandMarks(script, officialData.current, gestures.inHand, seats, (s) =>
+			hiding ? s.traveller : (s.traveller ?? characterOf(listed(s.seatId)[0]?.id)?.id)
+		)
+	);
+	const label = (seat: PublicSeat) =>
+		seatLabel(seat, {
+			name: nameOf(seat),
+			mine: seat.seatId === mine,
+			traveller: characterOf(seat.traveller)?.name,
+			guesses: hiding ? [] : listed(seat.seatId).flatMap((g) => guessName(g.id) ?? []),
+			reminders: remindersOn(visible, seat.seatId).map(reminderWords),
+			note: !!notes[seat.seatId]
+		});
 </script>
 
 {#if final && showFinal}
@@ -518,6 +510,7 @@
 						notInPlay={seat.notInPlay ? t('common.notInPlay') : undefined}
 						name={nameOf(seat)}
 						number={seat.seatNumber}
+						{...seatMarks(inHandMarks, gestures, seat.seatId)}
 						face={shown ? face : undefined}
 						vote={seat.ghostVote}
 						avatar={seat.avatar}

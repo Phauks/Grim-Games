@@ -45,6 +45,19 @@
 		 * label sits across it in a pill, over the token so nothing moves.
 		 */
 		notInPlay?: string;
+		/**
+		 * While a reminder is in hand, picked up, chosen or its night step walked (Trevor,
+		 * 2026-10-18): the seat whose character it belongs to (`source`), a seat it may go on
+		 * (`target`), or both. A ring, a glow, or the two together, so it never rests on colour
+		 * alone. The same marks on the Storyteller's board and a player's grim (Trevor, 2026-11-10).
+		 */
+		role?: 'source' | 'target' | 'both';
+		/** Faded: the reminder in hand doesn't fit this seat (it can still go here). */
+		misfit?: boolean;
+		/** A reminder is dragged over it, to be let go here. */
+		drop?: boolean;
+		/** The seat a dragged reminder is being moved from (Trevor, 2026-10-20): a dashed ring. */
+		from?: boolean;
 	}
 
 	let {
@@ -59,7 +72,11 @@
 		frame,
 		avatar,
 		picture,
-		notInPlay
+		notInPlay,
+		role,
+		misfit = false,
+		drop = false,
+		from = false
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -85,6 +102,10 @@
 	data-dead={dead || undefined}
 	data-not-in-play={notInPlay ? '' : undefined}
 	data-framed={framed || undefined}
+	data-role={role}
+	data-misfit={misfit || undefined}
+	data-drop={drop || undefined}
+	data-from={from || undefined}
 	style:--size="{size}px"
 	style:--frame-scale={framed ? 50 / (frame?.faceRadius ?? FACE_RADIUS) : 1}
 >
@@ -116,6 +137,41 @@
 </span>
 
 <style>
+	/* What the reminder in hand says about this seat (props `role`, `misfit`, `drop`, `from`). */
+	.seat-disc[data-role] .disc,
+	.seat-disc[data-from] .disc,
+	.seat-disc[data-drop] .disc {
+		border-radius: 50%;
+	}
+	.seat-disc[data-role='source'] .disc,
+	.seat-disc[data-role='both'] .disc {
+		outline: calc(0.15 * var(--u)) solid var(--accent);
+		outline-offset: calc(0.25 * var(--u));
+	}
+	.seat-disc[data-role='target'] .disc,
+	.seat-disc[data-role='both'] .disc {
+		box-shadow:
+			0 0 0 calc(0.2 * var(--u)) var(--focus-glow),
+			0 0 var(--u) calc(0.4 * var(--u)) var(--focus);
+	}
+	/* Both: the glow sits outside the ring. */
+	.seat-disc[data-role='both'] .disc {
+		box-shadow:
+			0 0 0 calc(0.6 * var(--u)) var(--focus-glow),
+			0 0 var(--u) calc(0.8 * var(--u)) var(--focus);
+	}
+	.seat-disc[data-misfit] .disc {
+		opacity: 0.4;
+	}
+	/* Where the dragged reminder came from, unlike every other seat (Trevor, 2026-10-20). */
+	.seat-disc[data-from] .disc {
+		outline: calc(0.15 * var(--u)) dashed var(--on-surface);
+		outline-offset: calc(0.25 * var(--u));
+	}
+	.seat-disc[data-drop] .disc {
+		outline: 3px solid var(--focus);
+		outline-offset: 4px;
+	}
 	.seat-disc {
 		position: relative;
 		display: grid;

@@ -332,6 +332,10 @@
 		frame={seatFrame(seat.frame)}
 		avatar={seat.avatar}
 		{picture}
+		{role}
+		{misfit}
+		drop={dropTarget}
+		from={dragFrom}
 	/>
 </button>
 
@@ -340,40 +344,6 @@
 	.seat {
 		-webkit-touch-callout: none;
 		user-select: none;
-	}
-	.seat[data-role] :global(.disc) {
-		border-radius: 50%;
-	}
-	.seat[data-role='source'] :global(.disc),
-	.seat[data-role='both'] :global(.disc) {
-		outline: calc(0.15 * var(--u)) solid var(--accent);
-		outline-offset: calc(0.25 * var(--u));
-	}
-	.seat[data-role='target'] :global(.disc),
-	.seat[data-role='both'] :global(.disc) {
-		box-shadow:
-			0 0 0 calc(0.2 * var(--u)) var(--focus-glow),
-			0 0 var(--u) calc(0.4 * var(--u)) var(--focus);
-	}
-	/* Both: the glow sits outside the ring. */
-	.seat[data-role='both'] :global(.disc) {
-		box-shadow:
-			0 0 0 calc(0.6 * var(--u)) var(--focus-glow),
-			0 0 var(--u) calc(0.8 * var(--u)) var(--focus);
-	}
-	.seat[data-misfit] :global(.disc) {
-		opacity: 0.4;
-	}
-	/* Where the dragged reminder came from, unlike every other seat (Trevor, 2026-10-20). */
-	.seat[data-from] :global(.disc) {
-		outline: calc(0.15 * var(--u)) dashed var(--on-surface);
-		outline-offset: calc(0.25 * var(--u));
-		border-radius: 50%;
-	}
-	.seat[data-drop] :global(.disc) {
-		outline: 3px solid var(--focus);
-		outline-offset: 4px;
-		border-radius: 50%;
 	}
 	.seat {
 		position: relative;
