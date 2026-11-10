@@ -36,7 +36,8 @@
 <style>
 	.generic {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(30%, calc(7 * var(--u))), 1fr));
+		/* Two rows of three: good on top, evil under it (Trevor, 2026-11-10). */
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-1);
 		margin: 0 0 var(--space-2);
 		padding: 0;

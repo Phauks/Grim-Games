@@ -40,12 +40,13 @@ export type GuessMark =
 	| { generic: GenericGuess; label: string }
 	| { avatar: AvatarId; name: string; label: string; picture?: string };
 
+/** Good on the first row, evil on the second (Trevor, 2026-11-10), three to a row (GenericGuessGrid). */
 export const GENERIC_GUESSES: readonly GenericGuess[] = [
 	{ key: 'type:townsfolk', type: 'townsfolk', team: 'good' },
 	{ key: 'type:outsider', type: 'outsider', team: 'good' },
+	{ key: 'team:good', team: 'good' },
 	{ key: 'type:minion', type: 'minion', team: 'evil' },
 	{ key: 'type:demon', type: 'demon', team: 'evil' },
-	{ key: 'team:good', team: 'good' },
 	{ key: 'team:evil', team: 'evil' }
 ];
 
