@@ -354,6 +354,12 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			'count',
 			'players',
 			'any-of',
+			'character',
+			'same',
+			'alignment',
+			'direction',
+			'distance',
+			'storyteller',
 			'pair-of-type',
 			'evil-pairs',
 			'evil-alive-neighbours',
@@ -384,7 +390,8 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		scope: opt(oneOf(['alive-neighbours', 'neighbour-pairs', 'everyone'])),
 		choose: opt(COUNT),
 		matching: opt(COUNT),
-		woke: opt(T)
+		woke: opt(T),
+		to: opt(SOME_TYPES)
 	}),
 	madAs: obj({
 		token: TOKEN,
