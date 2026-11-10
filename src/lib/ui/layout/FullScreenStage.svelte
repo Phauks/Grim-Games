@@ -32,7 +32,9 @@
 		children,
 		corner,
 		testid,
+		// eslint-disable-next-line no-useless-assignment -- bindable: the board reads it
 		cornerWidth = $bindable(0),
+		// eslint-disable-next-line no-useless-assignment -- bindable: the board reads it
 		cornerHeight = $bindable(0)
 	}: Props = $props();
 
