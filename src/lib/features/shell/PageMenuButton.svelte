@@ -15,5 +15,7 @@
 		position: absolute;
 		top: calc(var(--app-top) + var(--menu-inset));
 		left: calc(env(safe-area-inset-left) + var(--menu-inset));
+		/* Over the page head's band (Page.svelte), which comes after it. */
+		z-index: var(--z-above);
 	}
 </style>

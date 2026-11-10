@@ -96,45 +96,51 @@
 {/snippet}
 <main class="page" class:wide class:fill>
 	<PageMenuButton />
-	<header class="head" class:visually-hidden={hideTitle}>
-		{#if titleBelow}
-			<!-- The title on the buttons' row when it fits there at full size, else under them
+	<div class="head-band" class:visually-hidden={hideTitle}>
+		<header class="head">
+			{#if titleBelow}
+				<!-- The title on the buttons' row when it fits there at full size, else under them
 			     (Trevor, 2026-11-01); the byline under both, across the page. -->
-			<div
-				class="title-row"
-				data-title-below=""
-				bind:this={row}
-				{@attach oneRow(
-					{
-						title: () => row?.querySelector('h1'),
-						actions: () => row?.querySelector('.actions'),
-						others: () => [row?.querySelector('.menu-room')],
-						slots: actionSlots
-					},
-					title,
-					showMenu
-				)}
-			>
-				{#if showMenu && !hideTitle}<span class="menu-room" aria-hidden="true"></span>{/if}
-				{@render heading()}
-				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
-				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
-			</div>
-		{:else}
-			<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-				{#if showMenu && !hideTitle}
-					<div class="start">
-						<span class="menu-room" aria-hidden="true"></span>
-						{@render heading()}
-					</div>
-				{:else}
+				<div
+					class="title-row"
+					data-title-below=""
+					bind:this={row}
+					{@attach oneRow(
+						{
+							title: () => row?.querySelector('h1'),
+							actions: () => row?.querySelector('.actions'),
+							others: () => [row?.querySelector('.menu-room')],
+							slots: actionSlots
+						},
+						title,
+						showMenu
+					)}
+				>
+					{#if showMenu && !hideTitle}<span class="menu-room" aria-hidden="true"></span>{/if}
 					{@render heading()}
-				{/if}
-				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
-			</div>
-			{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
-		{/if}
-	</header>
+					{#if actions}<div class="actions" data-testid="page-actions">
+							{@render actions()}
+						</div>{/if}
+					{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+				</div>
+			{:else}
+				<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
+					{#if showMenu && !hideTitle}
+						<div class="start">
+							<span class="menu-room" aria-hidden="true"></span>
+							{@render heading()}
+						</div>
+					{:else}
+						{@render heading()}
+					{/if}
+					{#if actions}<div class="actions" data-testid="page-actions">
+							{@render actions()}
+						</div>{/if}
+				</div>
+				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+			{/if}
+		</header>
+	</div>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
 	{#if side}
 		<div class="split" data-side-flow={sideFlow ? '' : undefined}>
@@ -155,6 +161,9 @@
 		margin: 0 auto;
 		/* The title row starts level with the hamburger and the sidebar's name row. */
 		padding: var(--menu-inset) var(--page-gutter) var(--space-6);
+		/* The head's band paints under the page's text and the hamburger, never under the
+		   window behind the page. */
+		isolation: isolate;
 	}
 	.page.wide {
 		max-width: none;
@@ -181,6 +190,40 @@
 		display: grid;
 		gap: var(--space-1);
 		container: page-head / inline-size;
+	}
+	/*
+	 * The page's head (its buttons, title and byline) on a raised band with a line along its
+	 * foot, set apart from the content as the bottom tab bar is (Trevor, 2026-11-10: C2). The
+	 * band starts at the page's top and ends halfway down the gap under the head, so nothing
+	 * moves; it scrolls away with the page. The colour reaches the screen's sides through the
+	 * gutter to the page's edges as the tab bar's does (Tabs.svelte), clipped at its own top and foot.
+	 * On a wrapper rather than the head itself: Chrome can leave an absolute ::before of a size
+	 * container unpainted (the Library on a computer).
+	 */
+	.head-band {
+		position: relative;
+	}
+	.head-band:not(.visually-hidden)::before,
+	.head-band:not(.visually-hidden)::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		pointer-events: none;
+	}
+	.head-band:not(.visually-hidden)::before {
+		z-index: var(--z-under);
+		top: calc(-1 * var(--menu-inset));
+		bottom: calc(-0.5 * var(--space-4));
+		background: var(--surface-raised);
+		box-shadow: 0 0 0 100vmax var(--surface-raised);
+		clip-path: inset(0 calc(-1 * var(--page-gutter)));
+	}
+	.head-band:not(.visually-hidden)::after {
+		bottom: calc(-0.5 * var(--space-4));
+		height: 1px; /* px-ok: a hairline, as the tab bar's */
+		background: var(--border);
+		box-shadow: 0 0 0 100vmax var(--border);
+		clip-path: inset(0 calc(-1 * var(--page-gutter)));
 	}
 	/*
 	 * A narrow page (phones): the actions get their own row under the title, so a wide button

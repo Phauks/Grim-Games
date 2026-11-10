@@ -148,3 +148,28 @@ test('About, Credits and Support are as wide as Roadmap and Changelog', async ({
 	expect(widths['/support']).toBe(widths['/roadmap']);
 	expect(widths['/changelog']).toBe(widths['/roadmap']);
 });
+
+// Trevor (2026-11-10, C2): the head (buttons, title, byline) sits on a raised band with a line
+// along its foot, as the bottom tab bar does, ending in the gap above the content.
+test('the page head sits on a raised band that ends above the content', async ({ page }) => {
+	await page.goto('/spikes/page');
+	const main = page.getByRole('main');
+	const band = main.locator('.head-band');
+	const look = await band.evaluate((node) => {
+		const before = getComputedStyle(node, '::before');
+		const after = getComputedStyle(node, '::after');
+		const probe = document.createElement('i');
+		probe.style.color = 'var(--surface-raised)';
+		node.append(probe);
+		const raised = getComputedStyle(probe).color;
+		probe.remove();
+		return { fill: before.backgroundColor, raised, line: after.height };
+	});
+	expect(look.fill).toBe(look.raised);
+	expect(look.line).toBe('1px');
+	const head = (await band.boundingBox())!;
+	const subtitle = (await main.getByText('Subtitle line').boundingBox())!;
+	const search = (await main.getByRole('searchbox', { name: 'Search' }).boundingBox())!;
+	expect(subtitle.y + subtitle.height).toBeLessThanOrEqual(head.y + head.height + 1);
+	expect(search.y).toBeGreaterThan(head.y + head.height);
+});
