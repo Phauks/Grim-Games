@@ -56,6 +56,7 @@ const EMPTY: Readonly<Record<AnswerGroup['among'], string>> = {
 	dead: 'Nobody is dead',
 	marked: 'Nobody carries its reminders',
 	abnormal: 'No abnormal abilities recorded',
+	guessed: 'No guesses logged today',
 	nominators: 'No nominations recorded today',
 	voters: 'Votes are not recorded',
 	executed: 'Nobody died by execution today',
@@ -96,6 +97,7 @@ function groupOf(
 				.filter((s, i, all) => all.indexOf(s) === i);
 		case 'voters':
 		case 'abnormal':
+		case 'guessed':
 			return undefined;
 		case 'executed': {
 			// Today's executions from the day log; when the log has none (the Storyteller ran the
@@ -204,6 +206,7 @@ function anyAnswer(
 			{ relevant: [] }
 		);
 	}
+	if (block.onlyYes) return onlyYesAnswer(game, seatId, characterId, characters, block, group);
 	const w = byWorld(game, seatId, characters, (world) => ({
 		kind: 'yes-no',
 		value: group.some((s) => registersAs(world, s, block))
@@ -223,6 +226,53 @@ function anyAnswer(
 			facts: group.map((s) => fact(game, s, characters, base)),
 			alternatives: w.alternatives
 		}
+	);
+}
+
+/** What the group did, for saying none of them matched (`onlyYes`). */
+const DID: Readonly<Record<AnswerGroup['among'], string>> = {
+	dead: 'is dead',
+	marked: 'carries its reminders',
+	abnormal: 'worked abnormally',
+	guessed: 'was guessed',
+	nominators: 'nominated today',
+	voters: 'voted today',
+	executed: 'died by execution today',
+	died: 'died today',
+	everyone: 'is in play'
+};
+
+/**
+ * `any` with `onlyYes`: yes when a player of the group truly matches, else nothing to learn.
+ * The answer decides whether the character wakes (the Godfather kills tonight when an Outsider
+ * died today, https://wiki.bloodontheclocktower.com/Godfather), so it goes by true characters,
+ * as the Storyteller's grimoire shows them: a Drunk counts as an Outsider, as does a Recluse.
+ */
+function onlyYesAnswer(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	block: BlockRule,
+	group: SeatId[]
+): NightAnswer {
+	const matching = group.filter((s) => trulyMatches(game, s, block, characters));
+	const who = [
+		block.alignment,
+		block.types?.map((t) => t[0].toUpperCase() + t.slice(1)).join(' or ') ?? 'player'
+	]
+		.filter(Boolean)
+		.join(' ');
+	return answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		matching.length === 0
+			? { kind: 'none', reason: `No ${who} ${DID[block.among]}` }
+			: { kind: 'yes-no', value: true },
+		matching,
+		{ relevant: matching, facts: matching.map((s) => fact(game, s, characters)) }
 	);
 }
 
@@ -323,47 +373,6 @@ function charactersAnswer(
 	});
 }
 
-/**
- * Godfather: whether an Outsider died today, so the Godfather wakes tonight to kill
- * (https://wiki.bloodontheclocktower.com/Godfather). An Outsider is a player whose true
- * character is an Outsider (a Drunk counts, as does a Recluse). Deaths come from today's
- * deaths in the log (`today`), today's executions and exiles, and the Godfather's "Died
- * Today" reminder on a dead Outsider, which is how the Storyteller marks it on the board.
- */
-function outsiderDied(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	characters: CharacterLookup,
-	rule: Answers,
-	today?: NightToday
-): NightAnswer {
-	const marked = game.seating.filter((s) =>
-		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === rule.token)
-	);
-	const died = new Set([
-		...(today?.died ?? []),
-		...[...entriesOf(game, 'execution'), ...entriesOf(game, 'exile')]
-			.filter((e) => e.died)
-			.map((e) => e.seatId),
-		...marked
-	]);
-	const outsiders = game.seating.filter(
-		(s) => died.has(s) && getSeat(game, s)?.dead && typeOf(game, s, characters) === 'outsider'
-	);
-	return answer(
-		game,
-		seatId,
-		characterId,
-		characters,
-		outsiders.length === 0
-			? { kind: 'none', reason: 'No Outsider died today' }
-			: { kind: 'yes-no', value: true },
-		outsiders,
-		{ relevant: outsiders, facts: outsiders.map((s) => fact(game, s, characters)) }
-	);
-}
-
 /** The dead player carrying a character's reminder, as `{ seatId }`. */
 function marked(
 	game: Game,
@@ -379,7 +388,7 @@ function marked(
 }
 
 /**
- * Juggler: how many of today's guesses are correct
+ * A `count` among `guessed`: how many of today's guesses are correct, the Juggler's
  * (https://wiki.bloodontheclocktower.com/Juggler). Guesses come from the Juggler's day notes
  * and are checked against each player's true character. Each guess is one player and one
  * character, so a player guessed as two characters is two guesses, and the same player and
@@ -441,8 +450,8 @@ function correctGuesses(
 }
 
 /**
- * Gossip: whether today's public statement was true, so a player dies tonight
- * (https://wiki.bloodontheclocktower.com/Gossip). The truth is the Storyteller's call, marked
+ * `statement`: whether today's public statement was true, the Gossip's, so a player dies
+ * tonight (https://wiki.bloodontheclocktower.com/Gossip). The truth is the Storyteller's call, marked
  * on the statement in the day log (L58); the latest statement today counts.
  */
 function statementTrue(
@@ -499,11 +508,14 @@ function countAnswer(
 	characterId: CharacterId,
 	characters: CharacterLookup,
 	rule: Answers,
-	today?: NightToday
+	today?: NightToday,
+	basis?: SeatId
 ): NightAnswer {
 	if (rule.question !== 'count') throw new Error('not a count');
 	if (rule.among === 'abnormal')
 		return abnormalAbilities(game, seatId, characterId, characters, rule, today);
+	if (rule.among === 'guessed')
+		return correctGuesses(game, seatId, characterId, characters, rule, today, basis);
 	const group = groupOf(game, characterId, characters, rule, today) ?? [];
 	const matchIn = (w: RegistrationWorld) => group.filter((s) => registersAs(w, s, rule));
 	const w = byWorld(game, seatId, characters, (world) => ({
@@ -574,16 +586,18 @@ function abnormalAbilities(
 }
 
 /**
- * General: which team the Storyteller believes is winning, good, evil or neither
- * (https://wiki.bloodontheclocktower.com/General). Only the Storyteller can judge it, so there
- * is no answer to work out: all three are offered (`choices`).
+ * `storyteller`: the Storyteller's own judgement, so there is no answer to work out and each
+ * of `choices` is offered. The General learns which team the Storyteller believes is winning,
+ * good, evil or neither (https://wiki.bloodontheclocktower.com/General).
  */
-function winningAlignment(
+function storytellerAnswer(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	rule: Answers
 ): NightAnswer {
+	if (rule.question !== 'storyteller') throw new Error('not a storyteller choice');
 	return answer(
 		game,
 		seatId,
@@ -593,10 +607,7 @@ function winningAlignment(
 		[],
 		{
 			relevant: [],
-			choices: (['good', 'evil', 'neither'] as const).map((value) => ({
-				kind: 'alignment',
-				value
-			}))
+			choices: rule.choices.map((value) => ({ kind: 'alignment', value }))
 		}
 	);
 }
@@ -618,11 +629,8 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	any: anyAnswer,
 	character: characterAnswer,
 	characters: charactersAnswer,
-	'outsider-died': outsiderDied,
-	'correct-guesses': correctGuesses,
-	'statement-true': statementTrue,
-	'winning-alignment': (game, seatId, characterId, characters) =>
-		winningAlignment(game, seatId, characterId, characters)
+	statement: statementTrue,
+	storyteller: storytellerAnswer
 };
 
 /**
@@ -770,12 +778,13 @@ function answerValue(a: NightAnswer): AnswerValue {
 
 /**
  * The highest number a number answer could be, for listing the false ones: the whole group for
- * a `count` of the dead or the marked, the Juggler's five guesses
- * (https://wiki.bloodontheclocktower.com/Juggler), else every player.
+ * a `count` of the dead or the marked, the guesses a day claim may hold for `guessed` (the
+ * Juggler's five, https://wiki.bloodontheclocktower.com/Juggler), else every player.
  */
 function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
 	const rule = rulesOf(characterId, characters)?.answers;
-	if (rule?.question === 'correct-guesses') return 5;
 	if (rule?.question !== 'count' || rule.among === 'abnormal') return game.seating.length;
+	if (rule.among === 'guessed')
+		return rulesOf(characterId, characters)?.guessLimit ?? game.seating.length;
 	return (groupOf(game, characterId, characters, rule) ?? game.seating).length;
 }

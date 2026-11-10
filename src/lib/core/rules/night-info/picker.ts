@@ -18,7 +18,7 @@ import { pretendGame } from '../pretend.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { Night } from '../night-order.ts';
 import { wokeTonight } from '../woke-tonight.ts';
-import { carries, lastShown } from './token-carriers.ts';
+import { carries } from './token-carriers.ts';
 import { perPairOptions } from './neighbour-pairs.ts';
 import {
 	blockFacts,
@@ -167,14 +167,10 @@ interface PickerSpec extends Learns {
 
 type PickerShape = Pick<PickerSpec, 'kind' | 'seatCount' | 'answer' | 'judgement'>;
 /**
- * The picker each `learns` measure shows: its kind and how many players are tapped. A building
- * block's comes from what it asks (`BLOCK_KINDS`); the presets of one never reach here, as
- * reading them expands them (`data/night-info-rules.ts`).
+ * The picker each `learns` building block shows: its kind and, from `choose`, how many players
+ * are tapped. Every official name is a preset of a block, expanded when read
+ * (`data/night-info-rules.ts`).
  */
-const MEASURE_PICKERS: Readonly<Partial<Record<Learns['measure'], PickerShape>>> = {
-	'demon-in-pair': { kind: 'players', seatCount: 2 },
-	'type-differs-from-token': { kind: 'players', seatCount: 1 }
-};
 const BLOCK_SHAPES: Readonly<Record<LearnsBlock, Omit<PickerShape, 'seatCount'>>> = {
 	count: { kind: 'number' },
 	players: { kind: 'players' },
@@ -188,9 +184,8 @@ const BLOCK_SHAPES: Readonly<Record<LearnsBlock, Omit<PickerShape, 'seatCount'>>
 };
 
 function shapeOf(learns: Learns): PickerShape | undefined {
-	if (isLearnsBlock(learns.measure))
-		return { ...BLOCK_SHAPES[learns.measure], seatCount: learns.choose ?? 0 };
-	return MEASURE_PICKERS[learns.measure];
+	if (!isLearnsBlock(learns.measure)) return undefined;
+	return { ...BLOCK_SHAPES[learns.measure], seatCount: learns.choose ?? 0 };
 }
 
 /** The character type a two-player `character` block shows (the Washerwoman's Townsfolk). */
@@ -210,26 +205,6 @@ function pickerSpec(characterId: CharacterId, characters: CharacterLookup): Pick
 	return learns && shape && { ...learns, ...shape };
 }
 
-/**
- * The players among `others` who register as the Demon. When the waking player's recorded
- * death cause is a character one of them truly is, only those: the Demon that killed them,
- * when more than one Demon is in play (https://wiki.bloodontheclocktower.com/Sage). An
- * unrecorded or general cause keeps every Demon.
- */
-function killerDemons(
-	game: Game,
-	seatId: SeatId,
-	others: readonly SeatId[],
-	world: RegistrationWorld,
-	characters: CharacterLookup
-): SeatId[] {
-	const demons = others.filter((s) => world.type(s) === 'demon');
-	const cause = game.seats[seatId]?.deathCause;
-	if (cause === undefined) return demons;
-	const killers = demons.filter((s) => trueCharacter(game, s, characters) === cause);
-	return killers.length > 0 ? killers : demons;
-}
-
 /** The options that are true when players register as `world` says. */
 function optionsIn(
 	game: Game,
@@ -239,31 +214,8 @@ function optionsIn(
 	characters: CharacterLookup,
 	world: RegistrationWorld
 ): InfoOption[] {
-	// Information is about the other players: the waking player is never one of them
-	// (a rules question for Trevor; see the report).
-	const others = game.seating.filter((s) => s !== seatId);
-	if (isBlock(spec)) return blockOptions(spec, { game, seatId, characterId, characters, world });
-	switch (spec.measure) {
-		case 'demon-in-pair':
-			// https://wiki.bloodontheclocktower.com/Sage: two players, one of them the Demon; the
-			// other is anyone else.
-			return killerDemons(game, seatId, others, world, characters).flatMap((demon) =>
-				others
-					.filter((s) => s !== demon)
-					.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
-			);
-		case 'type-differs-from-token': {
-			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
-			// type than the one shown last time (any player the first time). Alive or dead.
-			const before = lastShown(game, seatId, characterId, spec.token).map((s) => world.type(s));
-			return others
-				.filter((s) => !before.includes(world.type(s)))
-				.map((s) => ({ seats: [s], pivot: s }));
-		}
-		default:
-			// A preset of a building block, expanded when read.
-			return [];
-	}
+	if (!isBlock(spec)) return [];
+	return blockOptions(spec, { game, seatId, characterId, characters, world });
 }
 
 const isBlock = (spec: PickerSpec): spec is PickerSpec & BlockSpec => isLearnsBlock(spec.measure);
@@ -321,22 +273,12 @@ function pickerFacts(
 	characters: CharacterLookup,
 	world: RegistrationWorld
 ): WhyFact[] {
-	const others = game.seating.filter((s) => s !== seatId);
 	const f = (s: SeatId) => fact(game, s, characters, world);
-	if (isBlock(spec)) {
-		// The Fortune Teller's red herring is marked as one.
-		return blockFacts(spec, { game, seatId, characterId, characters, world }).map((s) =>
-			spec.token && carries(game, s, characterId, spec.token) ? { ...f(s), redHerring: true } : f(s)
-		);
-	}
-	switch (spec.measure) {
-		case 'demon-in-pair':
-			return killerDemons(game, seatId, others, world, characters).map(f);
-		case 'type-differs-from-token':
-			return lastShown(game, seatId, characterId, spec.token).map(f);
-		default:
-			return [];
-	}
+	if (!isBlock(spec)) return [];
+	// The Fortune Teller's red herring is marked as one.
+	return blockFacts(spec, { game, seatId, characterId, characters, world }).map((s) =>
+		spec.token && carries(game, s, characterId, spec.token) ? { ...f(s), redHerring: true } : f(s)
+	);
 }
 
 /** The info picker for a waking player, or undefined for a character it does not cover. */

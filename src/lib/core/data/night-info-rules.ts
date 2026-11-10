@@ -120,7 +120,16 @@ const PRESETS: Partial<Record<LearnsMeasure, Omit<Learns, 'preset'>>> = {
 	'chosen-alignment': { measure: 'alignment', choose: 1, self: true },
 	'closest-evil-direction': { measure: 'direction', alignment: 'evil' },
 	'demon-minion-steps': { measure: 'distance', types: ['demon'], to: ['minion'] },
-	'storyteller-pick': { measure: 'storyteller', choose: 1 }
+	'storyteller-pick': { measure: 'storyteller', choose: 1 },
+	'demon-in-pair': {
+		measure: 'players',
+		choose: 2,
+		matching: 1,
+		atLeast: true,
+		types: ['demon'],
+		killer: true
+	},
+	'type-differs-from-token': { measure: 'players', choose: 1 }
 };
 
 export interface Learns {
@@ -133,6 +142,18 @@ export interface Learns {
 	choose?: number;
 	/** For `players`: how many of them match; all when left out. */
 	matching?: number;
+	/** For `players`: at least `matching` of them match (the Sage's pair may be two Demons). */
+	atLeast?: true;
+	/**
+	 * For a block: only players whose character the waking player's death is recorded as, when
+	 * any match (the Demon that killed the Sage, with more than one in play).
+	 */
+	killer?: true;
+	/**
+	 * For a block: players whose type differs from those of the players last shown, who carry
+	 * this reminder (the Balloonist's "Seen").
+	 */
+	differsFromToken?: ReminderLabel;
 	/** For a block: only players who woke tonight by their own ability match. */
 	woke?: true;
 	/** For `distance`: the character types it counts the steps to. */
@@ -158,6 +179,9 @@ export interface Learns {
  * - `abnormal` (for `count` only): those whose ability worked abnormally since dawn because of
  *   another character, from the info recorded as abnormal; once the Storyteller has put this
  *   character's `token` on players, those carrying it (their call);
+ * - `guessed` (for `count` only): today's guesses in this character's day claim, each one
+ *   player and one character, that are right; once the Storyteller has put this character's
+ *   `token` on players, how many tokens there are (their call);
  * - `nominators`: those who nominated today, from the nominations recorded;
  * - `voters`: those who voted today, which the app does not record, so only `mark` answers;
  * - `executed`: those who died by execution today, from the day log, else the dead player
@@ -169,17 +193,21 @@ export interface Learns {
  * group when neither is given. What is learnt about the group:
  * - `count`: how many match;
  * - `any`: yes when any matches. `mark` is the Storyteller's day mark (`day-mark-rules.ts`)
- *   that answers it when set and the group recorded today says otherwise, or says nothing;
+ *   that answers it when set and the group recorded today says otherwise, or says nothing.
+ *   With `onlyYes`, a no is nothing to learn (the Godfather only wakes when one died);
  * - `character`: the character of the latest player in the group who matches;
  * - `characters`: the characters in play of the one character type in `types`.
- * The official names below that are a block are presets that expand to it (`ANSWER_PRESETS`):
+ * Two blocks look at no group:
+ * - `statement`: whether today's statement in this character's day claim was true, the
+ *   Storyteller's mark on it (L58);
+ * - `storyteller`: the Storyteller's own judgement, one of `choices` (alignments, or
+ *   `neither`), all offered.
+ * The official names below are presets that expand to a block (`ANSWER_PRESETS`):
  * `evil-dead` (Oracle), `evil-marked` (the Duchess's visitors), `abnormal-abilities`
  * (Mathematician), `minion-nominated` (Town Crier), `demon-voted` (Flowergirl),
- * `executed-character` (Undertaker) and `outsiders-in-play` (Godfather, first night).
- * The rest are worked out one by one, each for a single character: `outsider-died` (Godfather),
- * `correct-guesses` (Juggler), `statement-true` (Gossip, from the statement logged by day, L58)
- * and `winning-alignment` (General: which team the Storyteller believes is winning, good, evil
- * or neither, their judgement, so all three are offered).
+ * `executed-character` (Undertaker), `outsiders-in-play` (Godfather, first night),
+ * `outsider-died` (Godfather), `correct-guesses` (Juggler), `statement-true` (Gossip) and
+ * `winning-alignment` (General: which team is winning, good, evil or neither).
  * `token` is the character's reminder that marks the answer on the board ("Died Today",
  * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
  * character that learns something else then (the Godfather starts knowing which Outsiders
@@ -189,14 +217,15 @@ export interface Learns {
  * `falseToken` is the reminder whose player must get false information (the Duchess's
  * "False Info").
  */
+/** The blocks that look at a group (`among`). */
 const ANSWER_BLOCKS = ['count', 'any', 'character', 'characters'] as const;
-const ANSWER_ONE_OFFS = [
+/** The blocks that look at no group. */
+const ANSWER_OWN = ['statement', 'storyteller'] as const;
+const ANSWER_PRESET_NAMES = [
 	'outsider-died',
 	'correct-guesses',
 	'statement-true',
-	'winning-alignment'
-] as const;
-const ANSWER_PRESET_NAMES = [
+	'winning-alignment',
 	'evil-dead',
 	'evil-marked',
 	'abnormal-abilities',
@@ -205,11 +234,12 @@ const ANSWER_PRESET_NAMES = [
 	'executed-character',
 	'outsiders-in-play'
 ] as const;
-const ANSWER_NAMES = [...ANSWER_BLOCKS, ...ANSWER_ONE_OFFS, ...ANSWER_PRESET_NAMES] as const;
+const ANSWER_NAMES = [...ANSWER_BLOCKS, ...ANSWER_OWN, ...ANSWER_PRESET_NAMES] as const;
 const ANSWER_GROUPS = [
 	'dead',
 	'marked',
 	'abnormal',
+	'guessed',
 	'nominators',
 	'voters',
 	'executed',
@@ -218,7 +248,9 @@ const ANSWER_GROUPS = [
 ] as const;
 const ANSWER_WAKES = ['marked'] as const;
 type AnswerBlock = (typeof ANSWER_BLOCKS)[number];
-type AnswerOneOff = (typeof ANSWER_ONE_OFFS)[number];
+/** What a `storyteller` block may answer. */
+export const ANSWER_CHOICES = ['good', 'evil', 'neither'] as const;
+export type AnswerChoice = (typeof ANSWER_CHOICES)[number];
 type AnswerPreset = (typeof ANSWER_PRESET_NAMES)[number];
 
 /** The group a building block looks at, and who in it matches. */
@@ -228,10 +260,12 @@ export interface AnswerGroup {
 	types?: readonly CharacterType[];
 	/** For `any`: the Storyteller's day mark that answers it. */
 	mark?: DayMark;
+	/** For `any`: a no is nothing to learn. */
+	onlyYes?: true;
 }
 
 /** The official names that are a block, and the block each expands to. */
-const ANSWER_PRESETS: Readonly<Record<AnswerPreset, { question: AnswerBlock } & AnswerGroup>> = {
+const ANSWER_PRESETS: Readonly<Record<AnswerPreset, AnswerAsked>> = {
 	'evil-dead': { question: 'count', among: 'dead', alignment: 'evil' },
 	'evil-marked': { question: 'count', among: 'marked', alignment: 'evil' },
 	'abnormal-abilities': { question: 'count', among: 'abnormal' },
@@ -243,12 +277,19 @@ const ANSWER_PRESETS: Readonly<Record<AnswerPreset, { question: AnswerBlock } & 
 	},
 	'demon-voted': { question: 'any', among: 'voters', types: ['demon'], mark: 'demon-voted' },
 	'executed-character': { question: 'character', among: 'executed' },
-	'outsiders-in-play': { question: 'characters', among: 'everyone', types: ['outsider'] }
+	'outsiders-in-play': { question: 'characters', among: 'everyone', types: ['outsider'] },
+	'outsider-died': { question: 'any', among: 'died', types: ['outsider'], onlyYes: true },
+	'correct-guesses': { question: 'count', among: 'guessed' },
+	'statement-true': { question: 'statement' },
+	'winning-alignment': { question: 'storyteller', choices: ['good', 'evil', 'neither'] }
 };
 
-/** A question as asked: one worked out on its own, or a building block. */
-export type AnswerAsked =
-	{ question: AnswerOneOff } | ({ question: AnswerBlock; preset?: AnswerPreset } & AnswerGroup);
+/** A question as asked: a building block, with the official name it was written as. */
+export type AnswerAsked = { preset?: AnswerPreset } & (
+	| ({ question: AnswerBlock } & AnswerGroup)
+	| { question: 'statement' }
+	| { question: 'storyteller'; choices: readonly AnswerChoice[] }
+);
 
 export type Answers = AnswerAsked & {
 	token?: ReminderLabel;
@@ -261,13 +302,15 @@ const isAnswerBlock = (name: string): name is AnswerBlock =>
 	(ANSWER_BLOCKS as readonly string[]).includes(name);
 
 /** `name` as asked: a preset expanded to its block. */
-function asked(name: (typeof ANSWER_NAMES)[number], group?: AnswerGroup): AnswerAsked {
+function asked(
+	name: (typeof ANSWER_NAMES)[number],
+	group?: AnswerGroup,
+	choices?: readonly AnswerChoice[]
+): AnswerAsked {
 	if (isAnswerBlock(name)) return { question: name, ...(group as AnswerGroup) };
-	if (name in ANSWER_PRESETS) {
-		const preset = name as AnswerPreset;
-		return { ...ANSWER_PRESETS[preset], preset };
-	}
-	return { question: name as AnswerOneOff };
+	if (name === 'storyteller') return { question: name, choices: choices ?? [] };
+	if (name === 'statement') return { question: name };
+	return { ...ANSWER_PRESETS[name], preset: name };
 }
 
 export function readLearns(
@@ -296,7 +339,10 @@ export function readLearns(
 			'choose',
 			'matching',
 			'woke',
-			'to'
+			'to',
+			'atLeast',
+			'killer',
+			'differsFromToken'
 		],
 		path,
 		issues
@@ -311,6 +357,9 @@ export function readLearns(
 	const noneWhenAbsent = readBoolean(raw, 'noneWhenAbsent', path, issues);
 	const types = readTypes(raw, 'types', path, issues);
 	const to = readTypes(raw, 'to', path, issues);
+	const atLeast = readBoolean(raw, 'atLeast', path, issues);
+	const killer = readBoolean(raw, 'killer', path, issues);
+	const differsFromToken = readToken(raw, 'differsFromToken', path, issues, reminders);
 	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 	const self = readBoolean(raw, 'self', path, issues);
 	const alive = readBoolean(raw, 'alive', path, issues);
@@ -322,14 +371,21 @@ export function readLearns(
 	const preset = PRESETS[measure];
 	const block = preset?.measure ?? measure;
 	const out: Learns = preset ? { ...preset, preset: measure } : { measure };
-	if (token) out.token = token;
+	// The Balloonist's token marks who was shown, which the players shown now must differ from.
+	if (token && measure === 'type-differs-from-token') out.differsFromToken = token;
+	else if (token) out.token = token;
+	if (differsFromToken) out.differsFromToken = differsFromToken;
+	if (killer) out.killer = true;
+	if (atLeast) {
+		if (block !== 'players') issues.add(`${path}.atLeast`, 'only `players` takes it');
+		else out.atLeast = true;
+	}
 	if (noneWhenAbsent !== undefined) out.noneWhenAbsent = noneWhenAbsent;
 	if (type) {
 		if (measure !== 'pair-of-type') issues.add(`${path}.type`, 'only `pair-of-type` takes it');
 		else out.types = [type];
 	}
 	if (types || alignment || self || alive) {
-		if (!isLearnsBlock(block)) issues.add(path, 'only the building blocks take who it is about');
 		if (self) out.self = true;
 		if (alive) out.alive = true;
 		if (types) out.types = types;
@@ -340,7 +396,6 @@ export function readLearns(
 		else out.to = to;
 	}
 	if (scope || choose !== undefined || matching !== undefined || woke) {
-		if (!isLearnsBlock(block)) issues.add(path, 'only the building blocks take a scope or count');
 		if (scope) out.scope = scope;
 		if (choose !== undefined) out.choose = choose;
 		if (matching !== undefined) out.matching = matching;
@@ -401,9 +456,13 @@ function checkBlock(learns: Learns, path: string, issues: Issues) {
 	if (matching !== undefined && choose !== undefined && matching > choose)
 		issues.add(`${path}.matching`, 'more than are shown');
 	if (measure === 'distance' && !learns.to) issues.add(`${path}.to`, 'missing');
-	const named = learns.alignment || learns.types || learns.woke || learns.token;
+	const named =
+		learns.alignment || learns.types || learns.woke || learns.token || learns.differsFromToken;
 	if (!named && MATCHING_BLOCKS.includes(measure as LearnsBlock))
-		issues.add(path, 'needs who matches: `alignment`, `types`, `woke` or `token`');
+		issues.add(
+			path,
+			'needs who matches: `alignment`, `types`, `woke`, `token` or `differsFromToken`'
+		);
 }
 
 export function readAnswers(
@@ -424,6 +483,8 @@ export function readAnswers(
 			'alignment',
 			'types',
 			'mark',
+			'onlyYes',
+			'choices',
 			'token',
 			'firstNight',
 			'wakes',
@@ -437,6 +498,8 @@ export function readAnswers(
 	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 	const types = readTypes(raw, 'types', path, issues);
 	const mark = readEnum(raw, 'mark', DAY_MARKS, path, issues, false);
+	const onlyYes = readBoolean(raw, 'onlyYes', path, issues) === true || undefined;
+	const choices = readChoices(raw, path, issues);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const firstNight = readEnum(raw, 'firstNight', ANSWER_NAMES, path, issues, false);
 	const wakes = readEnum(raw, 'wakes', ANSWER_WAKES, path, issues, false);
@@ -452,24 +515,55 @@ export function readAnswers(
 			among,
 			...(alignment ? { alignment } : {}),
 			...(types ? { types } : {}),
-			...(mark ? { mark } : {})
+			...(mark ? { mark } : {}),
+			...(onlyYes ? { onlyYes } : {})
 		};
 		if (!checkAnswerBlock(question, group, path, issues)) return undefined;
-	} else if (among || alignment || types || mark) {
-		issues.add(path, 'only a building block takes `among`, `alignment`, `types` and `mark`');
+	} else if (among || alignment || types || mark || onlyYes) {
+		issues.add(
+			path,
+			'only a block that looks at a group takes `among`, `alignment`, `types`, `mark` and `onlyYes`'
+		);
 		return undefined;
 	}
-	if (firstNight && isAnswerBlock(firstNight)) {
+	if (question === 'storyteller' && !choices) {
+		if (raw.choices === undefined) issues.add(`${path}.choices`, 'missing');
+		return undefined;
+	}
+	if (choices && question !== 'storyteller') {
+		issues.add(`${path}.choices`, 'only `storyteller` takes it');
+		return undefined;
+	}
+	if (firstNight && (isAnswerBlock(firstNight) || firstNight === 'storyteller')) {
 		issues.add(`${path}.firstNight`, `a \`${firstNight}\` needs its own fields: name a preset`);
 		return undefined;
 	}
 	return {
-		...asked(question, group),
+		...asked(question, group, choices),
 		...(token ? { token } : {}),
 		...(firstNight ? { firstNight: asked(firstNight) } : {}),
 		...(wakes ? { wakes } : {}),
 		...(falseToken ? { falseToken } : {})
 	};
+}
+
+/** A `storyteller` block's `choices`: some of good, evil and neither. */
+function readChoices(
+	raw: Record<string, unknown>,
+	path: string,
+	issues: Issues
+): AnswerChoice[] | undefined {
+	const value = raw.choices;
+	if (value === undefined) return undefined;
+	const ok =
+		Array.isArray(value) &&
+		value.length >= 2 &&
+		value.every((v, i) => ANSWER_CHOICES.includes(v) && value.indexOf(v) === i);
+	if (!ok) {
+		issues.add(`${path}.choices`, 'expected two or more of `good`, `evil` and `neither`');
+		return undefined;
+	}
+	return value as AnswerChoice[];
 }
 
 /** Whether a block's group fits what it asks. */
@@ -484,6 +578,11 @@ function checkAnswerBlock(
 		issues.add(`${path}.among`, 'only a `count` looks at `abnormal`');
 	if (group.among === 'abnormal' && (group.alignment || group.types))
 		issues.add(path, 'not with `among: "abnormal"`: it counts every one');
+	if (group.among === 'guessed' && question !== 'count')
+		issues.add(`${path}.among`, 'only a `count` looks at `guessed`');
+	if (group.among === 'guessed' && (group.alignment || group.types))
+		issues.add(path, 'not with `among: "guessed"`: it counts the right guesses');
+	if (group.onlyYes && question !== 'any') issues.add(`${path}.onlyYes`, 'only `any` takes it');
 	if (group.among === 'voters' && !group.mark)
 		issues.add(`${path}.mark`, 'votes are not recorded: `voters` needs a `mark`');
 	if (group.mark && question !== 'any') issues.add(`${path}.mark`, 'only `any` takes it');
