@@ -52,7 +52,7 @@ export function yesNoAnswers(
 		for (const yes of [true, false]) {
 			if (out.some((o) => o.yes === yes)) continue;
 			// Under the Vortox only the false answer may be given.
-			if (loose === 'vortox' && yes === truth) continue;
+			if (loose === 'false-info' && yes === truth) continue;
 			out.push({ yes, reason: loose });
 		}
 	}

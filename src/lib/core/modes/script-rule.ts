@@ -8,7 +8,7 @@
  */
 import type { CharacterId, ScriptMeta } from '#lib/core/data/types.ts';
 import { modifierFromText } from '#lib/core/rules/setup-modifiers.ts';
-import { BOOTLEGGER, scriptRules } from '#lib/core/rules/script-rules.ts';
+import { scriptRules } from '#lib/core/rules/script-rules.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 
 /** The id of a script's own rule; no library or custom rule may use it. */
@@ -22,8 +22,9 @@ export function scriptSpecialRule(
 	if (!text.length) return undefined;
 	const modifier = modifierFromText(
 		{
-			id: BOOTLEGGER,
-			name: 'Bootlegger',
+			// Only the lines' text is read, so the rule stands in as its own character.
+			id: SCRIPT_RULE_ID,
+			name: meta?.name?.trim() || 'Script',
 			type: 'loric',
 			ability: text.join(' '),
 			setup: true,

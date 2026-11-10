@@ -64,7 +64,7 @@ function causeText(game: DayGame, c: AbnormalCause): string {
 					...(c.seatId ? { seatId: c.seatId } : {})
 				})
 			: '';
-	if (c.reason === 'registration' || c.reason === 'vortox' || c.reason === 'protected') {
+	if (c.reason === 'registration' || c.reason === 'false-info' || c.reason === 'protected') {
 		return who;
 	}
 	if (c.reason === 'no-ability') return `No Ability · ${who}`;

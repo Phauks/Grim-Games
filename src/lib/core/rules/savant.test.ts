@@ -159,7 +159,7 @@ describe('Savant situation', () => {
 			'vortox'
 		]);
 		expect(savantSituation(g, seats[0], characters)).toMatchObject({
-			vortox: seats[5],
+			falseSeat: seats[5],
 			mode: 'both-false'
 		});
 	});

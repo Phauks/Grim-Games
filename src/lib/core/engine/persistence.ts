@@ -18,7 +18,7 @@ import type { GameId } from '#lib/core/model/index.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 31;
+export const SAVED_GAME_VERSION = 32;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -326,6 +326,32 @@ const migrateV29toV30: Migration = (doc) => {
  */
 const migrateV30toV31: Migration = (doc) => ({ ...doc, schemaVersion: 31 });
 
+/**
+ * Version 32 (2026-11-10) names the reason an ability's info had to be false after what makes
+ * it so (`false-info`, the `falseInfo` rules part) instead of after one character
+ * (`vortox`), so no character is named in code. Each recorded abnormal cause with the old
+ * reason gets the new one.
+ */
+const migrateV31toV32: Migration = (doc) => {
+	const rename = (value: unknown): unknown => {
+		if (Array.isArray(value)) return value.map(rename);
+		if (!isRecord(value)) return value;
+		const out: Record<string, unknown> = {};
+		for (const [key, inner] of Object.entries(value)) {
+			out[key] =
+				key === 'abnormal' && Array.isArray(inner)
+					? inner.map((cause) =>
+							isRecord(cause) && cause.reason === 'vortox'
+								? { ...cause, reason: 'false-info' }
+								: cause
+						)
+					: rename(inner);
+		}
+		return out;
+	};
+	return { ...doc, log: rename(doc.log), schemaVersion: 32 };
+};
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -357,7 +383,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	27: migrateV27toV28,
 	28: migrateV28toV29,
 	29: migrateV29toV30,
-	30: migrateV30toV31
+	30: migrateV30toV31,
+	31: migrateV31toV32
 };
 
 /**

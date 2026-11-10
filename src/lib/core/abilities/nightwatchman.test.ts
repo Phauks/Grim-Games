@@ -83,7 +83,7 @@ describe('Nightwatchman', () => {
 			expect(abilityState(s.game, s.seat('nightwatchman'), s.characters).works).toBe(true);
 			expect(
 				reliability(s.game, s.seat('nightwatchman'), 'nightwatchman', s.characters)
-			).toMatchObject({ mustBeFalse: true, falseBy: 'vortox', vortox: s.seat('vortox') });
+			).toMatchObject({ mustBeFalse: true, falseBy: 'vortox', falseSeat: s.seat('vortox') });
 		});
 	});
 

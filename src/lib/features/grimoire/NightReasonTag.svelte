@@ -54,7 +54,7 @@
 		be false</span
 	>{:else if reason === 'unreliable'}<span class="tag warn"
 		><Icon name="warning" />Not reliable</span
-	>{:else if reason === 'vortox'}<span class="tag warn"
+	>{:else if reason === 'false-info'}<span class="tag warn"
 		>{#if falseBy}<CharacterPiece
 				template="badge"
 				characterId={falseBy}

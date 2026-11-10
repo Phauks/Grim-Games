@@ -14,7 +14,7 @@ import {
 	withRules,
 	type SpecialRule
 } from '#lib/core/modes/index.ts';
-import { BOOTLEGGER, scriptRules } from '#lib/core/rules/script-rules.ts';
+import { scriptRules, scriptRulesCarrier } from '#lib/core/rules/script-rules.ts';
 import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
 import { setupSelection } from '#lib/features/setup/selection.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -53,12 +53,15 @@ export async function applyGameRules(
 		if (!run(port, { type: 'ChangeScript', script })) return;
 		// The Bootlegger carries the lines in play, as a game started with them has it
 		// (startingRuleCharacters), and leaves with them unless the script lists it.
-		const has = game.ruleCharacters.includes(BOOTLEGGER);
-		const lines = scriptRules(script.meta).length > 0;
-		const listed = script.entries.some((e) => e.kind === 'official' && e.id === BOOTLEGGER);
-		if (lines && !has && !run(port, { type: 'AddRuleCharacter', characterId: BOOTLEGGER })) return;
-		if (!lines && has && !listed)
-			run(port, { type: 'RemoveRuleCharacter', characterId: BOOTLEGGER });
+		const carrier = port.lookup ? scriptRulesCarrier(port.lookup) : undefined;
+		if (carrier) {
+			const has = game.ruleCharacters.includes(carrier.id);
+			const lines = scriptRules(script.meta).length > 0;
+			const listed = script.entries.some((e) => e.kind === 'official' && e.id === carrier.id);
+			const characterId = carrier.id;
+			if (lines && !has && !run(port, { type: 'AddRuleCharacter', characterId })) return;
+			if (!lines && has && !listed) run(port, { type: 'RemoveRuleCharacter', characterId });
+		}
 	}
 	writeGameMode(gameId, { ...record, rules });
 	const base = findMode(record.modeId) ?? STANDARD;

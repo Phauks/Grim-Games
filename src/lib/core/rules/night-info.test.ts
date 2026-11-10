@@ -1028,7 +1028,7 @@ describe('Mathematician', () => {
 		const { game: g, seats } = castGame(['washerwoman', 'slayer', 'vortox', 'witch', 'savant']);
 		const picker = infoPicker(g, seats[0], 'washerwoman', characters)!;
 		expect(abnormalCauses(picker, { seats: [seats[1], seats[2]], characterId: 'savant' })).toEqual([
-			{ reason: 'vortox', characterId: 'vortox', seatId: seats[2] }
+			{ reason: 'false-info', characterId: 'vortox', seatId: seats[2] }
 		]);
 		expect(abnormalCauses(picker, { seats: [seats[1], seats[2]], characterId: 'slayer' })).toEqual(
 			[]

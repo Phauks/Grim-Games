@@ -4,7 +4,7 @@
  * so the game state itself only stores ids.
  */
 import type { Character, CharacterId, GameData, Script } from '#lib/core/data/index.ts';
-import { BOOTLEGGER, bootleggerWithRules } from '#lib/core/rules/script-rules.ts';
+import { bootleggerWithRules, scriptRulesCarrier } from '#lib/core/rules/script-rules.ts';
 
 export type CharacterLookup = ReadonlyMap<CharacterId, Character>;
 
@@ -22,8 +22,8 @@ export function characterLookup(
 		if (entry.kind === 'custom') map.set(entry.character.id, entry.character);
 	}
 	// The Bootlegger shows the script's own rules (script-rules.ts).
-	const bootlegger = map.get(BOOTLEGGER);
-	if (bootlegger) map.set(BOOTLEGGER, bootleggerWithRules(bootlegger, script.meta));
+	const carrier = scriptRulesCarrier(map);
+	if (carrier) map.set(carrier.id, bootleggerWithRules(carrier, script.meta));
 	return map;
 }
 
