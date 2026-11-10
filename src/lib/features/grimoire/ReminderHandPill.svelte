@@ -11,15 +11,13 @@
 		numberSymbol,
 		symbolNumber,
 		type Reminder,
-		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { bankView, type BankItem } from './bank-items.ts';
+	import { bankView } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { ReminderDragging } from './reminder-drag.svelte.ts';
-	import type { ReminderHand } from './reminder-hand.svelte.ts';
+	import type { TrayGestures } from './tray-gestures.svelte.ts';
 	import ReminderInHand from './ReminderInHand.svelte';
 	import HeldTokenPick from './HeldTokenPick.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
@@ -29,32 +27,15 @@
 
 	interface Props {
 		grimoire: Grimoire;
-		hand: ReminderHand;
+		/** The bank's, shared with a player's tray (tray-gestures.svelte.ts). */
+		gestures: TrayGestures;
 		board: HTMLElement | undefined;
-		remDrag: ReminderDragging;
-		/** Drops a bank token at a client point (ReminderBank). */
-		dropBank: (item: BankItem, x: number, y: number) => void;
-		/** Opens an ∞ token's editor (ReminderBank). */
-		editToken: (tokenId: string) => void;
-		/** Asks to delete an ∞ token (ReminderBank). */
-		deleteToken: (tokenId: string) => void;
-		/** Takes a board token off the board (ReminderMoveConfirm). */
-		onRemove: (reminderId: ReminderId) => void;
 		/** Marks the seats for a board token in hand. */
 		onHints: (hints: { seats: SeatId[]; reminder?: Reminder }) => void;
 	}
 
-	let {
-		grimoire,
-		hand,
-		board,
-		remDrag,
-		dropBank,
-		editToken,
-		deleteToken,
-		onRemove,
-		onHints
-	}: Props = $props();
+	let { grimoire, gestures, board, onHints }: Props = $props();
+	const hand = $derived(gestures.hand);
 
 	const characters = $derived(grimoire.open.characters);
 	const game = $derived(grimoire.game);
@@ -108,13 +89,17 @@
 		const putDown = () => hand.putDown();
 		if (held?.kind === 'bank')
 			return heldTokenActions(grimoire, held.item, {
-				edit: editToken,
-				remove: deleteToken,
+				edit: (tokenId) => gestures.editToken(tokenId),
+				remove: (tokenId) => gestures.askDelete(tokenId),
 				putDown
 			});
 		if (!placed || !held) return [];
 		const edit = () => hand.showAbout(held);
-		return placedTokenActions(grimoire, placed, { remove: onRemove, putDown, edit });
+		return placedTokenActions(grimoire, placed, {
+			remove: (id) => gestures.takeOff(id),
+			putDown,
+			edit
+		});
 	});
 
 	$effect(() => {
@@ -125,11 +110,7 @@
 		const keep = (target: Element) =>
 			!!target.closest('[data-testid="reminder-in-hand"]') ||
 			(held.kind === 'bank' && !!target.closest('[data-tray]'));
-		return dropOnTap(el, keep, (x, y) => {
-			hand.putDown();
-			if (held.kind === 'bank') dropBank(held.item, x, y);
-			else remDrag.move(held.reminderId, held.from, x, y, true, true);
-		});
+		return dropOnTap(el, keep, (x, y) => gestures.drop(x, y));
 	});
 </script>
 

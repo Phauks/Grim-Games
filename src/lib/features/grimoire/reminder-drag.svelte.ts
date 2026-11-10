@@ -7,7 +7,6 @@
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import {
-	ruleReminders,
 	trueCharacter,
 	type CharacterLookup,
 	type Game,
@@ -17,9 +16,8 @@ import {
 } from '#lib/core/model/index.ts';
 import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 import type { BoardSize } from './board-geometry.ts';
-import type { Grimoire } from './grimoire.svelte.ts';
-import type ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-import { copiedLook, handReminder, onBoard } from './reminders.ts';
+import type { TrayGestures } from './tray-gestures.svelte.ts';
+import { handReminder, onBoard } from './reminders.ts';
 
 /**
  * Whether a client point is over the bank's "+ New token" (Trevor, 2026-10-27): a reminder
@@ -50,7 +48,6 @@ export const newTokenGlow = (dragging: boolean, over: boolean): 'over' | 'ready'
 
 /** What dragging reads from the board, fresh on each call. */
 export interface ReminderDragContext {
-	grimoire: Grimoire;
 	game: Game;
 	characters: CharacterLookup;
 	/** Where each seat sits, in % of the board, in seating order. */
@@ -58,28 +55,21 @@ export interface ReminderDragContext {
 	/** Token size, in px. */
 	size: number;
 	board: BoardSize;
-	/** The board element. */
-	element: HTMLElement | undefined;
-	confirm: ReturnType<typeof ReminderMoveConfirm> | undefined;
-}
-
-export interface ReminderDrag {
-	reminderId: ReminderId;
-	/** The seat it is on; none for a loose reminder or one a Fabled or Loric holds. */
-	from: SeatId | undefined;
-	/** Where the token is, in % of the board. */
-	at: SeatPoint;
-	target?: SeatId;
-	/** Over the bank's "+ New token", which glows (Trevor, 2026-10-27). */
-	overNew?: boolean;
 }
 
 export class ReminderDragging {
-	drag = $state<ReminderDrag | undefined>();
 	#context: () => ReminderDragContext;
+	#gestures: () => TrayGestures | undefined;
 
-	constructor(context: () => ReminderDragContext) {
+	/** `gestures`: the bank's (tray-gestures.svelte.ts), which drops a dragged token. */
+	constructor(context: () => ReminderDragContext, gestures: () => TrayGestures | undefined) {
 		this.#context = context;
+		this.#gestures = gestures;
+	}
+
+	/** The board token being dragged: where it is, from which seat, over which seat. */
+	get drag() {
+		return this.#gestures()?.placedDrag;
 	}
 
 	/**
@@ -151,7 +141,7 @@ export class ReminderDragging {
 	};
 
 	cancel() {
-		this.drag = undefined;
+		this.#gestures()?.cancel();
 	}
 
 	/** A reminder's drag, from `from` (if on a seat), to a client point; `end` when let go. */
@@ -163,44 +153,6 @@ export class ReminderDragging {
 		end: boolean,
 		tap = false
 	) {
-		const { element, grimoire, game, confirm } = this.#context();
-		if (!element) return;
-		const rect = element.getBoundingClientRect();
-		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = this.seatAt(at, tap);
-		if (!end) {
-			const overNew = overNewToken(x, y);
-			this.drag = {
-				reminderId,
-				from,
-				at,
-				target: overNew ? undefined : target,
-				overNew: overNew || undefined
-			};
-			return;
-		}
-		this.drag = undefined;
-		// Dropped on "+ New token" (it sits in the tray): a new ∞ token like it.
-		if (overNewToken(x, y)) {
-			const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
-			if (reminder) grimoire.run({ type: 'AddGenericToken', look: copiedLook(reminder) });
-			return;
-		}
-		// Dropped back on the setup reminders tray: it waits there again (History has it).
-		if (overTray(x, y)) {
-			confirm?.requestReturn(reminderId);
-			return;
-		}
-		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
-		if (!reminder) return;
-		// Dropped on a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
-		const rule = this.ruleAt(x, y, reminder);
-		if (rule) {
-			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
-				confirm?.requestRule(reminderId, rule);
-			return;
-		}
-		// Dropped on another seat: moved (one History entry).
-		if (target && target !== from) confirm?.request(reminderId, target);
+		this.#gestures()?.dragPlaced(reminderId, from, x, y, end, tap);
 	}
 }

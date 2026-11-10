@@ -7,6 +7,8 @@
 	import type { Box } from '#lib/features/grimoire/name-placement.ts';
 	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
 	import ReminderTethers from '#lib/features/grimoire/ReminderTethers.svelte';
+	import type { TrayGestures } from '#lib/features/grimoire/tray-gestures.svelte.ts';
+	import { placedId } from './player-tray-places.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
@@ -41,23 +43,12 @@
 		/** Seats with the player's note mark. */
 		notes: Readonly<SeatNotes>;
 		characterOf: (id: CharacterId) => Character | undefined;
-		/** A token tapped: picked up (PlayerReminderBin). */
-		onTap: (seat: PublicSeat, reminder: PlayerReminder) => void;
-		/** The town, for where a dragged token is. */
-		town: HTMLElement | undefined;
 		/**
-		 * A token dragged to a client point, `end` when let go (PlayerReminderBin `dragPlaced`, as
-		 * the board's ReminderDragging `move`).
+		 * What a finger does with a token: the Storyteller bank's own gestures
+		 * (tray-gestures.svelte.ts): a tap picks it up, a drag takes it to a seat, onto the tray
+		 * (off it comes) or onto "+ New token" (a new ∞ token like it).
 		 */
-		onDrag: (
-			seat: PublicSeat,
-			reminder: PlayerReminder,
-			x: number,
-			y: number,
-			end: boolean
-		) => void;
-		/** A token's drag given up. */
-		onCancel?: () => void;
+		gestures: TrayGestures;
 		/** The seat whose token or reminder a finger is on, for "While held" lines. */
 		held?: string;
 		/** Boxes every reminder keeps clear of, in px: the controls in the top right. */
@@ -73,27 +64,15 @@
 		names,
 		notes,
 		characterOf,
-		onTap,
-		onDrag,
-		onCancel,
-		town,
+		gestures,
 		held = $bindable(),
 		clear = []
 	}: Props = $props();
 
-	/** The token under a finger, as on the board (Trevor, 2026-11-01): where it is, in %. */
-	let drag = $state<{ key: string; at: SeatPoint }>();
-	function dragTo(seat: PublicSeat, reminder: PlayerReminder, x: number, y: number, end: boolean) {
-		const rect = town?.getBoundingClientRect();
-		if (!end && rect) {
-			const at = {
-				x: ((x - rect.left) / rect.width) * 100,
-				y: ((y - rect.top) / rect.height) * 100
-			};
-			drag = { key: `${seat.seatId}/${placedKey(reminder)}`, at };
-		} else drag = undefined;
-		onDrag(seat, reminder, x, y, end);
-	}
+	/** The token under a finger, as on the board (Trevor, 2026-11-01). */
+	const drag = $derived(gestures.placedDrag);
+	const pickUp = (seatId: string, reminder: PlayerReminder) =>
+		gestures.hand.toggle({ kind: 'placed', reminderId: placedId(seatId, reminder), from: seatId });
 
 	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
 	const fan = $derived.by(() => {
@@ -140,8 +119,8 @@
 
 {#each seats as seat, i (seat.seatId)}
 	{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
-		{@const key = `${seat.seatId}/${placedKey(reminder)}`}
-		{@const dragged = drag?.key === key}
+		{@const id = placedId(seat.seatId, reminder)}
+		{@const dragged = drag?.reminderId === id}
 		<div class="hold" role="presentation" onpointerdown={() => (held = seat.seatId)}>
 			<BoardReminderChip
 				look={playerLook(reminder, characterOf)}
@@ -150,12 +129,9 @@
 				disabled={false}
 				seatNumber={i + 1}
 				dragging={dragged}
-				onTap={() => onTap(seat, reminder)}
-				onDrag={(x, y, end) => dragTo(seat, reminder, x, y, end)}
-				onCancel={() => {
-					drag = undefined;
-					onCancel?.();
-				}}
+				onTap={() => pickUp(seat.seatId, reminder)}
+				onDrag={(x, y, end) => gestures.dragPlaced(id, seat.seatId, x, y, end)}
+				onCancel={() => gestures.cancel()}
 			/>
 		</div>
 	{/each}

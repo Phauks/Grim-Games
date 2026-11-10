@@ -33,6 +33,8 @@
 	import { playerLook, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
 	import PlayerReminderBin from './PlayerReminderBin.svelte';
+	import { TrayGestures } from '#lib/features/grimoire/tray-gestures.svelte.ts';
+	import { playerTrayPlaces } from './player-tray-places.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -144,6 +146,13 @@
 	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
 	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
+	/**
+	 * What a finger does with the tray and the tokens on seats: the Storyteller bank's own
+	 * gestures (Trevor, 2026-11-10: "I just want them to be the same"), with this phone's tokens.
+	 */
+	const gestures = new TrayGestures(() =>
+		playerTrayPlaces(() => ({ reminders, town: townEl, seats, points, size }))
+	);
 	let held = $state<string>(); // The seat a finger is on, its reminder lines under "While held".
 	/** The seat the room gave this phone; it has a ring on the grim. */
 	const mine = $derived(player?.view?.me.seatId);
@@ -281,7 +290,7 @@
 	const current = $derived(chosen && (seats.find((s) => s.seatId === chosen?.seatId) ?? chosen));
 	function choose(seat: PublicSeat, event?: MouseEvent) {
 		// A token tapped in the bin goes on the seat tapped next.
-		if (bin?.placeOn(seat) || seating?.claim(seat)) return;
+		if (gestures.dropOnSeat(seat.seatId) || seating?.claim(seat)) return;
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
@@ -516,19 +525,14 @@
 				{characterOf}
 				bind:held
 				clear={toolsClear}
-				town={townEl}
-				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
-				onDrag={(seat, r, x, y, end) => bin?.dragPlaced(seat.seatId, r, x, y, end)}
-				onCancel={() => bin?.cancelPlaced()}
+				{gestures}
 			/>
 			{#if !display}<PlayerReminderBin
 					bind:this={bin}
 					characters={script.characters}
 					guessed={firstReminders}
-					{seats}
-					{points}
+					{gestures}
 					town={townEl}
-					{size}
 					{chip}
 					{characterOf}
 					disabled={hiding}
