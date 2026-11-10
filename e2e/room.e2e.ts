@@ -1,3 +1,4 @@
+import { expectNothingCovered } from './occlusion.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { addNote, expectNotes, noteRows, rewriteNote } from './notes.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
@@ -2088,6 +2089,10 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 		() => !document.elementFromPoint(innerWidth / 2, 8)?.closest('[data-filled]')
 	);
 	expect(stripCovered).toBe(false);
+	// The corner's buttons, stepped down past the camera, sit over no seat, and the tray's
+	// handle under none (Trevor's Pixel, 2026-11-10: the buttons covered the Poisoner and the
+	// Oracle's Know).
+	await expectNothingCovered(phone, town);
 	// The whole screen, under the camera too; only the text and controls step in, clear of the
 	// camera and the rounded corners (Trevor, 2026-10-27: "moving out text and controls").
 	const filled = (await town.boundingBox())!;

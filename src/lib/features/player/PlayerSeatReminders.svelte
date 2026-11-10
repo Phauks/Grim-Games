@@ -49,6 +49,8 @@
 		onDrop: (seat: PublicSeat, reminder: PlayerReminder, x: number, y: number) => void;
 		/** The seat whose token or reminder a finger is on, for "While held" lines. */
 		held?: string;
+		/** Boxes every reminder keeps clear of, in px: the controls in the top right. */
+		clear?: readonly Box[];
 	}
 
 	let {
@@ -63,7 +65,8 @@
 		onTap,
 		onDrop,
 		town,
-		held = $bindable()
+		held = $bindable(),
+		clear = []
 	}: Props = $props();
 
 	/** The token under a finger, as on the board (Trevor, 2026-11-01): where it is, in %. */
@@ -103,7 +106,7 @@
 					nameOffset: boardLooks.current.nameOffset
 				})
 			})),
-			[],
+			clear,
 			board
 		).at.map((spots) => spots.map((p) => toPercent(p, board)));
 	});
