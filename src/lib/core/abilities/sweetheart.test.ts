@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { deathReminder } from '#lib/core/rules/first-death.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
 import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { placeholdersFor } from '#lib/core/rules/night-text.ts';
@@ -130,6 +131,36 @@ describe('Sweetheart', () => {
 				works: false,
 				impairments: [{ reason: 'drunk', source: { characterId: 'sweetheart' } }]
 			});
+		});
+	});
+
+	describe('the death asks whom to make drunk (https://wiki.bloodontheclocktower.com/Sweetheart#How_to_Run)', () => {
+		const cast = ['sweetheart', 'mathematician', 'chef', 'vortox', 'witch'];
+
+		it('offers its Drunk for a player the Storyteller picks, once', () => {
+			// Wiki: "If the Sweetheart dies, you choose any one player to become drunk - mark this
+			// player with the DRUNK reminder."
+			const s = scenario(cast).execute('sweetheart');
+			const at = s.seat('sweetheart');
+			expect(deathReminder(s.game, at, 'execution', s.characters)).toEqual({
+				characterId: 'sweetheart',
+				label: 'Drunk',
+				chosen: true
+			});
+			// Already on someone: not offered again.
+			const marked = s.reminder('chef', 'sweetheart', 'Drunk');
+			expect(deathReminder(marked.game, at, 'execution', marked.characters)).toBeUndefined();
+		});
+
+		it('offers nothing while the Sweetheart is drunk or poisoned', () => {
+			// Wiki: "If the Sweetheart dies, you choose any one player to become drunk - mark this
+			// player with the DRUNK reminder."
+			const s = scenario(['sweetheart', 'mathematician', 'chef', 'vortox', 'poisoner'])
+				.poisoned('sweetheart')
+				.execute('sweetheart');
+			expect(
+				deathReminder(s.game, s.seat('sweetheart'), 'execution', s.characters)
+			).toBeUndefined();
 		});
 	});
 });

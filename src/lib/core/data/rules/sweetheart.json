@@ -9,7 +9,9 @@
 	},
 	"actsWhenDead": true,
 	"onDeath": {
-		"by": "any"
+		"by": "any",
+		"places": "Drunk",
+		"placesOn": "chosen"
 	},
 	"reminderTargets": {
 		"Drunk": {

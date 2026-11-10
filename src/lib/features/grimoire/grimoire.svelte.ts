@@ -394,10 +394,18 @@ export class Grimoire {
 	 * Fool, not by the Assassin): the board offers to keep them alive and spend the ability
 	 * (`survivesFirstDeath`; Trevor, 2026-10-22). With `places`, the death sets off the ability
 	 * instead and the board offers to place its reminder, the player staying dead (the Barber's
-	 * "Haircuts Tonight", `deathReminder`; Trevor, 2026-11-06).
+	 * "Haircuts Tonight", `deathReminder`; Trevor, 2026-11-06). With `chosen`, it goes on a player
+	 * the Storyteller picks (the Sweetheart's Drunk; Trevor, 2026-11-10).
 	 */
 	firstDeathAsk = $state.raw<
-		{ seatId: SeatId; characterId: CharacterId; token: ReminderLabel; places?: true } | undefined
+		| {
+				seatId: SeatId;
+				characterId: CharacterId;
+				token: ReminderLabel;
+				places?: true;
+				chosen?: true;
+		  }
+		| undefined
 	>();
 
 	private askFirstDeath(command: Command): void {
@@ -428,7 +436,8 @@ export class Grimoire {
 				seatId: death.seatId,
 				characterId: placed.characterId,
 				token: placed.label,
-				places: true
+				places: true,
+				...(placed.chosen ? { chosen: true as const } : {})
 			};
 			return;
 		}

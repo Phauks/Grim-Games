@@ -30,10 +30,14 @@ export function survivesFirstDeath(
 	return saver;
 }
 
-/** A reminder its player's death puts on them, and whose ability it is. */
+/**
+ * A reminder its player's death puts on the board, and whose ability it is: on the dead player,
+ * or with `chosen` on a player the Storyteller picks.
+ */
 export interface DeathReminder {
 	characterId: CharacterId;
 	label: ReminderLabel;
+	chosen?: true;
 }
 
 /**
@@ -41,7 +45,9 @@ export interface DeathReminder {
  * Tonight", the night the Demon may swap two players' characters
  * (https://wiki.bloodontheclocktower.com/Barber). Only when the death's cause sets the ability
  * off, the ability works (drunk or poisoned, it does nothing) and the reminder is not on them
- * yet. A suggestion: the Storyteller may leave it off.
+ * yet. With `placesOn: chosen` the reminder goes on a player the Storyteller picks (the
+ * Sweetheart's Drunk, https://wiki.bloodontheclocktower.com/Sweetheart), so only while that
+ * reminder is on nobody yet. A suggestion: the Storyteller may leave it off.
  */
 export function deathReminder(
 	game: Game,
@@ -56,7 +62,14 @@ export function deathReminder(
 	if (!onDeathApplies(trigger, cause, characters)) return undefined;
 	if (abilityState(game, seatId, characters).impairments.length > 0) return undefined;
 	const label = trigger.places.toLowerCase();
-	if (seat.reminders.some((r) => r.characterId === characterId && r.label.toLowerCase() === label))
-		return undefined;
+	const mine = (s: SeatId) =>
+		game.seats[s].reminders.some(
+			(r) => r.characterId === characterId && r.label.toLowerCase() === label
+		);
+	if (trigger.placesOn === 'chosen') {
+		if (game.seating.some(mine)) return undefined;
+		return { characterId, label: trigger.places, chosen: true };
+	}
+	if (mine(seatId)) return undefined;
 	return { characterId, label: trigger.places };
 }

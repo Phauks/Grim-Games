@@ -166,7 +166,7 @@ export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.
 export function onDeathTrigger(
 	characterId: CharacterId,
 	characters: CharacterLookup
-): { by: KillBy | 'any'; night?: true; places?: ReminderLabel } | undefined {
+): { by: KillBy | 'any'; night?: true; places?: ReminderLabel; placesOn?: 'chosen' } | undefined {
 	return rulesOf(characterId, characters)?.onDeath;
 }
 
