@@ -37,7 +37,7 @@
 	let { game, characterId }: Props = $props();
 
 	const g = $derived(game.game);
-	const rule = $derived(contestRule(characterId, game.characters));
+	const rule = $derived(contestRule(g, characterId, game.characters));
 	const choosers = $derived(contestChoosers(g, characterId, game.characters));
 	let open = $state(false);
 	let chooser = $state<SeatId>();

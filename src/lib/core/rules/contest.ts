@@ -11,10 +11,11 @@ import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The contest rule of `characterId`, if its ability holds one. */
-export function contestRule(characterId: CharacterId, characters: CharacterLookup) {
-	return rulesOf(characterId, characters)?.gameEnd?.contest;
+export function contestRule(game: Game, characterId: CharacterId, characters: CharacterLookup) {
+	return rulesFor(game, characterId, characters)?.gameEnd?.contest;
 }
 
 /** The players who choose the contest's other player (the Demon), in seating order. */
@@ -23,7 +24,7 @@ export function contestChoosers(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const rule = contestRule(characterId, characters);
+	const rule = contestRule(game, characterId, characters);
 	if (!rule) return [];
 	return game.seating.filter((id) => typeOf(game, id, characters) === rule.chooser);
 }
@@ -38,7 +39,7 @@ export function contestOpponents(
 	chooser: SeatId,
 	characters: CharacterLookup
 ): SeatId[] {
-	if (!contestRule(characterId, characters)) return [];
+	if (!contestRule(game, characterId, characters)) return [];
 	const own = alignmentOf(game, chooser);
 	if (own === undefined) return [];
 	return game.seating.filter((id) => {
@@ -59,7 +60,7 @@ export function contestWinner(
 	b: { seatId: SeatId; votes: number },
 	characters: CharacterLookup
 ): Alignment | undefined {
-	const rule = contestRule(characterId, characters);
+	const rule = contestRule(game, characterId, characters);
 	if (!rule) return undefined;
 	if (a.votes === b.votes) return rule.tie;
 	return alignmentOf(game, a.votes > b.votes ? a.seatId : b.seatId);

@@ -1,5 +1,4 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	isSymbolColour,
 	numberSymbol,
@@ -30,6 +29,7 @@ import {
 	warnIfNotRuleReminder,
 	type Deciders
 } from './shared.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Reminder tokens: placing, moving, notes, symbols and generic tokens. */
 export const REMINDERS_DECIDERS: Deciders<
@@ -199,7 +199,7 @@ export const REMINDERS_DECIDERS: Deciders<
 		const { characterId } = command;
 		if (characterId !== undefined && !ctx.characters.get(characterId))
 			refuse('unknown-character', `no character ${characterId}`);
-		const rule = rulesOf(reminder.characterId, ctx.characters)?.madAs;
+		const rule = rulesFor(game, reminder.characterId, ctx.characters)?.madAs;
 		if (characterId !== undefined && (rule?.mad !== 'carrier' || rule.token !== reminder.label))
 			warn('not-mad-as', 'this reminder’s rules do not record a mad-as character');
 		if (characterId === reminder.madAs) {

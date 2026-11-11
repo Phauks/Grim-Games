@@ -9,7 +9,6 @@ import type {
 	GameEndRules,
 	HoldThen
 } from '#lib/core/data/game-end-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -24,6 +23,7 @@ import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { carriesDemonToken } from './death-causes.ts';
 import type { GameEnd, GameEndOptions, GameHold } from './game-end.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -43,8 +43,12 @@ export function executedOn(log: DayLog): SeatId[] {
 	return log.entries.flatMap((e) => (e.kind === 'execution' ? [e.seatId] : []));
 }
 
-function gameEndRules(characterId: CharacterId | undefined, characters: CharacterLookup) {
-	return characterId ? rulesOf(characterId, characters)?.gameEnd : undefined;
+function gameEndRules(
+	game: Game,
+	characterId: CharacterId | undefined,
+	characters: CharacterLookup
+) {
+	return characterId ? rulesFor(game, characterId, characters)?.gameEnd : undefined;
 }
 
 /** A player whose true character has a rule, with the rule. */
@@ -62,7 +66,7 @@ export function ruled<T>(
 ): Ruled<T>[] {
 	return game.seating.flatMap((seatId) => {
 		const characterId = trueCharacter(game, seatId, characters);
-		const rules = gameEndRules(characterId, characters);
+		const rules = gameEndRules(game, characterId, characters);
 		return characterId && rules
 			? (pick(rules) ?? []).map((rule) => ({ seatId, characterId, rule }))
 			: [];
@@ -143,7 +147,7 @@ export function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLoo
 	const seat = game.seats[seatId];
 	if (!seat) return false;
 	const characterId = trueCharacter(game, seatId, characters);
-	const rule = gameEndRules(characterId, characters)?.aliveWhileDead;
+	const rule = gameEndRules(game, characterId, characters)?.aliveWhileDead;
 	if (!characterId || !rule) return false;
 	if (abilityState(game, seatId, characters).impairments.length > 0) return false;
 	if (
@@ -245,7 +249,7 @@ export function guessesEvilTeam(game: Game, characters: CharacterLookup): GameEn
  */
 function diesWithCarrier(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const characterId = trueCharacter(game, seatId, characters);
-	const token = gameEndRules(characterId, characters)?.aliveWhileDead?.whileCarrierAlive;
+	const token = gameEndRules(game, characterId, characters)?.aliveWhileDead?.whileCarrierAlive;
 	if (!characterId || !token) return false;
 	const carriers = carrying(game, characterId, token).filter((id) => id !== seatId);
 	if (carriers.length === 0 || carriers.some((id) => isAliveForWin(game, id))) return false;

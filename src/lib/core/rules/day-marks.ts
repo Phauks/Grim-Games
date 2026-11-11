@@ -6,21 +6,22 @@
  * https://wiki.bloodontheclocktower.com/Town_Crier).
  */
 import { DAY_MARKS, type DayMark, type DayMarkRule } from '#lib/core/data/day-mark-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { actsWhenDead, keepsAbilityWhenDead } from '#lib/core/rules/dead-characters.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export { DAY_MARKS, type DayMark, type DayMarkRule };
 
 /** A character's `dayMark` rule, from the rules block it carries. */
 export function dayMarkOf(
+	game: Game,
 	characterId: CharacterId | undefined,
 	characters: CharacterLookup
 ): DayMarkRule | undefined {
 	if (characterId === undefined) return undefined;
-	return rulesOf(characterId, characters)?.dayMark;
+	return rulesFor(game, characterId, characters)?.dayMark;
 }
 
 /** A seat whose character shows a day mark with its tokens. */
@@ -43,7 +44,7 @@ export function dayMarkSeats(
 ): DayMarkSeat[] {
 	return game.seating.flatMap((seatId) => {
 		const characterId = game.seats[seatId]?.characterId;
-		const rule = dayMarkOf(characterId, characters);
+		const rule = dayMarkOf(game, characterId, characters);
 		if (!characterId || !rule || (mark && rule.mark !== mark)) return [];
 		if (
 			game.seats[seatId].dead &&

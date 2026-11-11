@@ -3,7 +3,6 @@
  * block `learns` something. Part of `night-info.ts`.
  */
 import { isLearnsBlock, type Learns, type LearnsBlock } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -42,6 +41,7 @@ import {
 	reliability,
 	wikiOf
 } from './reliability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * - `pair-character`: two players and a character, one of whom is that character
@@ -199,8 +199,12 @@ function characterTypeOf(spec: PickerSpec): CharacterType | undefined {
  * The picker for a character that `learns` first-night information (its rules block: our
  * `data/rules/<id>.json`, or a custom character's `rules`), or undefined.
  */
-function pickerSpec(characterId: CharacterId, characters: CharacterLookup): PickerSpec | undefined {
-	const learns = rulesOf(characterId, characters)?.learns;
+function pickerSpec(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): PickerSpec | undefined {
+	const learns = rulesFor(game, characterId, characters)?.learns;
 	const shape = learns && shapeOf(learns);
 	return learns && shape && { ...learns, ...shape };
 }
@@ -289,7 +293,7 @@ export function infoPicker(
 	characters: CharacterLookup,
 	night: Night = game.pastDays.length === 0 ? 'first' : 'other'
 ): InfoPicker | undefined {
-	const learns = pickerSpec(characterId, characters);
+	const learns = pickerSpec(game, characterId, characters);
 	if (!learns) return undefined;
 	const spec: PickerSpec = learns.woke
 		? {

@@ -9,19 +9,20 @@
  * The Storyteller judges whether madness was kept, so nothing here acts on its own.
  */
 import type { MadAs } from '#lib/core/data/mad-as-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { madAsPartners } from './jinx-effects.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** `characterId`'s `madAs` rule, if it has one. */
 export function madAsRule(
+	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): MadAs | undefined {
-	return rulesOf(characterId, characters)?.madAs;
+	return rulesFor(game, characterId, characters)?.madAs;
 }
 
 export interface MadAsMark {
@@ -39,12 +40,12 @@ export function madAsOf(game: Game, seatId: SeatId, characters: CharacterLookup)
 	if (!seat) return [];
 	const out: MadAsMark[] = [];
 	for (const r of seat.reminders) {
-		const rule = madAsRule(r.characterId, characters);
+		const rule = madAsRule(game, r.characterId, characters);
 		if (rule?.mad === 'carrier' && r.label === rule.token && r.madAs !== undefined)
 			out.push({ characterId: r.madAs, by: r.characterId, reminderId: r.reminderId });
 	}
 	const own = trueCharacter(game, seatId, characters);
-	const rule = own === undefined ? undefined : madAsRule(own, characters);
+	const rule = own === undefined ? undefined : madAsRule(game, own, characters);
 	if (own !== undefined && rule?.mad === 'self') {
 		for (const s of game.seating) {
 			if (s === seatId) continue;
@@ -79,7 +80,7 @@ export function madAsChoice(
 	by: CharacterId,
 	characters: CharacterLookup
 ): MadAsChoice | undefined {
-	const rule = madAsRule(by, characters);
+	const rule = madAsRule(game, by, characters);
 	if (rule?.mad !== 'carrier' || !rule.choose) return undefined;
 	let token: MadAsChoice['token'];
 	for (const seatId of game.seating)
