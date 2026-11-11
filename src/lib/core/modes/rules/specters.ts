@@ -26,7 +26,7 @@ export const SPECTERS: SpecialRule = {
 	// The stream's description: Nashable is developing Specters.
 	authors: [{ title: 'Nashable', url: STREAM }],
 	unconfirmed: ['daySteps'],
-	parts: {
+	setup: {
 		participants: { spectators: 'shared-ability' },
 		daySteps: [
 			{

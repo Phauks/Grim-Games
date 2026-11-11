@@ -74,8 +74,8 @@ export async function applyGameRules(
 		if (!had.includes(id) && setupSelection.copies(id) === 0) setupSelection.setCopies(id, 1);
 	// Hidden characters leave with the rule that added them.
 	if (
-		before.parts.pool?.kind === 'script-plus-hidden' &&
-		after.parts.pool?.kind !== 'script-plus-hidden'
+		before.setup.pool?.kind === 'script-plus-hidden' &&
+		after.setup.pool?.kind !== 'script-plus-hidden'
 	) {
 		for (const id of readExtras(gameId) ?? []) setupSelection.setCopies(id, 0);
 		writeExtras(gameId, []);

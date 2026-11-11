@@ -55,7 +55,7 @@
 	const record = $derived(readGameMode(gameId));
 	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
 	const restrictions = $derived(record?.restrictions ?? NO_RESTRICTIONS);
-	const pool = $derived(mode.parts.pool);
+	const pool = $derived(mode.setup.pool);
 	const announce = $derived(pool?.kind === 'script-plus-hidden' && pool.announceRange);
 	const scriptCharacters = $derived(
 		game.script.entries.flatMap((e): Character[] => {

@@ -16,7 +16,7 @@ import type { BetweenGamesRule, GameMode } from './types.ts';
 
 /** The mode's between-games rule, when it runs a campaign. */
 export function campaignRule(mode: GameMode): BetweenGamesRule | undefined {
-	return mode.parts.betweenGames?.kind === 'campaign' ? mode.parts.betweenGames : undefined;
+	return mode.setup.betweenGames?.kind === 'campaign' ? mode.setup.betweenGames : undefined;
 }
 
 /**

@@ -15,7 +15,7 @@ export interface TravellerInPlay {
  * the bag (Stowed Away; Trevor, 2026-10-19: "this may need to change").
  */
 function travellersArePublic(gameId: GameId): boolean {
-	return (gameModeOf(gameId)?.parts.travellers?.inBag ?? 0) === 0;
+	return (gameModeOf(gameId)?.setup.travellers?.inBag ?? 0) === 0;
 }
 
 /**

@@ -27,7 +27,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { dismissedGameEnds } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
-	import { tonight } from './night-steps.ts';
+	import { tonight } from '#lib/core/rules/night/board-steps.ts';
 	import { isGeneric, reminderWords } from './reminders.ts';
 
 	/**
@@ -68,7 +68,7 @@
 	const on = $derived(active && preferences.current.assistance.gameEndPrompts);
 	// A special rule under which an executed Demon wins it for good (Binary Supernovae).
 	const demonExecutedBy = $derived(
-		readGameMode(game.gameId)?.rules.find((r) => r.parts.winConditions?.kind === 'demon-executed')
+		readGameMode(game.gameId)?.rules.find((r) => r.setup.winConditions?.kind === 'demon-executed')
 			?.name
 	);
 	const ends = $derived(on ? gameEnds(game, characters, { dayEnded, demonExecutedBy }) : []);

@@ -26,7 +26,7 @@ export const SUSHI_BUFFET: GameMode = {
 			url: 'https://ekins.blog/2026/05/02/final-3-con-2026-part-1/'
 		}
 	],
-	parts: {
+	setup: {
 		// Trevor, 2026-10-18, in the project chat.
 		bluffs: { kind: 'none', instructions: 'The Demon receives no bluffs.' },
 		pool: { kind: 'all-characters' },

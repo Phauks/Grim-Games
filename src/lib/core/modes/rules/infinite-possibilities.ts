@@ -25,7 +25,7 @@ export const INFINITE_POSSIBILITIES: SpecialRule = {
 	sources: [{ title: 'A Script of Infinite Possibilities (Chill on the Clocktower)', url: POST }],
 	// The post's byline; it credits Patters with the idea, not the script.
 	authors: [{ title: 'Nashable', url: POST }],
-	parts: {
+	setup: {
 		pool: {
 			kind: 'script-plus-hidden',
 			// Rows the Storyteller fills; 1 to 4 of them in all (Trevor, 2026-10-18), one of each

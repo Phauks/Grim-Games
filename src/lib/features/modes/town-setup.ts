@@ -51,7 +51,7 @@ export async function afterTownBag(
 
 /** The draw once the bags are reviewed: one token for both games when the players are the same. */
 export function townDrawHref(group: TownGroup, mode: GameMode | undefined): ResolvedPathname {
-	if (mode?.parts.towns?.samePlayers)
+	if (mode?.setup.towns?.samePlayers)
 		return resolve('/towns/[groupId]/draw', { groupId: group.groupId });
 	return resolve('/grimoire/[gameId]/draw', { gameId: group.gameIds[0] });
 }

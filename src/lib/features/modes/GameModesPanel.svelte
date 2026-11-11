@@ -177,8 +177,8 @@
 	);
 	/** The mode as it plays, with the rules folded in. */
 	const played = $derived(withRules(mode, rules));
-	const pool = $derived(played.parts.pool);
-	const towns = $derived(played.parts.towns);
+	const pool = $derived(played.setup.pool);
+	const towns = $derived(played.setup.towns);
 	let restrictions = $state(NO_RESTRICTIONS);
 	// Role Recycling is the Storyteller's choice for a draft (Trevor, 2026-10-18); unset, the mode's own.
 	let roleRecycling = $state<boolean | undefined>();
@@ -188,7 +188,7 @@
 	let oneType = $state<boolean | undefined>();
 	let dealsRequired = $state(true);
 	const draft = $derived(
-		played.parts.assignment?.kind === 'draft' ? played.parts.assignment : undefined
+		played.setup.assignment?.kind === 'draft' ? played.setup.assignment : undefined
 	);
 	let players = $state(8);
 	let starting = $state(false);
@@ -268,7 +268,7 @@
 			: undefined
 	);
 	/** Towns further apart than the mode allows: a warning, never a lock. */
-	const counts = $derived(played.parts.counts);
+	const counts = $derived(played.setup.counts);
 	const uneven = $derived(
 		sizes &&
 			counts?.kind === 'per-town' &&
@@ -335,7 +335,7 @@
 			];
 			restrictPool = modeCharacters(played, scriptCharacters, data.characters, {
 				banned: [],
-				allowed: played.parts.restricted?.banned ?? []
+				allowed: [...(played.setup.restricted?.banned ?? [])]
 			});
 			restricting = true;
 		} catch (e) {

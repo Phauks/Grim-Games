@@ -7,13 +7,13 @@ import type { Script } from '#lib/core/data/types.ts';
 import { scriptForRules } from './rule-script.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 
-const rule = (id: string, parts: SpecialRule['parts']): SpecialRule => ({
+const rule = (id: string, setup: SpecialRule['setup']): SpecialRule => ({
 	kind: 'special-rule',
 	format: SPECIAL_RULE_FORMAT,
 	id,
 	name: id,
 	sources: [],
-	parts
+	setup
 });
 
 const script: Script = {

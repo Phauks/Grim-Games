@@ -28,7 +28,7 @@ export const FLESH_AND_BONE: GameMode = {
 	],
 	// The rules page names no author; the Specters stream's description calls Nashable its creator.
 	authors: [{ title: 'Nashable', url: 'https://www.youtube.com/watch?v=-R34QbIgDh8' }],
-	parts: {
+	setup: {
 		pool: { kind: 'campaign', startingScript: 'any' },
 		forced: {
 			homebrew: [{ title: 'Flesh and Bone (Fabled)', url: 'https://fleshandbone.app/' }],

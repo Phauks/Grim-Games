@@ -26,7 +26,7 @@ export const TWO_TOWNS: GameMode = {
 	authors: [
 		{ title: 'Ekin', url: 'https://ekins.blog/2026/04/29/two-towns-and-a-boomdandy-rules/' }
 	],
-	parts: {
+	setup: {
 		pool: {
 			kind: 'per-town',
 			scripts: [

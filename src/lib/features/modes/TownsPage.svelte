@@ -51,9 +51,9 @@
 
 	const group = $derived(townGroup(groupId));
 	const mode = $derived(findMode(group?.modeId ?? '') ?? STANDARD);
-	const samePlayers = $derived(mode.parts.towns?.samePlayers === true);
+	const samePlayers = $derived(mode.setup.towns?.samePlayers === true);
 	const moving = $derived(
-		mode.parts.daySteps?.some((s) => s.kind === 'town-representative') === true
+		mode.setup.daySteps?.some((s) => s.kind === 'town-representative') === true
 	);
 
 	let towns = $state.raw<OpenGame[] | undefined>();

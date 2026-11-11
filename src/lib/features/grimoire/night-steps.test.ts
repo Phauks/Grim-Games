@@ -5,14 +5,13 @@ import { characterLookup, type DeathCause, type Game } from '#lib/core/model/ind
 import { ON_DEATH, type NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
+import { givesNumber, stepName } from './night-steps.ts';
 import {
 	boardNightSteps,
-	givesNumber,
 	ruleNightSteps,
 	stepHolders,
-	stepName,
 	stepWakes
-} from './night-steps.ts';
+} from '#lib/core/rules/night/board-steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 const data = committedGameData();
@@ -125,7 +124,7 @@ describe('ruleNightSteps', () => {
 	const council = {
 		id: COUNCIL_OF_THE_DEAD.id,
 		name: COUNCIL_OF_THE_DEAD.name,
-		text: COUNCIL_OF_THE_DEAD.parts.text,
+		text: COUNCIL_OF_THE_DEAD.setup.text,
 		rules: COUNCIL_OF_THE_DEAD.rules!
 	};
 	it('adds Council of the Dead on night 4 only, headed by the rule', () => {
@@ -134,7 +133,7 @@ describe('ruleNightSteps', () => {
 			{
 				kind: 'custom',
 				title: 'Council of the Dead',
-				reminder: COUNCIL_OF_THE_DEAD.parts.text?.join(' '),
+				reminder: COUNCIL_OF_THE_DEAD.setup.text?.join(' '),
 				afterDawn: false
 			}
 		]);

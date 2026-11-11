@@ -13,7 +13,7 @@
 		label: string;
 		/** The file's key, shown in the coding font. */
 		name: string;
-		/** Where it is in the file, as a problem names it (`parts.pool.count`). */
+		/** Where it is in the file, as a problem names it (`setup.pool.count`). */
 		path?: string;
 		/** The label's id, for a control labelled by it. */
 		labelId?: string;

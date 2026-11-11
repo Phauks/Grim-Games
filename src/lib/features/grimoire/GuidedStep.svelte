@@ -56,7 +56,8 @@
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { seatMisfits } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { givesNumber, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { givesNumber, seatName, stepName } from './night-steps.ts';
+	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
 	import { reminderCopies, reminderKey, stepTokenCharacter } from './reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';

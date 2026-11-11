@@ -8,17 +8,17 @@ import { modeRule } from './file-kind.ts';
 import { STANDARD } from './registry.ts';
 import type { GameMode, SpecialRule } from './types.ts';
 
-const mode = (parts: GameMode['parts'], extra: Partial<GameMode> = {}): GameMode => ({
+const mode = (setup: GameMode['setup'], extra: Partial<GameMode> = {}): GameMode => ({
 	format: 1,
 	id: 'mine',
 	name: 'Mine',
 	sources: [],
-	parts,
+	setup,
 	...extra
 });
 const rule = (
 	id: string,
-	parts: SpecialRule['parts'],
+	setup: SpecialRule['setup'],
 	extra: Partial<SpecialRule> = {}
 ): SpecialRule => ({
 	kind: 'special-rule',
@@ -26,7 +26,7 @@ const rule = (
 	id,
 	name: id,
 	sources: [],
-	parts,
+	setup,
 	...extra
 });
 
@@ -44,7 +44,7 @@ describe('a game mode that sets rule parts', () => {
 			id: 'mine',
 			name: 'Mine',
 			sources: [],
-			parts: { text: ['The dead wake.'] },
+			setup: { text: ['The dead wake.'] },
 			rules: { nightWakes: [wake] }
 		});
 		expect(modeRule(STANDARD)).toBe(undefined);
@@ -53,10 +53,10 @@ describe('a game mode that sets rule parts', () => {
 
 	it('folds their parts in with the rules chosen on top; rules blocks stay each file’s own', () => {
 		const other = { ...wake, when: 'one-night', night: 1 } as const;
-		const { parts, conflicts } = combineRules(own, [
+		const { setup, conflicts } = combineRules(own, [
 			rule('r', { text: ['More.'] }, { rules: { nightWakes: [other] } })
 		]);
-		expect(parts.text).toEqual(['The dead wake.', 'More.']);
+		expect(setup.text).toEqual(['The dead wake.', 'More.']);
 		// Two files that set one rules block part differently conflict, like a one-answer part.
 		expect(conflicts).toEqual([{ ids: ['mine', 'r'], part: 'rules.nightWakes' }]);
 	});
@@ -71,12 +71,12 @@ describe('a game mode that sets rule parts', () => {
 
 	it('counts the whole-game parts as one-answer parts', () => {
 		// Only a game mode sets them; a file read past the checker still warns, never mixes.
-		const clash = { ...rule('r', {}), parts: { counts: { kind: 'standard' } } } as SpecialRule;
-		const { parts, conflicts } = combineRules(
+		const clash = { ...rule('r', {}), setup: { counts: { kind: 'standard' } } } as SpecialRule;
+		const { setup, conflicts } = combineRules(
 			mode({ counts: { kind: 'per-town', maxDifference: 1 } }),
 			[clash]
 		);
-		expect(parts.counts).toEqual({ kind: 'per-town', maxDifference: 1 });
+		expect(setup.counts).toEqual({ kind: 'per-town', maxDifference: 1 });
 		expect(conflicts).toEqual([{ ids: ['mine', 'r'], part: 'counts' }]);
 	});
 

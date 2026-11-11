@@ -56,7 +56,7 @@ export function rulesScript(
 	restrictions: StorytellerRestrictions
 ): Script {
 	const out = modeScript(mode, script, scriptCharacters, data.characters, restrictions);
-	const lines = mode.parts.text ?? [];
+	const lines = mode.setup.text ?? [];
 	if (!lines.length) return out;
 	const meta = out.meta ?? { name: '' };
 	return { ...out, meta: { ...meta, bootlegger: [...(meta.bootlegger ?? []), ...lines] } };

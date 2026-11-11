@@ -81,7 +81,7 @@
 	const gameId = $derived(game.gameId);
 	const record = $derived(readGameMode(gameId));
 	const mode = $derived(gameModeOf(gameId) ?? STANDARD);
-	const assignment = $derived(mode.parts.assignment);
+	const assignment = $derived(mode.setup.assignment);
 	const split = $derived(splitPlayers(game.seating.length));
 	const seats = $derived(game.seating.slice(0, split.dealt));
 	// The game's script is already the mode's (start.ts): its pool, less restricted characters.
@@ -122,7 +122,7 @@
 						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
 						oneTypePerOffer: record?.oneTypePerOffer ?? assignment.oneTypePerOffer,
 						dealsRequired: record?.dealsRequired ?? true,
-						modifiers: mode.parts.setupModifiers?.kind === 'as-chosen',
+						modifiers: mode.setup.setupModifiers?.kind === 'as-chosen',
 						jinxes: record?.jinxedPairs ?? 'allow',
 						ivory: record?.ivoryDraft ?? false,
 						hidden: characters.filter(isReplacedAfterDraw).map((c) => c.id),
@@ -130,7 +130,7 @@
 					},
 					split.counts,
 					// Lil' Monsta is never dealt, but drafted it turns its player into a Minion.
-					mode.parts.setupModifiers?.kind === 'as-chosen'
+					mode.setup.setupModifiers?.kind === 'as-chosen'
 						? [...pickableCharacters(mode, characters), ...draftedTurned(characters)]
 						: pickableCharacters(mode, characters),
 					Math.random,

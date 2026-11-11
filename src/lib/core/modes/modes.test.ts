@@ -14,10 +14,10 @@ import {
 	inPlayFor,
 	modeCharacters,
 	modeScript,
-	runsPart
+	runsSection
 } from './pool.ts';
-import { INSTRUCTIONS_FROM_REVISION, parseGameMode, parseModeOrRule } from './validate.ts';
-import { MODE_PARTS } from './types.ts';
+import { parseGameMode, parseModeOrRule } from './validate.ts';
+import { MODE_SECTIONS } from './types.ts';
 
 const data = committedGameData();
 const known = new Set(data.characters.map((c) => c.id));
@@ -44,7 +44,7 @@ describe('shipped modes', () => {
 
 	it('Standard changes nothing, so the app runs every part', () => {
 		const standard = mode('standard');
-		for (const part of MODE_PARTS) expect(runsPart(standard, part)).toBe(true);
+		for (const part of MODE_SECTIONS) expect(runsSection(standard, part)).toBe(true);
 	});
 });
 
@@ -56,7 +56,7 @@ describe('parseGameMode', () => {
 				id: 'Bad Id',
 				name: '',
 				sources: [{ title: 'x', url: 'http://x' }],
-				parts: {
+				setup: {
 					assignment: { kind: 'draft', offers: [0] },
 					restricted: { banned: ['nobody'] },
 					teleport: {}
@@ -70,42 +70,43 @@ describe('parseGameMode', () => {
 			'id: must be lower-case letters, digits and dashes',
 			'name: must be a name',
 			'sources[0].url: must be an https link',
-			'parts.assignment.offers: must be a list of whole numbers of at least 1',
-			'parts.restricted.banned[0]: unknown character nobody',
-			'parts.teleport: unknown part'
+			'setup.assignment.offers[0]: expected a whole number above 0, got 0',
+			'setup.assignment.recycleUnchosen: missing',
+			'setup.assignment.oneTypePerOffer: missing',
+			'setup.assignment.instructions: the Storyteller runs this section, so say what they do',
+			'setup.restricted.banned[0]: unknown character nobody',
+			'setup.teleport: unknown section'
 		]);
 	});
 });
 
 describe('Storyteller instructions (Trevor, 2026-10-19: mode files "self-sufficient for the storyteller")', () => {
-	const at = (file: object, revision: number) =>
-		parseModeOrRule({ ...JSON.parse(JSON.stringify(file)), revision }, known);
+	const read = (file: object) => parseModeOrRule(JSON.parse(JSON.stringify(file)), known);
 
 	it.each([...GAME_MODES, ...SPECIAL_RULES].map((m) => [m.id, m] as const))(
 		'%s says what the Storyteller does for every part the app doesn’t run',
 		(_id, m) => {
-			expect(at(m, INSTRUCTIONS_FROM_REVISION).ok).toBe(true);
+			expect(read(m).ok).toBe(true);
 		}
 	);
 
-	it('are required from their revision on, and older files are read without them', () => {
+	it('are required on every part the Storyteller runs', () => {
 		const file = {
 			format: 1,
 			id: 'house',
 			name: 'House',
 			sources: [{ title: 'x', url: 'https://x.example' }],
-			parts: {
+			setup: {
 				restricted: { banned: [] },
 				bluffs: { kind: 'none' },
 				ruleChanges: [{ characters: [], instructions: 'Ours.' }, { characters: [] }]
 			}
 		};
-		expect(at(file, INSTRUCTIONS_FROM_REVISION - 1).ok).toBe(true);
-		expect(at(file, INSTRUCTIONS_FROM_REVISION)).toEqual({
+		expect(read(file)).toEqual({
 			ok: false,
 			issues: [
-				'parts.bluffs.instructions: the Storyteller runs this part, so say what they do',
-				'parts.ruleChanges[1].instructions: the Storyteller runs this part, so say what they do'
+				'setup.bluffs.instructions: the Storyteller runs this section, so say what they do',
+				'setup.ruleChanges[1].instructions: the Storyteller runs this section, so say what they do'
 			]
 		});
 	});
@@ -116,11 +117,11 @@ describe('Storyteller instructions (Trevor, 2026-10-19: mode files "self-suffici
 			id: 'house',
 			name: 'House',
 			sources: [{ title: 'x', url: 'https://x.example' }],
-			parts: { bluffs: { kind: 'none', instructions: ' ' } }
+			setup: { bluffs: { kind: 'none', instructions: ' ' } }
 		};
 		expect(parseGameMode(file)).toEqual({
 			ok: false,
-			issues: ['parts.bluffs.instructions: must be text']
+			issues: ['setup.bluffs.instructions: must be text']
 		});
 	});
 });
@@ -217,13 +218,13 @@ describe('Two Towns and a Boomdandy (https://ekins.blog/2026/04/29/two-towns-and
 describe('Two games at once (Trevor, 2026-10-17)', () => {
 	it('plays every player in both towns, never the Demon in both, and the app runs the towns', () => {
 		const two = mode('two-games-at-once');
-		expect(two.parts.towns).toMatchObject({
+		expect(two.setup.towns).toMatchObject({
 			count: 2,
 			samePlayers: true,
 			notInEveryTown: ['demon']
 		});
-		expect(runsPart(two, 'towns')).toBe(true);
-		expect(runsPart(mode('two-towns-and-a-boomdandy'), 'daySteps')).toBe(false);
+		expect(runsSection(two, 'towns')).toBe(true);
+		expect(runsSection(mode('two-towns-and-a-boomdandy'), 'daySteps')).toBe(false);
 	});
 });
 
@@ -262,7 +263,7 @@ describe('Two Towns and a Boomdandy: always in play', () => {
 		const two = mode('two-towns-and-a-boomdandy');
 		expect(inPlayFor(two, 0)).toEqual(['boomdandy']);
 		expect(inPlayFor(two, 1)).toEqual(['mayor']);
-		expect(runsPart(two, 'forced')).toBe(true);
+		expect(runsSection(two, 'forced')).toBe(true);
 		expect(inPlayFor(mode('standard'))).toEqual([]);
 	});
 });

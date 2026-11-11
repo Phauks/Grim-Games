@@ -2,14 +2,14 @@
  * The pieces the game mode and special rule guides are written with (format-guide.ts): the
  * guide's own shapes, the fields every part has, and the format's revision.
  */
-import type { ModePart, RuleOnlyPart } from './types.ts';
+import type { ModeSection, RuleOnlySection } from './types.ts';
 
 /**
  * The rolling revision of the format while it is developed (Trevor, 2026-10-18): it goes up
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 17;
+export const GAME_MODE_REVISION = 20;
 
 export interface GuideField {
 	name: string;
@@ -28,8 +28,8 @@ export interface GuideKind {
 	fields: GuideField[];
 }
 
-export interface GuidePart {
-	part: ModePart | RuleOnlyPart;
+export interface GuideSection {
+	part: ModeSection | RuleOnlySection;
 	/** One object, or a list of them. */
 	list: boolean;
 	about: string;
@@ -45,7 +45,7 @@ export const CITE: GuideField = {
 	about: 'The page this part comes from, when it is not the mode’s first source.'
 };
 
-/** Required, from revision 8, on a part the app doesn't run (validate.ts). */
+/** Required on a section the app doesn't run (validate.ts). */
 export const INSTRUCTIONS: GuideField = {
 	name: 'instructions',
 	type: 'text',
@@ -57,5 +57,3 @@ export const INSTRUCTIONS: GuideField = {
 export const IDS = 'list of character ids';
 export const SEATED = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
 export const TYPES = [...SEATED, 'traveller', 'fabled', 'loric'] as const;
-export const counts = (about: string): GuideField[] =>
-	SEATED.map((type) => ({ name: type, type: 'whole number', required: false, about }));

@@ -18,7 +18,7 @@
 
 	const gameId = $derived(port.game?.gameId);
 	const mode = $derived(gameId !== undefined ? gameModeOf(gameId) : undefined);
-	const hides = $derived(mode?.parts.pool?.kind === 'script-plus-hidden');
+	const hides = $derived(mode?.setup.pool?.kind === 'script-plus-hidden');
 	let count = $state(0);
 
 	$effect(() => {

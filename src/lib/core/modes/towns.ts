@@ -20,7 +20,7 @@ export function townSizes(players: number, towns: number): number[] {
 
 /** Players the representative moves at the end of `day` (1-based); 0 when the rule has none. */
 export function movesOnDay(mode: GameMode, day: number): number {
-	const step = mode.parts.daySteps?.find((s) => s.kind === 'town-representative');
+	const step = mode.setup.daySteps?.find((s) => s.kind === 'town-representative');
 	if (!step || step.kind !== 'town-representative') return 0;
 	return step.movesPerDay[day - 1] ?? 0;
 }
@@ -39,8 +39,8 @@ export function inEveryTown(
 	mode: GameMode,
 	players: readonly PlayerAcrossTowns[]
 ): { playerName: PlayerName; type: SeatedType }[] {
-	const types = mode.parts.towns?.notInEveryTown ?? [];
-	const towns = mode.parts.towns?.count ?? 1;
+	const types = mode.setup.towns?.notInEveryTown ?? [];
+	const towns = mode.setup.towns?.count ?? 1;
 	const out: { playerName: PlayerName; type: SeatedType }[] = [];
 	for (const p of players) {
 		if (p.characters.length < towns) continue;
@@ -114,7 +114,7 @@ export function pairTiles(
 ): TilePair[] | undefined {
 	const [a, b] = bags.map((bag) => Object.keys(bag.tiles).sort());
 	if (a.length !== b.length) return undefined;
-	const kept = new Set<CharacterType>(mode.parts.towns?.notInEveryTown ?? []);
+	const kept = new Set<CharacterType>(mode.setup.towns?.notInEveryTown ?? []);
 	const type = (bag: Bag, id: TileId) => typeOf(bag.tiles[id].grimoire);
 	for (let i = 0; i < a.length; i++) {
 		const clash = type(bags[0], a[i]);

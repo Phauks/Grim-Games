@@ -90,7 +90,7 @@
 	 * With "I See Dead People" on, deaths are never announced (World Cup thread, 2026-10-19):
 	 * the spoken line says so instead.
 	 */
-	const privateDeaths = $derived(gameModeOf(g.gameId)?.parts.deaths?.kind === 'private');
+	const privateDeaths = $derived(gameModeOf(g.gameId)?.setup.deaths?.kind === 'private');
 
 	// ── What didn't happen: a kill whose Dead token sits on a living player (Trevor) ──
 	const prevented = $derived(preventedDeaths(g, game.characters));

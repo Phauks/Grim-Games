@@ -8,10 +8,10 @@
  * JSON, so nothing in the format is ever out of reach.
  */
 import { CITE, GAME_MODE_REVISION, IDS, INSTRUCTIONS, TYPES } from './guide-fields.ts';
-import type { GuideField, GuidePart } from './guide-fields.ts';
+import type { GuideField, GuideSection } from './guide-fields.ts';
 import { GUIDE_TOP } from './mode-guide.ts';
-import { FILE_GUIDE_PARTS } from './rule-guide.ts';
-import { GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
+import { FILE_GUIDE_SECTIONS } from './rule-guide.ts';
+import { GAME_MODE_FORMAT, WHOLE_GAME_SECTIONS } from './types.ts';
 import { fileKind, type FileKind } from './file-kind.ts';
 
 /** What the builder makes: a game mode, or a special rule that stacks on one (`fileKind`). */
@@ -42,12 +42,12 @@ const CONTROLS: Record<string, (field: GuideField) => FieldControl> = {
 	'list of text': () => ({ kind: 'texts' }),
 	'list of whole numbers': () => ({ kind: 'numbers' }),
 	'list of character types': (f) => ({ kind: 'choices', values: f.values ?? TYPES }),
-	'list of part names': (f) => ({ kind: 'choices', values: f.values ?? [] }),
+	'list of setup section names': (f) => ({ kind: 'choices', values: f.values ?? [] }),
 	[IDS]: () => ({ kind: 'characters' }),
 	'list of links': () => ({ kind: 'links' }),
 	'https link': () => ({ kind: 'link' }),
 	'object of counts by type': () => ({ kind: 'counts' }),
-	'object { "min", "max" }': () => ({ kind: 'range' })
+	'{ min, max }': () => ({ kind: 'range' })
 };
 
 /**
@@ -72,8 +72,8 @@ export function knownType(type: string): boolean {
 	return type in CONTROLS || JSON_TYPES.has(type);
 }
 
-/** Top-level fields the builder fills in itself: the format, revision and parts. */
-const AUTOMATIC = new Set(['kind', 'format', 'revision', 'parts']);
+/** Top-level fields the builder fills in itself: the format, revision and setup. */
+const AUTOMATIC = new Set(['kind', 'format', 'revision', 'setup']);
 
 /** The file's own fields (id, name, sources and the rest), as the guide lists them. */
 export function topFields(): GuideField[] {
@@ -82,28 +82,28 @@ export function topFields(): GuideField[] {
 
 /**
  * Every part a file can set, in two groups (Trevor, 2026-11-01: one format, auto-labelled):
- * the parts any file can set, then those that make it a game mode (`WHOLE_GAME_PARTS`).
+ * the parts any file can set, then those that make it a game mode (`WHOLE_GAME_SECTIONS`).
  */
-export function buildParts(): { any: GuidePart[]; wholeGame: GuidePart[] } {
-	const whole: readonly string[] = WHOLE_GAME_PARTS;
+export function buildParts(): { any: GuideSection[]; wholeGame: GuideSection[] } {
+	const whole: readonly string[] = WHOLE_GAME_SECTIONS;
 	return {
-		any: FILE_GUIDE_PARTS.filter((p) => !whole.includes(p.part)),
-		wholeGame: FILE_GUIDE_PARTS.filter((p) => whole.includes(p.part))
+		any: FILE_GUIDE_SECTIONS.filter((p) => !whole.includes(p.part)),
+		wholeGame: FILE_GUIDE_SECTIONS.filter((p) => whole.includes(p.part))
 	};
 }
 
 /** A part whose items are plain lines (a rule's `text`): no fields and no kinds. */
-export function isLinesPart(part: GuidePart): boolean {
+export function isLinesPart(part: GuideSection): boolean {
 	return part.list && part.fields.length === 0 && part.kinds.length === 0;
 }
 
 /** The fields of one part, or one item of a list part, of the chosen kind. */
-export function partFields(part: GuidePart, kind: string | undefined): GuideField[] {
+export function partFields(part: GuideSection, kind: string | undefined): GuideField[] {
 	const own = part.kinds.find((k) => k.kind === kind)?.fields ?? [];
 	return [...part.fields, ...own, CITE, INSTRUCTIONS];
 }
 
-/** A new, empty file: nothing but what every file needs. Its parts make it a mode or a rule. */
+/** A new, empty file: nothing but what every file needs. Its setup makes it a mode or a rule. */
 export function emptyFile(): Record<string, unknown> {
 	return {
 		format: GAME_MODE_FORMAT,
@@ -111,20 +111,20 @@ export function emptyFile(): Record<string, unknown> {
 		id: '',
 		name: '',
 		sources: [],
-		parts: {}
+		setup: {}
 	};
 }
 
 /**
  * Whether loaded JSON is a mode file, and which kind (the Library's Add takes them beside
- * scripts): an object with a numeric `format` and a `parts` object, labelled by its parts
- * (`fileKind`). A script is a list, and a single character has no `parts`, so neither reads
+ * scripts): an object with a numeric `format` and a `setup` object, labelled by its setup
+ * (`fileKind`). A script is a list, and a single character has no `setup`, so neither reads
  * as one.
  */
 export function modeFileKind(json: unknown): BuildKind | undefined {
 	if (typeof json !== 'object' || json === null || Array.isArray(json)) return undefined;
 	const file = json as Record<string, unknown>;
-	const parts = file.parts;
+	const parts = file.setup;
 	if (typeof file.format !== 'number' || typeof parts !== 'object' || parts === null) {
 		return undefined;
 	}
@@ -132,14 +132,14 @@ export function modeFileKind(json: unknown): BuildKind | undefined {
 }
 
 /** A new part or list item: its first kind, or no fields at all. */
-export function newPartValue(part: GuidePart): unknown {
+export function newPartValue(part: GuideSection): unknown {
 	if (isLinesPart(part)) return '';
 	return part.kinds.length ? { kind: part.kinds[0].kind } : {};
 }
 
 export type Path = readonly (string | number)[];
 
-/** The path as validate.ts writes it in a problem: `parts.daySteps[0].kind`. */
+/** The path as validate.ts writes it in a problem: `setup.daySteps[0].kind`. */
 export function pathText(path: Path): string {
 	return path.reduce<string>(
 		(text, key) =>
@@ -200,7 +200,7 @@ export const PART_NOTES: readonly GuideField[] = [CITE, INSTRUCTIONS];
 const NOTE_NAMES: ReadonlySet<string> = new Set(PART_NOTES.map((f) => f.name));
 
 /** The fields of one part, or one list item, less its Source and Storyteller instructions. */
-export function ownPartFields(part: GuidePart, kind: string | undefined): GuideField[] {
+export function ownPartFields(part: GuideSection, kind: string | undefined): GuideField[] {
 	return partFields(part, kind).filter((f) => !NOTE_NAMES.has(f.name));
 }
 
@@ -209,7 +209,12 @@ export function ownPartFields(part: GuidePart, kind: string | undefined): GuideF
  * any of its settings turns it on (Trevor, 2026-11-01: "while something is disabled, you
  * should still be able to open the menus").
  */
-export function setPartAt(part: GuidePart, current: unknown, path: Path, value: unknown): unknown {
+export function setPartAt(
+	part: GuideSection,
+	current: unknown,
+	path: Path,
+	value: unknown
+): unknown {
 	return setAt(current === undefined ? newPartValue(part) : current, path, value);
 }
 
@@ -254,7 +259,7 @@ export function jsonChunks(file: Record<string, unknown>): JsonChunk[] {
 	for (const line of lines) {
 		if (!inParts) {
 			around.push(line);
-			if (line === '  "parts": {') inParts = true;
+			if (line === '  "setup": {') inParts = true;
 			continue;
 		}
 		const start = /^ {4}"((?:[^"\\]|\\.)*)": /.exec(line);

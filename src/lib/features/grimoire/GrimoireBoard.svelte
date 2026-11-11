@@ -5,7 +5,8 @@
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, revivedToday, stepWakes, tonightFromLog } from './night-steps.ts';
+	import { revivedToday, tonightFromLog } from './night-steps.ts';
+	import { boardNightSteps, stepWakes } from '#lib/core/rules/night/board-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -50,7 +51,7 @@
 		nominationPrompts,
 		ruleSources,
 		type NominationPrompt
-	} from '#lib/core/modes/index.ts';
+	} from '#lib/core/rules/rule-sources.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';

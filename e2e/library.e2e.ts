@@ -983,7 +983,7 @@ test('game mode and special rule files are Library items, added and opened like 
 		name: 'Tiny Mode',
 		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
 		// Setting the counts makes it a game mode (one format, labelled by its parts).
-		parts: { counts: { kind: 'standard' }, restricted: { banned: ['pithag'] } }
+		setup: { counts: { kind: 'standard' }, restricted: { banned: ['pithag'] } }
 	});
 	const mode = pane(page, 'Tiny Mode');
 	await expect(mode.getByTestId('library-mode')).toBeVisible();
@@ -995,7 +995,7 @@ test('game mode and special rule files are Library items, added and opened like 
 		id: 'quiet-rule',
 		name: 'Quiet Rule',
 		sources: [],
-		parts: { text: ['No talking at night.'] }
+		setup: { text: ['No talking at night.'] }
 	});
 	const rule = pane(page, 'Quiet Rule');
 	await expect(rule.getByTestId('library-mode')).toBeVisible();
@@ -1009,7 +1009,7 @@ test('game mode and special rule files are Library items, added and opened like 
 	await expect(row(page, 'Quiet Rule')).toBeVisible();
 
 	// A file with problems says so and adds nothing.
-	await addFile('broken.json', { format: 1, id: 'Bad Id', parts: {} });
+	await addFile('broken.json', { format: 1, id: 'Bad Id', setup: {} });
 	await expect(page.getByText(/This mode file has \d+ problems/).first()).toBeVisible();
 
 	// Edit opens it in the Mode builder.

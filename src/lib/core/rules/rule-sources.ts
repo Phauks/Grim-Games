@@ -33,7 +33,7 @@ export interface RuleFile {
 	id: string;
 	name: string;
 	rules?: CharacterRules;
-	parts: { text?: string[] };
+	setup: { text?: readonly string[] };
 }
 
 /**
@@ -55,7 +55,7 @@ export function ruleSources(
 					{
 						id: file.id,
 						name: file.name,
-						...(file.parts.text?.length ? { text: file.parts.text } : {}),
+						...(file.setup.text?.length ? { text: file.setup.text } : {}),
 						rules: file.rules
 					}
 				]

@@ -9,19 +9,19 @@ import { describe, expect, it } from 'vitest';
 import {
 	documentedFields,
 	GAME_MODE_REVISION,
-	GUIDE_PARTS,
+	GUIDE_SECTIONS,
 	guideFingerprint,
 	MINIMAL_EXAMPLE,
-	RULE_GUIDE_PARTS,
+	RULE_GUIDE_SECTIONS,
 	RULE_MINIMAL_EXAMPLE
 } from './format-guide.ts';
 import { SPECIAL_RULES } from './rules/index.ts';
 import { GAME_MODES } from './registry.ts';
-import { MODE_PARTS, RULE_ONLY_PARTS } from './types.ts';
-import { KINDS, parseGameMode, parseSpecialRule } from './validate.ts';
+import { MODE_SECTIONS, RULE_ONLY_SECTIONS } from './types.ts';
+import { parseGameMode, parseSpecialRule } from './validate.ts';
 
 /**
- * The format's source at each revision. Changing types.ts, validate.ts or the guide fails
+ * The format's source at each revision. Changing types.ts, validate.ts, setup-spec.ts or the guide fails
  * this test: raise GAME_MODE_REVISION, update the guide, then record the new hash here.
  */
 const FORMAT_HASH: Record<number, string> = {
@@ -37,12 +37,15 @@ const FORMAT_HASH: Record<number, string> = {
 	14: '42776f8f462d4766',
 	15: 'bcba7e8955601c85',
 	16: '69b4100e630e5d8a',
-	17: '9ccdc45d8f63d9eb'
+	17: '9ccdc45d8f63d9eb',
+	18: '97512b9d41fe8cef',
+	19: 'dd15466db036c24f',
+	20: '62689fecf9c85f32'
 };
 
 function formatHash(): string {
 	const hash = createHash('sha256');
-	for (const file of ['types.ts', 'validate.ts'])
+	for (const file of ['types.ts', 'validate.ts', 'setup-spec.ts'])
 		hash.update(readFileSync(new URL(`./${file}`, import.meta.url), 'utf8'));
 	hash.update(guideFingerprint());
 	return hash.digest('hex').slice(0, 16);
@@ -63,15 +66,16 @@ function keys(value: unknown, out: Set<string>) {
 
 describe('the mode file guide', () => {
 	it('describes every part, in Inspect’s order', () => {
-		expect(GUIDE_PARTS.map((p) => p.part)).toEqual([...MODE_PARTS]);
+		expect(GUIDE_SECTIONS.map((p) => p.part)).toEqual([...MODE_SECTIONS]);
 	});
 
-	it('describes every kind the validator accepts, and no others', () => {
-		for (const p of GUIDE_PARTS)
-			expect(
-				p.kinds.map((k) => k.kind),
-				p.part
-			).toEqual([...(KINDS[p.part] ?? [])]);
+	it('says what every section, kind and field means', () => {
+		for (const p of [...GUIDE_SECTIONS, ...RULE_GUIDE_SECTIONS]) {
+			expect(p.about, p.part).not.toBe('');
+			for (const k of p.kinds) expect(k.about, `${p.part} ${k.kind}`).not.toBe('');
+			for (const f of [...p.fields, ...p.kinds.flatMap((k) => k.fields)])
+				expect(f.about, `${p.part}.${f.name}`).not.toBe('');
+		}
 	});
 
 	it('describes every field the built-in modes use', () => {
@@ -83,13 +87,7 @@ describe('the mode file guide', () => {
 	});
 
 	it('describes every special rule part, kind and field the library uses', () => {
-		expect(RULE_GUIDE_PARTS.map((p) => p.part)).toEqual([...RULE_ONLY_PARTS]);
-		for (const p of RULE_GUIDE_PARTS)
-			if (p.part in KINDS)
-				expect(
-					p.kinds.map((k) => k.kind),
-					p.part
-				).toEqual([...(KINDS[p.part] ?? [])]);
+		expect(RULE_GUIDE_SECTIONS.map((p) => p.part)).toEqual([...RULE_ONLY_SECTIONS]);
 		const used = new Set<string>();
 		for (const r of SPECIAL_RULES) keys(r, used);
 		expect([...used].filter((k) => !documentedFields().has(k))).toEqual([]);

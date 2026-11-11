@@ -6,12 +6,12 @@
  */
 import { isObject } from '#lib/core/data/validate.ts';
 import {
-	RULE_ONLY_PARTS,
-	WHOLE_GAME_PARTS,
+	RULE_ONLY_SECTIONS,
+	WHOLE_GAME_SECTIONS,
 	type GameMode,
-	type RuleOnlyParts,
+	type RuleSetup,
 	type SpecialRule,
-	type WholeGamePart
+	type WholeGameSection
 } from './types.ts';
 
 export type FileKind = 'game-mode' | 'special-rule';
@@ -20,11 +20,11 @@ export type FileKind = 'game-mode' | 'special-rule';
 const SCRIPT_POOLS: readonly unknown[] = ['script', 'script-plus-hidden'];
 
 /** The parts that make this file a game mode, in the guide's order (`pool` for a pool of its own). */
-export function wholeGamePartsOf(file: unknown): (WholeGamePart | 'pool')[] {
-	const parts = isObject(file) && isObject(file.parts) ? file.parts : {};
-	const found: (WholeGamePart | 'pool')[] = [];
-	if (isObject(parts.pool) && !SCRIPT_POOLS.includes(parts.pool.kind)) found.push('pool');
-	for (const part of WHOLE_GAME_PARTS) if (parts[part] !== undefined) found.push(part);
+export function wholeGamePartsOf(file: unknown): (WholeGameSection | 'pool')[] {
+	const setup = isObject(file) && isObject(file.setup) ? file.setup : {};
+	const found: (WholeGameSection | 'pool')[] = [];
+	if (isObject(setup.pool) && !SCRIPT_POOLS.includes(setup.pool.kind)) found.push('pool');
+	for (const part of WHOLE_GAME_SECTIONS) if (setup[part] !== undefined) found.push(part);
 	return found;
 }
 
@@ -38,19 +38,19 @@ export function fileKind(file: unknown): FileKind {
  * when the mode sets none of them.
  */
 export function modeRule(mode: GameMode): SpecialRule | undefined {
-	const parts = Object.fromEntries(
-		RULE_ONLY_PARTS.flatMap((part) =>
-			mode.parts[part] === undefined ? [] : [[part, mode.parts[part]]]
+	const setup = Object.fromEntries(
+		RULE_ONLY_SECTIONS.flatMap((part) =>
+			mode.setup[part] === undefined ? [] : [[part, mode.setup[part]]]
 		)
-	) as RuleOnlyParts;
-	if (Object.keys(parts).length === 0 && !mode.rules) return undefined;
+	) as RuleSetup;
+	if (Object.keys(setup).length === 0 && !mode.rules) return undefined;
 	return {
 		kind: 'special-rule',
 		format: mode.format,
 		id: mode.id,
 		name: mode.name,
 		sources: mode.sources,
-		parts,
+		setup,
 		...(mode.rules ? { rules: mode.rules } : {})
 	};
 }

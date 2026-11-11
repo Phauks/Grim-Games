@@ -5,38 +5,41 @@
  * uses isn't described here, or when the format changes without `GAME_MODE_REVISION` going
  * up.
  */
-import { MODE_PARTS, RULE_PARTS } from './types.ts';
-import { CITE, INSTRUCTIONS } from './guide-fields.ts';
-import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { RULE_GUIDE_PARTS } from './rule-guide.ts';
+import type { FieldSpec } from '#lib/core/data/field-spec.ts';
+import { FILE_SECTIONS } from './types.ts';
+import { SETUP_SPECS } from './setup-spec.ts';
+import { GUIDE_SECTIONS, GUIDE_TOP } from './mode-guide.ts';
+import { RULE_GUIDE_SECTIONS } from './rule-guide.ts';
 
 export {
 	GAME_MODE_REVISION,
 	type GuideField,
 	type GuideKind,
-	type GuidePart
+	type GuideSection
 } from './guide-fields.ts';
 export * from './mode-guide.ts';
 export * from './rule-guide.ts';
 
 /** Every field name the guide describes, at any depth: for the test that keeps it current. */
 export function documentedFields(): Set<string> {
-	const names = new Set<string>(['kind', 'cite', 'title', 'url', 'characterId', 'type']);
+	const names = new Set<string>(['title', 'url', 'modes', 'rules', ...FILE_SECTIONS]);
 	for (const f of GUIDE_TOP) names.add(f.name);
-	for (const part of RULE_PARTS) names.add(part);
-	for (const part of MODE_PARTS) names.add(part);
-	for (const extra of ['modes', 'rules']) names.add(extra);
-	for (const p of [...GUIDE_PARTS, ...RULE_GUIDE_PARTS]) {
-		for (const f of [...p.fields, CITE, INSTRUCTIONS]) names.add(f.name);
-		for (const k of p.kinds) for (const f of k.fields) names.add(f.name);
-	}
-	for (const extra of ['afterDay', 'together', 'winner', 'min', 'max']) names.add(extra);
+	const walk = (spec: FieldSpec) => {
+		if (spec.kind === 'object')
+			for (const f of spec.fields) {
+				names.add(f.key);
+				walk(f.spec);
+			}
+		else if (spec.kind === 'list') walk(spec.of);
+		else if (spec.kind === 'variants') for (const v of spec.variants) walk(v.spec);
+	};
+	for (const spec of Object.values(SETUP_SPECS)) walk(spec);
 	return names;
 }
 
 /** The guide's shape, as one line: the test pins it to `GAME_MODE_REVISION`. */
 export function guideFingerprint(): string {
-	return [...GUIDE_PARTS, ...RULE_GUIDE_PARTS]
+	return [...GUIDE_SECTIONS, ...RULE_GUIDE_SECTIONS]
 		.map(
 			(p) =>
 				`${p.part}:${p.fields.map((f) => f.name).join(',')}|${p.kinds

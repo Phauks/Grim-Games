@@ -10,7 +10,7 @@ import { createGame } from '#lib/core/engine/log.ts';
 import { testContext } from '#lib/core/model/fixtures.test-support.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { loadScript } from '#lib/core/data/script.ts';
-import { ruleSources, scriptOrderSource } from '#lib/core/modes/rule-effects.ts';
+import { ruleSources, scriptOrderSource } from '#lib/core/rules/rule-sources.ts';
 import { scriptRules, startingRuleCharacters } from './script-rules.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 

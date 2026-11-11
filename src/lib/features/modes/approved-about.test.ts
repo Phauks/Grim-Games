@@ -39,13 +39,13 @@ describe('approved Storyteller instructions', () => {
 	});
 
 	it('may approve more than one text for a part, one per setting of its rule switch', () => {
-		const key = 'plus-one:parts.information[0]';
+		const key = 'plus-one:setup.information[0]';
 		expect(instructionApproved(key, PLUS_ONE_NAMED)).toBe(true);
 		expect(
 			instructionApproved(key, 'Tell the table that one character from off the script is in play.')
 		).toBe(true);
 		expect(instructionApproved(key, `${PLUS_ONE_NAMED} `)).toBe(false);
-		expect(instructionApproved('infinite-possibilities:parts.information[0]', INFINITE_NAMED)).toBe(
+		expect(instructionApproved('infinite-possibilities:setup.information[0]', INFINITE_NAMED)).toBe(
 			true
 		);
 	});
@@ -53,7 +53,7 @@ describe('approved Storyteller instructions', () => {
 	it('approve only text a built-in mode or rule still has', () => {
 		const builtIn = [...GAME_MODES, ...SPECIAL_RULES];
 		const stale = Object.entries(APPROVED_INSTRUCTIONS).filter(([key, approved]) => {
-			const [, id, part, index] = /^([^:]+):parts\.(\w+)(?:\[(\d+)\])?$/.exec(key) ?? [];
+			const [, id, part, index] = /^([^:]+):setup\.(\w+)(?:\[(\d+)\])?$/.exec(key) ?? [];
 			const mode = builtIn.find((m) => m.id === id);
 			// A rule with a switch has a text for each setting of it.
 			const versions = mode
@@ -63,7 +63,7 @@ describe('approved Storyteller instructions', () => {
 					]
 				: [];
 			const texts = versions.map((m) => {
-				const value: unknown = m.parts[part as never];
+				const value: unknown = m.setup[part as never];
 				const item = index === undefined ? value : (value as unknown[] | undefined)?.[+index];
 				return (item as { instructions?: string } | undefined)?.instructions;
 			});
