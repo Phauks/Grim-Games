@@ -25,11 +25,12 @@ import {
 const colours = Object.keys(LAUREL_COLOURS) as LaurelColour[];
 
 describe('frames', () => {
-	it('keeps the six fixed forms first, then a laurel per leaf, with unique ids', () => {
+	it('keeps the fixed forms first, then a laurel per leaf, with unique ids', () => {
 		const ids = FRAME_FORMS.map((form) => form.id);
-		expect(ids.slice(0, 6)).toEqual([
+		expect(ids.slice(0, 7)).toEqual([
 			'ring',
 			'double-gold',
+			'studded',
 			'clock',
 			'scalloped',
 			'vines',
@@ -79,6 +80,8 @@ describe('frames', () => {
 		expect(ring).toMatchObject({ form: 'ring', colour: 'minion' });
 		expect(ring?.drawing[0].stroke).toBe(LAUREL_COLOURS.minion[0]);
 		expect(frameById('ring')?.drawing[0].stroke).toBe('var(--accent)');
+		// Studded ring joined Double ring as its own frame (Trevor, 2026-11-09).
+		expect(frameById('studded-demon')).toMatchObject({ form: 'studded', colour: 'demon' });
 		expect(frameById('double-gold-silver')).toMatchObject({
 			form: 'double-gold',
 			colour: 'silver'

@@ -9,10 +9,11 @@ function points(d: string): [number, number][] {
 
 describe('drawLaurel', () => {
 	it.each(LAUREL_FORMS)('draws %s inside the token, clear of the face', (form) => {
-		const shapes = drawLaurel({ form, colour: 'gold', closed: true });
-		// One path per layer of each branch, however many leaves: light for a full town.
-		expect(shapes.length).toBeGreaterThanOrEqual(8);
+		const shapes = drawLaurel({ form, colour: 'gold' });
+		// One path per layer, however many leaves: light for a full town.
+		expect(shapes.length).toBeGreaterThanOrEqual(4);
 		expect(shapes.length).toBeLessThanOrEqual(10);
+		expect(shapes.every((shape) => shape.shape === 'path')).toBe(true);
 		for (const shape of shapes) {
 			if (shape.shape !== 'path') continue;
 			for (const [x, y] of points(shape.d)) {
@@ -33,6 +34,26 @@ describe('drawLaurel', () => {
 		paints.delete(undefined);
 		expect([...paints].every((p) => (LAUREL_COLOURS.demon as readonly string[]).includes(p!))).toBe(
 			true
+		);
+	});
+
+	it.each(LAUREL_FORMS)('draws %s the same all the way round, so it can turn', (form) => {
+		// Trevor (2026-11-09): the old laurels "overemphasize top and bottom", and should look
+		// good while rotated. Leaf points in each quarter of the token stay close in number.
+		const quarters = [0, 0, 0, 0];
+		for (const shape of drawLaurel({ form, colour: 'gold' })) {
+			if (shape.shape !== 'path') continue;
+			for (const [x, y] of points(shape.d)) {
+				const degrees = (Math.atan2(x - 50, 50 - y) * 180) / Math.PI + 360;
+				quarters[Math.floor(degrees / 90) % 4]++;
+			}
+		}
+		expect(Math.min(...quarters) / Math.max(...quarters)).toBeGreaterThan(0.75);
+	});
+
+	it('draws the same wreath every time', () => {
+		expect(drawLaurel({ form: 'ivy', colour: 'green' })).toEqual(
+			drawLaurel({ form: 'ivy', colour: 'green' })
 		);
 	});
 
