@@ -369,11 +369,9 @@ test('a jinx is built with its partner and effects as fields (M79)', async ({ pa
 
 	// Effects are added one at a time from the jinx verbs, each with its own fields.
 	await dialog.getByRole('combobox', { name: 'Add to Empath' }).tap();
-	await page.getByRole('option', { name: 'Impairs', exact: true }).tap();
-	await expect(dialog.getByRole('combobox', { name: 'Impairs', exact: true })).toHaveText(
-		/poisoned/
-	);
+	await page.getByRole('option', { name: 'Grimoire', exact: true }).tap();
+	await expect(dialog.getByRole('combobox', { name: 'Grimoire', exact: true })).toHaveText(/all/);
 	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('rules')).toContainText('Empath Impairs poisoned');
+	await expect(page.getByTestId('rules')).toContainText('Empath Grimoire all');
 });
