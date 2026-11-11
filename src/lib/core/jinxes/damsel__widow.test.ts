@@ -49,7 +49,7 @@ describe('Damsel + Widow jinx', () => {
 
 		it("is data in the Widow's rules", () => {
 			expect(jinxRulesBetween('damsel', 'widow', committedCharacters())).toEqual({
-				impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+				patch: { when: ['partner-in-play'], parts: { impairs: { self: { reason: 'poisoned' } } } }
 			});
 		});
 

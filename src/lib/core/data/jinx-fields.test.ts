@@ -23,7 +23,7 @@ describe('jinx fields', () => {
 			empath: { impairs: 'poisoned', partnerInPlay: true },
 			chef: {
 				impairs: { kind: 'drunk', who: 'both', when: ['self-alive', { not: { day: 2 } }] },
-				deadAtLeast: 1
+				noKill: 'token'
 			}
 		};
 		expect(uncovered(JINX_FIELDS, jinxes)).toEqual([]);

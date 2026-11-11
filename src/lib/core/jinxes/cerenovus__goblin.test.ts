@@ -41,7 +41,16 @@ describe('Cerenovus + Goblin jinx', () => {
 		it("is data in the Cerenovus's rules", () => {
 			// Wiki: "The Cerenovus may choose to make a player mad that they are the Goblin."
 			expect(ownJinxRules(base.game, 'cerenovus', 'goblin', base.characters)).toEqual({
-				madAsPartner: {}
+				patch: {
+					parts: {
+						madAs: {
+							token: 'Mad',
+							mad: 'carrier',
+							choose: ['townsfolk', 'outsider'],
+							characters: ['goblin']
+						}
+					}
+				}
 			});
 			expect(madAsPartners(base.game, 'cerenovus', base.characters)).toEqual(['goblin']);
 		});

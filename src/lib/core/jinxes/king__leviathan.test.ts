@@ -58,7 +58,10 @@ describe('King + Leviathan jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'king', 'leviathan', committedCharacters())
 			).toEqual({
-				deadAtLeast: { dead: 1, when: ['partner-in-play'] }
+				patch: {
+					when: ['partner-in-play'],
+					parts: { wakesWhen: { deadAtLeastLiving: true, deadAtLeast: 1 } }
+				}
 			});
 		});
 

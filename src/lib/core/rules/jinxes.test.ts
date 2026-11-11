@@ -135,7 +135,7 @@ describe('jinx rules data', () => {
 		// The Spy's file says what happens to the Damsel (`who: "partner"`), read from her side,
 		// with the condition turned round to hers.
 		expect(jinxRulesBetween('damsel', 'spy', committedCharacters())).toEqual({
-			impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+			patch: { when: ['partner-in-play'], parts: { impairs: { self: { reason: 'poisoned' } } } }
 		});
 		expect(jinxRulesBetween('spy', 'damsel', committedCharacters())).toBeUndefined();
 		expect(jinxRulesBetween('chambermaid', 'mathematician', committedCharacters())).toBeUndefined();
@@ -146,7 +146,7 @@ describe('jinx rules data', () => {
 		expect(
 			readJinxRules(
 				{
-					a: { deadAtLeast: 1, impairs: 'drunk', notDeclared: true },
+					a: { noKill: 'token', notDeclared: true },
 					b: {
 						impairs: { who: 'both', kind: 'drunk', unlessImpaired: true },
 						grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
@@ -161,7 +161,7 @@ describe('jinx rules data', () => {
 				issues
 			)
 		).toEqual({
-			a: { deadAtLeast: { dead: 1 }, impairs: { kind: 'drunk' }, notDeclared: {} },
+			a: { noKill: { on: 'token' }, notDeclared: {} },
 			b: {
 				impairs: { who: 'both', kind: 'drunk', unlessImpaired: true },
 				grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
@@ -268,8 +268,11 @@ describe('jinx rules data', () => {
 
 	it('reports a prerequisite missing from the partner, and an effect both files set', () => {
 		const rules = new Map<string, Json>([
-			['a', { jinxes: { b: { impairs: { who: 'partner', kind: 'poisoned' } } } }],
-			['b', { jinxes: { a: { impairs: { who: 'self', kind: 'drunk' } } } }]
+			[
+				'a',
+				{ jinxes: { b: { impairs: { who: 'both', kind: 'poisoned', unlessImpaired: true } } } }
+			],
+			['b', { jinxes: { a: { impairs: { who: 'both', kind: 'drunk', unlessImpaired: true } } } }]
 		]);
 		const read = (id: string) => {
 			const raw = rules.get(id)!;
@@ -309,7 +312,7 @@ describe('jinx rules data', () => {
 			readJinxRules(
 				{
 					a: { registersTo: { alignments: ['evil'], always: true } },
-					b: { impairs: { who: 'partner', kind: 'poisoned' }, noKill: 'token' },
+					b: { impairs: { who: 'both', kind: 'poisoned', unlessImpaired: true }, noKill: 'token' },
 					c: { grimoire: { hides: 'all' } }
 				},
 				'jinxes',
@@ -317,7 +320,10 @@ describe('jinx rules data', () => {
 			)
 		).toEqual({
 			a: { registersTo: { alignments: ['evil'], always: true } },
-			b: { impairs: { who: 'partner', kind: 'poisoned' }, noKill: { on: 'token' } },
+			b: {
+				impairs: { who: 'both', kind: 'poisoned', unlessImpaired: true },
+				noKill: { on: 'token' }
+			},
 			c: { grimoire: { hides: 'all' } }
 		});
 		expect(issues.list).toEqual([]);
@@ -352,7 +358,6 @@ describe('jinx rules data', () => {
 			c: { endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' } },
 			d: { endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' } },
 			e: {
-				deadAtLeast: { dead: 1, when: ['partner-in-play'] },
 				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
 			}
 		};
@@ -372,7 +377,6 @@ describe('jinx rules data', () => {
 				c: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', day: 5 } },
 				d: { endsGame: { kind: 'sometimes', winner: 'good' } },
 				e: {
-					deadAtLeast: 0,
 					cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 2.5 }] }
 				}
 			},
@@ -389,7 +393,6 @@ describe('jinx rules data', () => {
 			'jinxes.d.endsGame.kind',
 			'jinxes.d',
 			'jinxes.e.cannotCreate.when[0].afterDay',
-			'jinxes.e.deadAtLeast.dead',
 			'jinxes.e'
 		]);
 	});
@@ -399,7 +402,11 @@ describe('jinx rules data', () => {
 		const good = {
 			a: { notDeclared: {}, keepsProtection: {}, learns: { what: 'partner-choice' } },
 			b: {
-				impairs: { who: 'partner', kind: 'no-ability', when: ['self-in-play'] },
+				patch: {
+					who: 'partner',
+					when: ['self-in-play'],
+					parts: { impairs: { self: { reason: 'no-ability' } } }
+				},
 				noExecuteNow: { player: 'partner' }
 			},
 			c: { noExecuteNow: { player: 'marked', token: 'Fear' } }
@@ -593,12 +600,21 @@ describe('jinx rules data', () => {
 				'giver',
 				{
 					rules: {
-						jinxes: { chef: { impairs: { who: 'partner' as const, kind: 'drunk' as const } } }
+						jinxes: {
+							chef: {
+								patch: {
+									who: 'partner' as const,
+									parts: { impairs: { self: { reason: 'drunk' as const } } }
+								}
+							}
+						}
 					}
 				}
 			]
 		]);
-		expect(jinxRulesBetween('chef', 'giver', custom)).toEqual({ impairs: { kind: 'drunk' } });
+		expect(jinxRulesBetween('chef', 'giver', custom)).toEqual({
+			patch: { parts: { impairs: { self: { reason: 'drunk' } } } }
+		});
 		expect(jinxRulesBetween('giver', 'chef', custom)).toBeUndefined();
 	});
 });

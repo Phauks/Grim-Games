@@ -27,10 +27,16 @@
 	},
 	"jinxes": {
 		"damsel": {
-			"impairs": {
+			"patch": {
 				"who": "partner",
-				"kind": "poisoned",
-				"when": ["self-in-play"]
+				"when": ["self-in-play"],
+				"parts": {
+					"impairs": {
+						"self": {
+							"reason": "poisoned"
+						}
+					}
+				}
 			}
 		},
 		"magician": {

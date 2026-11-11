@@ -49,7 +49,7 @@ describe('Damsel + Spy jinx', () => {
 
 		it("is data in the Spy's rules", () => {
 			expect(jinxRulesBetween('damsel', 'spy', committedCharacters())).toEqual({
-				impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+				patch: { when: ['partner-in-play'], parts: { impairs: { self: { reason: 'poisoned' } } } }
 			});
 		});
 

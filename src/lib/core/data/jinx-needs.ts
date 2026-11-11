@@ -57,7 +57,6 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	noKill: (e) =>
 		(e as NoKill).on === 'token' ? [{ on: 'other', parts: ['stopsWaking', 'stopsKilling'] }] : [],
 
-	deadAtLeast: () => [{ on: 'subject', parts: ['wakesWhen'] }],
 	partnerSetup: () => [
 		{ on: 'subject', parts: GAINS },
 		{ on: 'other', parts: ['setupModifier'] }
@@ -81,7 +80,6 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	notSecondDemon: () => [{ on: 'subject', parts: ['becomes'] }],
 	keepsAbility: () => [{ on: 'other', parts: ['keepsAbility'] }],
 	survives: () => [{ on: 'subject', parts: ['gameEnd'] }],
-	madAsPartner: () => [{ on: 'subject', parts: ['madness'] }],
 	thinksPartnerSetup: () => [{ on: 'other', parts: ['setupModifier'] }],
 	voter: () => [
 		{ on: 'subject', parts: ['voter'] },
