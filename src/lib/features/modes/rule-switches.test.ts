@@ -20,10 +20,10 @@ describe('rule switches', () => {
 
 	it('name the extra characters on +1 and Infinite Possibilities, with no range offered', () => {
 		const named = switched(plusOne, { 'plus-one:named': true });
-		expect(named.parts.information?.[0]?.instructions).toBe(PLUS_ONE_NAMED);
+		expect(named.setup.information?.[0]?.instructions).toBe(PLUS_ONE_NAMED);
 		const many = switched(infinite, { 'infinite-possibilities:named': true });
-		expect(many.parts.information).toEqual([{ instructions: INFINITE_NAMED }]);
-		expect(many.parts.pool).toMatchObject({ announceRange: false, count: { min: 1, max: 4 } });
+		expect(many.setup.information).toEqual([{ instructions: INFINITE_NAMED }]);
+		expect(many.setup.pool).toMatchObject({ announceRange: false, count: { min: 1, max: 4 } });
 		// The copy a game keeps is still a valid rule file.
 		expect(parseSpecialRule(many).ok).toBe(true);
 	});
@@ -34,8 +34,8 @@ describe('rule switches', () => {
 		const bargain = specialRuleById('djinns-bargain')!;
 		expect(switched(bargain, {})).toEqual(bargain);
 		const limited = switched(bargain, { 'djinns-bargain:three-alive': true });
-		expect(limited.parts.ruleChanges?.[0]?.instructions).toBe(
-			`${bargain.parts.ruleChanges?.[0]?.instructions} ${DJINN_THREE_ALIVE}`
+		expect(limited.setup.ruleChanges?.[0]?.instructions).toBe(
+			`${bargain.setup.ruleChanges?.[0]?.instructions} ${DJINN_THREE_ALIVE}`
 		);
 		expect(limited.rules?.onNominated).toEqual({ effect: 'nominator-may-die', minAlive: 4 });
 		expect(parseSpecialRule(limited).ok).toBe(true);
@@ -46,7 +46,7 @@ describe('rule switches', () => {
 		const rule = specialRuleById('duplicate-characters')!;
 		expect(switched(rule, {})).toEqual(rule);
 		const demons = switched(rule, { 'duplicate-characters:demons': true });
-		expect(demons.parts.duplicates).toMatchObject({
+		expect(demons.setup.duplicates).toMatchObject({
 			kind: 'allowed',
 			notTypes: [],
 			instructions: DUPLICATE_DEMONS

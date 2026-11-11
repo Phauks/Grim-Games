@@ -9,15 +9,15 @@ import { describe, expect, it } from 'vitest';
 import {
 	documentedFields,
 	GAME_MODE_REVISION,
-	GUIDE_PARTS,
+	GUIDE_SECTIONS,
 	guideFingerprint,
 	MINIMAL_EXAMPLE,
-	RULE_GUIDE_PARTS,
+	RULE_GUIDE_SECTIONS,
 	RULE_MINIMAL_EXAMPLE
 } from './format-guide.ts';
 import { SPECIAL_RULES } from './rules/index.ts';
 import { GAME_MODES } from './registry.ts';
-import { MODE_PARTS, RULE_ONLY_PARTS } from './types.ts';
+import { MODE_SECTIONS, RULE_ONLY_SECTIONS } from './types.ts';
 import { KINDS, parseGameMode, parseSpecialRule } from './validate.ts';
 
 /**
@@ -37,7 +37,8 @@ const FORMAT_HASH: Record<number, string> = {
 	14: '42776f8f462d4766',
 	15: 'bcba7e8955601c85',
 	16: '69b4100e630e5d8a',
-	17: '9ccdc45d8f63d9eb'
+	17: '9ccdc45d8f63d9eb',
+	18: 'a360b96a26001852'
 };
 
 function formatHash(): string {
@@ -63,11 +64,11 @@ function keys(value: unknown, out: Set<string>) {
 
 describe('the mode file guide', () => {
 	it('describes every part, in Inspect’s order', () => {
-		expect(GUIDE_PARTS.map((p) => p.part)).toEqual([...MODE_PARTS]);
+		expect(GUIDE_SECTIONS.map((p) => p.part)).toEqual([...MODE_SECTIONS]);
 	});
 
 	it('describes every kind the validator accepts, and no others', () => {
-		for (const p of GUIDE_PARTS)
+		for (const p of GUIDE_SECTIONS)
 			expect(
 				p.kinds.map((k) => k.kind),
 				p.part
@@ -83,8 +84,8 @@ describe('the mode file guide', () => {
 	});
 
 	it('describes every special rule part, kind and field the library uses', () => {
-		expect(RULE_GUIDE_PARTS.map((p) => p.part)).toEqual([...RULE_ONLY_PARTS]);
-		for (const p of RULE_GUIDE_PARTS)
+		expect(RULE_GUIDE_SECTIONS.map((p) => p.part)).toEqual([...RULE_ONLY_SECTIONS]);
+		for (const p of RULE_GUIDE_SECTIONS)
 			if (p.part in KINDS)
 				expect(
 					p.kinds.map((k) => k.kind),

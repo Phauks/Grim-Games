@@ -18,14 +18,14 @@ import {
 	topFields
 } from './builder.ts';
 import { fileKind } from './file-kind.ts';
-import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { FILE_GUIDE_PARTS } from './rule-guide.ts';
+import { GUIDE_SECTIONS, GUIDE_TOP } from './mode-guide.ts';
+import { FILE_GUIDE_SECTIONS } from './rule-guide.ts';
 import { parseModeOrRule } from './validate.ts';
-import { FILE_PARTS, WHOLE_GAME_PARTS } from './types.ts';
+import { FILE_SECTIONS, WHOLE_GAME_SECTIONS } from './types.ts';
 
 const allFields = () => [
 	...GUIDE_TOP,
-	...FILE_GUIDE_PARTS.flatMap((p) => [...p.fields, ...p.kinds.flatMap((k) => k.fields)])
+	...FILE_GUIDE_SECTIONS.flatMap((p) => [...p.fields, ...p.kinds.flatMap((k) => k.fields)])
 ];
 
 describe('the Mode builder form, drawn from the format guide', () => {
@@ -36,15 +36,15 @@ describe('the Mode builder form, drawn from the format guide', () => {
 
 	it('offers every part of the format, those that make a game mode apart', () => {
 		const { any, wholeGame } = buildParts();
-		expect(wholeGame.map((p) => p.part)).toEqual([...WHOLE_GAME_PARTS]);
-		expect([...any, ...wholeGame].map((p) => p.part).sort()).toEqual([...FILE_PARTS].sort());
+		expect(wholeGame.map((p) => p.part)).toEqual([...WHOLE_GAME_SECTIONS]);
+		expect([...any, ...wholeGame].map((p) => p.part).sort()).toEqual([...FILE_SECTIONS].sort());
 	});
 
 	it('leaves the kind, format, revision and parts to the builder', () => {
 		const names = topFields().map((f) => f.name);
 		expect(names).toContain('id');
 		expect(names).not.toContain('format');
-		expect(names).not.toContain('parts');
+		expect(names).not.toContain('setup');
 	});
 
 	it('reads choices from the values the guide lists', () => {
@@ -58,7 +58,7 @@ describe('the Mode builder form, drawn from the format guide', () => {
 
 	it('every part and kind, added empty, gives a file the checker reads', () => {
 		// Each kind's own fields come with every part's cite and instructions.
-		const assignment = GUIDE_PARTS.find((p) => p.part === 'assignment')!;
+		const assignment = GUIDE_SECTIONS.find((p) => p.part === 'assignment')!;
 		expect(partFields(assignment, 'draft').map((f) => f.name)).toEqual([
 			'offers',
 			'recycleUnchosen',
@@ -71,40 +71,40 @@ describe('the Mode builder form, drawn from the format guide', () => {
 		const { any, wholeGame } = buildParts();
 		for (const part of [...any, ...wholeGame]) {
 			const value = newPartValue(part);
-			const withPart = setAt(file, ['parts', part.part], part.list ? [value] : value);
+			const withPart = setAt(file, ['setup', part.part], part.list ? [value] : value);
 			// Problems may be listed (required fields), but always at the part.
 			const parsed = parseModeOrRule(withPart);
 			if (!parsed.ok)
 				for (const issue of parsed.issues)
-					expect(issue.startsWith(`parts.${part.part}`), issue).toBe(true);
+					expect(issue.startsWith(`setup.${part.part}`), issue).toBe(true);
 		}
 		// The empty file is a special rule; a whole-game part makes it a game mode.
 		expect(fileKind(file)).toBe('special-rule');
-		expect(fileKind(setAt(file, ['parts', 'counts'], { kind: 'standard' }))).toBe('game-mode');
+		expect(fileKind(setAt(file, ['setup', 'counts'], { kind: 'standard' }))).toBe('game-mode');
 	});
 });
 
 describe('editing the file', () => {
 	it('sets and removes values without touching the rest', () => {
-		const file = { name: 'A', parts: { forced: { inPlay: ['imp'] } } };
-		const next = setAt(file, ['parts', 'forced', 'onScript'], ['chef']);
-		expect(next).toEqual({ name: 'A', parts: { forced: { inPlay: ['imp'], onScript: ['chef'] } } });
-		expect(file.parts.forced).toEqual({ inPlay: ['imp'] });
-		expect(setAt(next, ['parts', 'forced', 'inPlay'], undefined)).toEqual({
+		const file = { name: 'A', setup: { forced: { inPlay: ['imp'] } } };
+		const next = setAt(file, ['setup', 'forced', 'onScript'], ['chef']);
+		expect(next).toEqual({ name: 'A', setup: { forced: { inPlay: ['imp'], onScript: ['chef'] } } });
+		expect(file.setup.forced).toEqual({ inPlay: ['imp'] });
+		expect(setAt(next, ['setup', 'forced', 'inPlay'], undefined)).toEqual({
 			name: 'A',
-			parts: { forced: { onScript: ['chef'] } }
+			setup: { forced: { onScript: ['chef'] } }
 		});
 		expect(setAt({ l: ['a', 'b'] }, ['l', 0], undefined)).toEqual({ l: ['b'] });
 	});
 
 	it('finds the problems at a field, as the checker writes their paths', () => {
-		expect(pathText(['parts', 'nightSteps', 0, 'when'])).toBe('parts.nightSteps[0].when');
+		expect(pathText(['setup', 'nightSteps', 0, 'when'])).toBe('setup.nightSteps[0].when');
 		const issues = [
-			'parts.nightSteps[0].when: must be one of x',
+			'setup.nightSteps[0].when: must be one of x',
 			'sources[1].url: must be an https link',
 			'id: bad'
 		];
-		expect(issuesAt(issues, ['parts', 'nightSteps', 0, 'when'])).toEqual(['must be one of x']);
+		expect(issuesAt(issues, ['setup', 'nightSteps', 0, 'when'])).toEqual(['must be one of x']);
 		expect(issuesAt(issues, ['sources'])).toEqual(['[1].url: must be an https link']);
 		expect(issuesAt(issues, ['name'])).toEqual([]);
 	});
@@ -112,19 +112,19 @@ describe('editing the file', () => {
 
 describe('telling a mode file from a script', () => {
 	it('reads a mode file, labelled by its parts, and not a script or a character', () => {
-		// Labelled by its parts: one that sets the whole game is a game mode.
+		// Labelled by its setup: one that sets the whole game is a game mode.
 		const counts = { kind: 'standard' };
-		expect(modeFileKind({ ...emptyFile(), parts: { counts } })).toBe('game-mode');
+		expect(modeFileKind({ ...emptyFile(), setup: { counts } })).toBe('game-mode');
 		expect(modeFileKind(emptyFile())).toBe('special-rule');
 		expect(modeFileKind([{ id: '_meta', name: 'S' }, 'washerwoman'])).toBeUndefined();
 		expect(modeFileKind({ id: 'x', name: 'X', ability: 'Each night...' })).toBeUndefined();
-		expect(modeFileKind({ format: 1, parts: [] })).toBeUndefined();
+		expect(modeFileKind({ format: 1, setup: [] })).toBeUndefined();
 		expect(modeFileKind(null)).toBeUndefined();
 	});
 });
 
 describe('the redesigned builder (Trevor, 2026-11-01)', () => {
-	const pool = GUIDE_PARTS.find((p) => p.part === 'pool')!;
+	const pool = GUIDE_SECTIONS.find((p) => p.part === 'pool')!;
 
 	it('adds Source and Storyteller instructions per part, not as a row on every part', () => {
 		const own = ownPartFields(pool, pool.kinds[0].kind).map((f) => f.name);
@@ -142,24 +142,24 @@ describe('the redesigned builder (Trevor, 2026-11-01)', () => {
 	});
 
 	it('jumps from a problem to the nearest setting that holds it', () => {
-		const paths = ['id', 'parts.pool', 'parts.pool.count', 'parts.nightSteps[0]'];
-		expect(closestPath('parts.pool.count', paths)).toBe('parts.pool.count');
-		expect(closestPath('parts.pool.kind', paths)).toBe('parts.pool');
-		expect(closestPath('parts.nightSteps[0].when', paths)).toBe('parts.nightSteps[0]');
-		expect(closestPath('parts.poolish', paths)).toBeUndefined();
+		const paths = ['id', 'setup.pool', 'setup.pool.count', 'setup.nightSteps[0]'];
+		expect(closestPath('setup.pool.count', paths)).toBe('setup.pool.count');
+		expect(closestPath('setup.pool.kind', paths)).toBe('setup.pool');
+		expect(closestPath('setup.nightSteps[0].when', paths)).toBe('setup.nightSteps[0]');
+		expect(closestPath('setup.poolish', paths)).toBeUndefined();
 	});
 
 	it('splits the JSON by part, joining back to the file exactly, in any key order', () => {
 		const file = {
 			id: 'x',
-			parts: { pool: { kind: 'script', note: '"parts": {' }, deaths: { kind: 'none' } },
+			setup: { pool: { kind: 'script', note: '"setup": {' }, deaths: { kind: 'none' } },
 			name: 'After parts'
 		};
 		const chunks = jsonChunks(file);
 		expect(chunks.map((c) => c.text).join('')).toBe(JSON.stringify(file, null, 2));
 		expect(chunks.filter((c) => c.part).map((c) => c.part)).toEqual(['pool', 'deaths']);
 		expect(chunks.find((c) => c.part === 'pool')?.text).toContain('"kind": "script"');
-		const empty = { id: 'y', parts: {} };
+		const empty = { id: 'y', setup: {} };
 		expect(
 			jsonChunks(empty)
 				.map((c) => c.text)

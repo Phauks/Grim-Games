@@ -19,7 +19,7 @@ export const BINARY_SUPERNOVAE: SpecialRule = {
 	about:
 		'One extra Demon is in play. Good wins as soon as any Demon dies by execution; a Demon killed any other way doesn’t end the game.',
 	sources: [{ title: 'Binary Supernovae (Beardy on the Clocktower)', url: PAGE }],
-	parts: {
+	setup: {
 		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
 			'If a Demon dies by execution, good wins. The Summoner removes only 1 Demon. [+1 Demon]'

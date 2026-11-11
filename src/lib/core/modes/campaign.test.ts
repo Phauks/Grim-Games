@@ -17,7 +17,7 @@ import {
 	flowCharacter,
 	nextCampaignScript
 } from './campaign.ts';
-import { NO_RESTRICTIONS, runsPart } from './pool.ts';
+import { NO_RESTRICTIONS, runsSection } from './pool.ts';
 import { gameModeById } from './registry.ts';
 
 const data = committedGameData();
@@ -201,9 +201,9 @@ describe('campaignOver', () => {
 	});
 });
 
-describe('runsPart', () => {
+describe('runsSection', () => {
 	it('runs the campaign pool and between-games rules', () => {
-		expect(runsPart(fleshAndBone, 'pool')).toBe(true);
-		expect(runsPart(fleshAndBone, 'betweenGames')).toBe(true);
+		expect(runsSection(fleshAndBone, 'pool')).toBe(true);
+		expect(runsSection(fleshAndBone, 'betweenGames')).toBe(true);
 	});
 });

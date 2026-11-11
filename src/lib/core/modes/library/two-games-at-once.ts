@@ -15,7 +15,7 @@ export const TWO_GAMES_AT_ONCE: GameMode = {
 		'The same players play two scripts at the same time, with a character in each game. No one may be the Demon in both.',
 	sources: [],
 	unconfirmed: ['pool', 'counts', 'winConditions'],
-	parts: {
+	setup: {
 		pool: { kind: 'per-town', scripts: [] },
 		towns: { count: 2, storytellers: 1, samePlayers: true, notInEveryTown: ['demon'] }
 	}

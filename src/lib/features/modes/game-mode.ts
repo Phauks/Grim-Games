@@ -10,7 +10,7 @@ import {
 	modeRule,
 	STANDARD,
 	withRules,
-	type CombinedParts,
+	type CombinedSetup,
 	type GameMode,
 	type SpecialRule
 } from '#lib/core/modes/index.ts';
@@ -20,7 +20,7 @@ import { readGameMode } from './game-mode-store.ts';
 import { readExtras } from './mode-extras.ts';
 
 /** The game's mode with its rules; undefined for a game started without one (standard). */
-export function gameModeOf(gameId: GameId): (GameMode & { parts: CombinedParts }) | undefined {
+export function gameModeOf(gameId: GameId): (GameMode & { setup: CombinedSetup }) | undefined {
 	const record = readGameMode(gameId);
 	if (!record) return undefined;
 	return withRules(findMode(record.modeId) ?? STANDARD, record.rules);
@@ -44,7 +44,7 @@ export function playedRules(gameId: GameId): SpecialRule[] {
  * Whale Buffet): every type but those named; undefined when only their own rules allow it.
  */
 export function duplicatesAllowedIn(gameId: GameId): AnyDuplicates | undefined {
-	const duplicates = gameModeOf(gameId)?.parts.duplicates;
+	const duplicates = gameModeOf(gameId)?.setup.duplicates;
 	return duplicates?.kind === 'allowed' ? { notTypes: duplicates.notTypes } : undefined;
 }
 

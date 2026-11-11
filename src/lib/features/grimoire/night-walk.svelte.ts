@@ -172,7 +172,7 @@ export class NightWalk {
 	 */
 	asleepRule = $derived.by(() => {
 		const { game, characters, rules } = this.#context();
-		const rule = rules.find((r) => r.parts.deaths?.kind === 'private')?.name;
+		const rule = rules.find((r) => r.setup.deaths?.kind === 'private')?.name;
 		const step = this.step;
 		if (!rule || !step) return undefined;
 		const holders = stepHolders(game, step, characters);
@@ -192,7 +192,7 @@ export class NightWalk {
 	emptySeatRule = $derived.by(() => {
 		const { game, characters, rules } = this.#context();
 		const rule = rules.find(
-			(r) => r.parts.seats?.kind === 'storyteller-seat' && r.parts.seats.count > 0
+			(r) => r.setup.seats?.kind === 'storyteller-seat' && r.setup.seats.count > 0
 		)?.name;
 		const step = this.step;
 		if (!rule || !step) return undefined;

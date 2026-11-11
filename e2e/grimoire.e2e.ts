@@ -5686,7 +5686,7 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		id: 'trouble',
 		name: 'Trouble',
 		sources: [{ title: 'Our group', url: 'https://example.com/trouble' }],
-		parts: {
+		setup: {
 			pool: { kind: 'all-characters' },
 			restricted: { banned: [] },
 			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
@@ -7600,7 +7600,7 @@ test('a game mode that sets a night step adds it to the night, headed by the mod
 		id: 'dead-wake',
 		name: 'Dead Wake',
 		sources: [],
-		parts: { assignment: { kind: 'bag' } },
+		setup: { assignment: { kind: 'bag' } },
 		rules: { nightWakes: [{ when: 'one-night', night: 1, dead: true }] }
 	};
 	await page.goto('/new');

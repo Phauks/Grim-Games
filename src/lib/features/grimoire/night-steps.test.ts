@@ -125,7 +125,7 @@ describe('ruleNightSteps', () => {
 	const council = {
 		id: COUNCIL_OF_THE_DEAD.id,
 		name: COUNCIL_OF_THE_DEAD.name,
-		text: COUNCIL_OF_THE_DEAD.parts.text,
+		text: COUNCIL_OF_THE_DEAD.setup.text,
 		rules: COUNCIL_OF_THE_DEAD.rules!
 	};
 	it('adds Council of the Dead on night 4 only, headed by the rule', () => {
@@ -134,7 +134,7 @@ describe('ruleNightSteps', () => {
 			{
 				kind: 'custom',
 				title: 'Council of the Dead',
-				reminder: COUNCIL_OF_THE_DEAD.parts.text?.join(' '),
+				reminder: COUNCIL_OF_THE_DEAD.setup.text?.join(' '),
 				afterDawn: false
 			}
 		]);

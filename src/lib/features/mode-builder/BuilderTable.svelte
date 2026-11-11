@@ -11,7 +11,7 @@
 		/** The header band's contents; left out, no band. */
 		head?: Snippet;
 		children: Snippet;
-		/** Where it is in the file (`parts.pool`), for jumping to it from the output. */
+		/** Where it is in the file (`setup.pool`), for jumping to it from the output. */
 		path?: string;
 		/** A part the file leaves out: shown dimmed, every control still usable. */
 		off?: boolean;

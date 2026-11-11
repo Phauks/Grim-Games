@@ -9,7 +9,7 @@
 import type { CharacterId, Script } from '#lib/core/data/types.ts';
 import type { SpecialRule } from './types.ts';
 
-const lines = (rules: readonly SpecialRule[]) => rules.flatMap((r) => r.parts.text ?? []);
+const lines = (rules: readonly SpecialRule[]) => rules.flatMap((r) => r.setup.text ?? []);
 
 export function scriptForRules(
 	script: Script,
@@ -19,14 +19,14 @@ export function scriptForRules(
 	const old = new Set(lines(before));
 	const kept = (script.meta?.bootlegger ?? []).filter((line) => !old.has(line));
 	const bootlegger = [...kept, ...lines(after)];
-	const banned = new Set<CharacterId>(after.flatMap((r) => r.parts.restricted?.banned ?? []));
+	const banned = new Set<CharacterId>(after.flatMap((r) => r.setup.restricted?.banned ?? []));
 	const entries = script.entries.filter(
 		(e) => !banned.has(e.kind === 'custom' ? e.character.id : e.id)
 	);
 	const have = new Set(entries.map((e) => (e.kind === 'custom' ? e.character.id : e.id)));
 	for (const id of after.flatMap((r) => [
-		...(r.parts.forced?.onScript ?? []),
-		...(r.parts.forced?.inPlay ?? [])
+		...(r.setup.forced?.onScript ?? []),
+		...(r.setup.forced?.inPlay ?? [])
 	])) {
 		if (have.has(id) || banned.has(id)) continue;
 		entries.push({ kind: 'official', id });

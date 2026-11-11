@@ -1,13 +1,13 @@
 <script lang="ts">
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import {
-		FILE_PARTS,
-		RULE_PARTS,
-		runsPart,
-		type CombinedParts,
+		FILE_SECTIONS,
+		RULE_SECTIONS,
+		runsSection,
+		type CombinedSetup,
 		type GameMode,
-		type ModePart,
-		type RulePart,
+		type ModeSection,
+		type RuleSection,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -37,19 +37,19 @@
 
 	const isRule = $derived(mode.kind === 'special-rule');
 	// A rule's own text is its description (shownAbout), so it isn't listed again as a part.
-	const partNames = $derived<readonly (ModePart | RulePart)[]>(
-		(mode.kind === 'special-rule' ? RULE_PARTS : FILE_PARTS).filter(
-			(part) => part !== 'text' || !mode.parts.text?.length
+	const partNames = $derived<readonly (ModeSection | RuleSection)[]>(
+		(mode.kind === 'special-rule' ? RULE_SECTIONS : FILE_SECTIONS).filter(
+			(part) => part !== 'text' || !mode.setup.text?.length
 		)
 	);
-	const parts = $derived<CombinedParts>(shownParts(mode.id, mode.parts, showsOwnWording(mode)));
+	const parts = $derived<CombinedSetup>(shownParts(mode.id, mode.setup, showsOwnWording(mode)));
 	const unconfirmed = $derived<readonly string[]>(mode.unconfirmed ?? []);
 
 	type Status = 'standard' | 'runs' | 'storyteller' | 'unconfirmed';
-	function status(part: ModePart | RulePart): Status {
+	function status(part: ModeSection | RuleSection): Status {
 		if (unconfirmed.includes(part)) return 'unconfirmed';
 		if (parts[part] === undefined) return 'standard';
-		return runsPart({ parts }, part) ? 'runs' : 'storyteller';
+		return runsSection({ setup: parts }, part) ? 'runs' : 'storyteller';
 	}
 	const STATUS_LABEL = {
 		standard: 'modes.status.standard',

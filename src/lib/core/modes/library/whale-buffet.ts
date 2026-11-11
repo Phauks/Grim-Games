@@ -20,7 +20,7 @@ export const WHALE_BUFFET: GameMode = {
 		{ title: 'Whalebuffet', url: 'https://whalebuffet.com/' },
 		{ title: 'Whalebuffet script', url: 'https://whalebuffet.com/script' }
 	],
-	parts: {
+	setup: {
 		pool: {
 			kind: 'all-characters',
 			types: ['townsfolk', 'outsider', 'minion', 'demon', 'traveller']

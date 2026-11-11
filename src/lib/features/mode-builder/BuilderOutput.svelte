@@ -2,13 +2,13 @@
 	import type { Snippet } from 'svelte';
 	import {
 		jsonChunks,
-		runsPart,
+		runsSection,
 		splitIssue,
 		type BuildKind,
-		type CombinedParts,
-		type GuidePart,
-		type ModePart,
-		type RulePart
+		type CombinedSetup,
+		type GuideSection,
+		type ModeSection,
+		type RuleSection
 	} from '#lib/core/modes/index.ts';
 	import ModeValue from '#lib/features/modes/ModeValue.svelte';
 	import { modeLabel } from '#lib/features/modes/labels.ts';
@@ -29,16 +29,16 @@
 		kind: BuildKind;
 		because: readonly string[];
 		file: Record<string, unknown>;
-		parts: readonly GuidePart[];
+		sections: readonly GuideSection[];
 		/** The checker's problems, and Save's when it refused. */
 		issues: readonly string[];
-		/** Jumps to the setting at this path (`name`, `parts.pool.count`). */
+		/** Jumps to the setting at this path (`name`, `setup.pool.count`). */
 		onJump: (path: string) => void;
 		/** Buttons at the top (Inspect, Request feature). */
 		actions?: Snippet;
 	}
 
-	let { kind, because, file, parts, issues, onJump, actions }: Props = $props();
+	let { kind, because, file, sections, issues, onJump, actions }: Props = $props();
 
 	/** "Game mode, because it sets Setup counts", or "Special rule" (Trevor, 2026-11-01). */
 	const label = $derived(
@@ -49,12 +49,12 @@
 			: t('modes.builder.makes.special-rule')
 	);
 
-	const partsValue = $derived(
-		typeof file.parts === 'object' && file.parts !== null && !Array.isArray(file.parts)
-			? (file.parts as Record<string, unknown>)
+	const setupValue = $derived(
+		typeof file.setup === 'object' && file.setup !== null && !Array.isArray(file.setup)
+			? (file.setup as Record<string, unknown>)
 			: {}
 	);
-	const shown = $derived(parts.filter((p) => partsValue[p.part] !== undefined));
+	const shown = $derived(sections.filter((p) => setupValue[p.part] !== undefined));
 	const name = $derived(typeof file.name === 'string' && file.name ? file.name : undefined);
 	const id = $derived(typeof file.id === 'string' ? file.id : '');
 	const chunks = $derived(jsonChunks(file));
@@ -62,7 +62,7 @@
 	/** Who runs a part as the file sets it, as Inspect says. */
 	function status(part: string): 'modes.status.runs' | 'modes.status.storyteller' {
 		try {
-			return runsPart({ parts: partsValue as CombinedParts }, part as ModePart | RulePart)
+			return runsSection({ setup: setupValue as CombinedSetup }, part as ModeSection | RuleSection)
 				? 'modes.status.runs'
 				: 'modes.status.storyteller';
 		} catch {
@@ -109,12 +109,12 @@
 			</li>
 			{#each shown as p (p.part)}
 				<li data-summary={p.part}>
-					<button type="button" class="entry" onclick={() => onJump(`parts.${p.part}`)}>
+					<button type="button" class="entry" onclick={() => onJump(`setup.${p.part}`)}>
 						<span class="key">
 							{modeLabel('part', p.part)}
 							<small>{t(status(p.part))}</small>
 						</span>
-						<span class="value"><ModeValue field={p.part} value={partsValue[p.part]} /></span>
+						<span class="value"><ModeValue field={p.part} value={setupValue[p.part]} /></span>
 					</button>
 				</li>
 			{/each}
@@ -130,7 +130,7 @@
 						type="button"
 						class="chunk"
 						aria-label={t('modes.builder.jumpTo', { part: modeLabel('part', at) })}
-						onclick={() => onJump(`parts.${at}`)}>{c.text}</button
+						onclick={() => onJump(`setup.${at}`)}>{c.text}</button
 					>{:else}<span>{c.text}</span>{/if}{/each}</pre>
 	</section>
 </div>

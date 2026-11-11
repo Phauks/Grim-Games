@@ -24,7 +24,7 @@ export interface SourceLink {
 }
 
 /** Every part a mode can change, in the order Inspect shows them. */
-export const MODE_PARTS = [
+export const MODE_SECTIONS = [
 	'pool',
 	'restricted',
 	'counts',
@@ -41,7 +41,7 @@ export const MODE_PARTS = [
 	'participants',
 	'betweenGames'
 ] as const;
-export type ModePart = (typeof MODE_PARTS)[number];
+export type ModeSection = (typeof MODE_SECTIONS)[number];
 
 /** Fields every part carries: where its rule comes from, and how the Storyteller runs it. */
 interface Cited {
@@ -50,7 +50,7 @@ interface Cited {
 	/**
 	 * What the Storyteller does for this part when the app doesn't run it, so the file alone
 	 * says what a game needs (Trevor, 2026-10-19: the JSON should be "self-sufficient for the
-	 * storyteller"). Required on such parts from revision 8 (validate.ts).
+	 * storyteller"). Required on such sections (validate.ts).
 	 */
 	instructions?: string;
 }
@@ -257,9 +257,9 @@ export type CampaignEnd = (typeof CAMPAIGN_ENDS)[number];
 
 /**
  * Every part a file can set (Trevor, 2026-11-01: one format for game modes and special rules).
- * The rule parts (`RuleOnlyParts`) are named for where they began; a game mode may set them too.
+ * The rule parts (`RuleOnlySetup`) are named for where they began; a game mode may set them too.
  */
-export interface ModeParts extends RuleOnlyParts {
+export interface ModeSetup extends RuleOnlySetup {
 	pool?: PoolRule;
 	restricted?: Restrictions;
 	counts?: CountsRule;
@@ -304,10 +304,10 @@ export interface GameMode {
 	 */
 	about?: string;
 	/** Parts no source confirms; Inspect marks them. */
-	unconfirmed?: FilePart[];
+	unconfirmed?: FileSection[];
 	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
 	conflictsWith?: { modes?: string[]; rules?: string[] };
-	parts: ModeParts;
+	setup: ModeSetup;
 	/** What the mode does in play, as a rules block (`FileRules`). */
 	rules?: FileRules;
 }
@@ -316,7 +316,7 @@ export interface GameMode {
  * Special rules (Trevor, 2026-10-18: "Yes, split"): a game has one game mode, and any number
  * of special rules on top. Since 2026-11-01 (Trevor: one format, auto-labelled) both are one
  * format, and a file's parts say which it is (`fileKind`): one that sets a whole-game part
- * (`WHOLE_GAME_PARTS`, or a pool other than the script) is a game mode, any other a special
+ * (`WHOLE_GAME_SECTIONS`, or a pool other than the script) is a game mode, any other a special
  * rule, so several rules can stack. The World Cup 2025 scripts carry their rule this way, as Bootlegger lines
  * (https://botc-script-viewer.sthom.kiwi/wc25/). Design:
  * /mnt/project-files/world-cup-rules/format-design.md.
@@ -324,7 +324,7 @@ export interface GameMode {
 export const SPECIAL_RULE_FORMAT = 1;
 
 /** The game mode parts a special rule may also set: the ones that add to a game. */
-export const STACKING_PARTS = [
+export const STACKING_SECTIONS = [
 	'pool',
 	'restricted',
 	'setupModifiers',
@@ -336,32 +336,32 @@ export const STACKING_PARTS = [
 	'daySteps',
 	'winConditions',
 	'participants'
-] as const satisfies readonly ModePart[];
-export type StackingPart = (typeof STACKING_PARTS)[number];
+] as const satisfies readonly ModeSection[];
+export type StackingSection = (typeof STACKING_SECTIONS)[number];
 
 /** Parts only a special rule sets, in the order Inspect shows them. */
-export const RULE_ONLY_PARTS = ['text', 'travellers', 'seats', 'deaths'] as const;
-export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
+export const RULE_ONLY_SECTIONS = ['text', 'travellers', 'seats', 'deaths'] as const;
+export type RuleOnlySection = (typeof RULE_ONLY_SECTIONS)[number];
 
 /** Every part a special rule can set. */
-export const RULE_PARTS = [...STACKING_PARTS, ...RULE_ONLY_PARTS] as const;
-export type RulePart = (typeof RULE_PARTS)[number];
+export const RULE_SECTIONS = [...STACKING_SECTIONS, ...RULE_ONLY_SECTIONS] as const;
+export type RuleSection = (typeof RULE_SECTIONS)[number];
 
 /** Every part any file can set: the game mode parts, then the rule parts. */
-export const FILE_PARTS = [...MODE_PARTS, ...RULE_ONLY_PARTS] as const;
-export type FilePart = (typeof FILE_PARTS)[number];
+export const FILE_SECTIONS = [...MODE_SECTIONS, ...RULE_ONLY_SECTIONS] as const;
+export type FileSection = (typeof FILE_SECTIONS)[number];
 
 /**
  * Parts that make a file a game mode: each sets up or deals the whole game, so a game has one
  * answer for it. A pool other than the script (or the script plus hidden characters) does too.
  */
-export const WHOLE_GAME_PARTS = [
+export const WHOLE_GAME_SECTIONS = [
 	'counts',
 	'assignment',
 	'towns',
 	'betweenGames'
-] as const satisfies readonly ModePart[];
-export type WholeGamePart = (typeof WHOLE_GAME_PARTS)[number];
+] as const satisfies readonly ModeSection[];
+export type WholeGameSection = (typeof WHOLE_GAME_SECTIONS)[number];
 
 /** Travellers dealt from the bag like other characters (Stowed Away). */
 export interface TravellersRule extends Cited {
@@ -383,7 +383,7 @@ export interface DeathsRule extends Cited {
 	kind: 'private';
 }
 
-export interface RuleOnlyParts {
+export interface RuleOnlySetup {
 	/** The rule's own lines, shown on the Bootlegger (a script's `_meta.bootlegger`). */
 	text?: string[];
 	travellers?: TravellersRule;
@@ -402,12 +402,12 @@ export interface RuleOnlyParts {
 export type FileRules = CharacterRules;
 
 /** A special rule's pool can only add to the script. */
-export type RuleParts = Omit<Pick<ModeParts, StackingPart>, 'pool'> & {
+export type RuleSetup = Omit<Pick<ModeSetup, StackingSection>, 'pool'> & {
 	pool?: Extract<PoolRule, { kind: 'script-plus-hidden' }>;
-} & RuleOnlyParts;
+} & RuleOnlySetup;
 
 /** A game mode with its special rules folded in (`combineRules`). */
-export type CombinedParts = ModeParts;
+export type CombinedSetup = ModeSetup;
 
 export interface SpecialRule {
 	/** Set by the parser from the file's parts (`fileKind`); a file need not say it. */
@@ -421,10 +421,10 @@ export interface SpecialRule {
 	sources: SourceLink[];
 	authors?: SourceLink[];
 	about?: string;
-	unconfirmed?: RulePart[];
+	unconfirmed?: RuleSection[];
 	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
 	conflictsWith?: { modes?: string[]; rules?: string[] };
-	parts: RuleParts;
+	setup: RuleSetup;
 	/** What the rule does in play, as a rules block (`FileRules`). */
 	rules?: FileRules;
 }

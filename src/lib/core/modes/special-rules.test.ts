@@ -16,14 +16,14 @@ import { fileKind, wholeGamePartsOf } from './file-kind.ts';
 
 const known = new Set(committedGameData().characters.map((c) => c.id));
 
-const rule = (id: string, parts: SpecialRule['parts'], extra: Partial<SpecialRule> = {}) =>
+const rule = (id: string, setup: SpecialRule['setup'], extra: Partial<SpecialRule> = {}) =>
 	({
 		kind: 'special-rule',
 		format: SPECIAL_RULE_FORMAT,
 		id,
 		name: id,
 		sources: [{ title: 'Rules', url: 'https://example.com/' }],
-		parts,
+		setup,
 		...extra
 	}) satisfies SpecialRule;
 
@@ -49,7 +49,7 @@ describe('reading a special rule file', () => {
 					Object.values(value).length > 0 &&
 					Object.values(value).every((v) => Array.isArray(v) && v.length === 0);
 		const found = [...SPECIAL_RULES, ...GAME_MODES].flatMap((m) =>
-			Object.entries(m.parts)
+			Object.entries(m.setup)
 				.filter(([, value]) => empty(value))
 				.map(([part]) => `${m.id}.${part}`)
 		);
@@ -75,7 +75,7 @@ describe('reading a special rule file', () => {
 					? Object.entries(value).flatMap(([k, v]) => emptyLists(v, `${path}.${k}`))
 					: [];
 		const found = [...SPECIAL_RULES, ...GAME_MODES]
-			.flatMap((m) => emptyLists(m.parts, m.id))
+			.flatMap((m) => emptyLists(m.setup, m.id))
 			.filter((path) => !meant.includes(path));
 		expect(found).toEqual([]);
 	});
@@ -83,7 +83,7 @@ describe('reading a special rule file', () => {
 	it('refuses the parts only a game mode sets, saying why', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),
-			parts: {
+			setup: {
 				assignment: { kind: 'bag' },
 				towns: { count: 2, storytellers: 2 },
 				counts: { kind: 'standard' },
@@ -92,11 +92,11 @@ describe('reading a special rule file', () => {
 			}
 		});
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'parts.assignment: deals the whole game, so the file is a game mode',
-			'parts.towns: adds towns, so the file is a game mode',
-			'parts.counts: sets up the whole game, so the file is a game mode (a rule changes counts with rules.setupModifier)',
-			'parts.betweenGames: links games, so the file is a game mode',
-			'parts.pool.kind: replaces the script, so the file is a game mode'
+			'setup.assignment: deals the whole game, so the file is a game mode',
+			'setup.towns: adds towns, so the file is a game mode',
+			'setup.counts: sets up the whole game, so the file is a game mode (a rule changes counts with rules.setupModifier)',
+			'setup.betweenGames: links games, so the file is a game mode',
+			'setup.pool.kind: replaces the script, so the file is a game mode'
 		]);
 	});
 
@@ -104,7 +104,7 @@ describe('reading a special rule file', () => {
 		const parsed = parseSpecialRule(
 			{
 				...rule('x', {}),
-				parts: {
+				setup: {
 					text: ['ok', 3],
 					travellers: { inBag: -1, announced: 'no' },
 					seats: { kind: 'storyteller-seat', count: 0, speaks: 'never' },
@@ -114,11 +114,14 @@ describe('reading a special rule file', () => {
 			known
 		);
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'parts.text: must be a list of lines',
-			'parts.travellers.inBag: must be a whole number',
-			'parts.travellers.announced: must be true or false',
-			'parts.seats.count: must be a whole number of at least 1',
-			'parts.deaths.kind: must be one of private'
+			'setup.text: must be a list of lines',
+			'setup.travellers.inBag: must be a whole number',
+			'setup.travellers.announced: must be true or false',
+			'setup.seats.count: must be a whole number of at least 1',
+			'setup.travellers.instructions: the Storyteller runs this part, so say what they do',
+			'setup.seats.instructions: the Storyteller runs this part, so say what they do',
+			'setup.deaths.kind: must be one of private',
+			'setup.deaths.instructions: the Storyteller runs this part, so say what they do'
 		]);
 	});
 
@@ -152,7 +155,7 @@ describe('reading a special rule file', () => {
 	it('refuses parts that are now in the rules block as unknown', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),
-			parts: {
+			setup: {
 				countChanges: [],
 				demonAttacks: { kind: 'script-order' },
 				abilities: { kind: 'dead-keep' },
@@ -161,11 +164,11 @@ describe('reading a special rule file', () => {
 			}
 		});
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'parts.countChanges: unknown part',
-			'parts.demonAttacks: unknown part',
-			'parts.abilities: unknown part',
-			'parts.nightSteps: unknown part',
-			'parts.nominations: unknown part'
+			'setup.countChanges: unknown section',
+			'setup.demonAttacks: unknown section',
+			'setup.abilities: unknown section',
+			'setup.nightSteps: unknown section',
+			'setup.nominations: unknown section'
 		]);
 	});
 
@@ -182,29 +185,29 @@ describe('reading a special rule file', () => {
 		delete bare.kind;
 		expect(parseModeOrRule(bare)).toEqual({ ok: true, rule: SPECIAL_RULES[0] });
 		// An older rule file that deals the game is a game mode; its kind is dropped.
-		const dealt = { ...SPECIAL_RULES[0], parts: { assignment: { kind: 'bag' } } };
+		const dealt = { ...SPECIAL_RULES[0], setup: { assignment: { kind: 'bag' } } };
 		const read = parseModeOrRule(dealt);
 		expect(read.ok && 'mode' in read && read.mode.kind).toBe(undefined);
 		expect(read.ok && 'mode' in read).toBe(true);
 		expect(wholeGamePartsOf(dealt)).toEqual(['assignment']);
-		expect(wholeGamePartsOf({ parts: { pool: { kind: 'all-characters' } } })).toEqual(['pool']);
-		expect(wholeGamePartsOf({ parts: { pool: { kind: 'script-plus-hidden' } } })).toEqual([]);
+		expect(wholeGamePartsOf({ setup: { pool: { kind: 'all-characters' } } })).toEqual(['pool']);
+		expect(wholeGamePartsOf({ setup: { pool: { kind: 'script-plus-hidden' } } })).toEqual([]);
 	});
 
 	it('lets a game mode set the rule parts too', () => {
 		const seats = parseGameMode({
 			...STANDARD,
-			parts: {
+			setup: {
 				assignment: { kind: 'bag' },
-				seats: { kind: 'storyteller-seat', count: 1, speaks: 'never' }
+				seats: { kind: 'storyteller-seat', count: 1, speaks: 'never', instructions: 'Hold it.' }
 			}
 		});
 		expect(seats.ok).toBe(true);
 		const bad = parseGameMode({
 			...STANDARD,
-			parts: { travellers: { inBag: -1, announced: true } }
+			setup: { travellers: { inBag: -1, announced: true, instructions: 'Deal them.' } }
 		});
-		expect(bad.ok ? [] : bad.issues).toEqual(['parts.travellers.inBag: must be a whole number']);
+		expect(bad.ok ? [] : bad.issues).toEqual(['setup.travellers.inBag: must be a whole number']);
 	});
 
 	it('keeps rule ids apart from mode ids and the script rule', () => {
@@ -225,34 +228,34 @@ describe('combining a mode with special rules', () => {
 			restricted: { banned: ['pithag', 'engineer'] },
 			forced: { inPlay: ['witch'] }
 		});
-		const { parts, conflicts } = combineRules(STANDARD, [a, b]);
+		const { setup, conflicts } = combineRules(STANDARD, [a, b]);
 		expect(conflicts).toEqual([]);
-		expect(parts.text).toEqual(['A.', 'B.']);
-		expect(parts.restricted?.banned).toEqual(['pithag', 'engineer']);
-		expect(parts.forced).toEqual({ inPlay: ['witch'], ruleCharacters: ['ferryman'] });
+		expect(setup.text).toEqual(['A.', 'B.']);
+		expect(setup.restricted?.banned).toEqual(['pithag', 'engineer']);
+		expect(setup.forced).toEqual({ inPlay: ['witch'], ruleCharacters: ['ferryman'] });
 	});
 
 	it("keeps the mode's own bans, and runs its day steps before a rule's", () => {
 		const whale = gameModeById('whale-buffet')!;
 		const step = { kind: 'spectator-vote' } as const;
-		const { parts } = combineRules(whale, [
+		const { setup } = combineRules(whale, [
 			rule('a', { restricted: { banned: ['chef'] }, daySteps: [step] })
 		]);
-		expect(parts.restricted?.banned).toEqual([...whale.parts.restricted!.banned, 'chef']);
-		expect(parts.restricted?.notChoosable).toEqual(whale.parts.restricted!.notChoosable);
-		expect(parts.daySteps).toEqual([step]);
+		expect(setup.restricted?.banned).toEqual([...whale.setup.restricted!.banned, 'chef']);
+		expect(setup.restricted?.notChoosable).toEqual(whale.setup.restricted!.notChoosable);
+		expect(setup.daySteps).toEqual([step]);
 	});
 
 	it('warns when two set a single-answer part differently, and keeps the first', () => {
 		const whale = gameModeById('whale-buffet')!;
-		const { parts, conflicts } = combineRules(whale, [
+		const { setup, conflicts } = combineRules(whale, [
 			rule('a', { bluffs: { kind: 'standard' } }),
 			rule('b', { deaths: { kind: 'private' } }),
 			rule('c', { deaths: { kind: 'private' } })
 		]);
 		expect(conflicts).toEqual([{ ids: ['whale-buffet', 'a'], part: 'bluffs' }]);
-		expect(parts.bluffs).toEqual(whale.parts.bluffs);
-		expect(parts.deaths).toEqual({ kind: 'private' });
+		expect(setup.bluffs).toEqual(whale.setup.bluffs);
+		expect(setup.deaths).toEqual({ kind: 'private' });
 	});
 
 	it("lets a rule's hidden extras add to a script, not to a mode that replaces it", () => {
@@ -261,7 +264,7 @@ describe('combining a mode with special rules', () => {
 			extras: { townsfolk: 1 },
 			announceRange: false
 		} as const;
-		expect(combineRules(STANDARD, [rule('a', { pool: extras })]).parts.pool).toEqual(extras);
+		expect(combineRules(STANDARD, [rule('a', { pool: extras })]).setup.pool).toEqual(extras);
 		const whale = gameModeById('whale-buffet')!;
 		expect(combineRules(whale, [rule('a', { pool: extras })]).conflicts).toEqual([
 			{ ids: ['whale-buffet', 'a'], part: 'pool' }
@@ -290,13 +293,13 @@ describe("a script's own rule", () => {
 			]
 		});
 		expect(r?.id).toBe(SCRIPT_RULE_ID);
-		expect(r?.parts.text).toHaveLength(1);
+		expect(r?.setup.text).toHaveLength(1);
 		expect(r?.rules?.setupModifier?.ops).toEqual([{ kind: 'delta', type: 'demon', values: [1] }]);
 	});
 
 	it('is plain text without brackets, and absent without lines', () => {
 		const r = scriptSpecialRule({ name: 'Seat 7', bootlegger: ['Seat 7 remains empty.'] });
-		expect(r?.parts).toEqual({ text: ['Seat 7 remains empty.'] });
+		expect(r?.setup).toEqual({ text: ['Seat 7 remains empty.'] });
 		expect(scriptSpecialRule({ name: 'x' })).toBeUndefined();
 		expect(scriptSpecialRule({ name: 'x', bootlegger: [' '] })).toBeUndefined();
 	});
@@ -307,7 +310,7 @@ describe('+1', () => {
 	const rule = (id: string) => SPECIAL_RULES.find((r) => r.id === id)!;
 
 	it('adds exactly one character from off the script, of any type', () => {
-		expect(rule('plus-one').parts.pool).toMatchObject({
+		expect(rule('plus-one').setup.pool).toMatchObject({
 			kind: 'script-plus-hidden',
 			count: { min: 1, max: 1 },
 			announceRange: false
@@ -331,7 +334,7 @@ describe('Duplicate Characters', () => {
 	const byId = (id: string) => data.characters.find((c) => c.id === id)!;
 
 	it('lets any character but a Demon have more than one copy on a standard game', () => {
-		const duplicates = combineRules(STANDARD, [rule]).parts.duplicates;
+		const duplicates = combineRules(STANDARD, [rule]).setup.duplicates;
 		expect(duplicates).toMatchObject({ kind: 'allowed', notTypes: ['demon'] });
 		const allowed = duplicates?.kind === 'allowed' ? duplicates : undefined;
 		for (const id of ['chef', 'saint', 'poisoner']) {
@@ -364,14 +367,14 @@ describe('Binary Supernovae', () => {
 	const supernovae = SPECIAL_RULES.find((r) => r.id === 'binary-supernovae')!;
 
 	it("adds a Demon through its line's bracket, as the game's Bootlegger reads it", () => {
-		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: supernovae.parts.text });
+		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: supernovae.setup.text });
 		expect(onBootlegger?.rules?.setupModifier?.ops).toEqual([
 			{ kind: 'delta', type: 'demon', values: [1] }
 		]);
 	});
 
 	it('ends the game on an executed Demon', () => {
-		expect(supernovae.parts.winConditions?.kind).toBe('demon-executed');
+		expect(supernovae.setup.winConditions?.kind).toBe('demon-executed');
 	});
 });
 
@@ -386,8 +389,8 @@ describe.each([
 
 	it('acts on a nomination and changes no counts', () => {
 		expect(found.rules?.onNominated).toEqual(onNominated);
-		expect(found.parts.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
-		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.parts.text });
+		expect(found.setup.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
+		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.setup.text });
 		expect(onBootlegger?.rules).toBeUndefined();
 	});
 });

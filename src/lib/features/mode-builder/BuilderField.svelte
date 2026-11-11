@@ -26,7 +26,7 @@
 		field: GuideField;
 		/** The part (or `file`) it belongs to, for labels read differently in one part. */
 		parent: string;
-		/** Where it is in the file, as a problem names it (`parts.pool.count`), to jump to it. */
+		/** Where it is in the file, as a problem names it (`setup.pool.count`), to jump to it. */
 		path: string;
 		value: unknown;
 		/** `undefined` leaves an optional field out of the file. */

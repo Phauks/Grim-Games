@@ -213,8 +213,8 @@
 	}
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
-	const assignment = $derived(mode?.parts.assignment?.kind);
-	const hidden = $derived(mode?.parts.pool?.kind === 'script-plus-hidden');
+	const assignment = $derived(mode?.setup.assignment?.kind);
+	const hidden = $derived(mode?.setup.pool?.kind === 'script-plus-hidden');
 	let inspecting = $state(false);
 	let spectating = $state(false);
 	let towns = $state.raw<(OpenGame | undefined)[]>([]);

@@ -14,7 +14,7 @@
 </script>
 
 <p class="why" data-testid="setup-dealt">
-	{t(mode?.parts.assignment?.kind === 'draft' ? 'setup.dealt.draft' : 'setup.dealt.choose', {
+	{t(mode?.setup.assignment?.kind === 'draft' ? 'setup.dealt.draft' : 'setup.dealt.choose', {
 		mode: mode?.name ?? ''
 	})}
 </p>

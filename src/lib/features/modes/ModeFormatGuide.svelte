@@ -3,10 +3,10 @@
 		GAME_MODE_FORMAT,
 		GAME_MODE_REVISION,
 		GUIDE_INTRO,
-		GUIDE_PARTS,
+		GUIDE_SECTIONS,
 		GUIDE_TOP,
 		MINIMAL_EXAMPLE,
-		RULE_GUIDE_PARTS,
+		RULE_GUIDE_SECTIONS,
 		gameModeById,
 		type GuideField
 	} from '#lib/core/modes/index.ts';
@@ -45,7 +45,7 @@
 		{ id: 'overview', label: t('modes.guide.overview') },
 		{ id: 'top', label: t('modes.guide.top') },
 		// One format for game modes and special rules (Trevor, 2026-11-01): every part, in order.
-		...[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].map((p) => ({
+		...[...GUIDE_SECTIONS, ...RULE_GUIDE_SECTIONS].map((p) => ({
 			id: `part:${p.part}`,
 			label: modeLabel('part', p.part)
 		})),
@@ -54,7 +54,7 @@
 	// Opens on the overview; on a phone, Back shows the list of sections.
 	let current = $state<string | undefined>('overview');
 	const part = $derived(
-		[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].find((p) => `part:${p.part}` === current)
+		[...GUIDE_SECTIONS, ...RULE_GUIDE_SECTIONS].find((p) => `part:${p.part}` === current)
 	);
 
 	let body = $state<HTMLElement>();

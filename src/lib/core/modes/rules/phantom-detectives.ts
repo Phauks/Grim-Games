@@ -18,7 +18,7 @@ export const PHANTOM_DETECTIVES: SpecialRule = {
 	about:
 		'Townsfolk have no ability while alive and gain it when they die. Every other dead player keeps their ability, except the Demon.',
 	sources: [{ title: 'The Phantom Detectives (Schnauzer Club)', url: PAGE }],
-	parts: {
+	setup: {
 		// The author's rule, quoted.
 		text: [
 			'Dead players (not Demons) keep their abilities.',

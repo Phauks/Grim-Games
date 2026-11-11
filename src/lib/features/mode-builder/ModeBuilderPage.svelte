@@ -66,8 +66,8 @@
 	const groups = buildParts();
 	const parts = [...groups.any, ...groups.wholeGame];
 	const partsValue = $derived(
-		typeof file.parts === 'object' && file.parts !== null
-			? (file.parts as Record<string, unknown>)
+		typeof file.setup === 'object' && file.setup !== null
+			? (file.setup as Record<string, unknown>)
 			: {}
 	);
 	const parsed = $derived(parseModeOrRule(file, known));
@@ -98,7 +98,7 @@
 	/** Save's own problems first, then the checker's. */
 	const shownIssues = $derived([...saveIssues, ...issues.filter((i) => !saveIssues.includes(i))]);
 	function problemsIn(part: string) {
-		const at = `parts.${part}`;
+		const at = `setup.${part}`;
 		return shownIssues.filter((i) => {
 			const { path } = splitIssue(i);
 			return path === at || path.startsWith(`${at}.`) || path.startsWith(`${at}[`);
@@ -306,7 +306,7 @@
 								{part}
 								value={partsValue[part.part]}
 								problems={problemsIn(part.part)}
-								onChange={(v) => set(['parts', part.part], v)}
+								onChange={(v) => set(['setup', part.part], v)}
 								onGuide={guide}
 							/>
 						{/each}
@@ -317,7 +317,7 @@
 						{kind}
 						because={wholeGamePartsOf(file)}
 						{file}
-						{parts}
+						sections={parts}
 						issues={shownIssues}
 						onJump={jump}
 					>

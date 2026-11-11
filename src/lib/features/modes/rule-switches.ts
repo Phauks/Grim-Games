@@ -44,12 +44,12 @@ const EXTRAS: readonly RuleSwitch[] = [
 		apply: (rule, on) => {
 			if (!on) return rule;
 			const text = rule.id === 'plus-one' ? PLUS_ONE_NAMED : INFINITE_NAMED;
-			const [first, ...rest] = rule.parts.information ?? [];
-			const pool = rule.parts.pool;
+			const [first, ...rest] = rule.setup.information ?? [];
+			const pool = rule.setup.pool;
 			return {
 				...rule,
-				parts: {
-					...rule.parts,
+				setup: {
+					...rule.setup,
 					// Naming them says more than a range, so no range is offered.
 					...(pool?.kind === 'script-plus-hidden'
 						? { pool: { ...pool, announceRange: false } }
@@ -77,15 +77,15 @@ const DJINN: readonly RuleSwitch[] = [
 		default: false,
 		apply: (rule, on) => {
 			if (!on) return rule;
-			const [first, ...rest] = rule.parts.ruleChanges ?? [];
+			const [first, ...rest] = rule.setup.ruleChanges ?? [];
 			return {
 				...rule,
 				// The prompt on a nomination is offered only while 4 or more live.
 				...(rule.rules?.onNominated
 					? { rules: { ...rule.rules, onNominated: { ...rule.rules.onNominated, minAlive: 4 } } }
 					: {}),
-				parts: {
-					...rule.parts,
+				setup: {
+					...rule.setup,
 					ruleChanges: [
 						{ ...first, instructions: `${first?.instructions ?? ''} ${DJINN_THREE_ALIVE}`.trim() },
 						...rest
@@ -110,12 +110,12 @@ const DUPLICATES: readonly RuleSwitch[] = [
 		label: () => 'modes.switch.duplicateDemons',
 		default: false,
 		apply: (rule, on) => {
-			const duplicates = rule.parts.duplicates;
+			const duplicates = rule.setup.duplicates;
 			if (!on || duplicates?.kind !== 'allowed') return rule;
 			return {
 				...rule,
-				parts: {
-					...rule.parts,
+				setup: {
+					...rule.setup,
 					duplicates: {
 						...duplicates,
 						notTypes: duplicates.notTypes?.filter((type) => type !== 'demon'),

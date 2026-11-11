@@ -8,7 +8,7 @@
 		setAt,
 		setPartAt,
 		type GuideField,
-		type GuidePart
+		type GuideSection
 	} from '#lib/core/modes/index.ts';
 	import { fieldLabel, modeLabel } from '#lib/features/modes/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -34,7 +34,7 @@
 	 * and notes.
 	 */
 	interface Props {
-		part: GuidePart;
+		part: GuideSection;
 		value: unknown;
 		/** `undefined` leaves the part out of the file (played as standard). */
 		onChange: (value: unknown) => void;
@@ -46,7 +46,7 @@
 	let { part, value, onChange, problems, onGuide }: Props = $props();
 
 	const name = $derived(modeLabel('part', part.part));
-	const path = $derived(`parts.${part.part}`);
+	const path = $derived(`setup.${part.part}`);
 	const section = $derived(`part:${part.part}`);
 	const off = $derived(value === undefined);
 	const items = $derived(Array.isArray(value) ? value : []);

@@ -15,7 +15,7 @@ export const DUPLICATE_CHARACTERS: SpecialRule = {
 	// Trevor's own wording (2026-10-24).
 	about: 'There can be multiple copies of characters in the bag.',
 	sources: [],
-	parts: {
+	setup: {
 		duplicates: {
 			kind: 'allowed',
 			extrasMayBeDrunk: false,

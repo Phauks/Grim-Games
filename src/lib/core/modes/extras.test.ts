@@ -12,7 +12,7 @@ import {
 	extraTotal,
 	rollExtras
 } from './extras.ts';
-import { NO_RESTRICTIONS, runsPart } from './pool.ts';
+import { NO_RESTRICTIONS, runsSection } from './pool.ts';
 import { withRules } from './combine.ts';
 import { STANDARD } from './registry.ts';
 import { INFINITE_POSSIBILITIES, specialRuleById, SPECTERS } from './rules/index.ts';
@@ -75,9 +75,9 @@ describe('announcedRange', () => {
 	});
 });
 
-describe('runsPart', () => {
+describe('runsSection', () => {
 	it('runs the hidden extras pool itself', () => {
-		expect(runsPart(infinite, 'pool')).toBe(true);
+		expect(runsSection(infinite, 'pool')).toBe(true);
 	});
 });
 

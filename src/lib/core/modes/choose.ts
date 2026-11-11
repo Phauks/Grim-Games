@@ -30,9 +30,9 @@ export function chooseOptions(
 	type: SeatedType,
 	taken: readonly CharacterId[] = []
 ): Character[] {
-	const onlyFor = mode.parts.restricted?.onlyFor ?? [];
+	const onlyFor = mode.setup.restricted?.onlyFor ?? [];
 	const reserved = new Map(onlyFor.map((o) => [o.characterId, o.type]));
-	const duplicates = mode.parts.duplicates?.kind === 'allowed';
+	const duplicates = mode.setup.duplicates?.kind === 'allowed';
 	const used = new Set(duplicates ? [] : taken);
 	return pickableCharacters(mode, characters).filter((c) => {
 		if (used.has(c.id)) return false;

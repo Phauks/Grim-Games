@@ -21,8 +21,8 @@
 
 	let { open = $bindable(), mode, characters, restrictions, onChange }: Props = $props();
 
-	const modeBans = $derived(new Set(mode.parts.restricted?.banned ?? []));
-	const notChoosable = $derived(new Set(mode.parts.restricted?.notChoosable ?? []));
+	const modeBans = $derived(new Set(mode.setup.restricted?.banned ?? []));
+	const notChoosable = $derived(new Set(mode.setup.restricted?.notChoosable ?? []));
 	const banned = $derived([...bannedIn(mode, restrictions)]);
 	let query = $state('');
 

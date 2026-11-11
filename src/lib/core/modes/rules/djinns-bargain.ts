@@ -20,7 +20,7 @@ export const DJINNS_BARGAIN: SpecialRule = {
 	about:
 		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.',
 	sources: [{ title: 'The Djinn’s Bargain (Beardy on the Clocktower)', url: PAGE }],
-	parts: {
+	setup: {
 		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
 			'A player who nominates may choose to die.',

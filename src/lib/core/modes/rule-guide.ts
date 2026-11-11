@@ -3,10 +3,10 @@
  * 2026-11-01 any file may set them, a game mode too (Trevor: one format for both).
  */
 import { SPECIAL_RULE_FORMAT } from './types.ts';
-import { GAME_MODE_REVISION, type GuidePart } from './guide-fields.ts';
-import { GUIDE_PARTS } from './mode-guide.ts';
+import { GAME_MODE_REVISION, type GuideSection } from './guide-fields.ts';
+import { GUIDE_SECTIONS } from './mode-guide.ts';
 
-export const RULE_GUIDE_PARTS: GuidePart[] = [
+export const RULE_GUIDE_SECTIONS: GuideSection[] = [
 	{
 		part: 'text',
 		list: true,
@@ -74,7 +74,7 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 ];
 
 /** Every part any file can set, in the guide's order. */
-export const FILE_GUIDE_PARTS: GuidePart[] = [...GUIDE_PARTS, ...RULE_GUIDE_PARTS];
+export const FILE_GUIDE_SECTIONS: GuideSection[] = [...GUIDE_SECTIONS, ...RULE_GUIDE_SECTIONS];
 
 /** The least a special rule needs: one line of text. */
 export const RULE_MINIMAL_EXAMPLE = {
@@ -83,5 +83,5 @@ export const RULE_MINIMAL_EXAMPLE = {
 	id: 'house-rule',
 	name: 'House rule',
 	sources: [{ title: 'Our group’s house rules', url: 'https://example.com/house-rules' }],
-	parts: { text: ['Our house rule.'] }
+	setup: { text: ['Our house rule.'] }
 };

@@ -24,7 +24,7 @@ export function requiredInBag(gameId: GameId): Map<CharacterId, string> {
 	const mode = findMode(record.modeId) ?? STANDARD;
 	for (const id of inPlayFor(mode)) out.set(id, mode.name);
 	for (const rule of record.rules) {
-		for (const id of rule.parts.forced?.inPlay ?? []) if (!out.has(id)) out.set(id, rule.name);
+		for (const id of rule.setup.forced?.inPlay ?? []) if (!out.has(id)) out.set(id, rule.name);
 	}
 	return out;
 }

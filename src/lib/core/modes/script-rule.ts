@@ -40,7 +40,7 @@ export function scriptSpecialRule(
 		id: SCRIPT_RULE_ID,
 		name: meta?.name?.trim() || 'Script',
 		sources: [],
-		parts: { text },
+		setup: { text },
 		...(modifier?.ops.length
 			? { rules: { setupModifier: { summary: modifier.summary, ops: [...modifier.ops] } } }
 			: {})

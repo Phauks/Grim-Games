@@ -6,7 +6,7 @@ import { gameModeOf } from './game-mode.ts';
 /** Whether the game's mode or rules give spectators a vote (Specters), for a link from its board. */
 export function hasSpectatorVote(gameId: GameId): boolean {
 	const mode = gameModeOf(gameId);
-	return mode?.parts.daySteps?.some((s) => s.kind === 'spectator-vote') === true;
+	return mode?.setup.daySteps?.some((s) => s.kind === 'spectator-vote') === true;
 }
 
 /**

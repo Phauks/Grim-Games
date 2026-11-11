@@ -6,10 +6,10 @@
  * Design: /mnt/project-files/world-cup-rules/format-design.md.
  */
 import type {
-	CombinedParts,
+	CombinedSetup,
 	ForcedRule,
 	GameMode,
-	ModeParts,
+	ModeSetup,
 	Restrictions,
 	SpecialRule
 } from './types.ts';
@@ -22,17 +22,17 @@ export interface RuleConflict {
 	 * The part both set differently, or `rules.<part>` for a part of both rules blocks; absent
 	 * when a rule lists the other in `conflictsWith`.
 	 */
-	part?: keyof CombinedParts | `rules.${string}`;
+	part?: keyof CombinedSetup | `rules.${string}`;
 }
 
 export interface Combined {
-	parts: CombinedParts;
+	setup: CombinedSetup;
 	conflicts: RuleConflict[];
 }
 
 /**
  * Parts with one answer per game: a second, different answer is a conflict. The whole-game
- * parts are here too (Trevor, 2026-11-01), though only a game mode sets them (`fileKind`).
+ * setup are here too (Trevor, 2026-11-01), though only a game mode sets them (`fileKind`).
  */
 const SINGLE = [
 	'pool',
@@ -48,7 +48,7 @@ const SINGLE = [
 	'travellers',
 	'seats',
 	'deaths'
-] as const satisfies readonly (keyof CombinedParts)[];
+] as const satisfies readonly (keyof CombinedSetup)[];
 
 /** Parts that are lists: every file's items, in order. */
 const LISTS = [
@@ -56,26 +56,26 @@ const LISTS = [
 	'information',
 	'daySteps',
 	'text'
-] as const satisfies readonly (keyof CombinedParts)[];
+] as const satisfies readonly (keyof CombinedSetup)[];
 
 export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Combined {
-	const parts: CombinedParts = { ...mode.parts };
+	const setup: CombinedSetup = { ...mode.setup };
 	const conflicts: RuleConflict[] = [];
 	// Who set each single-answer part, for naming a conflict.
-	const setBy = new Map<keyof CombinedParts, string>();
+	const setBy = new Map<keyof CombinedSetup, string>();
 	for (const key of SINGLE)
-		if (mode.parts[key as keyof ModeParts] !== undefined) setBy.set(key, mode.id);
+		if (mode.setup[key as keyof ModeSetup] !== undefined) setBy.set(key, mode.id);
 
 	for (const rule of rules) {
-		const add: CombinedParts = rule.parts;
+		const add: CombinedSetup = rule.setup;
 		for (const key of SINGLE) {
 			const value = add[key];
 			if (value === undefined) continue;
-			const current = parts[key];
+			const current = setup[key];
 			// A mode's pool of plain script is the standard one, which a rule's pool may add to.
-			const standard = key === 'pool' && parts.pool?.kind === 'script';
+			const standard = key === 'pool' && setup.pool?.kind === 'script';
 			if (current === undefined || standard) {
-				Object.assign(parts, { [key]: value });
+				Object.assign(setup, { [key]: value });
 				setBy.set(key, rule.id);
 			} else if (!same(current, value)) {
 				conflicts.push({ ids: [setBy.get(key) ?? mode.id, rule.id], part: key });
@@ -83,10 +83,10 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 		}
 		for (const key of LISTS) {
 			const items = add[key];
-			if (items?.length) Object.assign(parts, { [key]: [...(parts[key] ?? []), ...items] });
+			if (items?.length) Object.assign(setup, { [key]: [...(setup[key] ?? []), ...items] });
 		}
-		if (add.restricted) parts.restricted = joinRestrictions(parts.restricted, add.restricted);
-		if (add.forced) parts.forced = joinForced(parts.forced, add.forced);
+		if (add.restricted) setup.restricted = joinRestrictions(setup.restricted, add.restricted);
+		if (add.forced) setup.forced = joinForced(setup.forced, add.forced);
 	}
 
 	// Rules blocks stay each file's own (a rule source each, `rule-effects.ts`), but two that set
@@ -111,7 +111,7 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 				conflicts.push({ ids });
 		}
 	}
-	return { parts, conflicts };
+	return { setup, conflicts };
 }
 
 function same(a: unknown, b: unknown): boolean {
@@ -152,10 +152,10 @@ function joinForced(a: ForcedRule | undefined, b: ForcedRule): ForcedRule {
 	};
 }
 
-/** The mode as the game plays it: its parts with the rules folded in (conflicts aside). */
+/** The mode as the game plays it: its setup with the rules folded in (conflicts aside). */
 export function withRules(
 	mode: GameMode,
 	rules: readonly SpecialRule[]
-): GameMode & { parts: CombinedParts } {
-	return rules.length ? { ...mode, parts: combineRules(mode, rules).parts } : mode;
+): GameMode & { setup: CombinedSetup } {
+	return rules.length ? { ...mode, setup: combineRules(mode, rules).setup } : mode;
 }

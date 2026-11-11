@@ -1147,7 +1147,7 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 		id: 'tiny-buffet',
 		name: 'Tiny Buffet',
 		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
-		parts: {
+		setup: {
 			pool: { kind: 'all-characters' },
 			restricted: { banned: ['pithag'] },
 			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
@@ -1157,13 +1157,13 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText(
-		'parts.assignment.instructions: the Storyteller runs this part'
+		'setup.assignment.instructions: the Storyteller runs this part'
 	);
 	const instructions = 'Each player picks any character of the type they drew.';
-	mine.parts.assignment = {
-		...mine.parts.assignment,
+	mine.setup.assignment = {
+		...mine.setup.assignment,
 		instructions
-	} as typeof mine.parts.assignment;
+	} as typeof mine.setup.assignment;
 	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog).toHaveCount(0);
@@ -2356,7 +2356,7 @@ test('built-in special rules have no Delete; custom rules sit beneath, shared by
 		id: 'house-rule',
 		name: 'Our House Rule',
 		sources: [{ title: 'Our group', url: 'https://example.com/house' }],
-		parts: { text: ['Our house rule.'] }
+		setup: { text: ['Our house rule.'] }
 	};
 	await dialog.getByRole('button', { name: 'Add mode' }).tap();
 	const add = page.getByRole('dialog', { name: 'Add a game mode' });
@@ -2399,7 +2399,7 @@ test('a custom game mode can be shared; a built-in one cannot', async ({ page })
 			name: 'Tiny Mode',
 			sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
 			// Dealt from the bag: a whole-game part, so the file is a game mode (2026-11-01).
-			parts: { assignment: { kind: 'bag' }, restricted: { banned: ['pithag'] } }
+			setup: { assignment: { kind: 'bag' }, restricted: { banned: ['pithag'] } }
 		})
 	);
 	await add.getByRole('button', { name: 'Confirm' }).tap();

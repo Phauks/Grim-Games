@@ -243,7 +243,7 @@
 	 * that many fewer players). Otherwise a selected Traveller is one more player.
 	 */
 	const travellersInBag = $derived(
-		game ? (gameModeOf(game.gameId)?.parts.travellers?.inBag ?? 0) : 0
+		game ? (gameModeOf(game.gameId)?.setup.travellers?.inBag ?? 0) : 0
 	);
 	/** Characters may have several copies (Duplicate Characters, Trevor 2026-10-24). */
 	const duplicatesAllowed = $derived(game ? duplicatesAllowedIn(game.gameId) : undefined);

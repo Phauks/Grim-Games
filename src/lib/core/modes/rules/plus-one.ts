@@ -16,7 +16,7 @@ export const PLUS_ONE: SpecialRule = {
 		'1 Character not on the script is added to the bag. This character may or may not be announced.',
 	aliases: ['Plus One'],
 	sources: [],
-	parts: {
+	setup: {
 		pool: {
 			kind: 'script-plus-hidden',
 			// One row per type; exactly one of them is filled (count).

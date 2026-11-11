@@ -20,5 +20,5 @@ export const STANDARD: GameMode = {
 		{ title: 'Blood on the Clocktower', url: TPI }
 	],
 	authors: [{ title: 'The Pandemonium Institute', url: TPI }],
-	parts: {}
+	setup: {}
 };

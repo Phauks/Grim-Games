@@ -3,7 +3,7 @@
  * mode dialog and the Mode builder (format-guide.ts). One format for both since 2026-11-01
  * (Trevor: "One format, auto-labelled").
  */
-import { CAMPAIGN_ENDS, FILE_PARTS, GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
+import { CAMPAIGN_ENDS, FILE_SECTIONS, GAME_MODE_FORMAT, WHOLE_GAME_SECTIONS } from './types.ts';
 import {
 	counts,
 	GAME_MODE_REVISION,
@@ -11,16 +11,16 @@ import {
 	SEATED,
 	TYPES,
 	type GuideField,
-	type GuidePart
+	type GuideSection
 } from './guide-fields.ts';
 
 export const GUIDE_INTRO = [
-	'A game mode and a special rule are written the same way: one JSON object. Paste it, or open a .json file, in Add mode, or make one in the Mode builder. Every problem is listed with where it is (for example parts.assignment.offers), so a file can be fixed in one go.',
-	`The app labels each file from its parts. A file that sets ${WHOLE_GAME_PARTS.join(', ')}, or a pool other than script or script-plus-hidden, sets up the whole game, so it is a game mode: a game has one, picked on New game. Any other file only adds to a game, so it is a special rule: a game can have any number.`,
-	'When the mode and its rules, or two rules, set the same one-answer part differently, New game warns and the Storyteller decides. Lists are joined and count changes add up.',
+	'A game mode and a special rule are written the same way: one JSON object. Paste it, or open a .json file, in Add mode, or make one in the Mode builder. Every problem is listed with where it is (for example setup.assignment.offers), so a file can be fixed in one go.',
+	`The app labels each file from its setup. A file that sets ${WHOLE_GAME_SECTIONS.join(', ')}, or a pool other than script or script-plus-hidden, sets up the whole game, so it is a game mode: a game has one, picked on New game. Any other file only adds to a game, so it is a special rule: a game can have any number.`,
+	'When the mode and its rules, or two rules, set the same one-answer section differently, New game warns and the Storyteller decides. Lists are joined and count changes add up.',
 	'Start from a built-in mode or rule: Inspect shows its whole file.',
 	'Character ids are the official ones, lower case with no spaces or dashes (pithag, bountyhunter). Unknown ids are refused.',
-	'Every part is optional. A part left out is played as standard, and the app runs it. A part the app can’t run yet is shown in Inspect as run by the Storyteller.',
+	'Every setup section is optional. A section left out is played as standard, and the app runs it. A section the app can’t run yet is shown in Inspect as run by the Storyteller.',
 	'Links must start with https://. A mode names its sources, if a page describes it, and an author only with a link to a page that names them.'
 ];
 
@@ -75,10 +75,10 @@ export const GUIDE_TOP: GuideField[] = [
 	},
 	{
 		name: 'unconfirmed',
-		type: 'list of part names',
+		type: 'list of setup section names',
 		required: false,
-		about: 'Parts no source confirms. Inspect marks them.',
-		values: FILE_PARTS
+		about: 'Setup sections no source confirms. Inspect marks them.',
+		values: FILE_SECTIONS
 	},
 	{
 		name: 'conflictsWith',
@@ -88,10 +88,11 @@ export const GUIDE_TOP: GuideField[] = [
 			'{ "modes": [ids], "rules": [ids] }: modes and rules this one can’t sensibly be played with. Choosing both warns on New game.'
 	},
 	{
-		name: 'parts',
+		name: 'setup',
 		type: 'object',
 		required: true,
-		about: 'What the file changes, by part (below). Every part is optional.'
+		about:
+			'What the file changes in the game’s setup, by section (below). Every section is optional.'
 	},
 	{
 		name: 'rules',
@@ -102,7 +103,7 @@ export const GUIDE_TOP: GuideField[] = [
 	}
 ];
 
-export const GUIDE_PARTS: GuidePart[] = [
+export const GUIDE_SECTIONS: GuideSection[] = [
 	{
 		part: 'pool',
 		list: false,
@@ -563,5 +564,5 @@ export const MINIMAL_EXAMPLE = {
 	id: 'no-pit-hag',
 	name: 'No Pit-Hag',
 	sources: [{ title: 'Our group’s house rules', url: 'https://example.com/house-rules' }],
-	parts: { restricted: { banned: ['pithag'] } }
+	setup: { restricted: { banned: ['pithag'] } }
 };

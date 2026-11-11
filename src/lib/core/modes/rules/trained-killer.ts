@@ -18,7 +18,7 @@ export const TRAINED_KILLER: SpecialRule = {
 	about:
 		'The Demon doesn’t choose who to attack. Each night after the first, it attacks the next living in-play character in script order.',
 	sources: [{ title: 'Trained Killer (Beardy on the Clocktower)', url: PAGE }],
-	parts: {
+	setup: {
 		// The author's rule, quoted.
 		text: ['Each night*, the Demon attacks the next living in-play character(s) in script order.'],
 		ruleChanges: [

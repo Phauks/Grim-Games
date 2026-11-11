@@ -39,14 +39,14 @@
 	let { open = $bindable(), game, mode }: Props = $props();
 
 	const step = $derived(
-		mode.parts.daySteps?.find(
+		mode.setup.daySteps?.find(
 			(s): s is Extract<DayStep, { kind: 'spectator-vote' }> => s.kind === 'spectator-vote'
 		)
 	);
 
 	/** The mode or rules that give the spectators a vote, shown at the top. */
 	const spawning = $derived(
-		spawnedBy(game.gameId, (f) => !!f.parts.daySteps?.some((s) => s.kind === 'spectator-vote'))
+		spawnedBy(game.gameId, (f) => !!f.setup.daySteps?.some((s) => s.kind === 'spectator-vote'))
 	);
 
 	let data = $state.raw<GameData>();

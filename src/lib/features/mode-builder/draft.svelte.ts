@@ -57,7 +57,7 @@ export function isEmptyDraft(d: ModeDraft): boolean {
 		!d.editing &&
 		!f.id &&
 		!f.name &&
-		(!isObject(f.parts) || Object.keys(f.parts).length === 0) &&
+		(!isObject(f.setup) || Object.keys(f.setup).length === 0) &&
 		(!Array.isArray(f.sources) || f.sources.length === 0)
 	);
 }

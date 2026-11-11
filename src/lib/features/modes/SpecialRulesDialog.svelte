@@ -95,7 +95,7 @@
 		const q = term.trim().toLocaleLowerCase();
 		if (!q) return rules;
 		return rules.filter((rule) =>
-			[rule.name, ...(rule.aliases ?? []), shownAbout(rule) ?? rule.parts.text?.join(' ') ?? '']
+			[rule.name, ...(rule.aliases ?? []), shownAbout(rule) ?? rule.setup.text?.join(' ') ?? '']
 				.join(' ')
 				.toLocaleLowerCase()
 				.includes(q)
@@ -114,7 +114,7 @@
 			: t('modes.conflictListed', { first, second });
 	}
 	const description = (m: GameMode | SpecialRule) =>
-		shownAbout(m) ?? m.parts.text?.join(' ') ?? t('common.none');
+		shownAbout(m) ?? m.setup.text?.join(' ') ?? t('common.none');
 
 	function toggle(id: string, on: boolean) {
 		onChange(on ? [...ruleIds.filter((x) => x !== id), id] : ruleIds.filter((x) => x !== id));

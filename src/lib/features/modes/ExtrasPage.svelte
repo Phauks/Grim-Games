@@ -21,7 +21,7 @@
 	const gameId = $derived(game.gameId);
 	const started = $derived(setupComplete(game));
 	/** The mode or rules that hide characters, shown at the top. */
-	const spawning = $derived(spawnedBy(gameId, (f) => f.parts.pool?.kind === 'script-plus-hidden'));
+	const spawning = $derived(spawnedBy(gameId, (f) => f.setup.pool?.kind === 'script-plus-hidden'));
 </script>
 
 <Page title={t('modes.extras.title')}>

@@ -4,7 +4,7 @@
  * puts on the script (part 7).
  */
 import type { Character, CharacterId, Script } from '#lib/core/data/types.ts';
-import type { CombinedParts, GameMode, ModePart, RulePart } from './types.ts';
+import type { CombinedSetup, GameMode, ModeSection, RuleSection } from './types.ts';
 import { isBagDisabled, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
@@ -22,7 +22,7 @@ export const NO_RESTRICTIONS: StorytellerRestrictions = { banned: [], allowed: [
 /** Every character banned in this game. */
 export function bannedIn(mode: GameMode, own: StorytellerRestrictions): Set<CharacterId> {
 	const allowed = new Set(own.allowed);
-	const banned = new Set((mode.parts.restricted?.banned ?? []).filter((id) => !allowed.has(id)));
+	const banned = new Set((mode.setup.restricted?.banned ?? []).filter((id) => !allowed.has(id)));
 	for (const id of own.banned) banned.add(id);
 	return banned;
 }
@@ -39,7 +39,7 @@ export function modeCharacters(
 	own: StorytellerRestrictions = NO_RESTRICTIONS
 ): Character[] {
 	const banned = bannedIn(mode, own);
-	const pool = mode.parts.pool;
+	const pool = mode.setup.pool;
 	const base =
 		pool?.kind === 'all-characters'
 			? official.filter((c) =>
@@ -52,7 +52,7 @@ export function modeCharacters(
 	const forced =
 		pool?.kind === 'per-town'
 			? []
-			: [...(mode.parts.forced?.onScript ?? []), ...(mode.parts.forced?.inPlay ?? [])];
+			: [...(mode.setup.forced?.onScript ?? []), ...(mode.setup.forced?.inPlay ?? [])];
 	for (const id of forced) {
 		const character = official.find((c) => c.id === id);
 		if (character && !have.has(id) && !banned.has(id)) {
@@ -78,7 +78,7 @@ export function modeScript(
 	const out: Script = {
 		...script,
 		meta:
-			mode.parts.pool?.kind === 'all-characters'
+			mode.setup.pool?.kind === 'all-characters'
 				? { ...script.meta, name: mode.name }
 				: script.meta,
 		entries: characters.map((c) => custom.get(c.id) ?? { kind: 'official', id: c.id })
@@ -91,19 +91,19 @@ export function modeScript(
  * single game the mode's `forced.inPlay`.
  */
 export function inPlayFor(mode: GameMode, town = 0): CharacterId[] {
-	const perTown = mode.parts.towns?.inPlay;
+	const perTown = mode.setup.towns?.inPlay;
 	if (perTown) return perTown[town] ?? [];
-	return mode.parts.forced?.inPlay ?? [];
+	return mode.setup.forced?.inPlay ?? [];
 }
 
 /** Whether the Demon learns bluffs in this mode (no: Sushi Buffet, Whale Buffet). */
 export function demonBluffs(mode: GameMode): boolean {
-	return mode.parts.bluffs?.kind !== 'none';
+	return mode.setup.bluffs?.kind !== 'none';
 }
 
 /** Characters players may choose or be offered: the game's, less those that can't be chosen. */
 export function choosableCharacters(mode: GameMode, characters: readonly Character[]): Character[] {
-	const not = new Set(mode.parts.restricted?.notChoosable ?? []);
+	const not = new Set(mode.setup.restricted?.notChoosable ?? []);
 	return characters.filter((c) => !not.has(c.id));
 }
 
@@ -141,8 +141,11 @@ export function hiddenAsTownsfolk(characters: readonly Character[]): Character[]
  * run by the Storyteller. Parts a mode leaves out are standard, which the app always runs.
  */
 /** Whether the app runs a part of a mode, a combined mode or a special rule. */
-export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePart): boolean {
-	const p: CombinedParts = mode.parts;
+export function runsSection(
+	mode: { setup: CombinedSetup },
+	part: ModeSection | RuleSection
+): boolean {
+	const p: CombinedSetup = mode.setup;
 	switch (part) {
 		case 'text':
 			// A rule's lines go on the script's Bootlegger when the game starts (features/modes/start.ts).
@@ -201,6 +204,6 @@ export function runsPart(mode: { parts: CombinedParts }, part: ModePart | RulePa
 				p.winConditions.kind === 'demon-executed'
 			);
 		default:
-			return p[part as keyof CombinedParts] === undefined;
+			return p[part as keyof CombinedSetup] === undefined;
 	}
 }

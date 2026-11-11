@@ -11,7 +11,7 @@ import type { GameMode } from './types.ts';
 
 /** How many extras of each type the mode adds; none for other pools. */
 export function extraCounts(mode: GameMode): Partial<Record<SeatedType, number>> {
-	const pool = mode.parts.pool;
+	const pool = mode.setup.pool;
 	return pool?.kind === 'script-plus-hidden' ? pool.extras : {};
 }
 
@@ -25,7 +25,7 @@ export function allowedOffScript(
 	mode: GameMode,
 	extras: readonly CharacterId[]
 ): ReadonlySet<CharacterId> {
-	return new Set(mode.parts.pool?.kind === 'script-plus-hidden' ? extras : []);
+	return new Set(mode.setup.pool?.kind === 'script-plus-hidden' ? extras : []);
 }
 
 /** Off-script official characters a type's extra can be: not restricted, not on the script. */
@@ -44,7 +44,7 @@ export function extraCandidates(
 
 /** How many extras there are in all: the mode's range, or one for every type's row. */
 export function extraTotal(mode: GameMode): { min: number; max: number } {
-	const pool = mode.parts.pool;
+	const pool = mode.setup.pool;
 	const rows = Object.values(extraCounts(mode)).reduce((a, n) => a + (n ?? 0), 0);
 	if (pool?.kind !== 'script-plus-hidden' || !pool.count) return { min: rows, max: rows };
 	const max = Math.min(rows, pool.count.max);
