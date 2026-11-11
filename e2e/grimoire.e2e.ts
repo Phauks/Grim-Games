@@ -5689,7 +5689,12 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		setup: {
 			pool: { kind: 'all-characters' },
 			restricted: { banned: [] },
-			assignment: { kind: 'choose-own', when: 'first-night', reconsider: false }
+			assignment: {
+				kind: 'choose-own',
+				when: 'first-night',
+				reconsider: false,
+				instructions: 'Each player chooses a character of the type they were dealt.'
+			}
 		}
 	};
 	for (const players of [5, 9, 12, 15]) {
