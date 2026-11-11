@@ -29,7 +29,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const via = $derived(step.gained ? undefined : step.character?.id);
-	const rule = $derived(via ? choosesAbility(via, characters) : undefined);
+	const rule = $derived(via ? choosesAbility(game, via, characters) : undefined);
 	const holder = $derived(rule ? stepHolders(game, step, characters)[0] : undefined);
 	const chosen = $derived(
 		via && holder !== undefined ? chosenAbility(game, holder, via, characters) : undefined

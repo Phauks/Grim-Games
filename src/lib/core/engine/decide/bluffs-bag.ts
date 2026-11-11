@@ -1,5 +1,4 @@
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	isKnownReminder,
 	isOnScript,
@@ -24,6 +23,7 @@ import {
 	trulyInPlay,
 	type Deciders
 } from './shared.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Bluff sets and the character bag. */
 export const BLUFFS_BAG_DECIDERS: Deciders<
@@ -52,7 +52,8 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 		// characters in play (Trevor, 2026-10-16).
 		const playing = trulyInPlay(game, ctx);
 		const lunaticSet =
-			set === 1 && [...playing].some((id) => rulesOf(id, ctx.characters)?.believesType === 'demon');
+			set === 1 &&
+			[...playing].some((id) => rulesFor(game, id, ctx.characters)?.believesType === 'demon');
 		// A character in play that lets good characters repeat (the Pope) lets the Demon be
 		// given duplicates of in-play ones as bluffs (https://wiki.bloodontheclocktower.com/Pope).
 		const playingCharacters = [...playing].flatMap((id) => ctx.characters.get(id) ?? []);
@@ -99,7 +100,7 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 	SetFakeEvilInfo(game, command, ctx, warn) {
 		const seatId = seatOf(game, command.seatId).seatId;
 		const id = trueCharacter(game, seatId, ctx.characters);
-		if (!id || rulesOf(id, ctx.characters)?.believesType !== 'demon') {
+		if (!id || rulesFor(game, id, ctx.characters)?.believesType !== 'demon') {
 			warn('not-a-believer', 'this player does not believe they are the Demon');
 		}
 		const seats = (ids: readonly SeatId[]) => [

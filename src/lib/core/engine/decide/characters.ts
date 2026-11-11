@@ -1,5 +1,4 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	OVERRIDE_FIELDS,
 	isOnScript,
@@ -31,6 +30,7 @@ import {
 	type Deciders,
 	type Warn
 } from './shared.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Characters on seats, alignment, death, ghost votes, overrides and Fabled or Loric in play. */
 export const CHARACTERS_DECIDERS: Deciders<
@@ -240,7 +240,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 		}
 		if (command.alignment === 'evil') {
 			const limiter = [...trulyInPlay(game, ctx)].find(
-				(id) => rulesOf(id, ctx.characters)?.limitsExtraEvil
+				(id) => rulesFor(game, id, ctx.characters)?.limitsExtraEvil
 			);
 			if (limiter && extraEvilPlayers(game, ctx.characters, seat.seatId) > 1) {
 				const name = ctx.characters.get(limiter)?.name ?? limiter;
@@ -265,7 +265,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 				);
 			// An ability meant for the Storyteller goes to a player only by a jinx that sends it
 			// to a Minion (the Plague Doctor's Spy).
-			const rule = rulesOf(via.id, ctx.characters)?.givesAbility;
+			const rule = rulesFor(game, via.id, ctx.characters)?.givesAbility;
 			const toMinion =
 				givenInstead(via.id, given.id, game.script, ctx.characters)?.instead === 'a-minion';
 			if (rule?.to === 'storyteller' && !toMinion)
@@ -446,7 +446,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 
 	SetOptionalRule(game, command, ctx, warn) {
 		const character = characterOf(ctx, command.characterId);
-		if (!rulesOf(character.id, ctx.characters)?.optionalRule)
+		if (!rulesFor(game, character.id, ctx.characters)?.optionalRule)
 			refuse('no-optional-rule', `${character.name} has no optional rule`);
 		if ((game.optionalRules?.includes(character.id) ?? false) === command.on) {
 			warn(

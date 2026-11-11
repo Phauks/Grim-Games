@@ -291,7 +291,7 @@
 			markButton(characterId) !== undefined);
 	/** A day mark's button on its character's row, while its setting is on (L43). */
 	const markButton = (characterId: CharacterId | undefined) =>
-		assistance.demonVotedButton ? dayMarkOf(characterId, game.characters)?.mark : undefined;
+		assistance.demonVotedButton ? dayMarkOf(g, characterId, game.characters)?.mark : undefined;
 	/**
 	 * The Savant's information for today, recommended until it is set (Trevor, 2026-10-20: L5):
 	 * with "Suggest Savant information" on, where the grimoire can open its sheet.

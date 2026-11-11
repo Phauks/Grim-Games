@@ -9,19 +9,20 @@
  *   own way, a swapped token with its "Is The" reminder, still counts too (`gainedBy`).
  */
 import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { gainedBy } from './gained-abilities.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** `via`'s rule when its player chooses the ability they gain. */
 export function choosesAbility(
+	game: Game,
 	via: CharacterId,
 	characters: CharacterLookup
 ): (GainedFrom & { choose: NonNullable<GainedFrom['choose']> }) | undefined {
-	const rule = rulesOf(via, characters)?.gainedFrom;
+	const rule = rulesFor(game, via, characters)?.gainedFrom;
 	return rule?.choose ? { ...rule, choose: rule.choose } : undefined;
 }
 
@@ -38,7 +39,7 @@ export function chosenAbility(
 	via: CharacterId,
 	characters: CharacterLookup
 ): ChosenAbility | undefined {
-	const rule = choosesAbility(via, characters);
+	const rule = choosesAbility(game, via, characters);
 	if (!rule) return undefined;
 	const held = game.seats[holder]?.abilities?.find((a) => a.via === via);
 	if (held) return { characterId: held.characterId };
@@ -73,7 +74,7 @@ export function abilityChoice(
 	characterId: CharacterId | undefined,
 	characters: CharacterLookup
 ): AbilityChoicePlan | undefined {
-	const rule = choosesAbility(via, characters);
+	const rule = choosesAbility(game, via, characters);
 	if (!rule) return undefined;
 	const dropHeld = game.seats[holder]?.abilities?.find((a) => a.via === via)?.characterId;
 	const dropReminders = game.seating.flatMap((s) =>

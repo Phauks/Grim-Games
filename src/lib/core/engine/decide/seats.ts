@@ -1,4 +1,3 @@
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	isTraveller,
 	trueCharacter,
@@ -20,6 +19,7 @@ import {
 	type Deciders,
 	type Warn
 } from './shared.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * The note a `SetGameNote` or `SetSeatNote` writes into `notes`, trimmed, or undefined when
@@ -97,7 +97,8 @@ function checkSeatSwaps(game: Game, ctx: EngineContext, warn: Warn): void {
 	for (const seatId of game.seating) {
 		if (game.seats[seatId].dead) continue;
 		const id = trueCharacter(game, seatId, ctx.characters);
-		const limit = id === undefined ? undefined : rulesOf(id, ctx.characters)?.seatSwapsPerDay;
+		const limit =
+			id === undefined ? undefined : rulesFor(game, id, ctx.characters)?.seatSwapsPerDay;
 		if (limit === undefined || (game.today.swaps ?? 0) < limit) continue;
 		const name = ctx.characters.get(id!)?.name ?? id;
 		warn('already-used', `the ${name} may swap seats only ${limit} times a day`);

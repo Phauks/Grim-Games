@@ -19,7 +19,6 @@
  * warns (`nominationsUnfinished`); it never locks.
  */
 import type { ReminderEnd, ReminderEndRule } from '#lib/core/data/parts/reminder-ends.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type {
@@ -31,15 +30,17 @@ import type {
 } from '#lib/core/model/types.ts';
 import { ownJinxes } from './jinxes.ts';
 import { ownerSeats } from './reminder-targets.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type { ReminderEnd, ReminderEndRule };
 
 /** When a placed reminder comes off by itself, from its character's `reminderEnds`. */
 export function reminderEndOf(
+	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup
 ): ReminderEndRule | undefined {
-	const ends = rulesOf(reminder.characterId, characters)?.reminderEnds;
+	const ends = rulesFor(game, reminder.characterId, characters)?.reminderEnds;
 	const label = reminder.label.toLowerCase();
 	const key = ends && Object.keys(ends).find((l) => l.toLowerCase() === label);
 	return key === undefined ? undefined : ends?.[key];
@@ -69,7 +70,7 @@ export function nominationsUnfinished(game: Game, characters: CharacterLookup): 
 function waitingOnNomination(game: Game, characters: CharacterLookup) {
 	return game.seating.flatMap((seatId) =>
 		game.seats[seatId].reminders.flatMap((reminder) => {
-			const end = reminderEndOf(reminder, characters);
+			const end = reminderEndOf(game, reminder, characters);
 			return typeof end === 'object' ? [{ reminder, end }] : [];
 		})
 	);
@@ -88,7 +89,7 @@ export function remindersEndingAt(
 	const days = game.pastDays.length;
 	return game.seating.flatMap((seatId) =>
 		game.seats[seatId].reminders.flatMap((r) => {
-			const at = reminderEndOf(r, characters);
+			const at = reminderEndOf(game, r, characters);
 			const effective = at === 'dawn' && kept.has(tokenKey(r.characterId, r.label)) ? 'dusk' : at;
 			return endsAt(effective, r.placedDays, days, turn) ? [r.reminderId] : [];
 		})
@@ -108,7 +109,7 @@ export function remindersRunOutByDawn(game: Game, characters: CharacterLookup): 
 	return game.seating.flatMap((seatId) =>
 		game.seats[seatId].reminders.flatMap((r) => {
 			if (dawn.has(r.reminderId)) return [r.reminderId];
-			const end = reminderEndOf(r, characters);
+			const end = reminderEndOf(game, r, characters);
 			const duskPassed = r.placedDays === undefined || r.placedDays < days;
 			return (end === 'dusk' || end === 'dusk-after-dawn') && duskPassed ? [r.reminderId] : [];
 		})
@@ -126,7 +127,7 @@ export function remindersEndingOnDeath(
 ): ReminderId[] {
 	return game.seating.flatMap((holder) =>
 		game.seats[holder].reminders.flatMap((r) => {
-			if (reminderEndOf(r, characters) !== 'owner-dies') return [];
+			if (reminderEndOf(game, r, characters) !== 'owner-dies') return [];
 			const owner =
 				r.ownerSeatId !== undefined
 					? r.ownerSeatId === seatId

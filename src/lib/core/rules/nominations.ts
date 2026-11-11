@@ -11,7 +11,6 @@ import type {
 	NominatingEffect,
 	OnNominated
 } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesFor } from './rules-for.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -66,12 +65,16 @@ export function storytellerNominee(game: Game, characters: CharacterLookup): boo
 		const id = trueCharacter(game, seatId, characters);
 		if (id) ids.add(id);
 	}
-	return [...ids].some((id) => endsOnStorytellerExecution(id, characters));
+	return [...ids].some((id) => endsOnStorytellerExecution(game, id, characters));
 }
 
 /** Whether a character lets the Storyteller be executed (`storyteller-executed`, the Atheist). */
-function endsOnStorytellerExecution(id: CharacterId, characters: CharacterLookup): boolean {
-	return !!rulesOf(id, characters)?.gameEnd?.ends?.some(
+function endsOnStorytellerExecution(
+	game: Game,
+	id: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	return !!rulesFor(game, id, characters)?.gameEnd?.ends?.some(
 		(e) => e.kind === 'condition' && e.event === 'storyteller-executed'
 	);
 }
@@ -197,7 +200,7 @@ export function storytellerRenominations(
 			'storytellerChooses',
 			characters,
 			(e) => e.what === 'own-execution'
-		).some(({ partner }) => endsOnStorytellerExecution(partner, characters))
+		).some(({ partner }) => endsOnStorytellerExecution(game, partner, characters))
 	);
 	return voted ? made : 0;
 }

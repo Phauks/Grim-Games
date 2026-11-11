@@ -88,10 +88,11 @@ export function impairmentOfLabel(label: string): 'poisoned' | 'drunk' | undefin
 
 /** What a reminder token does to its carrier or the other players (`impairs.tokens`). */
 function tokenImpairment(
+	game: Game,
 	r: { characterId: CharacterId; label: ReminderLabel },
 	characters: CharacterLookup
 ): TokenImpairment | undefined {
-	return rulesOf(r.characterId, characters)?.impairs?.tokens?.[r.label];
+	return rulesFor(game, r.characterId, characters)?.impairs?.tokens?.[r.label];
 }
 
 /** The character's wiki page, or the Glossary for a homebrew character. */
@@ -211,7 +212,7 @@ function impairmentsOf(
 			);
 			continue;
 		}
-		const rule = tokenImpairment(r, characters);
+		const rule = tokenImpairment(game, r, characters);
 		if (rule?.on === 'others') continue;
 		if (rule && sparedByJinx(game, r.characterId, characterId, characters)) continue;
 		if (rule) {
@@ -316,7 +317,7 @@ function impairmentsOf(
 	others: for (const other of traveller ? [] : game.seating) {
 		if (other === seatId) continue;
 		for (const token of game.seats[other].reminders) {
-			const rule = tokenImpairment(token, characters);
+			const rule = tokenImpairment(game, token, characters);
 			if (rule?.on !== 'others') continue;
 			if (sparedByJinx(game, token.characterId, characterId, characters)) continue;
 			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;

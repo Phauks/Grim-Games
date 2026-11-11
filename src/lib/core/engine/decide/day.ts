@@ -13,7 +13,6 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import {
 	DAY_MARKS,
@@ -348,7 +347,7 @@ export const DAY_DECIDERS: Deciders<
 		const seat = seatOf(game, command.seatId);
 		const character = characterOf(ctx, command.characterId);
 		const truly = trueCharacter(game, seat.seatId, ctx.characters);
-		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		const rule = rulesFor(game, character.id, ctx.characters)?.dayUse;
 		if (rule?.anyone && game.ruleCharacters.includes(character.id)) {
 			return anyoneUse(game, command, character, ctx, warn);
 		}
@@ -378,7 +377,8 @@ export const DAY_DECIDERS: Deciders<
 				e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
 		);
 		// The token that marks it spent: "No Ability", or its own (the Golem's May Not Nominate).
-		const spent = rulesOf(character.id, ctx.characters)?.dayUse?.spentToken ?? NO_ABILITY_LABEL;
+		const spent =
+			rulesFor(game, character.id, ctx.characters)?.dayUse?.spentToken ?? NO_ABILITY_LABEL;
 		if (!character.reminders.includes(spent)) {
 			// A player who acts twice may use it twice today (`actsTwice`, M15c).
 			if (usesToday.length >= dayUsesAllowed(game, seat.seatId, ctx.characters, false))
@@ -623,7 +623,7 @@ function outcomeEvents(
 		warn('outcome-may-not-apply', `that ability may not decide this execution (${problem})`);
 	const holder = outcomeHolder(game, outcome, ctx.characters);
 	const by = { characterId, ...(holder ? { seatId: holder.seatId } : {}) };
-	const marked = holder && rulesOf(characterId, ctx.characters)?.dayUse;
+	const marked = holder && rulesFor(game, characterId, ctx.characters)?.dayUse;
 	const events =
 		marked && problem !== 'used'
 			? DAY_DECIDERS.UseAbility(
@@ -681,7 +681,7 @@ function spendFalseInfo(
 ): { events: GameEvent[]; ids: string[] } {
 	const type = ctx.characters.get(characterId)?.type;
 	const by = mayBeFalseSource(game, seatId, type, ctx.characters);
-	const label = by ? rulesOf(by, ctx.characters)?.falseInfo?.spentToken : undefined;
+	const label = by ? rulesFor(game, by, ctx.characters)?.falseInfo?.spentToken : undefined;
 	if (!by || !label || !abnormal.some((c) => c.characterId === by)) return { events: [], ids: [] };
 	const reminder = { reminderId: ctx.newId(), characterId: by, label };
 	if (game.ruleCharacters.includes(by)) {
@@ -728,7 +728,7 @@ function anyoneUse(
 	};
 	if (command.on !== undefined) {
 		entry.on = seatOf(game, command.on).seatId;
-		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		const rule = rulesFor(game, character.id, ctx.characters)?.dayUse;
 		if (rule?.who === 'ally' && !isDayUseAlly(game, seat.seatId, entry.on)) {
 			warn('not-ally', `the ${character.name} kills a living player of its user's alignment`);
 		}
