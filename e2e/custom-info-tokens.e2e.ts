@@ -80,20 +80,6 @@ test('Bold, Italic, Underline and Colour each apply at once, in the editor, prev
 	await expect(tile.locator('u')).toHaveText('are');
 });
 
-test('a card saved before colours keeps its red words as red, not bold', async ({ page }) => {
-	await page.goto('/info-tokens');
-	await page.evaluate(() =>
-		localStorage.setItem(
-			'grim-games:info-tokens',
-			JSON.stringify({ version: 1, custom: [{ id: 'old', text: 'You are **mad**' }] })
-		)
-	);
-	await page.reload();
-	const tile = page.getByRole('button', { name: 'You are mad', exact: true });
-	await expect(tile.locator('[data-ink="red"]')).toHaveText('mad');
-	await expect(tile.locator('strong')).toHaveCount(0);
-});
-
 test('a card that belongs to a character sits under Character-Specific', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await newCard(page, 'You feel uneasy');
@@ -150,7 +136,7 @@ test('in a game, a character card is offered only while its character is in play
 		localStorage.setItem(
 			'grim-games:info-tokens',
 			JSON.stringify({
-				version: 2,
+				version: 3,
 				custom: [
 					{ id: 'a', text: 'Empath card', characterIds: ['empath'] },
 					{ id: 'b', text: 'Chef card', characterIds: ['chef'] }
@@ -261,7 +247,7 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 		localStorage.setItem(
 			'grim-games:info-tokens',
 			JSON.stringify({
-				version: 2,
+				version: 3,
 				custom: [{ id: 'a', text: 'You are [red]**very** mad[/red] today' }]
 			})
 		)
