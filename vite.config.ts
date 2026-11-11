@@ -185,7 +185,10 @@ function ocrFiles(): Plugin {
 	};
 }
 
-const rulesTests = ['src/lib/core/rules-tests/characters/**/*.test.ts', 'src/lib/core/rules-tests/jinxes/**/*.test.ts'];
+const rulesTests = [
+	'src/lib/core/rules-tests/characters/**/*.test.ts',
+	'src/lib/core/rules-tests/jinxes/**/*.test.ts'
+];
 
 export default defineConfig({
 	build: {
