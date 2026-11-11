@@ -9,7 +9,7 @@ import type { ModeSection, RuleOnlySection } from './types.ts';
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 18;
+export const GAME_MODE_REVISION = 19;
 
 export interface GuideField {
 	name: string;
@@ -57,5 +57,3 @@ export const INSTRUCTIONS: GuideField = {
 export const IDS = 'list of character ids';
 export const SEATED = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
 export const TYPES = [...SEATED, 'traveller', 'fabled', 'loric'] as const;
-export const counts = (about: string): GuideField[] =>
-	SEATED.map((type) => ({ name: type, type: 'whole number', required: false, about }));

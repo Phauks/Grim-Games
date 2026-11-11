@@ -8,36 +8,21 @@ import { isObject, Issues } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { fileKind } from './file-kind.ts';
 import { runsSection } from './pool.ts';
+import { readSpec } from '#lib/core/data/read-spec.ts';
+import { SETUP_SPECS } from './setup-spec.ts';
 import {
-	CAMPAIGN_ENDS,
 	FILE_SECTIONS,
 	GAME_MODE_FORMAT,
 	RULE_SECTIONS,
 	SPECIAL_RULE_FORMAT,
 	type CombinedSetup,
+	type FileSection,
 	type GameMode,
 	type ModeSection,
 	type SpecialRule
 } from './types.ts';
 
 export type ParsedMode = { ok: true; mode: GameMode } | { ok: false; issues: string[] };
-
-/** The `kind` values each behaviour part accepts. */
-export const KINDS: Partial<
-	Record<(typeof RULE_SECTIONS)[number] | ModeSection, readonly string[]>
-> = {
-	pool: ['script', 'all-characters', 'script-plus-hidden', 'campaign', 'per-town'],
-	counts: ['standard', 'per-town'],
-	setupModifiers: ['standard', 'only', 'as-chosen'],
-	assignment: ['bag', 'draft', 'choose-own'],
-	duplicates: ['standard', 'allowed'],
-	bluffs: ['standard', 'none'],
-	daySteps: ['town-representative', 'spectator-vote'],
-	winConditions: ['standard', 'demon-executed', 'all-towns'],
-	betweenGames: ['campaign'],
-	seats: ['storyteller-seat'],
-	deaths: ['private']
-};
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -54,7 +39,7 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 	const add = (path: string, message: string) => issues.push(`${path}: ${message}`);
 	if (!KIND_HINTS.includes(value.kind)) add('kind', 'must be game-mode or special-rule');
 	if (value.format !== GAME_MODE_FORMAT) add('format', `must be ${GAME_MODE_FORMAT}`);
-	checkRuleParts(value, add);
+	checkConflicts(value, add);
 	checkFile(value, FILE_SECTIONS, add, known);
 	const rules = readRules(value, add, known);
 	if (issues.length > 0) return { ok: false, issues };
@@ -96,7 +81,7 @@ export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId
 				? 'script is the standard pool; leave pool out'
 				: 'replaces the script, so the file is a game mode'
 		);
-	checkRuleParts(value, add);
+	checkConflicts(value, add);
 	checkFile(value, RULE_SECTIONS, add, known);
 	const rules = readRules(value, add, known);
 	return issues.length > 0
@@ -121,34 +106,27 @@ export function parseModeOrRule(
 		: parseGameMode(value, known);
 }
 
-/** The rule parts' own checks, and `conflictsWith`, for a file of either kind. */
-function checkRuleParts(
+/** `conflictsWith`, for a file of either kind. */
+function checkConflicts(
 	value: Record<string, unknown>,
 	add: (path: string, message: string) => void
 ) {
-	const parts = isObject(value.setup) ? value.setup : {};
-	if (parts.text !== undefined && !isTextList(parts.text))
-		add('setup.text', 'must be a list of lines');
-	if (isObject(parts.travellers)) {
-		if (!Number.isInteger(parts.travellers.inBag) || (parts.travellers.inBag as number) < 0)
-			add('setup.travellers.inBag', 'must be a whole number');
-		if (typeof parts.travellers.announced !== 'boolean')
-			add('setup.travellers.announced', 'must be true or false');
-	}
-	if (
-		isObject(parts.seats) &&
-		(!Number.isInteger(parts.seats.count) || (parts.seats.count as number) < 1)
-	)
-		add('setup.seats.count', 'must be a whole number of at least 1');
-	if (value.conflictsWith !== undefined) {
-		const c = value.conflictsWith;
-		if (!isObject(c) || [c.modes, c.rules].some((l) => l !== undefined && !isTextList(l)))
-			add('conflictsWith', 'must list modes and rules by id');
-	}
+	if (value.conflictsWith === undefined) return;
+	const c = value.conflictsWith;
+	if (!isObject(c) || [c.modes, c.rules].some((l) => l !== undefined && !isTextList(l)))
+		add('conflictsWith', 'must list modes and rules by id');
 }
 
 const isTextList = (value: unknown): boolean =>
 	Array.isArray(value) && value.every((line) => typeof line === 'string');
+
+/** Each problem a reader recorded, added under its own path. */
+function addAll(issues: Issues, add: (path: string, message: string) => void) {
+	for (const issue of issues.list) {
+		const at = issue.indexOf(': ');
+		add(issue.slice(0, at), issue.slice(at + 2));
+	}
+}
 
 /**
  * The file's rules block (`FileRules`), read by the same reader as a character's
@@ -162,10 +140,7 @@ function readRules(
 	if (value.rules === undefined) return undefined;
 	const issues = new Issues();
 	const rules = parseCharacterRules(value.rules, 'rules', issues);
-	for (const issue of issues.list) {
-		const at = issue.indexOf(': ');
-		add(issue.slice(0, at), issue.slice(at + 2));
-	}
+	addAll(issues, add);
 	if (known)
 		for (const [p, id] of characterIds(value.rules, 'rules')) {
 			if (!known.has(id)) add(p, `unknown character ${id}`);
@@ -212,56 +187,38 @@ function checkFile(
 			});
 	}
 
-	const parts = value.setup;
-	if (!isObject(parts)) add('setup', 'must be an object');
-	else {
-		for (const [key, part] of Object.entries(parts)) {
-			const path = `setup.${key}`;
-			if (!allowed.includes(key)) {
-				if (!(key in MODE_ONLY)) add(path, 'unknown section');
-				continue;
+	const setup = value.setup;
+	if (!isObject(setup)) {
+		add('setup', 'must be an object');
+		return;
+	}
+	for (const [key, raw] of Object.entries(setup)) {
+		const path = `setup.${key}`;
+		if (!allowed.includes(key)) {
+			if (!(key in MODE_ONLY)) add(path, 'unknown section');
+			continue;
+		}
+		const issues = new Issues();
+		readSpec(SETUP_SPECS[key as FileSection], raw, path, issues, undefined);
+		addAll(issues, add);
+		if (known)
+			for (const [p, id] of characterIds(raw, path)) {
+				if (!known.has(id)) add(p, `unknown character ${id}`);
 			}
-			const kinds = KINDS[key as keyof typeof KINDS];
-			// Plain lines are checked by their kind's parser. They need no instructions: a rule's
-			// lines are its instructions.
-			if (key === 'text') continue;
-			for (const [i, item] of (Array.isArray(part) ? part : [part]).entries()) {
-				const at = Array.isArray(part) ? `${path}[${i}]` : path;
-				if (!isObject(item)) {
-					add(at, 'must be an object');
-					continue;
-				}
-				if (kinds && !kinds.includes(item.kind as string))
-					add(`${at}.kind`, `must be one of ${kinds.join(', ')}`);
-				if (
-					item.instructions !== undefined &&
-					(typeof item.instructions !== 'string' || !item.instructions.trim())
-				)
-					add(`${at}.instructions`, 'must be text');
-				else if (
-					item.instructions === undefined &&
-					!runsSection({ setup: parts as CombinedSetup }, key as ModeSection)
-				)
-					add(`${at}.instructions`, 'the Storyteller runs this part, so say what they do');
-				if (key === 'betweenGames' && Array.isArray(item.endConditions))
-					item.endConditions.forEach((e, n) => {
-						if (!(CAMPAIGN_ENDS as readonly unknown[]).includes(e))
-							add(`${at}.endConditions[${n}]`, `unknown end condition ${String(e)}`);
-					});
-				if (key === 'assignment' && item.kind === 'draft') {
-					const offers = item.offers;
-					if (
-						!Array.isArray(offers) ||
-						offers.length === 0 ||
-						offers.some((n) => !Number.isInteger(n) || (n as number) < 1)
-					)
-						add(`${at}.offers`, 'must be a list of whole numbers of at least 1');
-				}
-				if (known)
-					for (const [p, id] of characterIds(item, at)) {
-						if (!known.has(id)) add(p, `unknown character ${id}`);
-					}
-			}
+		if (key === 'assignment' && isObject(raw) && Array.isArray(raw.offers) && !raw.offers.length)
+			add(`${path}.offers`, 'must offer at least one character');
+		// A rule's plain lines need no instructions: they are its instructions.
+		if (key === 'text') continue;
+		for (const [i, item] of (Array.isArray(raw) ? raw : [raw]).entries()) {
+			const at = Array.isArray(raw) ? `${path}[${i}]` : path;
+			if (!isObject(item)) continue;
+			if (typeof item.instructions === 'string' && !item.instructions.trim())
+				add(`${at}.instructions`, 'must be text');
+			else if (
+				item.instructions === undefined &&
+				!runsSection({ setup: setup as CombinedSetup }, key as ModeSection)
+			)
+				add(`${at}.instructions`, 'the Storyteller runs this section, so say what they do');
 		}
 	}
 }

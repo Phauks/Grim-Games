@@ -1,27 +1,18 @@
 /**
  * Game modes: community formats that change fundamental parts of a game (Trevor,
- * 2026-10-17). A mode is plain data in this format, so the app can show every part of it
- * (Inspect) and anyone can write one: a mode lists only the parts it changes, and every part
- * it leaves out stays standard.
- *
- * The parts are the ones the researched modes change between them
- * (/mnt/project-files/game-modes/what-modes-change.md). Each part is either data (characters,
- * numbers) or a choice from a fixed set of behaviours, never rules prose: the mode's own
- * rules are linked, not retold (no authored content, Trevor 2026-10-15).
+ * 2026-10-17). A mode is plain data in this format, so the app can show every section of it
+ * (Inspect) and anyone can write one: a mode lists only the setup sections it changes, and
+ * every section it leaves out stays standard. Each section's shape, and so its type here, is
+ * its spec in `setup-spec.ts`.
  */
-import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
-import type { SeatedType, TypeCounts } from '#lib/core/rules/distribution.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
+import type { CAMPAIGN_ENDS, LinkValue, SectionValue } from './setup-spec.ts';
 
-/** Bumped when the format changes incompatibly; `parseGameMode` reads older versions. */
+/** Bumped when the format changes incompatibly; a file in another format doesn't load. */
 export const GAME_MODE_FORMAT = 1;
 
-/** A page a mode or one of its parts comes from. */
-export interface SourceLink {
-	/** The page's own title, or the site's name. */
-	title: string;
-	url: string;
-}
+/** A page a mode or one of its sections comes from. */
+export type SourceLink = LinkValue;
 
 /** Every part a mode can change, in the order Inspect shows them. */
 export const MODE_SECTIONS = [
@@ -43,239 +34,32 @@ export const MODE_SECTIONS = [
 ] as const;
 export type ModeSection = (typeof MODE_SECTIONS)[number];
 
-/** Fields every part carries: where its rule comes from, and how the Storyteller runs it. */
-interface Cited {
-	/** The source for this part, when it is not the mode's first source. */
-	cite?: string;
-	/**
-	 * What the Storyteller does for this part when the app doesn't run it, so the file alone
-	 * says what a game needs (Trevor, 2026-10-19: the JSON should be "self-sufficient for the
-	 * storyteller"). Required on such sections (validate.ts).
-	 */
-	instructions?: string;
-}
+/** Each section's value, as its spec reads it (`setup-spec.ts`). */
+export type PoolRule = SectionValue<'pool'>;
+export type Restrictions = SectionValue<'restricted'>;
+export type CountsRule = SectionValue<'counts'>;
+export type SetupModifiersRule = SectionValue<'setupModifiers'>;
+export type AssignmentRule = SectionValue<'assignment'>;
+export type DuplicatesRule = SectionValue<'duplicates'>;
+export type ForcedRule = SectionValue<'forced'>;
+export type LinkedRule = SectionValue<'ruleChanges'>[number];
+export type BluffsRule = SectionValue<'bluffs'>;
+export type DayStep = SectionValue<'daySteps'>[number];
+export type WinRule = SectionValue<'winConditions'>;
+export type TownsRule = SectionValue<'towns'>;
+export type ParticipantsRule = SectionValue<'participants'>;
+export type BetweenGamesRule = SectionValue<'betweenGames'>;
+export type TravellersRule = SectionValue<'travellers'>;
+export type SeatsRule = SectionValue<'seats'>;
+export type DeathsRule = SectionValue<'deaths'>;
 
-/** 1. Which characters the game is played with. */
-export type PoolRule = Cited &
-	(
-		| { kind: 'script' }
-		/** Every official character of these types (all seated types when absent). */
-		| { kind: 'all-characters'; types?: CharacterType[] }
-		/** The chosen script plus unknown extra characters from off it (`extras` per type). */
-		| {
-				kind: 'script-plus-hidden';
-				/** The most of each type; each is a row the Storyteller may fill or leave empty. */
-				extras: Partial<TypeCounts>;
-				announceRange: boolean;
-				/** How many there are in all, when not every row is filled. */
-				count?: { min: number; max: number };
-		  }
-		/** The script changes from game to game (`betweenGames` says how). */
-		| { kind: 'campaign'; startingScript: 'any' }
-		/** One script per town (`towns`). */
-		| { kind: 'per-town'; scripts: SourceLink[] }
-	);
-
-/** 2. Characters the mode keeps out; the Storyteller adds to or lifts these per game. */
-export interface Restrictions extends Cited {
-	/** Never in the game. */
-	banned: CharacterId[];
-	/** May be in play, but no player chooses or is offered them. */
-	notChoosable?: CharacterId[];
-	/** Only a player of `type` may take this character (Whale Buffet: Summoner). */
-	onlyFor?: { characterId: CharacterId; type: SeatedType }[];
-}
-
-/** 3. How many of each character type. */
-export type CountsRule = Cited &
-	(
-		| { kind: 'standard' }
-		/** Standard counts for each town's players, towns as even as possible. */
-		| { kind: 'per-town'; maxDifference: number }
-	);
-
-/** 4. Which setup modifiers ([bracketed] abilities) change the counts. */
-export type SetupModifiersRule = Cited &
-	(
-		| { kind: 'standard' }
-		/** Only these characters' setup changes apply. */
-		| { kind: 'only'; characters: CharacterId[] }
-		/** Applied as each is drafted; the Storyteller decides when a count is already set. */
-		| { kind: 'as-chosen' }
-	);
-
-/** 5. How characters reach players. */
-export type AssignmentRule = Cited &
-	(
-		| { kind: 'bag' }
-		/**
-		 * Each player is offered characters and keeps one. `offers` is the size of each offer
-		 * in turn (a refused offer moves to the next, e.g. 3 → 2 → 1).
-		 */
-		| {
-				kind: 'draft';
-				offers: number[];
-				/** Characters not kept go back in the pool instead of being discarded. */
-				recycleUnchosen: boolean;
-				/** Every offer to one player is of one character type. */
-				oneTypePerOffer: boolean;
-		  }
-		/** The bag deals a character type; each player chooses a character of it. */
-		| {
-				kind: 'choose-own';
-				when: 'first-night';
-				/** The Storyteller may ask a player to choose again. */
-				reconsider: boolean;
-		  }
-	);
-
-/** 6. Several players with the same character. */
-export type DuplicatesRule = Cited &
-	(
-		| { kind: 'standard' }
-		| {
-				kind: 'allowed';
-				/** Extra copies may be drunk. */
-				extrasMayBeDrunk: boolean;
-				/** Types that still have one copy each; every type repeats when left out (revision 14). */
-				notTypes?: CharacterType[];
-		  }
-	);
-
-/** 7. Characters always in the game. */
-export interface ForcedRule extends Cited {
-	/** Always in play (dealt to a player). Left out when none is (revision 12). */
-	inPlay?: CharacterId[];
-	/** Always on the script, in play or not. */
-	onScript?: CharacterId[];
-	/** Rule characters (Fabled, Loric) always in the game. */
-	ruleCharacters?: CharacterId[];
-	/** A homebrew rule character the mode needs, by its own rules page (not in TPI data). */
-	homebrew?: SourceLink[];
-}
-
-/** 8 and 9. Rules the Storyteller runs by hand: which characters, and where to read them. */
-export interface LinkedRule extends Cited {
-	/** Left out when the rule concerns no particular character (revision 12). */
-	characters?: CharacterId[];
-}
-
-/**
- * Demon bluffs: `none` when the Demon learns no not-in-play characters (Trevor, 2026-10-18:
- * Sushi Buffet and Whale Buffet have no Demon bluffs).
- */
-export type BluffsRule = Cited & { kind: 'standard' | 'none' };
-
-/** 10. Steps added to each day. */
-export type DayStep = Cited &
-	(
-		| {
-				kind: 'town-representative';
-				/** Players the representative moves to the other town at the end of day N + 1. */
-				movesPerDay: number[];
-		  }
-		/**
-		 * Spectators vote on how their shared ability is used (Specters). `when` they vote;
-		 * the player they `pick` gains the `grants` character's ability, for as long as `lasts`.
-		 */
-		| {
-				kind: 'spectator-vote';
-				/** The shared ability's name, e.g. Apparition. */
-				ability?: string;
-				when?: 'each-dawn';
-				pick?: 'player';
-				grants?: CharacterId[];
-				lasts?: 'until-next-dawn';
-		  }
-	);
-
-/** 11. How the game is won. */
-export type WinRule = Cited &
-	(
-		| { kind: 'standard' }
-		/** Good also wins as soon as any Demon dies by execution (Binary Supernovae). */
-		| { kind: 'demon-executed' }
-		/**
-		 * A team wins by winning every town. When towns split after `afterDay` days, `winner`
-		 * wins if `together` are in one town, else the other team does.
-		 */
-		| {
-				kind: 'all-towns';
-				splitTiebreak: {
-					afterDay: number;
-					together: CharacterId[];
-					winner: 'good' | 'evil';
-				};
-		  }
-	);
-
-/** 12. More than one town (grimoire) in one game. */
-export interface TownsRule extends Cited {
-	count: number;
-	storytellers: number;
-	/** Every player plays in every town at once, with a character in each. */
-	samePlayers?: boolean;
-	/** A player can't have a character of these types in more than one town. */
-	notInEveryTown?: SeatedType[];
-	/** Characters always in play in each town, by town (part 7's `inPlay`, placed). */
-	inPlay?: CharacterId[][];
-}
-
-/** 13. People taking part without a seat. */
-export interface ParticipantsRule extends Cited {
-	spectators: 'shared-ability';
-}
-
-/** 14. What happens between games of a campaign. */
-export interface BetweenGamesRule extends Cited {
-	kind: 'campaign';
-	/** Executed characters are eliminated: `every` executed, or only the `last`. */
-	eliminate: 'every-executed' | 'last-executed';
-	/** An eliminated character is replaced by one of the same type that is still available. */
-	replaceSameType: boolean;
-	/** The script each game aims for. */
-	target: TypeCounts;
-	/** Demons are added one per game until `target.demon`. */
-	growDemons: boolean;
-	endConditions: CampaignEnd[];
-}
-
-export const CAMPAIGN_ENDS = [
-	'no-demons',
-	'deathmatch',
-	'domination',
-	'first-blood',
-	'attrition',
-	'mercy',
-	'rush',
-	'stockpile',
-	'fixed-games',
-	'fixed-time',
-	'endless'
-] as const;
 export type CampaignEnd = (typeof CAMPAIGN_ENDS)[number];
 
 /**
- * Every part a file can set (Trevor, 2026-11-01: one format for game modes and special rules).
- * The rule parts (`RuleOnlySetup`) are named for where they began; a game mode may set them too.
+ * Every section a file can set (Trevor, 2026-11-01: one format for game modes and special
+ * rules), each optional: a section left out stays standard.
  */
-export interface ModeSetup extends RuleOnlySetup {
-	pool?: PoolRule;
-	restricted?: Restrictions;
-	counts?: CountsRule;
-	setupModifiers?: SetupModifiersRule;
-	assignment?: AssignmentRule;
-	duplicates?: DuplicatesRule;
-	forced?: ForcedRule;
-	ruleChanges?: LinkedRule[];
-	information?: LinkedRule[];
-	bluffs?: BluffsRule;
-	daySteps?: DayStep[];
-	winConditions?: WinRule;
-	towns?: TownsRule;
-	participants?: ParticipantsRule;
-	betweenGames?: BetweenGamesRule;
-}
+export type ModeSetup = { -readonly [K in FileSection]?: SectionValue<K> };
 
 export interface GameMode {
 	/** Absent in files written before special rules existed (Trevor, 2026-10-18). */
@@ -363,34 +147,6 @@ export const WHOLE_GAME_SECTIONS = [
 ] as const satisfies readonly ModeSection[];
 export type WholeGameSection = (typeof WHOLE_GAME_SECTIONS)[number];
 
-/** Travellers dealt from the bag like other characters (Stowed Away). */
-export interface TravellersRule extends Cited {
-	/** At most this many Travellers in the bag; the other counts are for that many fewer players. */
-	inBag: number;
-	/** Whether the table is told which players are Travellers. */
-	announced: boolean;
-}
-
-/** A seat no one plays; the Storyteller may speak for it (The Ballad of Seat 7). */
-export interface SeatsRule extends Cited {
-	kind: 'storyteller-seat';
-	count: number;
-	speaks: 'never' | 'once-per-game';
-}
-
-/** Deaths the Storyteller does not announce (I See Dead People). */
-export interface DeathsRule extends Cited {
-	kind: 'private';
-}
-
-export interface RuleOnlySetup {
-	/** The rule's own lines, shown on the Bootlegger (a script's `_meta.bootlegger`). */
-	text?: string[];
-	travellers?: TravellersRule;
-	seats?: SeatsRule;
-	deaths?: DeathsRule;
-}
-
 /**
  * What a file does in play, as a rules block (M61e, Trevor 2026-11-06: "build modes from rule
  * parts"): the same parts a character's block has (`data/parts/`), read by the same reader, so
@@ -402,9 +158,9 @@ export interface RuleOnlySetup {
 export type FileRules = CharacterRules;
 
 /** A special rule's pool can only add to the script. */
-export type RuleSetup = Omit<Pick<ModeSetup, StackingSection>, 'pool'> & {
+export type RuleSetup = Omit<Pick<ModeSetup, RuleSection>, 'pool'> & {
 	pool?: Extract<PoolRule, { kind: 'script-plus-hidden' }>;
-} & RuleOnlySetup;
+};
 
 /** A game mode with its special rules folded in (`combineRules`). */
 export type CombinedSetup = ModeSetup;

@@ -81,7 +81,7 @@ export {
 } from './draft-seats.ts';
 
 export interface DraftConfig {
-	offers: number[];
+	offers: readonly number[];
 	recycleUnchosen: boolean;
 	oneTypePerOffer: boolean;
 	/** Drafted characters' setup modifiers change the open slots (mode part `as-chosen`). */

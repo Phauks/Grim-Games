@@ -33,7 +33,7 @@ export interface RuleFile {
 	id: string;
 	name: string;
 	rules?: CharacterRules;
-	setup: { text?: string[] };
+	setup: { text?: readonly string[] };
 }
 
 /**

@@ -34,7 +34,7 @@ test('builds a special rule without JSON, saves it on this device, and shares it
 	const output = page.getByRole('tab', { name: /^Output/ });
 	if (await output.isVisible()) await output.tap();
 	await expect(problems).toHaveText(
-		'setup.deaths.instructions the Storyteller runs this part, so say what they do'
+		'setup.deaths.instructions the Storyteller runs this section, so say what they do'
 	);
 	await expect(save).toBeDisabled();
 	// Tapping the problem goes to the setting: the part's Storyteller instructions.

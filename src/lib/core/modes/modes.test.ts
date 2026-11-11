@@ -70,8 +70,10 @@ describe('parseGameMode', () => {
 			'id: must be lower-case letters, digits and dashes',
 			'name: must be a name',
 			'sources[0].url: must be an https link',
-			'setup.assignment.instructions: the Storyteller runs this part, so say what they do',
-			'setup.assignment.offers: must be a list of whole numbers of at least 1',
+			'setup.assignment.offers[0]: expected a whole number above 0, got 0',
+			'setup.assignment.recycleUnchosen: missing',
+			'setup.assignment.oneTypePerOffer: missing',
+			'setup.assignment.instructions: the Storyteller runs this section, so say what they do',
 			'setup.restricted.banned[0]: unknown character nobody',
 			'setup.teleport: unknown section'
 		]);
@@ -103,8 +105,8 @@ describe('Storyteller instructions (Trevor, 2026-10-19: mode files "self-suffici
 		expect(read(file)).toEqual({
 			ok: false,
 			issues: [
-				'setup.bluffs.instructions: the Storyteller runs this part, so say what they do',
-				'setup.ruleChanges[1].instructions: the Storyteller runs this part, so say what they do'
+				'setup.bluffs.instructions: the Storyteller runs this section, so say what they do',
+				'setup.ruleChanges[1].instructions: the Storyteller runs this section, so say what they do'
 			]
 		});
 	});

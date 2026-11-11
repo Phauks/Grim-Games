@@ -47,7 +47,7 @@ const CONTROLS: Record<string, (field: GuideField) => FieldControl> = {
 	'list of links': () => ({ kind: 'links' }),
 	'https link': () => ({ kind: 'link' }),
 	'object of counts by type': () => ({ kind: 'counts' }),
-	'object { "min", "max" }': () => ({ kind: 'range' })
+	'{ min, max }': () => ({ kind: 'range' })
 };
 
 /**

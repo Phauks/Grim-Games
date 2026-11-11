@@ -114,14 +114,14 @@ describe('reading a special rule file', () => {
 			known
 		);
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'setup.text: must be a list of lines',
-			'setup.travellers.inBag: must be a whole number',
-			'setup.travellers.announced: must be true or false',
-			'setup.seats.count: must be a whole number of at least 1',
-			'setup.travellers.instructions: the Storyteller runs this part, so say what they do',
-			'setup.seats.instructions: the Storyteller runs this part, so say what they do',
-			'setup.deaths.kind: must be one of private',
-			'setup.deaths.instructions: the Storyteller runs this part, so say what they do'
+			'setup.text[1]: expected string, got number',
+			'setup.travellers.inBag: expected a whole number, 0 or more, got -1',
+			'setup.travellers.announced: expected boolean, got string',
+			'setup.travellers.instructions: the Storyteller runs this section, so say what they do',
+			'setup.seats.count: expected a whole number above 0, got 0',
+			'setup.seats.instructions: the Storyteller runs this section, so say what they do',
+			'setup.deaths: expected one of: private',
+			'setup.deaths.instructions: the Storyteller runs this section, so say what they do'
 		]);
 	});
 
@@ -207,7 +207,9 @@ describe('reading a special rule file', () => {
 			...STANDARD,
 			setup: { travellers: { inBag: -1, announced: true, instructions: 'Deal them.' } }
 		});
-		expect(bad.ok ? [] : bad.issues).toEqual(['setup.travellers.inBag: must be a whole number']);
+		expect(bad.ok ? [] : bad.issues).toEqual([
+			'setup.travellers.inBag: expected a whole number, 0 or more, got -1'
+		]);
 	});
 
 	it('keeps rule ids apart from mode ids and the script rule', () => {
@@ -367,7 +369,10 @@ describe('Binary Supernovae', () => {
 	const supernovae = SPECIAL_RULES.find((r) => r.id === 'binary-supernovae')!;
 
 	it("adds a Demon through its line's bracket, as the game's Bootlegger reads it", () => {
-		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: supernovae.setup.text });
+		const onBootlegger = scriptSpecialRule({
+			name: 'Any',
+			bootlegger: [...(supernovae.setup.text ?? [])]
+		});
 		expect(onBootlegger?.rules?.setupModifier?.ops).toEqual([
 			{ kind: 'delta', type: 'demon', values: [1] }
 		]);
@@ -390,7 +395,10 @@ describe.each([
 	it('acts on a nomination and changes no counts', () => {
 		expect(found.rules?.onNominated).toEqual(onNominated);
 		expect(found.setup.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
-		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.setup.text });
+		const onBootlegger = scriptSpecialRule({
+			name: 'Any',
+			bootlegger: [...(found.setup.text ?? [])]
+		});
 		expect(onBootlegger?.rules).toBeUndefined();
 	});
 });

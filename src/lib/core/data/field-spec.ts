@@ -13,18 +13,25 @@ export interface ObjectField {
 }
 
 /**
- * One shape a value may take, told apart from the others by a key it has (`has`) or by being
- * a list, text or an object (`is`).
+ * One shape a value may take, told apart from the others by its `kind` (`tag`), by a key it
+ * has (`has`) or by being a list, text or an object (`is`).
  */
 export interface Variant {
 	label: string;
+	/** The value's `kind` (a game mode file's setup sections, `modes/setup-spec.ts`). */
+	tag?: string;
 	has?: string;
 	/** `true`: the value `true`, a rule switched on with nothing more said. */
 	is?: 'array' | 'string' | 'number' | 'true' | 'object';
 	spec: FieldSpec;
 }
 
-export type FieldSpec =
+export type FieldSpec = Shape & {
+	/** What the value means, for a written guide (the game mode format guide). */
+	readonly about?: string;
+};
+
+type Shape =
 	/** Always true; left out when off. */
 	| { kind: 'true' }
 	| { kind: 'boolean' }
@@ -128,6 +135,9 @@ export const byCharacter = <S extends FieldSpec>(
 export const variants = <const V extends readonly Variant[]>(
 	...options: V
 ): Spec<SpecValue<V[number]['spec']>> => ({ kind: 'variants', variants: options });
+
+/** `spec`, with what its value means for a written guide. */
+export const about = <S extends FieldSpec>(text: string, spec: S): S => ({ ...spec, about: text });
 
 /** A setting that may be left out. */
 export const opt = <S extends FieldSpec>(spec: S): Optional<S> => ({ [OPTIONAL]: true, spec });
@@ -235,6 +245,7 @@ export function startVariant(variant: Variant): unknown {
 /** Which of `spec`'s variants `value` is; -1 when none fits. */
 export function variantOf(spec: Extract<FieldSpec, { kind: 'variants' }>, value: unknown): number {
 	return spec.variants.findIndex((v) => {
+		if (v.tag) return isRecord(value) && value.kind === v.tag;
 		if (v.has) return isRecord(value) && value[v.has] !== undefined;
 		if (v.is === 'array') return Array.isArray(value);
 		if (v.is === 'string') return typeof value === 'string';

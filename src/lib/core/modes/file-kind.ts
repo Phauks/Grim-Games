@@ -9,7 +9,7 @@ import {
 	RULE_ONLY_SECTIONS,
 	WHOLE_GAME_SECTIONS,
 	type GameMode,
-	type RuleOnlySetup,
+	type RuleSetup,
 	type SpecialRule,
 	type WholeGameSection
 } from './types.ts';
@@ -42,7 +42,7 @@ export function modeRule(mode: GameMode): SpecialRule | undefined {
 		RULE_ONLY_SECTIONS.flatMap((part) =>
 			mode.setup[part] === undefined ? [] : [[part, mode.setup[part]]]
 		)
-	) as RuleOnlySetup;
+	) as RuleSetup;
 	if (Object.keys(setup).length === 0 && !mode.rules) return undefined;
 	return {
 		kind: 'special-rule',

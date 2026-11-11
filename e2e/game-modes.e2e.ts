@@ -1157,7 +1157,7 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	await dialog.getByTestId('mode-file').fill(JSON.stringify(mine));
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(dialog.getByRole('status')).toContainText(
-		'setup.assignment.instructions: the Storyteller runs this part'
+		'setup.assignment.instructions: the Storyteller runs this section'
 	);
 	const instructions = 'Each player picks any character of the type they drew.';
 	mine.setup.assignment = {

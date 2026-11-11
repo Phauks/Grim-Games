@@ -335,7 +335,7 @@
 			];
 			restrictPool = modeCharacters(played, scriptCharacters, data.characters, {
 				banned: [],
-				allowed: played.setup.restricted?.banned ?? []
+				allowed: [...(played.setup.restricted?.banned ?? [])]
 			});
 			restricting = true;
 		} catch (e) {

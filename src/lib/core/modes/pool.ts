@@ -90,7 +90,7 @@ export function modeScript(
  * The characters a town's game always has in play: the town's own (`towns.inPlay`), or for a
  * single game the mode's `forced.inPlay`.
  */
-export function inPlayFor(mode: GameMode, town = 0): CharacterId[] {
+export function inPlayFor(mode: GameMode, town = 0): readonly CharacterId[] {
 	const perTown = mode.setup.towns?.inPlay;
 	if (perTown) return perTown[town] ?? [];
 	return mode.setup.forced?.inPlay ?? [];
