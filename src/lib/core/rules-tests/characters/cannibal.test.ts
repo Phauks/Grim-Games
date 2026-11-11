@@ -14,16 +14,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState, registrations } from '#lib/core/rules/ability.ts';
+import { abilityState, registrations } from '#lib/core/rules/abilities/ability.ts';
 import {
 	gainedAbilities,
 	hasAbilityOf,
 	withGainedSteps
-} from '#lib/core/rules/gained-abilities.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+} from '#lib/core/rules/abilities/gained-abilities.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,

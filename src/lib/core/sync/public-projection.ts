@@ -14,7 +14,7 @@ import {
 } from '#lib/core/model/index.ts';
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { publicVotesWithoutToken } from '#lib/core/rules/voting.ts';
+import { publicVotesWithoutToken } from '#lib/core/rules/day/voting.ts';
 import {
 	parsePlayersPhase,
 	parseSetupLook,
@@ -22,7 +22,7 @@ import {
 	type PlayersPhase,
 	type SetupLook
 } from '#lib/core/rules/game-phase.ts';
-import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer.ts';
+import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day/day-timer.ts';
 import { parsePublicSound, type PublicSound } from './room-sound.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';

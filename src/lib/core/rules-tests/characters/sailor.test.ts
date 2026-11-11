@@ -15,12 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState, protection } from '#lib/core/rules/ability.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Sailor', () => {
 	const character = committedCharacter('sailor');

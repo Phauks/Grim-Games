@@ -5,7 +5,7 @@
 import type { Command } from '#lib/core/engine/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
-import { tallyOf } from '#lib/core/rules/vote-weights.ts';
+import { tallyOf } from '#lib/core/rules/day/vote-weights.ts';
 import type { Scenario, SeatRef } from './scenario.ts';
 
 export type Nomination = Extract<DayEntry, { kind: 'nomination' }>;

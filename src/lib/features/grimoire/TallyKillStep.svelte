@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { dayTallyOf, tallyKills, type NightStep } from '#lib/core/rules/index.ts';
+	import { dayTallyOf, tallyKills } from '#lib/core/rules/day/day-tally.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 

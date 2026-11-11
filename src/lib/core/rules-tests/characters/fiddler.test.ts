@@ -15,15 +15,19 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
 import {
 	contestChoosers,
 	contestOpponents,
 	contestWinner,
 	ruleCharacterUse
-} from '#lib/core/rules/contest.ts';
+} from '#lib/core/rules/game-end/contest.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fiddler', () => {

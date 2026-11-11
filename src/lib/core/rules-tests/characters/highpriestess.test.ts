@@ -19,9 +19,9 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 
 describe('High Priestess', () => {
 	const character = committedCharacter('highpriestess');

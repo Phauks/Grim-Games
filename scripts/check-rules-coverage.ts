@@ -13,7 +13,7 @@
  *
  * Fix a missing file with `npm run scaffold:rules-tests`.
  */
-import { placeholderProblems } from '../src/lib/core/rules/night-text.ts';
+import { placeholderProblems } from '../src/lib/core/rules/night/night-text.ts';
 import { readGameData, readTestFiles } from './lib/game-data-files.ts';
 import {
 	ABILITIES_DIR,

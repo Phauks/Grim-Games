@@ -9,7 +9,7 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
+	import { scriptMaxPlayers } from '#lib/core/rules/setup/teensyville.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';

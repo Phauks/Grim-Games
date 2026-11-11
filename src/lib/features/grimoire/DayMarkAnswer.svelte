@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { rulesFor } from '#lib/core/rules/rules-for.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 

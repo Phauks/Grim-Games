@@ -6,7 +6,7 @@ import { specPart, type PartValue } from './part.ts';
  * at none each day: `label` names it on the day view; with `kills`, each one lets its ability
  * kill one player, by day or that night, with the character as the death cause (the
  * Yaggababble's phrase said aloud, https://wiki.bloodontheclocktower.com/Yaggababble). Read
- * by `rules/day-tally.ts` (Trevor, 2026-11-02: M17c).
+ * by `rules/day/day-tally.ts` (Trevor, 2026-11-02: M17c).
  */
 export const dayTally = specPart(
 	'Day tally',

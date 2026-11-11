@@ -11,7 +11,7 @@ import {
 	type CharacterId,
 	type GameData
 } from '#lib/core/data/index.ts';
-import { sheetWithOwnPlaces } from '#lib/core/rules/night-order.ts';
+import { sheetWithOwnPlaces } from '#lib/core/rules/night/night-order.ts';
 
 const dataDir = new URL('../../../../static/data/', import.meta.url);
 

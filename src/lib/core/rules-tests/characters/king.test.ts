@@ -14,11 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
 
 describe('King', () => {
 	const character = committedCharacter('king');
@@ -57,7 +57,7 @@ describe('King', () => {
 			// alive. On the fifth night, she learns that the Witch is alive."
 			// Once enough players are dead the King is shown alive characters, good or evil; a
 			// dead player's character is not one of them. Before then the King doesn't wake
-			// (`wakesWhen`, rules/wakes-when.test.ts).
+			// (`wakesWhen`, rules/night/wakes-when.test.ts).
 			const s = scenario(['king', 'snitch', 'witch', 'monk', 'imp']).dies('monk').dies('imp');
 			const picker = infoPicker(s.game, s.seat('king'), 'king', s.characters)!;
 			expect(isTruthful(picker, { seats: [s.seat('snitch')], characterId: 'snitch' })).toBe(true);

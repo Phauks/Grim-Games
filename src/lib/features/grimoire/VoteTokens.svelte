@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { registersAsDead, type SeatId } from '#lib/core/model/index.ts';
-	import { tokenGiverInfo } from '#lib/core/rules/index.ts';
+	import { tokenGiverInfo } from '#lib/core/rules/day/vote-weights.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

@@ -7,7 +7,7 @@
 		endReasonCharacter,
 		joinsWinners,
 		type EndReason
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/game-end/end-reason.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';

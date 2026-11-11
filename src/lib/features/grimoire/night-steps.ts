@@ -5,17 +5,15 @@
  */
 import type { GameData, NightMarker } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+import { diedSinceNewDay, revivedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
+import { MARKER_TEXT, type NightStep } from '#lib/core/rules/night/night-order.ts';
+import { SETUP_ALIGNMENT_STEP } from '#lib/core/rules/setup/setup-alignment.ts';
 import {
-	diedSinceNewDay,
-	MARKER_TEXT,
-	revivedSinceNewDay,
-	SETUP_ALIGNMENT_STEP,
 	TRAVELLER_ALIGNMENT_STEP,
-	TRAVELLER_JOINS_STEP,
-	type AnswerValue,
-	type Night,
-	type NightStep
-} from '#lib/core/rules/index.ts';
+	TRAVELLER_JOINS_STEP
+} from '#lib/core/rules/setup/traveller-alignment.ts';
+import { type AnswerValue } from '#lib/core/rules/night/info/reliability.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
 import { boardNightSteps, tonight } from '#lib/core/rules/night/board-steps.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
 import type { SpecialRule } from '#lib/core/modes/index.ts';

@@ -14,12 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
-import { neighbourSeats, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { neighbourFollows } from '#lib/core/rules/reminders/reminder-movement.ts';
+import { neighbourSeats, reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import {
 	committedCharacter,
 	nightSheetPresence,

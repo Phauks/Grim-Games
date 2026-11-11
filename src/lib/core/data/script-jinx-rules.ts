@@ -12,7 +12,7 @@
  * `when`, read by the same `readJinxRules`. `self` is the character whose entry holds the jinx
  * (a custom character, or an official one listed as `{ "id": "spy", "jinxes": […] }`), and
  * `partner` the jinx's `id`. A script's jinx replaces TPI's for that pair, so the app uses only
- * these rules for it, and a script jinx with no `rules` is text only (`rules/jinx-pairs.ts`,
+ * these rules for it, and a script jinx with no `rules` is text only (`rules/jinxes/jinx-pairs.ts`,
  * `rulesForJinx`). A custom character's own `rules.jinxes` is read the same way.
  *
  * A jinx with no `rules` whose wording is TPI's own for the pair is a copy, not a script's

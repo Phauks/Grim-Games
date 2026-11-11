@@ -4,7 +4,7 @@
 		DAY_SECONDS_PER_ALIVE_CHOICES,
 		DAY_SECONDS_PER_ALIVE_MAX,
 		DAY_SECONDS_PER_ALIVE_MIN
-	} from '#lib/core/rules/day-timer.ts';
+	} from '#lib/core/rules/day/day-timer.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';

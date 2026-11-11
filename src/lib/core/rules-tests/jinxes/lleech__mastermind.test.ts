@@ -11,11 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { aliveForEnd } from '#lib/core/rules/game-end-helpers.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { survivesCarrierBy } from '#lib/core/rules/jinx-effects.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { aliveForEnd } from '#lib/core/rules/game-end/game-end-helpers.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { survivesCarrierBy } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

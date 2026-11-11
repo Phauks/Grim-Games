@@ -90,7 +90,7 @@ const TAKES = { any: [], set: ['values'], delta: ['values', 'also', 'minUsual'] 
 
 /**
  * How a character's [bracketed] ability changes which characters are dealt: the
- * `setupModifier` part of its rules block, read here and used by `rules/setup-modifiers.ts`.
+ * `setupModifier` part of its rules block, read here and used by `rules/setup/setup-modifiers.ts`.
  * Brackets only matter during setup (https://wiki.bloodontheclocktower.com/Abilities).
  *
  * `summary` and `notes` are our own words, never wiki prose.

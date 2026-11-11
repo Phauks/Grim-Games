@@ -9,7 +9,7 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { infoPicker } from '#lib/core/rules/index.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
 import { shownCommands } from './record-shown.ts';
 
 describe('shownCommands', () => {

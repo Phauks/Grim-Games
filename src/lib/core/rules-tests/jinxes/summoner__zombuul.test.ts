@@ -12,9 +12,9 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
-import { changeableSeats } from '#lib/core/rules/becomes.ts';
-import { aliveForEnd, livesWhileDead } from '#lib/core/rules/game-end-helpers.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { changeableSeats } from '#lib/core/rules/abilities/becomes.ts';
+import { aliveForEnd, livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

@@ -15,11 +15,15 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { infoPicker } from '#lib/core/rules/night-info.ts';
-import { wishes } from '#lib/core/rules/wishes.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import { wishes } from '#lib/core/rules/abilities/wishes.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

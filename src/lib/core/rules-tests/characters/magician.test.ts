@@ -19,9 +19,9 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 
 describe('Magician', () => {
 	const character = committedCharacter('magician');

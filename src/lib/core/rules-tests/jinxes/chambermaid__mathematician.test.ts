@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedNightOrder } from '#lib/core/testing/committed-data.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
-import { infoPicker } from '#lib/core/rules/night-info.ts';
-import type { Night } from '#lib/core/rules/night-order.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import type { Night } from '#lib/core/model/overrides.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

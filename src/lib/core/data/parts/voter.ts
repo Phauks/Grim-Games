@@ -10,7 +10,7 @@ import { specPart, type PartValue } from './part.ts';
  * - `needsToken`: they vote only by using a vote token, which dead players may give them
  *   (the Beggar, https://wiki.bloodontheclocktower.com/Beggar); with `learnsGiver`, the
  *   Storyteller privately tells them the alignment of each player who gives them one
- *   (`tokenGiverInfo` in `rules/vote-weights.ts`).
+ *   (`tokenGiverInfo` in `rules/day/vote-weights.ts`).
  */
 export const voter = specPart(
 	'How its player votes',

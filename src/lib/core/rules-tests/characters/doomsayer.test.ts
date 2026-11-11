@@ -22,9 +22,13 @@ import {
 	dayUseOpen,
 	dayUseUsers,
 	isDayUseAlly
-} from '#lib/core/rules/day-claims.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+} from '#lib/core/rules/day/day-claims.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 /** A character's day reminders in this scenario: their group and plain text. */
 const dayLines = (s: Scenario, characterId: string) =>

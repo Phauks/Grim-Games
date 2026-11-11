@@ -5,14 +5,14 @@
 	import {
 		BUILDER_RULES,
 		builderRule,
-		startFor,
 		fitsFields,
 		readRuleText,
 		ruleProblems,
 		ruleText,
-		type BuilderRule,
-		type CharacterFields
-	} from '#lib/core/rules/index.ts';
+		type BuilderRule
+	} from '#lib/core/rules/character-builder-rules.ts';
+	import { startFor } from '#lib/core/data/field-spec.ts';
+	import { type CharacterFields } from '#lib/core/rules/character-builder.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

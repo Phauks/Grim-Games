@@ -14,11 +14,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { infoPicker, infoRecord, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import {
+	infoPicker,
+	infoRecord,
+	isAllowed,
+	isTruthful
+} from '#lib/core/rules/night/info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 describe('Knight', () => {
 	const character = committedCharacter('knight');

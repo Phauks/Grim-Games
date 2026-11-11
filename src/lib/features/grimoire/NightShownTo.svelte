@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import { evilLearns, prepValueKey, shownToSeats } from '#lib/core/rules/index.ts';
+	import { evilLearns, shownToSeats } from '#lib/core/rules/night/shown-to.ts';
+	import { prepValueKey } from '#lib/core/rules/day/day-reminders.ts';
 	import { charactersReallyInPlay } from '#lib/features/bluffs/bluffs.ts';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';

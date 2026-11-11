@@ -19,11 +19,15 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { executionSavers, protection } from '#lib/core/rules/ability.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Vizier', () => {

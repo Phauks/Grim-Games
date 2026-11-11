@@ -15,7 +15,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { standInKind } from '#lib/core/rules/bag-plan.ts';
+import { standInKind } from '#lib/core/rules/setup/bag-plan.ts';
 
 /**
  * What one phone shows its player. `alignment` is set only when the player is told it: one

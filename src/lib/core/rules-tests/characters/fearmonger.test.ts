@@ -13,9 +13,9 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

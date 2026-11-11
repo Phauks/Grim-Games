@@ -14,7 +14,7 @@ import type { CharacterId, CharacterName, CharacterType } from '#lib/core/data/t
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { nominatedEffectHolds } from '#lib/core/rules/nominations.ts';
+import { nominatedEffectHolds } from '#lib/core/rules/day/nominations.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** One rule source in a game: a Fabled or Loric in play, or a mode or special rule file. */

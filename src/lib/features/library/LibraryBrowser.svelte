@@ -23,7 +23,7 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import CampaignScripts from '#lib/features/modes/CampaignScripts.svelte';
-	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
+	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/character-builder.ts';
 	import type { Character, GameData } from '#lib/core/data/index.ts';
 	import { recentScripts, restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
 	import { describeSource } from '#lib/features/scripts/saved-scripts.ts';

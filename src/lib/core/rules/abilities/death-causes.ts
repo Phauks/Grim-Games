@@ -1,0 +1,425 @@
+/**
+ * Characters that can cause a death, for the death-cause picker: the script's characters
+ * whose ability can kill, cause their own death or cause an execution, plus any such
+ * character in play off the script (Travellers, Fabled and Loric can join any game).
+ *
+ * The data is each character's `deathCause` rule (`data/parts/death-cause.ts`). Returns data only; the UI words it. The picker's
+ * general causes (executed, the Demon, something else) are `GENERAL_DEATH_CAUSES`.
+ */
+import type { CharacterId } from '#lib/core/data/types.ts';
+import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
+import {
+	aliveNeighbours,
+	charactersInPlay,
+	getSeat,
+	isTraveller,
+	registersAsDead,
+	trueCharacter
+} from '#lib/core/model/selectors.ts';
+import {
+	GENERAL_DEATH_CAUSES,
+	type DeathCause,
+	type Game,
+	type SeatId
+} from '#lib/core/model/types.ts';
+import {
+	abilityState,
+	registrations,
+	registrationWorlds,
+	type AbilitySource,
+	type RegistrationWorld
+} from './ability.ts';
+import { protection } from './protection.ts';
+import { gainedBy, heldAbilitiesOf } from './gained-abilities.ts';
+import { killsMarkedBy } from '#lib/core/rules/jinxes/jinx-effects.ts';
+import {
+	type DeathCauseRule,
+	type DeathKind,
+	type RegistersAs,
+	type VictimRule
+} from '#lib/core/data/parts/death-cause.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
+
+/** A `deathCause` rule for a character whose ability can cause a death. */
+export type DeathCauseEntry = Extract<DeathCauseRule, { kind: DeathKind }>;
+
+/**
+ * One character the picker can offer. `kind` is `unknown` for a character not in our data
+ * (homebrew), except a Demon, which is taken to kill.
+ */
+export interface DeathCauseOption {
+	characterId: CharacterId;
+	kind: DeathKind | 'unknown';
+}
+
+/** A character's `deathCause` rule, from the rules block it carries. */
+function deathCauseRule(id: CharacterId, characters: CharacterLookup): DeathCauseRule | undefined {
+	return rulesOf(id, characters)?.deathCause;
+}
+
+/** The `deathCause` rule of a character that can cause a death, if any. */
+export function deathCauseEntry(
+	id: CharacterId,
+	characters: CharacterLookup
+): DeathCauseEntry | undefined {
+	const rule = deathCauseRule(id, characters);
+	return rule && 'kind' in rule ? rule : undefined;
+}
+
+/**
+ * The characters that can cause a death: those on the script in script order, then those
+ * in `inPlay` that are not on the script (a Traveller in play, the Fabled and Loric in
+ * play), in that order, each once.
+ */
+export function deathCauses(
+	scriptIds: Iterable<CharacterId>,
+	characters: CharacterLookup,
+	inPlay: Iterable<CharacterId> = []
+): DeathCauseOption[] {
+	const ids = [...new Set([...scriptIds, ...inPlay])];
+	const present = new Set(ids);
+	const out: DeathCauseOption[] = [];
+	for (const id of ids) {
+		const rule = deathCauseRule(id, characters);
+		if (rule && 'kind' in rule) {
+			if (!rule.onlyWith || rule.onlyWith.some((other) => present.has(other))) {
+				out.push({ characterId: id, kind: rule.kind });
+			}
+		} else if (!rule) {
+			const type = characters.get(id)?.type;
+			if (type !== undefined) {
+				out.push({ characterId: id, kind: type === 'demon' ? 'kills' : 'unknown' });
+			}
+		}
+	}
+	return out;
+}
+
+/**
+ * Whether a death was an execution: a plain one, or by a character whose ability executes (the
+ * Virgin's nominator, https://wiki.bloodontheclocktower.com/Virgin), which counts as an execution
+ * for everything that asks (the Saint, https://wiki.bloodontheclocktower.com/Saint).
+ */
+export function isExecution(cause: DeathCause | undefined, characters: CharacterLookup): boolean {
+	if (cause === 'execution') return true;
+	if (cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause))
+		return false;
+	return deathCauseEntry(cause, characters)?.kind === 'execution';
+}
+
+/**
+ * `deathCauses` for a game: its script, the characters on seats and the Fabled and Loric. A
+ * rule that waits on a change (`afterChanging`) counts only once it has happened.
+ */
+export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathCauseOption[] {
+	return deathCauses(scriptCharacterIds(game.script), characters, [
+		...charactersInPlay(game),
+		...game.ruleCharacters
+	]).filter((o) => changedEnough(game, o.characterId, characters));
+}
+
+/**
+ * The cause a reminder gives the death it marks: its own character, when that character can
+ * cause a death in this game (Trevor, 2026-10-23: the Fang Gu's "Dead" on a player "should know
+ * the token caused the death"). Undefined for the ∞ reminder, a character whose ability never
+ * kills, or a homebrew one we know nothing about.
+ */
+export function reminderDeathCause(
+	game: Game,
+	characters: CharacterLookup,
+	characterId: CharacterId
+): CharacterId | undefined {
+	const option = gameDeathCauses(game, characters).find((o) => o.characterId === characterId);
+	return option && option.kind !== 'unknown' ? option.characterId : undefined;
+}
+
+// ── Valid causes for one player ─────────────────────────────────────────────
+
+/**
+ * Why a cause is offered with a caution rather than plainly:
+ * - `registers`: the death depends on what the player registers as, through `source`'s
+ *   ability: a Recluse as the Demon for the Slayer, a Spy as a Townsfolk for the Virgin, or
+ *   (`unless`: they truly are what the rule needs, but may register otherwise) a Recluse as
+ *   the Demon for the Golem (https://wiki.bloodontheclocktower.com/Golem). `as` is what the
+ *   rule needs;
+ * - `impaired`: every player who has the character is drunk, poisoned or without ability
+ *   now, so it did nothing unless that was not so when the player died;
+ * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked;
+ * - `protected-by-day`: the player can't die by day (the Vizier), and it is day;
+ * - `protected`: a working ability says the player can't die to another ability (the Tea
+ *   Lady's Cannot Die, the Innkeeper's Safe), so it did nothing unless that was not so then.
+ */
+export type DeathCauseFlag =
+	| {
+			code: 'registers';
+			source: AbilitySource;
+			wiki: string;
+			/** What the rule needs the player to register as. */
+			as: RegistersAs;
+			unless?: true;
+	  }
+	| { code: 'impaired'; seatIds: SeatId[] }
+	| { code: 'unknown' }
+	| { code: 'protected-by-day'; source: AbilitySource }
+	| { code: 'protected'; source: AbilitySource };
+
+export interface ValidDeathCause {
+	cause: DeathCause;
+	/** `general` for executed, exiled and the Demon. */
+	kind: DeathKind | 'unknown' | 'general';
+	/**
+	 * For a character that kills only through an ability it gained (Cannibal, Pixie,
+	 * Philosopher): the character whose ability it has, shown beside it.
+	 */
+	gained?: CharacterId;
+	flags: DeathCauseFlag[];
+}
+
+/**
+ * The character whose ability `holder` has, for a character whose deaths come only from the
+ * ability it gained (its `gainedFrom` rule, `gainedBy`): the Cannibal's Lunch, the Pixie's Has
+ * Ability, the Philosopher's swapped token or Drunk. Without that, it is not offered (Trevor,
+ * 2026-10-17: the Cannibal can't kill unless the ability it gained can).
+ */
+function gainedFrom(
+	game: Game,
+	holder: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const rule = rulesFor(game, characterId, characters)?.gainedFrom;
+	const gained = rule && gainedBy(game, holder, characterId, rule, characters);
+	return gained?.status === 'has-ability' ? gained.characterId : undefined;
+}
+
+/**
+ * The causes of death that are valid for this player given the grimoire, in picker order:
+ * executed (exiled for a Traveller), the Demon, then the characters that could have killed
+ * them (script order). "Something else" is not offered (Trevor, 2026-10-16); a cause stays
+ * optional, and saved games may still hold 'other'.
+ *
+ * A character is left out when no player has it (true character, so a Drunk shown as the
+ * Slayer is not one) and it is not a Fabled or Loric in play; when it only kills its own
+ * player and this is someone else; and when its `deathCause.victim` rule fails however anyone
+ * registers. Demons are left out: "the Demon" covers them. A rule that holds only through
+ * a false registration, a character whose players are all impaired now, and a player
+ * whose alignment or character is unset give flagged entries instead.
+ *
+ * With `day` (the Storyteller marks the death while it is day), every cause but the
+ * execution is flagged for a player whose ability says they can't die by day (the Vizier,
+ * https://wiki.bloodontheclocktower.com/Vizier): warn, never lock. Every character's cause is
+ * flagged for a player a working ability protects from any kill (the Tea Lady's neighbour).
+ */
+export function validDeathCauses(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	{ day = false }: { day?: boolean } = {}
+): ValidDeathCause[] {
+	const [execution, demon, , exile] = GENERAL_DEATH_CAUSES;
+	const general = (cause: DeathCause): ValidDeathCause => ({ cause, kind: 'general', flags: [] });
+	if (!getSeat(game, seatId)) return [];
+
+	const regs = registrations(game, characters);
+	let worlds: RegistrationWorld[] | undefined;
+	// Travellers are exiled, not executed (Trevor, 2026-10-16;
+	// https://wiki.bloodontheclocktower.com/Exile).
+	const removed = isTraveller(game, seatId, characters) ? exile : execution;
+	const out: ValidDeathCause[] = [general(removed), general(demon)];
+
+	for (const { characterId, kind } of gameDeathCauses(game, characters)) {
+		if (characters.get(characterId)?.type === 'demon') continue;
+		const holders = game.seating.filter((s) => trueCharacter(game, s, characters) === characterId);
+		if (holders.length === 0 && !game.ruleCharacters.includes(characterId)) continue;
+
+		/** Who an ability can kill: its own player when it only causes its own death. */
+		const ruleOf = (id: CharacterId): VictimRule | undefined => {
+			const entry = deathCauseEntry(id, characters);
+			return entry?.kind === 'own-death' ? { who: 'self' } : entry?.victim;
+		};
+		// A gained ability: the rules of the character it came from.
+		const from = rulesFor(game, characterId, characters)?.gainedFrom !== undefined;
+		const gainedFor = new Map<SeatId, CharacterId>();
+		for (const h of from ? holders : []) {
+			const id = gainedFrom(game, h, characterId, characters);
+			const entry = id === undefined ? undefined : deathCauseEntry(id, characters);
+			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedFor.set(h, id);
+		}
+		if (from && gainedFor.size === 0) continue;
+		// An ability its own character gives its player without a token (`givesAbility` to
+		// `self`): the Amnesiac's, whatever the Storyteller chose it to be once picked in the
+		// seat's menu (https://wiki.bloodontheclocktower.com/Amnesiac, M15i), or the Hermit's
+		// Outsiders. The death is the holder's own character's, shown with the ability it held.
+		// Once any is recorded, it is offered only when one of them can kill this player.
+		const own = !from && kind === 'gained-ability';
+		let held = false;
+		for (const h of own ? holders : []) {
+			for (const ability of heldAbilitiesOf(game, h, characters)) {
+				if (ability.via !== characterId) continue;
+				held = true;
+				const entry = deathCauseEntry(ability.characterId, characters);
+				if (!entry || entry.kind === 'gained-ability') continue;
+				if (
+					!gainedFor.has(h) ||
+					holderFits(game, ruleOf(ability.characterId), h, seatId, characters)
+				)
+					gainedFor.set(h, ability.characterId);
+			}
+		}
+		if (held && gainedFor.size === 0) continue;
+		const ruleFor = (h: SeatId): VictimRule | undefined => {
+			const id = gainedFor.get(h);
+			if (id !== undefined) return ruleOf(id);
+			return kind === 'own-death'
+				? { who: 'self' }
+				: deathCauseEntry(characterId, characters)?.victim;
+		};
+		const acting = holders.filter(
+			(h) =>
+				(!(from || held) || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId, characters)
+		);
+		if (holders.length > 0 && acting.length === 0) continue;
+		const gained = acting.length > 0 ? gainedFor.get(acting[0]) : undefined;
+		const rule = acting.length > 0 ? ruleFor(acting[0]) : ruleFor(holders[0]);
+
+		const flags: DeathCauseFlag[] = [];
+		// A jinx lets it kill the player carrying the partner's token whatever they register as
+		// (`killsMarked`: the Slayer shoots the Lleech's host,
+		// https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
+		const marked = killsMarkedBy(game, characterId, seatId, characters) !== undefined;
+		if (rule?.who === 'registers' && !marked) {
+			worlds ??= registrationWorlds(game, characters, regs);
+			const verdict = registersAs(game, seatId, rule.as, worlds, characters);
+			if (verdict === 'never') continue;
+			if (verdict === 'unknown') flags.push({ code: 'unknown' });
+			if (verdict === 'falsely' || verdict === 'unless-falsely') {
+				const reg = regs.find((r) => r.seatId === seatId);
+				const unless = verdict === 'unless-falsely' ? { unless: true as const } : {};
+				if (reg)
+					flags.push({
+						code: 'registers',
+						source: reg.source,
+						wiki: reg.wiki,
+						as: rule.as,
+						...unless
+					});
+			}
+		}
+		if (
+			acting.length > 0 &&
+			acting.every((h) => abilityState(game, h, characters).impairments.length > 0)
+		) {
+			flags.push({ code: 'impaired', seatIds: acting });
+		}
+		out.push({ cause: characterId, kind, ...(gained ? { gained } : {}), flags });
+	}
+	// A protection from another ability's kill (the Tea Lady's: "The Tinker cannot die from their
+	// ability", https://wiki.bloodontheclocktower.com/Tinker) flags every character's cause.
+	const guarded = protection(game, seatId, characters, 'other');
+	const safe = day ? protection(game, seatId, characters, 'day') : undefined;
+	if (safe && safe !== 'override') {
+		for (const entry of out)
+			if (entry.cause !== removed) entry.flags.push({ code: 'protected-by-day', source: safe });
+	} else if (guarded && guarded !== 'override') {
+		for (const entry of out)
+			if (entry.kind !== 'general') entry.flags.push({ code: 'protected', source: guarded });
+	}
+	return out;
+}
+
+/**
+ * Whether a rule that waits on a change (`afterChanging`) holds: some player this character
+ * changed is now of that type (the Pit-Hag's made Demon, https://wiki.bloodontheclocktower.com/Pit-Hag).
+ * True for a rule without one.
+ */
+function changedEnough(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
+	const type = deathCauseEntry(characterId, characters)?.afterChanging;
+	if (type === undefined) return true;
+	return game.seating.some((s) => {
+		const seat = game.seats[s];
+		return (
+			seat.changedBy?.via === characterId &&
+			seat.characterId !== undefined &&
+			characters.get(seat.characterId)?.type === type
+		);
+	});
+}
+
+/** Whether the player with the character at `holder` could have killed `victim`. */
+function holderFits(
+	game: Game,
+	rule: VictimRule | undefined,
+	holder: SeatId,
+	victim: SeatId,
+	characters: CharacterLookup
+): boolean {
+	switch (rule?.who) {
+		case undefined:
+			return true;
+		case 'self':
+			return holder === victim;
+		case 'not-self':
+			return holder !== victim;
+		case 'registers':
+			return !rule.notSelf || holder !== victim;
+		case 'alive-neighbour':
+			// Neighbours as they were before the victim died.
+			return aliveNeighbours(
+				game,
+				holder,
+				characters,
+				(s) => s !== victim && registersAsDead(game, s, characters)
+			).includes(victim);
+	}
+}
+
+/**
+ * Whether a seat carries a reminder that makes it the Demon: a `carrierIsDemon` token (Lil'
+ * Monsta's babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta) or a `becomes`
+ * Demon token (the Scarlet Woman's Is The Demon,
+ * https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+ */
+export function carriesDemonToken(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): boolean {
+	return (getSeat(game, seatId)?.reminders ?? []).some((r) => {
+		const rules = rulesFor(game, r.characterId, characters);
+		return (
+			rules?.carrierIsDemon === r.label ||
+			(rules?.becomes?.into === 'demon' && rules.becomes.token === r.label)
+		);
+	});
+}
+
+/**
+ * Whether the player is (`truly`), is but could register otherwise (`unless-falsely`), could
+ * register as (`falsely`) or cannot be (`never`) what the rule needs, or `unknown` when their alignment or character is not set. A player
+ * carrying a reminder that makes them the Demon is the Demon (`carriesDemonToken`).
+ */
+function registersAs(
+	game: Game,
+	seatId: SeatId,
+	as: RegistersAs,
+	worlds: readonly RegistrationWorld[],
+	characters: CharacterLookup
+): 'truly' | 'unless-falsely' | 'falsely' | 'never' | 'unknown' {
+	const babysitter = carriesDemonToken(game, seatId, characters);
+	const test = (world: RegistrationWorld): boolean | undefined => {
+		if (as === 'good') {
+			const alignment = world.alignment(seatId);
+			return alignment === undefined ? undefined : alignment === 'good';
+		}
+		const type = world.type(seatId);
+		if (as === 'townsfolk') return type === undefined ? undefined : type === 'townsfolk';
+		const isDemon = babysitter || (type === undefined ? undefined : type === 'demon');
+		if (isDemon === undefined) return undefined;
+		return as === 'demon' ? isDemon : !isDemon;
+	};
+	const first = test(worlds[0]);
+	if (first === undefined) return 'unknown';
+	if (first) return worlds.every((w) => test(w) !== false) ? 'truly' : 'unless-falsely';
+	return worlds.some((w) => test(w)) ? 'falsely' : 'never';
+}

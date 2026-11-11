@@ -14,8 +14,8 @@ import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },

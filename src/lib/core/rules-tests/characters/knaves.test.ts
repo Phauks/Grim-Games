@@ -15,10 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, validInformation } from '#lib/core/rules/night-info.ts';
-import { savantSituation } from '#lib/core/rules/savant.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { validInformation } from '#lib/core/rules/night/info/valid-info.ts';
+import { savantSituation } from '#lib/core/rules/savant/savant.ts';
 import { decide } from '#lib/core/engine/index.ts';
-import { storytellerVisit } from '#lib/core/rules/storytellers.ts';
+import { storytellerVisit } from '#lib/core/rules/abilities/storytellers.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Knaves', () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
-import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
+import { setupReminders, type SetupReminder } from '#lib/core/rules/setup/setup-reminders.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { trayItems, traySeats, withoutOffSeat } from './setup-tray.ts';
 

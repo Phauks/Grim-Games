@@ -7,7 +7,7 @@
 import { untrack } from 'svelte';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-import { heldAbilitiesOf } from '#lib/core/rules/index.ts';
+import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import {

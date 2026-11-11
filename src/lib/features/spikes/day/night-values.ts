@@ -4,13 +4,9 @@
  * ranges, Mathematician causes and death verdicts.
  */
 import type { AbnormalCause, SeatId } from '#lib/core/model/index.ts';
-import type {
-	AbilitySource,
-	AnswerValue,
-	DeathVerdict,
-	Impairment,
-	NightAnswer
-} from '#lib/core/rules/index.ts';
+import type { AbilitySource, Impairment } from '#lib/core/rules/abilities/ability.ts';
+import type { AnswerValue, NightAnswer } from '#lib/core/rules/night/info/reliability.ts';
+import type { DeathVerdict } from '#lib/core/rules/night/night-deaths.ts';
 import type { DayGame } from './day-game.svelte.ts';
 
 /** "Ben (Poisoner)", or "Poisoner" with no seat. */

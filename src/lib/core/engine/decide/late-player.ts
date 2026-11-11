@@ -1,6 +1,6 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { isKnownReminder, type Tile, type TileId } from '#lib/core/model/index.ts';
-import { SHOWN_OWN_CHARACTER } from '#lib/core/rules/character-changes.ts';
+import { SHOWN_OWN_CHARACTER } from '#lib/core/rules/night/character-changes.ts';
 import type { TileSpec } from '../commands.ts';
 import type { GameEvent } from '../events.ts';
 import {

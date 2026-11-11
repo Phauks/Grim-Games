@@ -11,8 +11,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

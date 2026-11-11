@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
-	import { nightTextSegmentsFor } from '#lib/core/rules/night-text.ts';
+	import { nightTextSegmentsFor } from '#lib/core/rules/night/night-text.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightTextPiece from './NightTextPiece.svelte';

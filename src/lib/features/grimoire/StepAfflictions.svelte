@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { NightStep, Impairment } from '#lib/core/rules/index.ts';
-	import { nightStepAlerts } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import type { Impairment } from '#lib/core/rules/abilities/ability.ts';
+	import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';

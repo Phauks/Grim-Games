@@ -13,9 +13,9 @@ import { describe, expect, it } from 'vitest';
 import type { Script } from '#lib/core/data/index.ts';
 import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { cantTurnGood } from '#lib/core/rules/becomes.ts';
-import { neighbourAlignments } from '#lib/core/rules/becomes.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { cantTurnGood } from '#lib/core/rules/abilities/becomes.ts';
+import { neighbourAlignments } from '#lib/core/rules/abilities/becomes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 

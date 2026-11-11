@@ -3,7 +3,7 @@
  * when Start game was tapped, the night or day in play, and the corner's lines.
  */
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-import { gamePhase } from '#lib/core/rules/index.ts';
+import { gamePhase } from '#lib/core/rules/game-phase.ts';
 import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
 import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 import { scriptVersion } from '#lib/features/player/player-script.ts';

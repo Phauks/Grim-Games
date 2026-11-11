@@ -5,7 +5,7 @@
  * calls for (the Washerwoman's "Townsfolk" and "Wrong") where they aren't already.
  */
 import type { CharacterLookup, Game, Reminder, SeatId } from '#lib/core/model/index.ts';
-import { infoRecord, type InfoChoice, type InfoPicker } from '#lib/core/rules/index.ts';
+import { infoRecord, type InfoChoice, type InfoPicker } from '#lib/core/rules/night/info/picker.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { seatName } from '#lib/features/game/seat-label.ts';
 

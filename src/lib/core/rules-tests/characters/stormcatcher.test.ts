@@ -16,15 +16,17 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { evilLearns, prepValueCharacter, prepValueKey } from '#lib/core/rules/index.ts';
+import { evilLearns } from '#lib/core/rules/night/shown-to.ts';
+import { prepValueCharacter } from '#lib/core/rules/setup/setup-reminders.ts';
+import { prepValueKey } from '#lib/core/rules/day/day-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep, setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep, setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 
 describe('Storm Catcher', () => {
 	const character = committedCharacter('stormcatcher');

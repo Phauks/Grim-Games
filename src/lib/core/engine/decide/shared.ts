@@ -37,20 +37,22 @@ import {
 	type SeatId,
 	type Tile
 } from '#lib/core/model/index.ts';
+import { DAY_GROUPS } from '#lib/core/data/parts/day-reminders.ts';
+import { guessLimit } from '#lib/core/rules/day/day-claims.ts';
 import {
-	DAY_GROUPS,
-	guessLimit,
 	extraNominationOpen,
 	nominationsLeftThisGame,
 	nominationsPerDay,
-	remindersEndingOnDeath,
-	storytellerNominates,
+	storytellerNominates
+} from '#lib/core/rules/day/nominations.ts';
+import { remindersEndingOnDeath } from '#lib/core/rules/reminders/reminder-ends.ts';
+import {
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
-} from '#lib/core/rules/index.ts';
-import { pretendTeamSource } from '#lib/core/rules/pretend.ts';
-import { borrowedAbilities } from '#lib/core/rules/borrowed-abilities.ts';
+} from '#lib/core/model/overrides.ts';
+import { pretendTeamSource } from '#lib/core/rules/abilities/pretend.ts';
+import { borrowedAbilities } from '#lib/core/rules/abilities/borrowed-abilities.ts';
 import { readInfoTokenCharacters } from '#lib/core/data/parts/info-token-characters.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';

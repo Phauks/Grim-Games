@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { survivorsLackDemon } from '#lib/core/rules/index.ts';
+	import { survivorsLackDemon } from '#lib/core/rules/day/explosion.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
-	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
+	import { SETUP_LOOKS } from '#lib/core/rules/game-phase.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';

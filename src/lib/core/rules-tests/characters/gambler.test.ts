@@ -14,12 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { deathCheck, deathVerdict } from '#lib/core/rules/night-deaths.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { deathCheck, deathVerdict } from '#lib/core/rules/night/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Gambler', () => {
 	const character = committedCharacter('gambler');

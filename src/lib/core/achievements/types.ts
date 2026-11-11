@@ -15,7 +15,7 @@
  * agreed. Design: https://claude.ai/artifact/3xwEgmAXm32oPVN6EMWUdL
  */
 import type { CharacterId, CharacterType } from '#lib/core/data/index.ts';
-import type { EndReason } from '#lib/core/rules/end-reason.ts';
+import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { GameRecord } from '#lib/core/stats/index.ts';
 

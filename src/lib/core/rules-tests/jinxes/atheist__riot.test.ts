@@ -13,9 +13,13 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { mayNominate, nominationsPerDay, storytellerNominee } from '#lib/core/rules/nominations.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import {
+	mayNominate,
+	nominationsPerDay,
+	storytellerNominee
+} from '#lib/core/rules/day/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 const scriptOf = (ids: string[]): Script => ({

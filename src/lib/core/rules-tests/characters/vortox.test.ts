@@ -16,18 +16,14 @@ import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { castGame, castWith, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
-import {
-	answerOptions,
-	infoPicker,
-	isAllowed,
-	nightAnswer,
-	reliability
-} from '#lib/core/rules/night-info.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { savantSituation } from '#lib/core/rules/savant.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { answerOptions, nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { savantSituation } from '#lib/core/rules/savant/savant.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';

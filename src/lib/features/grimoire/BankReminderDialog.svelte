@@ -14,7 +14,9 @@
 		type ReminderInstance
 	} from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { pickedEffectOf, prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
+	import { pickedEffectOf } from '#lib/core/rules/reminders/reminder-effects.ts';
+	import { prepTextSegments } from '#lib/core/rules/setup/setup-reminders.ts';
+	import { takesNote } from '#lib/core/rules/night/shown-to.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';

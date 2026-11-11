@@ -9,7 +9,7 @@
 		truthfulFirst,
 		type InfoChoice,
 		type InfoPicker
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/night/info/picker.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { DayGame } from './day-game.svelte.ts';

@@ -19,8 +19,9 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
-import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/night/character-changes.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

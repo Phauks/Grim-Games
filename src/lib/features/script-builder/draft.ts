@@ -6,8 +6,8 @@ import {
 	MAX_EXPECTED_COUNT,
 	type HomebrewEntries,
 	type HomebrewEntry
-} from '#lib/core/rules/script-builder.ts';
-import type { TypeCounts } from '#lib/core/rules/distribution.ts';
+} from '#lib/core/rules/setup/script-builder.ts';
+import type { TypeCounts } from '#lib/core/rules/setup/distribution.ts';
 import { SEATED_TYPES } from '#lib/core/data/types.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { ScriptSource, VariationOf } from '#lib/features/scripts/saved-scripts.ts';

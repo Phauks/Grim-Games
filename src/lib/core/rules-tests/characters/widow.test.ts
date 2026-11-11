@@ -14,11 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState, protection } from '#lib/core/rules/ability.ts';
-import { shownToSeats } from '#lib/core/rules/index.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { shownToSeats } from '#lib/core/rules/night/shown-to.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { seesGrimoire } from '#lib/core/rules/night/sees-grimoire.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,

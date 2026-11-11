@@ -3,9 +3,9 @@
 	import {
 		abilityChoice,
 		chosenAbility,
-		choosesAbility,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+		choosesAbility
+	} from '#lib/core/rules/abilities/chosen-ability.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';

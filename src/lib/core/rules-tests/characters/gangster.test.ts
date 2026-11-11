@@ -14,10 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
+import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';

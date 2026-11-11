@@ -1,7 +1,7 @@
 /**
  * The Storyteller's changes to a game's generated day reminders and night steps, stored with
- * the game. They sit in the model, below the rules that apply them (`rules/day-reminders.ts`,
- * `rules/night-order.ts`), so the model never imports the rules.
+ * the game. They sit in the model, below the rules that apply them (`rules/day/day-reminders.ts`,
+ * `rules/night/night-order.ts`), so the model never imports the rules.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { DayGroup } from '#lib/core/data/parts/day-reminders.ts';

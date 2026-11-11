@@ -12,23 +12,27 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Night } from '#lib/core/model/overrides.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { withActsTwiceSteps } from '#lib/core/rules/acts-twice.ts';
-import { notDealtInPlay } from '#lib/core/rules/bag-characters.ts';
-import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
-import { keepsAbilityWhenDead } from '#lib/core/rules/dead-characters.ts';
-import { livesWhileDead } from '#lib/core/rules/game-end-helpers.ts';
-import { evilInfoNotesLeftOut } from '#lib/core/rules/holder-jinxes.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinx-pairs.ts';
-import { notDeclared } from '#lib/core/rules/jinxes.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
+import { withActsTwiceSteps } from '#lib/core/rules/abilities/acts-twice.ts';
+import { notDealtInPlay } from '#lib/core/rules/setup/bag-characters.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/night/character-changes.ts';
+import { keepsAbilityWhenDead } from '#lib/core/rules/abilities/dead-characters.ts';
+import { livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
+import { evilInfoNotesLeftOut } from '#lib/core/rules/jinxes/holder-jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
 import {
 	characterStepSeats,
 	wakesMarked,
 	withNightInfo
-} from '#lib/core/rules/night-info/steps.ts';
-import { nightOrder, sheetWithOwnPlaces, type NightStep } from '#lib/core/rules/night-order.ts';
-import { pretendSeatsOf, pretendTeam } from '#lib/core/rules/pretend.ts';
-import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
+} from '#lib/core/rules/night/info/steps.ts';
+import {
+	nightOrder,
+	sheetWithOwnPlaces,
+	type NightStep
+} from '#lib/core/rules/night/night-order.ts';
+import { pretendSeatsOf, pretendTeam } from '#lib/core/rules/abilities/pretend.ts';
+import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
 import {
 	deadWakesOn,
 	ruleSources,
@@ -37,7 +41,7 @@ import {
 	type RuleSource
 } from '#lib/core/rules/rule-sources.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 
 export function boardNightSteps(
 	game: Game,

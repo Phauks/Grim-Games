@@ -20,16 +20,16 @@ import {
 	type CastGame,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
-import { reliability } from '#lib/core/rules/night-info.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Pukka', () => {
 	const character = committedCharacter('pukka');

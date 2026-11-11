@@ -15,12 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState, protection } from '#lib/core/rules/ability.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Lleech', () => {
 	const character = committedCharacter('lleech');

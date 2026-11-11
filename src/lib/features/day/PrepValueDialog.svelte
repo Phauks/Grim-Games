@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
-	import { prepValueCharacter, prepValueKey, prepValueLabel } from '#lib/core/rules/index.ts';
+	import { prepValueCharacter, prepValueLabel } from '#lib/core/rules/setup/setup-reminders.ts';
+	import { prepValueKey } from '#lib/core/rules/day/day-reminders.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';

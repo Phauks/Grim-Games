@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Marionette + Summoner jinx', () => {

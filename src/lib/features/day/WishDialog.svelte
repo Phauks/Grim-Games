@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { WISH_EFFECTS, type SeatId, type WishEffect } from '#lib/core/model/index.ts';
-	import { grantedWish } from '#lib/core/rules/index.ts';
+	import { grantedWish } from '#lib/core/rules/abilities/wishes.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';

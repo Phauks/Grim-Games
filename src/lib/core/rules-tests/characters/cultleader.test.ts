@@ -15,10 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { neighbourAlignments } from '#lib/core/rules/becomes.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { neighbourAlignments } from '#lib/core/rules/abilities/becomes.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

@@ -1,7 +1,8 @@
 <script module lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
-	import { dayTallyOf, makesWish } from '#lib/core/rules/index.ts';
+	import { dayTallyOf } from '#lib/core/rules/day/day-tally.ts';
+	import { makesWish } from '#lib/core/rules/abilities/wishes.ts';
 
 	/** Whether a character's rules give its day row a wish or a count (RuleDayControl). */
 	export function hasRuleDayControl(characterId: CharacterId, characters: CharacterLookup) {

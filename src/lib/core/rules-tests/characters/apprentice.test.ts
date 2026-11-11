@@ -21,12 +21,12 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { validDeathCauses } from '#lib/core/rules/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
-import { infoPicker } from '#lib/core/rules/night-info/picker.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { deathVerdict } from '#lib/core/rules/night/night-deaths.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
@@ -34,9 +34,9 @@ import {
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
+import { hasAbilityOf } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { stepInfoTokens } from '#lib/core/rules/night/info-token-characters.ts';
 
 describe('Apprentice', () => {
 	const character = committedCharacter('apprentice');

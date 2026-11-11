@@ -18,7 +18,11 @@ import {
 } from '#lib/core/model/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
-import { borrowedAbilities, deadCharacters, reminderHolders } from '#lib/core/rules/index.ts';
+import {
+	borrowedAbilities,
+	reminderHolders
+} from '#lib/core/rules/abilities/borrowed-abilities.ts';
+import { deadCharacters } from '#lib/core/rules/abilities/dead-characters.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';

@@ -20,13 +20,17 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 const TURNS_EVIL = { characterId: 'mezepheles', label: 'Turns Evil' };
 

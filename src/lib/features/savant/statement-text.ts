@@ -4,7 +4,7 @@
  */
 import type { CharacterType } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-import type { SavantPart, SavantStatement } from '#lib/core/rules/index.ts';
+import type { SavantPart, SavantStatement } from '#lib/core/rules/savant/savant.ts';
 import { seatLabel } from '#lib/features/game/seat-label.ts';
 
 /** Character type names, as the game spells them. */

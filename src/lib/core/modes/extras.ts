@@ -5,7 +5,7 @@
  * (https://chillclocktower.com/2024/04/28/a-script-of-infinite-possibilities/).
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 import { bannedIn, type StorytellerRestrictions } from './pool.ts';
 import type { GameMode } from './types.ts';
 

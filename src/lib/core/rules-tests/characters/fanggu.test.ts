@@ -14,12 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { gameEnds, starPass } from '#lib/core/rules/game-end.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { gameEnds, starPass } from '#lib/core/rules/game-end/game-end.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

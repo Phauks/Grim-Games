@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { decide, dispatch } from '#lib/core/engine/index.ts';
-import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { extraEvilPlayers } from '#lib/core/rules/setup/extra-evil.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Spirit of Ivory', () => {

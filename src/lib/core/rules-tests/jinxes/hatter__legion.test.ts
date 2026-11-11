@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { allEvilBecomeTests, scriptOf } from './legion.test-support.ts';
 

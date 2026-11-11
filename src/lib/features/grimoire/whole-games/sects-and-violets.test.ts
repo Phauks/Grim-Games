@@ -11,13 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
-import {
-	characterNominationPrompts,
-	gameEnds,
-	infoPicker,
-	isAllowed,
-	type NightStep
-} from '#lib/core/rules/index.ts';
+import { characterNominationPrompts } from '#lib/core/rules/day/nominations.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { boardNightSteps, stepWakes, tonight } from '#lib/core/rules/night/board-steps.ts';

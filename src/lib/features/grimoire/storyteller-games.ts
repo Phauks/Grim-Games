@@ -5,7 +5,7 @@
  */
 import type { SavedGameSummary, UnreadableGame } from '#lib/core/engine/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
-import { gamePhase } from '#lib/core/rules/index.ts';
+import { gamePhase } from '#lib/core/rules/game-phase.ts';
 import { labGameId } from '#lib/features/character-lab/lab-store.svelte.ts';
 import { gameStore } from '#lib/features/game/session.svelte.ts';
 import {

@@ -23,11 +23,11 @@ import {
 	gainedSetupAbilities,
 	heldAbilitiesOf,
 	withGainedSteps
-} from '#lib/core/rules/gained-abilities.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { characterNominationPrompts, nominationsPerDay } from '#lib/core/rules/nominations.ts';
+} from '#lib/core/rules/abilities/gained-abilities.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { characterNominationPrompts, nominationsPerDay } from '#lib/core/rules/day/nominations.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Storyteller gives the Demon in `demon`'s seat a good ability through the Boffin. */

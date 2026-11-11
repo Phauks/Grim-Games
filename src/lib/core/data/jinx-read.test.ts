@@ -1,7 +1,7 @@
 /**
  * Reading the jinx format (`jinx-read.ts`): M44's conditions and verb shapes. The shapes are
  * the app's own, not the wiki's; what each does is tested through its reader in
- * `rules/script-jinxes.test.ts`.
+ * `rules/jinxes/script-jinxes.test.ts`.
  */
 import { describe, expect, it } from 'vitest';
 import { readJinxRules } from './jinx-read.ts';

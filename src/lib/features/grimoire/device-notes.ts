@@ -6,7 +6,7 @@
  * All live in localStorage with a version in the key, and anything unreadable is ignored.
  */
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
-import { parseEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
+import { parseEndReason, type EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	isDefaultLayout,

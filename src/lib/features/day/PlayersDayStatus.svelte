@@ -1,13 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import {
-		townCounts,
-		townVoting,
-		type dayTimers,
-		type PlayersPhase,
-		type SetupLook,
-		type TownSeat
-	} from '#lib/core/rules/index.ts';
+	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
+	import { townCounts, type TownSeat } from '#lib/core/rules/day/voting.ts';
+	import { townVoting } from '#lib/core/rules/day/voting-table.ts';
+	import { type PlayersPhase, type SetupLook } from '#lib/core/rules/game-phase.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { contextCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';

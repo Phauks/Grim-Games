@@ -8,12 +8,10 @@
 		type ReminderInstance,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import {
-		heldAbilitiesOf,
-		madAsOf,
-		pretendTeam,
-		votesWithoutToken
-	} from '#lib/core/rules/index.ts';
+	import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
+	import { madAsOf } from '#lib/core/rules/abilities/mad-as.ts';
+	import { pretendTeam } from '#lib/core/rules/abilities/pretend.ts';
+	import { votesWithoutToken } from '#lib/core/rules/day/voting.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';

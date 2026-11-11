@@ -15,7 +15,7 @@ import type {
 	PlayerName
 } from '#lib/core/data/index.ts';
 import type { DeathCause, GameId, SeatId } from '#lib/core/model/index.ts';
-import type { EndReason } from '#lib/core/rules/end-reason.ts';
+import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 
 /** Bump when the record's shape changes, as with saved games, once records are stored. */
 export const GAME_RECORD_VERSION = 1;

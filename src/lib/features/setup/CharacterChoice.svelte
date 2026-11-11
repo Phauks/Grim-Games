@@ -5,7 +5,7 @@
 	import JinxPartners from '#lib/features/characters/JinxPartners.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
-	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
+	import { isBagDisabled } from '#lib/core/rules/setup/bag-characters.ts';
 
 	interface Props {
 		character: Character;

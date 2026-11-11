@@ -14,8 +14,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { dayMarkValue } from '#lib/core/rules/day-marks.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { dayMarkValue } from '#lib/core/rules/day/day-marks.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

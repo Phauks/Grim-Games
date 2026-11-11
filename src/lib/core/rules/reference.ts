@@ -18,14 +18,16 @@ import {
 } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/parts/day-reminders.ts';
-import { dayRulesOf, detectDayReminders } from './day-reminders.ts';
+import { dayRulesOf, detectDayReminders } from '#lib/core/rules/day/day-reminders.ts';
 import { describeImpairable, describeWhen } from './describe.ts';
-import { MAX_DEALT_PLAYERS } from './distribution.ts';
-import { jinxIsExclusive } from './jinxes.ts';
-import { nightOrder, type Night, type NightOrder } from './night-order.ts';
-import { nightTextOverride, type NightTextOverride } from './night-text.ts';
-import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
-import { setupPrepOf } from './setup-reminders.ts';
+import { MAX_DEALT_PLAYERS } from '#lib/core/rules/setup/distribution.ts';
+import { jinxIsExclusive } from '#lib/core/rules/jinxes/jinxes.ts';
+import { nightOrder, type NightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
+import { nightTextOverride } from '#lib/core/rules/night/night-text.ts';
+import { type NightTextOverride } from '#lib/core/data/parts/night-text.ts';
+import { setupModifierFor, type SetupModifier } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { setupPrepOf } from '#lib/core/rules/setup/setup-reminders.ts';
 
 /**
  * A piece of a reminder sentence: a character badge, the player carrying a token, a value

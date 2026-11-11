@@ -20,15 +20,15 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { revivedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
-import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { revivedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
+import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
 
 describe('Shabaloth', () => {
 	const character = committedCharacter('shabaloth');

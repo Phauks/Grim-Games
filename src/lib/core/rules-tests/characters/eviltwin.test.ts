@@ -13,9 +13,9 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
@@ -23,8 +23,9 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, learnedRoles } from '#lib/core/rules/night-info.ts';
-import { shownToSeats } from '#lib/core/rules/shown-to.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import { learnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+import { shownToSeats } from '#lib/core/rules/night/shown-to.ts';
 
 describe('Evil Twin', () => {
 	const character = committedCharacter('eviltwin');

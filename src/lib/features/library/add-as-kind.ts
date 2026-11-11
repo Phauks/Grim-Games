@@ -4,8 +4,8 @@
  * (`ChangeKind.svelte`) saves characters the same way.
  */
 import type { Character, LoadedScript } from '#lib/core/data/index.ts';
-import { fieldsFromEntry } from '#lib/core/rules/index.ts';
-import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import { fieldsFromEntry } from '#lib/core/rules/character-builder.ts';
+import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 import { savedRef } from './library-collections.ts';
 import { characterCollections } from './library-collections.svelte.ts';

@@ -12,9 +12,9 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
-import { registrations } from '#lib/core/rules/ability.ts';
-import { infoPicker } from '#lib/core/rules/night-info.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { registrations } from '#lib/core/rules/abilities/ability.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },

@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

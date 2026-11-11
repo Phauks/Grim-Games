@@ -15,8 +15,8 @@ import { committedGameData, committedCharacters } from '#lib/core/testing/commit
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },

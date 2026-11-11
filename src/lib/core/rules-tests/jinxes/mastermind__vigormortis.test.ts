@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { keepsAbilityWhenDead } from '#lib/core/rules/dead-characters.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { keepsAbilityWhenDead } from '#lib/core/rules/abilities/dead-characters.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

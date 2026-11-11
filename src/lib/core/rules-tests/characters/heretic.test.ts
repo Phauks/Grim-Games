@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Heretic', () => {

@@ -4,7 +4,8 @@ import {
 	type Game,
 	type StorytellerPair
 } from '#lib/core/model/index.ts';
-import { grantedWish, makesWish, switchedPair, twoStorytellersBy } from '#lib/core/rules/index.ts';
+import { grantedWish, makesWish } from '#lib/core/rules/abilities/wishes.ts';
+import { switchedPair, twoStorytellersBy } from '#lib/core/rules/abilities/storytellers.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
 import { characterOf, entryOfKind, refuse, seatOf, type Deciders, type Warn } from './shared.ts';

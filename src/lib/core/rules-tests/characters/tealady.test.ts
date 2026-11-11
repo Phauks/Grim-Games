@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Tea Lady', () => {
 	const character = committedCharacter('tealady');

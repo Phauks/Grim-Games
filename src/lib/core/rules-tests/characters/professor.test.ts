@@ -21,16 +21,20 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { withNightInfo } from '#lib/core/rules/night-info.ts';
-import { revivedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { promptApplies, reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
-import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { revivedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { promptApplies, reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
+import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
 
 describe('Professor', () => {
 	const character = committedCharacter('professor');

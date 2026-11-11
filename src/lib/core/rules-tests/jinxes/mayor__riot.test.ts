@@ -12,10 +12,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { jinxStoppers } from '#lib/core/rules/jinx-ends.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { nomineesNominateNow } from '#lib/core/rules/nominations.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { jinxStoppers } from '#lib/core/rules/jinxes/jinx-ends.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { nomineesNominateNow } from '#lib/core/rules/day/nominations.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 const scriptOf = (ids: string[]): Script => ({

@@ -14,10 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightAnswer, reminderTargets } from '#lib/core/rules/index.ts';
-import { dayClaim, guessLimit } from '#lib/core/rules/day-claims.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { dayClaim, guessLimit } from '#lib/core/rules/day/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { wokeTonight } from '#lib/core/rules/night/woke-tonight.ts';
 import {
 	committedCharacter,
 	nightSheetPresence,

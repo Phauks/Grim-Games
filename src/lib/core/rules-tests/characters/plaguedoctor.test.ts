@@ -19,9 +19,9 @@ import {
 	testCharacters as characters,
 	type CastGame
 } from '#lib/core/model/fixtures.test-support.ts';
-import { withNightInfo } from '#lib/core/rules/night-info.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,

@@ -6,13 +6,17 @@ import {
 	replacedBy,
 	typeOf
 } from '#lib/core/model/index.ts';
-import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { cantTurnGood } from '#lib/core/rules/becomes.ts';
-import { PRETEND_TYPES, pretendTeamSource } from '#lib/core/rules/pretend.ts';
-import { barredAbilities, givenInstead, jinxForbidsBecoming } from '#lib/core/rules/jinxes.ts';
-import { tallyKiller, tallyKills } from '#lib/core/rules/day-tally.ts';
-import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
+import { extraEvilPlayers } from '#lib/core/rules/setup/extra-evil.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { cantTurnGood } from '#lib/core/rules/abilities/becomes.ts';
+import { PRETEND_TYPES, pretendTeamSource } from '#lib/core/rules/abilities/pretend.ts';
+import {
+	barredAbilities,
+	givenInstead,
+	jinxForbidsBecoming
+} from '#lib/core/rules/jinxes/jinxes.ts';
+import { tallyKiller, tallyKills } from '#lib/core/rules/day/day-tally.ts';
+import { neighbourFollows } from '#lib/core/rules/reminders/reminder-movement.ts';
 import type { Game, SeatId } from '#lib/core/model/index.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';

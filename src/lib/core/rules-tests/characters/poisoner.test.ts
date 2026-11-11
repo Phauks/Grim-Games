@@ -19,14 +19,16 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { infoPicker, isAllowed, nightAnswer, withNightInfo } from '#lib/core/rules/night-info.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Poisoner', () => {

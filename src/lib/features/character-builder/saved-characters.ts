@@ -3,7 +3,7 @@
  * not read (no migrations, CLAUDE.md). Each is TPI's script character object
  * as the Script builder puts it on a script.
  */
-import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import { characterEntry, fieldsFromEntry } from '#lib/core/rules/character-builder.ts';
 
 export const SAVED_CHARACTERS_VERSION = 1;

@@ -11,10 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { secondDemonReverts } from '#lib/core/rules/jinx-effects.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { secondDemonReverts } from '#lib/core/rules/jinxes/jinx-effects.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

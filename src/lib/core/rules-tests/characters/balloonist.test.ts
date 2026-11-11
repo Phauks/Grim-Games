@@ -19,10 +19,10 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** Whether tonight the Balloonist may be shown the player in `shown`'s seat. */

@@ -14,11 +14,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { quietLeft, quietStartRule } from '#lib/core/rules/quiet-start.ts';
+import { quietLeft, quietStartRule } from '#lib/core/rules/day/quiet-start.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 /** A character's day reminders in this scenario: their group and plain text. */
 const dayLines = (s: Scenario, characterId: string) =>
@@ -106,7 +110,7 @@ describe('Buddhist', () => {
 		});
 	});
 
-	/** M15b: the quiet start the day timer counts down (`quietStart`, `rules/quiet-start.ts`). */
+	/** M15b: the quiet start the day timer counts down (`quietStart`, `rules/day/quiet-start.ts`). */
 	describe('quiet start (M15b)', () => {
 		const s = scenario(['imp', 'washerwoman', 'empath', 'monk', 'soldier']).rule('buddhist');
 		const rule = quietStartRule(s.game, s.characters);

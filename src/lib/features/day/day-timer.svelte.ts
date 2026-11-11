@@ -1,4 +1,6 @@
-import { dayTimers, livingByTeam, quietStartRule } from '#lib/core/rules/index.ts';
+import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
+import { livingByTeam } from '#lib/core/rules/day/voting.ts';
+import { quietStartRule } from '#lib/core/rules/day/quiet-start.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';

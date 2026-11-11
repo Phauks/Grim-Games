@@ -13,9 +13,9 @@ import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { executionOutcomes } from '#lib/core/rules/execution-outcome.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { executionOutcomes } from '#lib/core/rules/day/execution-outcome.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './vizier.test-support.ts';
 

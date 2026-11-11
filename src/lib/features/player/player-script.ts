@@ -11,10 +11,11 @@ import {
 	type LoadedScript,
 	type NightMarker
 } from '#lib/core/data/index.ts';
-import { MAX_DEALT_PLAYERS } from '#lib/core/rules/distribution.ts';
-import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
+import { MAX_DEALT_PLAYERS } from '#lib/core/rules/setup/distribution.ts';
+import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes/jinxes.ts';
 import { scriptRulesCarrier, withScriptRules } from '#lib/core/data/script-rules.ts';
-import { isNightMarker, nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+import { isNightMarker, nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
 
 export interface TypeGroup {
 	type: CharacterType;

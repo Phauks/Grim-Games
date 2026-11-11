@@ -13,14 +13,14 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
-import { dayNumber, nightOrder } from '#lib/core/rules/night-order.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
+import { dayNumber, nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {

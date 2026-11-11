@@ -7,7 +7,7 @@ import { specPart, type PartValue } from './part.ts';
  * labels in the order they are placed: each night the token on a player is swapped for the
  * next, and the last one comes off. The Courtier's drunkenness lasts 3 nights and 3 days
  * (https://wiki.bloodontheclocktower.com/Courtier), marked Drunk 1, then Drunk 2, then Drunk 3,
- * as its How to Run says. Shown at the character's night step (`rules/countdown.ts`).
+ * as its How to Run says. Shown at the character's night step (`rules/reminders/countdown.ts`).
  */
 export const countdown = specPart(
 	'Countdown',

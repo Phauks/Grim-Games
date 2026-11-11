@@ -31,11 +31,12 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import {
 		isReplacedAfterDraw,
-		replacementReminder,
-		scriptJinxes,
-		type BagSlot
-	} from '#lib/core/rules/index.ts';
-	import { SEATED_TYPES, splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
+		replacementReminder
+	} from '#lib/core/rules/setup/bag-characters.ts';
+	import { scriptJinxes } from '#lib/core/rules/jinxes/jinxes.ts';
+	import { type BagSlot } from '#lib/core/rules/setup/bag-plan.ts';
+	import { splitPlayers } from '#lib/core/rules/setup/distribution.ts';
+	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';

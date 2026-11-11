@@ -6,7 +6,7 @@ import { specPart } from './part.ts';
  * When its ability is set off by its player's death (`onDeath`), another player becomes this
  * character: only `alive` players, and only those of `alignment` when given (the Farmer's
  * alive good player, https://wiki.bloodontheclocktower.com/Farmer). Read by
- * `rules/becomes.ts` (`passOnSeats`).
+ * `rules/abilities/becomes.ts` (`passOnSeats`).
  */
 export const passesOn = specPart(
 	'Passes on',

@@ -3,7 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { setupComplete } from '#lib/core/rules/index.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';

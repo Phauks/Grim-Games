@@ -15,15 +15,19 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { takesNote } from '#lib/core/rules/shown-to.ts';
+import { takesNote } from '#lib/core/rules/night/shown-to.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 const characters = committedGameData().byId;

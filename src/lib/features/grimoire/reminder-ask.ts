@@ -17,14 +17,11 @@ import type {
 	SeatId
 } from '#lib/core/model/index.ts';
 import { GENERIC_REMINDER_ID } from '#lib/core/model/types.ts';
-import { reminderDeathCause } from '#lib/core/rules/death-causes.ts';
-import {
-	promptApplies,
-	reminderOwnerDead,
-	reminderPrompt,
-	replacedByFlow,
-	type ReminderPrompt
-} from '#lib/core/rules/index.ts';
+import { reminderDeathCause } from '#lib/core/rules/abilities/death-causes.ts';
+import { promptApplies, reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
+import { reminderOwnerDead } from '#lib/core/rules/abilities/dead-characters.ts';
+import { replacedByFlow } from '#lib/core/rules/abilities/token-flow.ts';
+import { type ReminderPrompt } from '#lib/core/data/parts/reminder-prompts.ts';
 import { reminderWords } from './reminders.ts';
 
 /** Asks to change a seat's state; `cause` is the reminder's character when it can kill. */

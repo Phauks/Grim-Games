@@ -19,12 +19,12 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { mayNominate } from '#lib/core/rules/nominations.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
+import { mayNominate } from '#lib/core/rules/day/nominations.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Riot', () => {

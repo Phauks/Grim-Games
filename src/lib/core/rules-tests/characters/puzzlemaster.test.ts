@@ -20,10 +20,10 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { dayUseAnswer, dayUseOf } from '#lib/core/rules/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { dayUseAnswer, dayUseOf } from '#lib/core/rules/day/day-claims.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import {

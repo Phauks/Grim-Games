@@ -17,7 +17,7 @@
  * the draw: `setPin` and `checkPin`.
  */
 import { toHex } from '#lib/core/codes/hash.ts';
-import { waitAfter } from '#lib/core/rules/draw-lock.ts';
+import { waitAfter } from '#lib/core/rules/setup/draw-lock.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 const PREFIX = 'grim-games:draw-lock:';
@@ -155,7 +155,7 @@ class DrawLock {
 		return 'wrong';
 	}
 
-	/** Checks a PIN; a wrong one counts towards the wait (core/rules/draw-lock.ts). */
+	/** Checks a PIN; a wrong one counts towards the wait (core/rules/setup/draw-lock.ts). */
 	async unlock(gameId: string, pin: string, now = Date.now()): Promise<UnlockResult> {
 		const lock = readLock(gameId);
 		if (!lock?.locked) return 'ok';

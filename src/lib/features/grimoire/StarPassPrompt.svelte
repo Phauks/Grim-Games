@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { starPass } from '#lib/core/rules/index.ts';
+	import { starPass } from '#lib/core/rules/game-end/game-end.ts';
 	import NewDemonDialog from './NewDemonDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 

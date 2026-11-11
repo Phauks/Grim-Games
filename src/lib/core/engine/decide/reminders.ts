@@ -8,12 +8,10 @@ import {
 	type ReminderInstance
 } from '#lib/core/model/index.ts';
 import { COUNTER_TIMES } from '#lib/core/data/parts/counter.ts';
-import {
-	REMINDER_EFFECTS,
-	counterMoves,
-	fixedReminderMove,
-	pickedEffectOf
-} from '#lib/core/rules/index.ts';
+import { REMINDER_EFFECTS } from '#lib/core/data/parts/picked-effect.ts';
+import { counterMoves } from '#lib/core/rules/reminders/counters.ts';
+import { fixedReminderMove } from '#lib/core/rules/reminders/reminder-movement.ts';
+import { pickedEffectOf } from '#lib/core/rules/reminders/reminder-effects.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	checkCountsUp,

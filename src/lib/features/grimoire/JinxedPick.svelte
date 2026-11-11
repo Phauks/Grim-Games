@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-	import { jinxForbidsBecoming } from '#lib/core/rules/index.ts';
+	import { jinxForbidsBecoming } from '#lib/core/rules/jinxes/jinxes.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';

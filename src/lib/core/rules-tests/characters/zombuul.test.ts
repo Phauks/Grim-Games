@@ -19,13 +19,14 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
-import { diedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
+import { diedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Zombuul', () => {
 	const character = committedCharacter('zombuul');

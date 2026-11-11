@@ -16,11 +16,11 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { changedCharacters, recentDeaths } from '#lib/core/engine/index.ts';
-import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/night/character-changes.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Imp', () => {

@@ -1,8 +1,10 @@
 <script lang="ts">
 	import SeatBadge from './SeatBadge.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
-	import { IF_CHOSEN_KINDS, nightStepAlerts } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import type { NightAlert } from '#lib/core/rules/night/night-alerts.ts';
+	import type { Impairment } from '#lib/core/rules/abilities/ability.ts';
+	import { IF_CHOSEN_KINDS, nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';

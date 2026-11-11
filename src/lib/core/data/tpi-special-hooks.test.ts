@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { toScript, loadScript } from './script.ts';
-import { voteWorth } from '#lib/core/rules/vote-weights.ts';
+import { voteWorth } from '#lib/core/rules/day/vote-weights.ts';
 
 const data = committedGameData();
 

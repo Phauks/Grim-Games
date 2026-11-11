@@ -16,13 +16,21 @@ import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import {
+	nightStepAlerts,
+	onDeathApplies,
+	onDeathTrigger
+} from '#lib/core/rules/night/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { wokeTonight } from '#lib/core/rules/night/woke-tonight.ts';
 
 describe('Moonchild', () => {
 	const character = committedCharacter('moonchild');

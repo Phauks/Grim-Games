@@ -14,18 +14,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { believedDemon, believesDemon, chosenLikeDemon } from '#lib/core/rules/evil-info.ts';
-import { nightKiller } from '#lib/core/rules/night-alerts.ts';
-import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
+import { believedDemon, believesDemon, chosenLikeDemon } from '#lib/core/rules/night/evil-info.ts';
+import { nightKiller } from '#lib/core/rules/night/night-alerts.ts';
+import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { stepInfoCards, stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { stepInfoCards, stepInfoTokens } from '#lib/core/rules/night/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 describe('Lunatic', () => {
 	const character = committedCharacter('lunatic');

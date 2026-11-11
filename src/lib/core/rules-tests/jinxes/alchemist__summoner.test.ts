@@ -11,15 +11,22 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { analyseSelection, randomSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { gainedEnd } from '#lib/core/rules/jinx-effects.ts';
+import {
+	analyseSelection,
+	randomSelection,
+	type BagSelection
+} from '#lib/core/rules/setup/bag-plan.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { gainedEnd } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
-import { abilityHolders } from '#lib/core/rules/gained-abilities.ts';
-import { evilInfoNotesLeftOut, picksCharacterOnlyBy } from '#lib/core/rules/holder-jinxes.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
+import { abilityHolders } from '#lib/core/rules/abilities/gained-abilities.ts';
+import {
+	evilInfoNotesLeftOut,
+	picksCharacterOnlyBy
+} from '#lib/core/rules/jinxes/holder-jinxes.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { alchemistAs, scriptOf } from './alchemist.test-support.ts';
 
 const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));

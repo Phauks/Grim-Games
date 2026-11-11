@@ -14,12 +14,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState, protection } from '#lib/core/rules/ability.ts';
-import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
-import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
+import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Innkeeper', () => {
 	const character = committedCharacter('innkeeper');

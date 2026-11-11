@@ -13,7 +13,8 @@
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import { builtScriptJson, expectedScriptCounts, scriptFacts } from '#lib/core/rules/index.ts';
+	import { builtScriptJson, expectedScriptCounts } from '#lib/core/rules/setup/script-builder.ts';
+	import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';

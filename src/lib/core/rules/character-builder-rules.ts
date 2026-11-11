@@ -113,16 +113,3 @@ export function readRuleText(text: string): { value: unknown } | { error: string
 		return { error: error instanceof Error ? error.message : String(error) };
 	}
 }
-export type { PartField } from '#lib/core/data/parts/part.ts';
-export {
-	emptyFor,
-	fieldLabel,
-	optionLabel,
-	startFor,
-	startVariant,
-	summaryOf,
-	variantOf,
-	type FieldSpec,
-	type ObjectField,
-	type Variant
-} from '#lib/core/data/field-spec.ts';

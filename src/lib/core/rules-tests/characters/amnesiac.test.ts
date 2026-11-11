@@ -16,17 +16,21 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
-import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
 import type { DayEntry, Game } from '#lib/core/model/types.ts';
 import {
 	abilityGivers,
 	heldAbilitiesOf,
 	withGainedSteps
-} from '#lib/core/rules/gained-abilities.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+} from '#lib/core/rules/abilities/gained-abilities.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,

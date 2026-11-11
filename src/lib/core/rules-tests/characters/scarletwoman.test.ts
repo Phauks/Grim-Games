@@ -15,12 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
+import { infoPicker, isTruthful } from '#lib/core/rules/night/info/picker.ts';
 import { changedCharacters } from '#lib/core/engine/index.ts';
-import { becomesOffer } from '#lib/core/rules/becomes.ts';
-import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/night/character-changes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Scarlet Woman', () => {

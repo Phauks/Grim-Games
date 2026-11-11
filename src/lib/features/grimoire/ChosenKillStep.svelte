@@ -5,9 +5,9 @@
 		killChoice,
 		liveOrDieChosen,
 		namedCharacterKill,
-		resolveLiveOrDie,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+		resolveLiveOrDie
+	} from '#lib/core/rules/night/chosen-kills.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

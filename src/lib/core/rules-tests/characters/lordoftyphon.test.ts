@@ -15,21 +15,25 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
-import { evilInOneLine, nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { evilInOneLine, nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 import { decide } from '#lib/core/engine/index.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);

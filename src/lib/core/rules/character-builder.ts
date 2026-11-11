@@ -15,10 +15,10 @@ import {
 } from '#lib/core/data/index.ts';
 import { parseCharacterRules, readableRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { bracketText } from './setup-modifiers.ts';
-import type { HomebrewEntry } from './script-builder.ts';
+import { bracketText } from '#lib/core/rules/setup/setup-modifiers.ts';
+import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
-import type { Night } from './night-order.ts';
+import type { Night } from '#lib/core/model/overrides.ts';
 
 /** What the builder's form holds; text fields are kept as typed until the entry is made. */
 export interface CharacterFields {

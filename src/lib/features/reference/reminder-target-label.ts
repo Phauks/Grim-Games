@@ -5,7 +5,7 @@
  * and a custom character's rules show too.
  */
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
-import type { TargetRule } from '#lib/core/rules/reminder-targets.ts';
+import type { TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { TYPE_PLURALS } from './labels.ts';
 

@@ -13,9 +13,9 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type ReminderLabel, type Script } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { GENERIC_REMINDER_ID, type Game } from '#lib/core/model/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 

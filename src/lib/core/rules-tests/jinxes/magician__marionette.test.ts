@@ -11,8 +11,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 import { marionetteAs } from './marionette.test-support.ts';
 
 describe('Magician + Marionette jinx', () => {

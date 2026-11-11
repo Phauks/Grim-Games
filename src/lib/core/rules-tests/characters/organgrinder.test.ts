@@ -15,13 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { blockThreshold } from '#lib/core/rules/voting.ts';
-import { votesSecret } from '#lib/core/rules/voting-table.ts';
+import { blockThreshold } from '#lib/core/rules/day/voting.ts';
+import { votesSecret } from '#lib/core/rules/day/voting-table.ts';
 import { total, votes } from '#lib/core/testing/votes.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminders/reminder-ends.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Organ Grinder', () => {

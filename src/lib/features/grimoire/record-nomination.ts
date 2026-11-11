@@ -1,5 +1,5 @@
 import type { SeatId } from '#lib/core/model/index.ts';
-import { seatNominations } from '#lib/core/rules/index.ts';
+import { seatNominations } from '#lib/core/rules/day/nominations.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 
 /**

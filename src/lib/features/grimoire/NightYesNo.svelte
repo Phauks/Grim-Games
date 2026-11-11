@@ -1,8 +1,10 @@
 <script lang="ts">
 	import SeatBadge from './SeatBadge.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
-	import type { InfoChoice, InfoPicker, NightStep } from '#lib/core/rules/index.ts';
-	import { answerText, yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
+	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import { answerText } from '#lib/core/rules/night/info/picker.ts';
+	import { yesNoAnswers, yesNoSeats } from '#lib/core/rules/night/info/yes-no.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

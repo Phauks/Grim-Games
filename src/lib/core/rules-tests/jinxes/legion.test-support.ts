@@ -9,9 +9,9 @@
 import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { allEvilBecoming, ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { allEvilBecoming, ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 export const scriptOf = (ids: string[]): Script => ({

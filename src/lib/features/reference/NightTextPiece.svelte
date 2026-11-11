@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
-	import type { NightTextSegment } from '#lib/core/rules/night-text.ts';
+	import type { NightTextSegment } from '#lib/core/rules/night/night-text.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 

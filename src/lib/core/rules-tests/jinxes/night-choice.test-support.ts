@@ -12,16 +12,21 @@ import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 import {
 	jinxChoiceMisfits,
 	jinxChoiceStepId,
 	jinxChosenTonight,
 	nightChoosers,
 	withJinxChoiceSteps
-} from '#lib/core/rules/jinx-choices.ts';
-import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+} from '#lib/core/rules/jinxes/jinx-choices.ts';
+import {
+	nightStepAlerts,
+	onDeathApplies,
+	onDeathTrigger
+} from '#lib/core/rules/night/night-alerts.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },

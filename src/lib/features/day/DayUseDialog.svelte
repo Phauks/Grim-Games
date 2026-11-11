@@ -7,7 +7,7 @@
 		dayUseDeath,
 		dayUseSuggestion,
 		isDayUseAlly
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/day/day-claims.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';

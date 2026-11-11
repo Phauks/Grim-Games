@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { STANDARD } from '#lib/core/modes/index.ts';
-	import { optionalRuleChoices } from '#lib/core/rules/index.ts';
+	import { optionalRuleChoices } from '#lib/core/rules/optional-rules.ts';
 	import GameSettingsDialog from '#lib/features/game-settings/GameSettingsDialog.svelte';
 	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
 	import AddModeDialog from '#lib/features/modes/AddModeDialog.svelte';

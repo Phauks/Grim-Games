@@ -1,8 +1,8 @@
 <script module lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import type { DayReminders } from '#lib/core/rules/index.ts';
-	import { jinxStoppers, type JinxStopper } from '#lib/core/rules/jinx-ends.ts';
+	import type { DayReminders } from '#lib/core/rules/day/day-reminders.ts';
+	import { jinxStoppers, type JinxStopper } from '#lib/core/rules/jinxes/jinx-ends.ts';
 
 	/**
 	 * Who may stop a character's ability by a jinx (`jinxStoppers`: the Mayor stopping the

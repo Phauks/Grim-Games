@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { livingByTeam } from '#lib/core/rules/voting.ts';
-import { answerOptions, nightAnswer } from '#lib/core/rules/night-info.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { livingByTeam } from '#lib/core/rules/day/voting.ts';
+import { answerOptions, nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

@@ -20,13 +20,13 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { correctGuesses, dayUseOf } from '#lib/core/rules/day-claims.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { correctGuesses, dayUseOf } from '#lib/core/rules/day/day-claims.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/index.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/night/shown-to.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 /** Seats with these characters, then the extra commands. */

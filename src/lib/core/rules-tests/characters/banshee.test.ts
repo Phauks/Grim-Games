@@ -13,14 +13,18 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { deathReminder } from '#lib/core/rules/first-death.ts';
+import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { afterDeath, nominationsPerDay } from '#lib/core/rules/nominations.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { voteWorth } from '#lib/core/rules/vote-weights.ts';
+import { afterDeath, nominationsPerDay } from '#lib/core/rules/day/nominations.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { voteWorth } from '#lib/core/rules/day/vote-weights.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Banshee', () => {

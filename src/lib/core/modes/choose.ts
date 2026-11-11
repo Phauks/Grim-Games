@@ -6,7 +6,8 @@
  * Duplicates are allowed where the mode allows them. https://whalebuffet.com/
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
+import { type TypeCounts } from '#lib/core/rules/setup/distribution.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 import type { GameMode } from './types.ts';
 import { pickableCharacters } from './pool.ts';
 

@@ -7,7 +7,7 @@ export type DayMark = (typeof DAY_MARKS)[number];
 /**
  * A yes-or-no fact about today that the Storyteller marks by hand, because the app does not
  * track it, and that a character learns at night: the `dayMark` part of its rules block, read
- * here and used by `rules/day-marks.ts`, the day view and End day.
+ * here and used by `rules/day/day-marks.ts`, the day view and End day.
  *
  * - `mark`: which fact (`DAY_MARKS`): `demon-voted` (the Flowergirl,
  *   https://wiki.bloodontheclocktower.com/Flowergirl) or `minion-nominated` (the Town Crier,

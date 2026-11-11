@@ -8,12 +8,12 @@ import { getSeat, registersAsDead } from '#lib/core/model/selectors.ts';
 import type { Game, NominationVotes, SeatId } from '#lib/core/model/types.ts';
 import {
 	carriersOf,
-	mayVote,
 	mustVoteNow,
 	uncountedVote,
-	voterRule,
-	votesWithoutToken
-} from '#lib/core/rules/index.ts';
+	voterRule
+} from '#lib/core/rules/day/vote-weights.ts';
+import { mayVote } from '#lib/core/rules/day/voting-table.ts';
+import { votesWithoutToken } from '#lib/core/rules/day/voting.ts';
 import type { GameEvent } from '../events.ts';
 import { entryOfKind, refuse, seatOf, type Deciders } from './shared.ts';
 

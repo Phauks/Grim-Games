@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { setupComplete } from '#lib/core/rules/index.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
 	import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
 	import SetupNav from '#lib/features/setup/SetupNav.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';

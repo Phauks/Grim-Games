@@ -8,9 +8,9 @@
 		fieldsId,
 		nightPlaceOf,
 		previewCharacter,
-		withNightPlace,
-		SEATED_TYPES
-	} from '#lib/core/rules/index.ts';
+		withNightPlace
+	} from '#lib/core/rules/character-builder.ts';
+	import { SEATED_TYPES } from '#lib/core/data/types.ts';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

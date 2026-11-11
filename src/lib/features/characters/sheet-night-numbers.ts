@@ -1,5 +1,5 @@
 import type { CharacterId, NightSheet } from '#lib/core/data/index.ts';
-import { sheetNightNumbers } from '#lib/core/rules/night-numbers.ts';
+import { sheetNightNumbers } from '#lib/core/rules/night/night-numbers.ts';
 
 const cache = new WeakMap<NightSheet, { first: Map<string, number>; other: Map<string, number> }>();
 

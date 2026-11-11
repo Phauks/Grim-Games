@@ -5,7 +5,7 @@ import {
 	type GameNote,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
+import { neighbourFollows } from '#lib/core/rules/reminders/reminder-movement.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
 import { applyEvents } from '../reducer.ts';

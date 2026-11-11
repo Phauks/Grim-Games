@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import { countdownMoves, type NightStep } from '#lib/core/rules/index.ts';
+	import { countdownMoves } from '#lib/core/rules/reminders/countdown.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import SeatBadge from './SeatBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BoardReminder from './BoardReminder.svelte';

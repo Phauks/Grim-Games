@@ -1,17 +1,12 @@
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
-import {
-	becomesOffer,
-	followedAlignmentOffer,
-	reincarnatedBy,
-	survivesFirstDeath,
-	deathReminder,
-	explosionOf,
-	remindersRunOutByDawn,
-	counterMoves,
-	type Explosion,
-	type Night
-} from '#lib/core/rules/index.ts';
+import { becomesOffer, followedAlignmentOffer } from '#lib/core/rules/abilities/becomes.ts';
+import { reincarnatedBy } from '#lib/core/rules/abilities/reincarnation.ts';
+import { survivesFirstDeath, deathReminder } from '#lib/core/rules/abilities/first-death.ts';
+import { explosionOf, type Explosion } from '#lib/core/rules/day/explosion.ts';
+import { remindersRunOutByDawn } from '#lib/core/rules/reminders/reminder-ends.ts';
+import { counterMoves } from '#lib/core/rules/reminders/counters.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
 import { doneKey } from './night-steps.ts';
 import {
 	alignmentOf,

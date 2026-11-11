@@ -14,16 +14,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import {
 	dayReminders,
 	dayStateFromGame,
 	isOnceOnlyDayAbility,
 	renderReminder
-} from '#lib/core/rules/day-reminders.ts';
-import { infoPicker } from '#lib/core/rules/night-info.ts';
+} from '#lib/core/rules/day/day-reminders.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

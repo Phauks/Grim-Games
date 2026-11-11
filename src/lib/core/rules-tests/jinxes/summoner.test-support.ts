@@ -12,8 +12,8 @@ import {
 	arbitraryDeathPartners,
 	arbitraryDeathsTonight,
 	ownJinxRules
-} from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+} from '#lib/core/rules/jinxes/jinxes.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 export const scriptOf = (ids: string[]): Script => ({

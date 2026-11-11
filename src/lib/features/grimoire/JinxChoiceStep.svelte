@@ -3,9 +3,9 @@
 	import {
 		jinxChoiceMisfits,
 		jinxChoiceTonight,
-		nightChoosers,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+		nightChoosers
+	} from '#lib/core/rules/jinxes/jinx-choices.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -15,7 +15,7 @@
 	import SeatChooser from './SeatChooser.svelte';
 
 	/**
-	 * A jinx's night choice (`nightChoice`, `rules/jinx-choices.ts`): whom the Leviathan or
+	 * A jinx's night choice (`nightChoice`, `rules/jinxes/jinx-choices.ts`): whom the Leviathan or
 	 * Riot chose tonight, recorded in the day log as its ability used on that player
 	 * (https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). The dead, the evil (when
 	 * the choice is of a good player) and anyone chosen on an earlier night are faded, still

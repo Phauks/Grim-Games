@@ -4,7 +4,7 @@
  * and words) is on any seat, however it got there, or once the Storyteller dismisses it.
  * Nothing is placed automatically.
  */
-import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
+import { setupReminders, type SetupReminder } from '#lib/core/rules/setup/setup-reminders.ts';
 import type { CharacterLookup, Game, Reminder } from '#lib/core/model/index.ts';
 
 export interface TrayItem {

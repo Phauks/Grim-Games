@@ -2,33 +2,33 @@
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
+	import { blockThreshold } from '#lib/core/rules/day/voting.ts';
 	import {
-		blockThreshold,
 		dayMarkOf,
 		dayMarkSeats,
 		dayMarkValue,
-		dayReminders,
 		marksInPlay,
-		quietStartRule,
-		markToken,
-		type DayMark,
-		dayClaim,
+		markToken
+	} from '#lib/core/rules/day/day-marks.ts';
+	import {
+		dayReminders,
 		dayStateFromGame,
-		dayUseOf,
-		ruleCharacterUse,
 		isOnceOnlyDayAbility,
 		daySentence,
-		madnessOffer,
-		prepValueCharacter,
-		type DayReminder,
-		type MadnessOffer
-	} from '#lib/core/rules/index.ts';
+		type DayReminder
+	} from '#lib/core/rules/day/day-reminders.ts';
+	import { quietStartRule } from '#lib/core/rules/day/quiet-start.ts';
+	import { type DayMark } from '#lib/core/data/parts/day-mark.ts';
+	import { dayClaim, dayUseOf } from '#lib/core/rules/day/day-claims.ts';
+	import { ruleCharacterUse } from '#lib/core/rules/game-end/contest.ts';
+	import { madnessOffer, type MadnessOffer } from '#lib/core/rules/day/madness.ts';
+	import { prepValueCharacter } from '#lib/core/rules/setup/setup-reminders.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import JinxMark from '#lib/features/characters/JinxMark.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
-	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes/jinxes.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';

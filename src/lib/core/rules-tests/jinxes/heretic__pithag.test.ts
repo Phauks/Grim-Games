@@ -15,10 +15,10 @@ import { committedGameData, committedCharacters } from '#lib/core/testing/commit
 import { dispatch } from '#lib/core/engine/index.ts';
 import {
 	jinxForbidsBecoming,
-	jinxRulesBetween,
 	jinxSetupWarnings,
 	scriptJinxes
-} from '#lib/core/rules/jinxes.ts';
+} from '#lib/core/rules/jinxes/jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Heretic + Pit-Hag jinx', () => {

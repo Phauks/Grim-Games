@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { BagSlot } from '#lib/core/rules/index.ts';
+	import type { BagSlot } from '#lib/core/rules/setup/bag-plan.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { TileMark } from './tile-face.ts';

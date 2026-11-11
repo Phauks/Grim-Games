@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { dayTallyOf, tallyCount } from '#lib/core/rules/index.ts';
+	import { dayTallyOf, tallyCount } from '#lib/core/rules/day/day-tally.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import type { DayPort } from './day-port.ts';

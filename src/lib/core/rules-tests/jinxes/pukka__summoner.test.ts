@@ -12,8 +12,8 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
-import { characterChanger, earlyOnly } from '#lib/core/rules/becomes.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { characterChanger, earlyOnly } from '#lib/core/rules/abilities/becomes.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

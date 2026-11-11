@@ -12,8 +12,8 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './legion.test-support.ts';
 

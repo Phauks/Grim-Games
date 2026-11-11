@@ -1,5 +1,5 @@
 import type { Alignment } from '#lib/core/data/index.ts';
-import type { EndReason } from '#lib/core/rules/index.ts';
+import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 
 /**
  * A request, from outside the board, to open End game with the winner and how it ended already

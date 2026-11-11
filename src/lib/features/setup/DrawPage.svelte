@@ -4,7 +4,12 @@
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId, TileId } from '#lib/core/model/index.ts';
-	import { bagSlots, dealPairs, nextDrawSeat, type BagSlot } from '#lib/core/rules/index.ts';
+	import {
+		bagSlots,
+		dealPairs,
+		nextDrawSeat,
+		type BagSlot
+	} from '#lib/core/rules/setup/bag-plan.ts';
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import { seatsToName } from '#lib/core/sync/room-seating.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';

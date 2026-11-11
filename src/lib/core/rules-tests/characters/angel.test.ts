@@ -15,15 +15,19 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { effectNight, pickedEffectOf } from '#lib/core/rules/reminder-effects.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { effectNight, pickedEffectOf } from '#lib/core/rules/reminders/reminder-effects.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 
 /** The Angel's day reminders, as plain text. */
 const angelLines = (s: Scenario) =>

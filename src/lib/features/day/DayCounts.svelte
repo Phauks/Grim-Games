@@ -5,7 +5,7 @@
 		ghostVotesLeft,
 		livingByTeam,
 		type DayCount
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/day/voting.ts';
 	import { inPlay } from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';

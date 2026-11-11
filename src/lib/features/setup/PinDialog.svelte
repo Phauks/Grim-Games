@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FORGOT_WAIT_MS, secondsLeft } from '#lib/core/rules/draw-lock.ts';
+	import { FORGOT_WAIT_MS, secondsLeft } from '#lib/core/rules/setup/draw-lock.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -10,7 +10,7 @@
 	/**
 	 * The Storyteller PIN of the locked pass-the-phone draw (Trevor, 2026-10-19): set it
 	 * (typed twice), or type it to unlock. Wrong PINs make entry wait, and "Forgot PIN"
-	 * unlocks after a countdown everyone can see (core/rules/draw-lock.ts). Used by the Draw
+	 * unlocks after a countdown everyone can see (core/rules/setup/draw-lock.ts). Used by the Draw
 	 * page, its leave guard, and the board while the game's draw is locked.
 	 */
 	interface Props {

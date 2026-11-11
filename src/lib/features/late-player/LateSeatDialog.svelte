@@ -14,14 +14,13 @@
 	import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 	import type { Command, TileSpec } from '#lib/core/engine/index.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
+	import { analyseSelection } from '#lib/core/rules/setup/bag-plan.ts';
 	import {
-		analyseSelection,
 		drawState,
 		proposeLateSeat,
-		SEATED_TYPES,
-		type LateSeatProposal,
-		type SeatedType
-	} from '#lib/core/rules/index.ts';
+		type LateSeatProposal
+	} from '#lib/core/rules/setup/late-seat-proposal.ts';
+	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';

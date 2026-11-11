@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 
 describe('Kazali + Marionette jinx', () => {
 	const data = committedGameData();

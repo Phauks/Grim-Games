@@ -14,6 +14,8 @@ Private project: not for public distribution until The Pandemonium Institute has
 
 ```
 src/lib/core/      pure TypeScript game rules (no Svelte, no DOM; enforced by ESLint)
+  rules/           game rules by area: night, day, setup, abilities, jinxes, game-end, savant,
+                   reminders; import each file directly, there is no barrel
 src/lib/features/  Svelte feature modules (setup, grimoire, night, ...)
 src/lib/ui/        touch primitives, theme tokens, fonts, icons, setting rows; Ark UI is only imported here
 src/routes/        thin SvelteKit routes that compose features

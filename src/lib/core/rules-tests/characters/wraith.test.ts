@@ -19,13 +19,17 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>

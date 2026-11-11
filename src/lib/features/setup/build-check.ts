@@ -1,12 +1,9 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
-import { setupPrepOf } from '#lib/core/rules/index.ts';
-import type {
-	BagIssue,
-	ScriptRequirement,
-	SetupAnalysis,
-	SetupWarning
-} from '#lib/core/rules/index.ts';
+import { setupPrepOf } from '#lib/core/rules/setup/setup-reminders.ts';
+import type { BagIssue } from '#lib/core/rules/setup/bag-plan.ts';
+import type { ScriptRequirement } from '#lib/core/rules/setup/script-facts.ts';
+import type { SetupAnalysis, SetupWarning } from '#lib/core/rules/setup/setup.ts';
 
 /**
  * Problems that make the bag wrong for this table, which the Storyteller must confirm

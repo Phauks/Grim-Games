@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { onMount } from 'svelte';
-	import type { Night } from '#lib/core/rules/index.ts';
+	import type { Night } from '#lib/core/model/overrides.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';

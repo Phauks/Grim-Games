@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from './SeatBadge.svelte';
+	import { sideSwipe } from './side-swipe.ts';
 	import StepPiece from './StepPiece.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
@@ -22,20 +23,26 @@
 	import SetupAlignmentStep from './SetupAlignmentStep.svelte';
 	import TravellerJoins from './TravellerJoins.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
+	import { believesDemon } from '#lib/core/rules/night/evil-info.ts';
+	import { falseInfoSource } from '#lib/core/rules/night/info/reliability.ts';
 	import {
-		believesDemon,
-		falseInfoSource,
 		TRAVELLER_ALIGNMENT_STEP,
 		TRAVELLER_JOINS_STEP
-	} from '#lib/core/rules/index.ts';
-	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
+	} from '#lib/core/rules/setup/traveller-alignment.ts';
+	import { seesGrimoire } from '#lib/core/rules/night/sees-grimoire.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
-	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
+	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
+	import type { Night } from '#lib/core/model/overrides.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import StepReminderRow from './StepReminderRow.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
-	import { nightTextStepLines, rowsOnLines, stepNightText } from '#lib/core/rules/night-text.ts';
+	import {
+		nightTextStepLines,
+		rowsOnLines,
+		stepNightText
+	} from '#lib/core/rules/night/night-text.ts';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
 	import {
@@ -44,7 +51,7 @@
 		withChosen,
 		type FilledInfoToken,
 		type StepCard
-	} from '#lib/core/rules/info-token-characters.ts';
+	} from '#lib/core/rules/night/info-token-characters.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -65,7 +72,7 @@
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
-	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes/jinxes.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
@@ -123,21 +130,7 @@
 		const next = steps[index + by];
 		if (index >= 0 && next) onStep?.(next);
 	}
-	let swipeFrom: { x: number; y: number; id: number } | undefined;
-	function swipeStart(event: PointerEvent) {
-		if (event.pointerType !== 'mouse')
-			swipeFrom = { x: event.clientX, y: event.clientY, id: event.pointerId };
-	}
-	function swipeEnd(event: PointerEvent) {
-		const from = swipeFrom;
-		swipeFrom = undefined;
-		if (!from || from.id !== event.pointerId) return;
-		const dx = event.clientX - from.x;
-		const dy = event.clientY - from.y;
-		// A clear sideways swipe: a fifth of the screen, mostly across.
-		if (Math.abs(dx) > window.innerWidth / 5 && Math.abs(dx) > 2 * Math.abs(dy))
-			go(dx < 0 ? 1 : -1);
-	}
+	const swipe = sideSwipe(go);
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -425,9 +418,9 @@
 		role="group"
 		aria-label="Night step"
 		data-step-name={step ? stepName(step) : undefined}
-		onpointerdown={swipeStart}
-		onpointerup={swipeEnd}
-		onpointercancel={() => (swipeFrom = undefined)}
+		onpointerdown={swipe.start}
+		onpointerup={swipe.end}
+		onpointercancel={swipe.cancel}
 	>
 		{#if step}
 			<!-- A step heads with the standard row, as every list of characters shows it (Trevor,

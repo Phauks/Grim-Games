@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { deathReminder } from '#lib/core/rules/first-death.ts';
-import { swappableSeats } from '#lib/core/rules/becomes.ts';
-import { filledInfoToken, stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
+import { swappableSeats } from '#lib/core/rules/abilities/becomes.ts';
+import { filledInfoToken, stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Barber', () => {

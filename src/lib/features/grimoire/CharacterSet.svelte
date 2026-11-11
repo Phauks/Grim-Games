@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { AnswerValue } from '#lib/core/rules/index.ts';
+	import type { AnswerValue } from '#lib/core/rules/night/info/reliability.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';

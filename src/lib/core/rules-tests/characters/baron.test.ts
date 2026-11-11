@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Baron', () => {

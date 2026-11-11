@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { SEATED_TYPES, type SeatedType, type SetupAnalysis } from '#lib/core/rules/index.ts';
+	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+	import { type SetupAnalysis } from '#lib/core/rules/setup/setup.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';

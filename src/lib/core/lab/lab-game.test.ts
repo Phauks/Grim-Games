@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { BASE_DISTRIBUTION } from '#lib/core/rules/distribution.ts';
+import { BASE_DISTRIBUTION } from '#lib/core/rules/setup/distribution.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	labGame,
@@ -11,7 +11,7 @@ import {
 } from './lab-game.ts';
 
 // The Character Lab (M37): opponents come from the data, and a lab game seats the locked
-// characters first and fills the rest to the standard counts (src/lib/core/rules/distribution.ts).
+// characters first and fills the rest to the standard counts (src/lib/core/rules/setup/distribution.ts).
 
 const data = committedGameData();
 const typeOf = (id: string) => data.byId.get(id)!.type;

@@ -11,10 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { hasAbilityOf } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { alchemistAs, bagNotes } from './alchemist.test-support.ts';
 
 describe('Alchemist + Mastermind jinx', () => {

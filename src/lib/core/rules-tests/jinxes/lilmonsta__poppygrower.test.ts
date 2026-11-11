@@ -15,9 +15,9 @@ import {
 	committedGameData,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { babysitter, scriptOf, withLilMonsta } from './lilmonsta.test-support.ts';

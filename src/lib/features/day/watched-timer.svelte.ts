@@ -1,4 +1,4 @@
-import { dayTimers } from '#lib/core/rules/index.ts';
+import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 
 const { dayLeft, elapsed, isFresh, isOver, isRunning, shown } = dayTimers;
 

@@ -7,7 +7,7 @@ export type GivesAbilityTo = (typeof GIVES_ABILITY_TO)[number];
 
 /**
  * The `givesAbility` part of a character's rules block: it gives another player an ability
- * they hold without its token (`Seat.abilities`, `rules/gained-abilities.ts`). The
+ * they hold without its token (`Seat.abilities`, `rules/abilities/gained-abilities.ts`). The
  * Storyteller picks the ability from the seat's ⋯ menu. It names a behaviour, never a
  * character:
  * - `to`: who holds it; `demon`, the Demon in play (the Boffin,

@@ -6,7 +6,7 @@
  * ordinary saved game; these helpers only plan and check across them.
  */
 import type { CharacterId, CharacterType, PlayerName } from '#lib/core/data/types.ts';
-import type { SeatedType } from '#lib/core/rules/distribution.ts';
+import type { SeatedType } from '#lib/core/data/types.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
 import type { Bag, Game, Seat, SeatId, TileId } from '#lib/core/model/types.ts';
 import type { GameMode } from './types.ts';

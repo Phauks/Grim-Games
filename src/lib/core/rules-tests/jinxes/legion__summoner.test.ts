@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { allEvilBecomeTests } from './legion.test-support.ts';
 
 describe('Legion + Summoner jinx', () => {

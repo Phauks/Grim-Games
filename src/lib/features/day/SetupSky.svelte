@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SetupLook } from '#lib/core/rules/index.ts';
+	import type { SetupLook } from '#lib/core/rules/game-phase.ts';
 	import type { Candle } from '#lib/core/sync/seat-presence.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 

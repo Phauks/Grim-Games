@@ -5,8 +5,8 @@
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import { gainedSetupAbilities } from '#lib/core/rules/gained-abilities.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { gainedSetupAbilities } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

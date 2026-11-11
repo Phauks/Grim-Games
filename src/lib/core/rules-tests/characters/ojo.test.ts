@@ -15,10 +15,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { killChoice, namedCharacterKill } from '#lib/core/rules/chosen-kills.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { killChoice, namedCharacterKill } from '#lib/core/rules/night/chosen-kills.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Ojo', () => {

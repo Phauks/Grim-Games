@@ -16,7 +16,7 @@ import {
 	type Game,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import type { EndReason } from '#lib/core/rules/index.ts';
+import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 import type { GameRecap, RecapCharacter } from './recap-html.ts';
 import { causeLabel } from '#lib/features/grimoire/board.ts';
 import { endReasonLabel } from '#lib/features/grimoire/end-reason-label.ts';
