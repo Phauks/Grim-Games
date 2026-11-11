@@ -15,14 +15,13 @@ import type { PartValue, Reminders } from './parts/part.ts';
 import { describe, isObject, Issues } from './validate.ts';
 
 export type { ReminderPrompt } from './parts/reminder-prompts.ts';
-export type { KilledBy } from './parts/on-death.ts';
 export type { NominatedEffect, OnNominated } from './parts/on-nominated.ts';
 export type { DeadKeepAbilities } from './parts/dead-keep-abilities.ts';
 export type { NightWake } from './parts/night-wakes.ts';
 export type { NominatingEffect } from './parts/on-nominating.ts';
 export type { DayClaim } from './parts/day-claim.ts';
 export type { DayUse, DayUseAnswer, DayUseWho } from './parts/day-use.ts';
-export type { DeathCheckKind, DeathCheckRule } from './parts/death-check.ts';
+export type { DeathCheckKind } from './parts/death-check.ts';
 export type { Kills } from './parts/kills.ts';
 export { PROTECTS_FROM, type Protects } from './parts/protects.ts';
 export type { ShownTo } from './parts/shown-to.ts';

@@ -164,7 +164,7 @@ describe('pickedEffect', () => {
 		parseCharacterRules({ pickedEffect: { token: 'B', effects: ['x'] } }, 'y', issues, ['A']);
 		expect(issues.list).toEqual([
 			'y.pickedEffect.token: not one of this character’s reminders',
-			'y.pickedEffect.effects: expected some of no-kill, poisoned, mad, no-vote-today, no-ability-today, dies, other'
+			'y.pickedEffect.effects[0]: unknown value "x"'
 		]);
 	});
 });

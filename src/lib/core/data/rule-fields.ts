@@ -29,7 +29,6 @@ import {
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
-import { REMINDER_ENDS } from './parts/reminder-ends.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
@@ -168,15 +167,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		anyone: T,
 		minAlive: NUM,
 		beforeNominations: T
-	}),
-	deathCheck: obj({
-		kind: oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked-killed-by-demon']),
-		token: opt(TOKEN)
-	}),
-	executionOutcome: optObj({
-		failsIf: oneOf(['only-evil-voted']),
-		force: oneOf(['pass-or-fail']),
-		executeNow: oneOf(['good-voted'])
 	}),
 	gameEnd: obj({
 		ends: opt(
@@ -333,35 +323,13 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			minutes: opt(COUNT)
 		})
 	),
-	nominating: variants(
-		{ label: 'Only the Storyteller', has: 'by', spec: obj({ by: oneOf(['storyteller']) }) },
-		{ label: 'Times a game', has: 'perGame', spec: obj({ perGame: COUNT }) }
-	),
 	nominationsAfterExecution: COUNT,
-	onDeath: obj({
-		by: oneOf(['demon', 'other', 'any']),
-		night: opt(T),
-		places: opt(TOKEN),
-		placesOn: opt(oneOf(['chosen']))
-	}),
 	onNominated: obj({
 		by: opt(TYPES),
 		carrier: opt(TOKEN),
 		effect: oneOf(['execute-nominator', 'may-kill-nominator', 'evil-swap', 'nominator-may-die']),
 		first: opt(T),
 		minAlive: opt(NUM)
-	}),
-	pickedEffect: obj({
-		token: TOKEN,
-		effects: anyOf([
-			'other',
-			'poisoned',
-			'mad',
-			'dies',
-			'no-kill',
-			'no-vote-today',
-			'no-ability-today'
-		])
 	}),
 	protects: obj({
 		who: oneOf(['self', 'marked', 'good']),
@@ -372,12 +340,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		whileNeighboursGood: opt(T),
 		whileCarrierAlive: opt(TOKEN)
 	}),
-	reminderEnds: byToken(
-		variants(
-			{ label: 'At a time', is: 'string', spec: oneOf(REMINDER_ENDS) },
-			{ label: 'At a nomination', has: 'nominated', spec: obj({ nominated: ALIGNMENT }) }
-		)
-	),
 	reminderTargets: byToken(
 		optObj({
 			seat: oneOf(['self', 'other', 'any']),
