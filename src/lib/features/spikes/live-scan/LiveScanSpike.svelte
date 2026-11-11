@@ -9,9 +9,7 @@
 		grayOf,
 		homography,
 		mapPoint,
-		pageSize,
 		sheetCorners,
-		warp,
 		type Gray,
 		type Point,
 		type Rect,
@@ -28,7 +26,10 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { copyText } from '#lib/ui/clipboard.ts';
+	import { downloadBlob } from '#lib/ui/download.ts';
 	import { demoFeed, drawSheet, pictureSheet } from './demo-feed.ts';
+	import { onSheet, outline, palette, straighten } from './scan-frame.ts';
 
 	/**
 	 * Live script scan, mockup C built for real so the two ways of keeping its marks on the
@@ -80,10 +81,6 @@
 	 * it "takes picture too fast, so it is blurry"): a frame mid-shake scores lower.
 	 */
 	const SHARP_SHARE = 0.9;
-	/** The straightened page's long side: about 145 dots an inch on Letter, plenty for 9 point type. */
-	const PAGE_SIDE = 1600;
-	/** The corners are found again on a frame this wide before straightening, for a tighter fit. */
-	const FINE = 480;
 
 	let source = $state<Source>('demo');
 	let tracking = $state(true);
@@ -99,6 +96,15 @@
 	 * recommend rescanning if it notices certain issues"): once read, the frame stays held.
 	 */
 	let grabbed = $state(false);
+	/** True from the moment a picture is taken: it is held, so the phone can move again. */
+	let taken = $state(false);
+	/**
+	 * What happened on the last grab, to copy and send (Trevor, 2026-11-10: "add copyable
+	 * diagnostic for my scans so you can look").
+	 */
+	let diagnostics: Record<string, unknown> = {};
+	/** When Scan again was pressed: a new hold starts then, so the next grab is not at once. */
+	let rescanAt = 0;
 	/** Set by the shutter button: take the picture now, steady or not. */
 	let shutter = false;
 	/** What looked wrong with the grab, each a reason to scan again; empty when it looked fine. */
@@ -133,6 +139,9 @@
 		reads = 0;
 		reading = undefined;
 		grabbed = false;
+		taken = false;
+		diagnostics = {};
+		rescanAt = performance.now();
 		issues = [];
 		reviewOpen = false;
 		frozen = undefined;
@@ -187,7 +196,7 @@
 		input.value = '';
 		if (!file) return;
 		try {
-			feed = demoFeed(await pictureSheet(file));
+			feed = demoFeed(await pictureSheet(file), true);
 			source = 'picture';
 			problem = '';
 			startOver();
@@ -231,6 +240,14 @@
 		reads++;
 		const traces: PhotoLineTrace[] = [];
 		const result = readScriptLines(lines, pool, (t) => traces.push(t));
+		diagnostics.read = {
+			ms: Math.round(readMs),
+			lines: traces.map((t) => ({ text: t.text, outcome: t.outcome })),
+			found: result.found.map((f) => `${f.character.id}${f.kind === 'close' ? '?' : ''}`),
+			unmatched: result.unmatched,
+			title: result.title,
+			author: result.author
+		};
 		const marks: Mark[] = [];
 		for (const trace of traces) {
 			const kind = kindOf(trace);
@@ -256,53 +273,26 @@
 		}
 	}
 
-	/**
-	 * The frozen frame's sheet straightened into a flat page, and the map from page pixels back
-	 * to frame pixels; undefined when its corners can't be found again.
-	 */
-	function straighten(frozen: HTMLCanvasElement) {
-		const fine = document.createElement('canvas');
-		fine.width = FINE;
-		fine.height = Math.round((frozen.height * FINE) / frozen.width);
-		const fineCtx = fine.getContext('2d', { willReadFrequently: true })!;
-		fineCtx.drawImage(frozen, 0, 0, fine.width, fine.height);
-		const rgba = fineCtx.getImageData(0, 0, fine.width, fine.height).data;
-		const seen = sheetCorners(grayOf(rgba, fine.width, fine.height));
-		if (!seen) return undefined;
-		const k = frozen.width / FINE;
-		const quad = seen.map((p) => ({ x: (p.x + 0.5) * k, y: (p.y + 0.5) * k }));
-		const { width, height } = pageSize(quad, PAGE_SIDE);
-		const flat = [
-			{ x: 0, y: 0 },
-			{ x: width, y: 0 },
-			{ x: width, y: height },
-			{ x: 0, y: height }
-		];
-		const h = homography(flat, quad);
-		if (!h) return undefined;
-		const source = frozen
-			.getContext('2d', { willReadFrequently: true })!
-			.getImageData(0, 0, frozen.width, frozen.height).data;
-		const out = document.createElement('canvas');
-		out.width = width;
-		out.height = height;
-		out
-			.getContext('2d')!
-			.putImageData(
-				new ImageData(warp(source, frozen.width, frozen.height, h, width, height), width, height),
-				0,
-				0
-			);
-		return { page: out, quad, toFrame: (p: Point) => mapPoint(h, p) };
+	function copyDiagnostics() {
+		void copyText(JSON.stringify(diagnostics, null, 1), {
+			copied: ['Diagnostics copied'],
+			failed: ['Could not copy', 'The browser did not allow it.']
+		});
 	}
 
-	/** Whether any glare patch (in quick-check pixels) lies over the sheet's corners' box. */
-	function onSheet(glare: Rect[], toView: number, corners?: Point[]): boolean {
-		if (!corners) return glare.length > 0;
-		const xs = corners.map((c) => c.x / toView);
-		const ys = corners.map((c) => c.y / toView);
-		const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-		return glare.some((g) => g.x0 < x1 && g.x1 > x0 && g.y0 < y1 && g.y1 > y0);
+	/** Saves the picture taken and the page straightened from it, to send with the diagnostics. */
+	function savePictures() {
+		const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+		for (const [name, canvas] of [
+			['frame', frozen],
+			['page', pageShown ? page : undefined]
+		] as const) {
+			canvas?.toBlob(
+				(blob) => blob && downloadBlob(`live-scan-${stamp}-${name}.jpg`, blob),
+				'image/jpeg',
+				0.92
+			);
+		}
 	}
 
 	/** Holds the read frame and lists what looked wrong with it, each a reason to scan again. */
@@ -319,28 +309,9 @@
 			!title && 'No title read.'
 		];
 		issues = problems.filter((i): i is string => !!i);
+		diagnostics.issues = issues;
 		grabbed = true;
 		reviewOpen = true;
-	}
-
-	/** The colour of each kind of mark, from the theme. */
-	function palette() {
-		const css = getComputedStyle(document.documentElement);
-		const token = (name: string) => css.getPropertyValue(name).trim();
-		return {
-			character: token('--good'),
-			ability: token('--good'),
-			title: token('--accent'),
-			unknown: token('--evil'),
-			glare: token('--accent'),
-			sheet: token('--on-surface')
-		};
-	}
-
-	function outline(ctx: CanvasRenderingContext2D, points: Point[]) {
-		ctx.beginPath();
-		points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-		ctx.closePath();
 	}
 
 	onMount(() => {
@@ -427,18 +398,20 @@
 				colours = palette();
 				if (grabbed) status = issues.length ? 'Read, with problems below' : 'Read';
 				else if (!reader) status = 'Starting the text reader';
-				else if (busy) status = tracking ? 'Frozen, reading the straightened page' : 'Reading';
+				else if (busy) status = tracking ? 'Reading the straightened page' : 'Reading';
 				else if (tracking)
 					status = !corners
 						? 'Show all four corners'
-						: now - steadySince > STEADY_MS / 2
+						: now - Math.max(steadySince, rescanAt) > STEADY_MS / 2
 							? 'Hold it there'
 							: 'Steady the sheet';
 				else if (moving) status = 'Moving, marks hidden';
 				else status = 'Hold still';
 
 				const auto = tracking
-					? !!corners && now - steadySince > STEADY_MS && sharp >= SHARP_SHARE * sharpest
+					? !!corners &&
+						now - Math.max(steadySince, rescanAt) > STEADY_MS &&
+						sharp >= SHARP_SHARE * sharpest
 					: now - stillSince > STILL_MS;
 				if (grabbed || !reader || busy || !(shutter || auto)) {
 					// Held after a grab, or not ready: nothing is read.
@@ -455,9 +428,34 @@
 					const flat = tracking && corners ? straighten(still) : undefined;
 					frozenQuad = flat?.quad;
 					const glareAtGrab = onSheet(glare, toView, corners);
+					taken = true;
+					const round1 = (p: Point) => ({ x: Math.round(p.x), y: Math.round(p.y) });
+					diagnostics = {
+						at: new Date().toISOString(),
+						device: navigator.userAgent,
+						source,
+						frame: { width: shot.w, height: shot.h },
+						grab: {
+							by: manual ? 'Take picture' : 'auto',
+							heldMs: Math.round(now - steadySince),
+							sharpness: Math.round(sharp),
+							sharpestOfHold: Math.round(sharpest),
+							corners: corners?.map(round1),
+							straightened: flat ? { width: flat.page.width, height: flat.page.height } : null,
+							glareOnSheet: glareAtGrab,
+							glare: glare.map((g) => ({
+								x0: Math.round(g.x0 * toView),
+								y0: Math.round(g.y0 * toView),
+								x1: Math.round(g.x1 * toView),
+								y1: Math.round(g.y1 * toView)
+							}))
+						},
+						settings: { tracking, steady: STEADY, steadyMs: STEADY_MS, sharpShare: SHARP_SHARE }
+					};
 					const begun = round;
 					const done = () => {
 						busy = false;
+						if (!grabbed) taken = false;
 						if (!grabbed) {
 							frozen = undefined;
 							frozenQuad = undefined;
@@ -467,7 +465,7 @@
 					const failed = (error: unknown) =>
 						(problem = `A read failed (${(error as Error).message}).`);
 					if (flat) {
-						status = 'Frozen, reading the straightened page';
+						status = 'Reading the straightened page';
 						if (page) {
 							page.width = flat.page.width;
 							page.height = flat.page.height;
@@ -594,9 +592,15 @@
 		<video bind:this={video} muted playsinline hidden></video>
 		<canvas bind:this={view} data-testid="live-scan-view" aria-label="Camera with read marks"
 		></canvas>
+		{#if taken}
+			<!-- The picture is held (Trevor, 2026-11-10): say so plainly, so the phone can move. -->
+			<div class="taken" data-testid="live-scan-taken">
+				<p>Picture taken. You can move.</p>
+			</div>
+		{/if}
 		<div class="pills">
 			<p class="pill" role="status" data-testid="live-scan-status">{status}</p>
-			{#if glareShown}<p class="pill glare">Glare: tilt to read under it</p>{/if}
+			{#if glareShown && !taken}<p class="pill glare">Glare: tilt to read under it</p>{/if}
 		</div>
 	</div>
 
@@ -612,7 +616,11 @@
 			? 'found'
 			: 'not found'}
 	</p>
-	<Button variant="quiet" onclick={startOver}>Scan again</Button>
+	<div class="tools">
+		<Button variant="quiet" onclick={startOver}>Scan again</Button>
+		<Button variant="quiet" disabled={!grabbed} onclick={copyDiagnostics}>Copy diagnostics</Button>
+		<Button variant="quiet" disabled={!grabbed} onclick={savePictures}>Save pictures</Button>
+	</div>
 	<figure class="page" hidden={!pageShown}>
 		<canvas bind:this={page} data-testid="live-scan-page" aria-label="The last page straightened"
 		></canvas>
@@ -650,6 +658,49 @@
 		height: 1px; /* px-ok: an offscreen file input, as Add script's */
 		opacity: 0;
 		pointer-events: none;
+	}
+	.tools {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	/* The held picture: a dimmed frame with a plain message, after a flash like a shutter. */
+	.taken {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		box-shadow: inset 0 0 0 calc(0.4 * var(--u)) var(--good);
+		pointer-events: none;
+	}
+	.taken::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: var(--surface);
+		opacity: 0.35;
+		animation: shutter 0.35s ease-out;
+	}
+	.taken p {
+		position: relative;
+		margin: 0;
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-full);
+		background: var(--good);
+		color: var(--on-good);
+		font-size: 1.25rem;
+		font-weight: 700;
+	}
+	@keyframes shutter {
+		from {
+			background: var(--on-surface);
+			opacity: 0.8;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.taken::before {
+			animation: none;
+		}
 	}
 	.issues {
 		padding: var(--space-2) var(--space-3);

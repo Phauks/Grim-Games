@@ -13,14 +13,20 @@ test('a shaky sheet is grabbed once, straightened and read, then held for review
 	const review = page.getByRole('dialog', { name: 'Trouble Brewing' });
 	await expect(review).toContainText('Washerwoman', { timeout: 90_000 });
 	await expect(page.getByTestId('live-scan-page')).toBeVisible();
+	// Held, and said so, so the phone can move (Trevor, 2026-11-10).
+	await expect(page.getByTestId('live-scan-taken')).toContainText('Picture taken. You can move.');
 	await expect(page.getByText('1 reads')).toBeVisible();
 	await page.keyboard.press('Escape');
 	// Held: no second read starts.
 	await page.waitForTimeout(3000);
 	await expect(page.getByText('1 reads')).toBeVisible();
 	await expect(page.getByTestId('live-scan-status')).toHaveText(/^Read/);
+	// What happened, to copy and send.
+	await expect(page.getByRole('button', { name: 'Copy diagnostics' })).toBeEnabled();
+	await expect(page.getByRole('button', { name: 'Save pictures' })).toBeEnabled();
 	await page.getByRole('button', { name: 'Scan again' }).last().tap();
 	await expect(page.getByTestId('live-scan-banner')).toHaveText('Nothing read yet');
+	await expect(page.getByTestId('live-scan-taken')).toBeHidden();
 	// A picture taken by hand (Trevor, 2026-11-10), in case the auto-grab has difficulties.
 	await page.getByRole('button', { name: 'Take picture' }).tap();
 	await expect(review).toContainText('Washerwoman', { timeout: 30_000 });
