@@ -41,6 +41,16 @@
  * "when": ["self-dead"]}}}`. Read for the Empath (`rules/jinx-pairs.ts`), the condition turns
  * round to `partner-dead`: the Empath is poisoned while the Lamplighter's player is dead.
  */
+import {
+	CHARACTER,
+	COUNT,
+	obj,
+	oneOf,
+	STR,
+	TOKEN,
+	type FieldSpec,
+	type Variant
+} from './field-spec.ts';
 import { ALIGNMENTS, type Alignment, type CharacterId, type ReminderLabel } from './types.ts';
 import {
 	describe,
@@ -83,6 +93,30 @@ export type JinxCondition =
 	| { alive: CharacterId }
 	| { inPlay: CharacterId }
 	| { not: JinxCondition };
+
+/**
+ * A `when` condition as the Character builder edits it: a plain one by name, or one keyed with
+ * its value. A `not` holds another condition, so the description refers to itself.
+ */
+const CONDITION_VARIANTS: Variant[] = [
+	{ label: 'Condition', is: 'string', spec: oneOf(JINX_FLAGS) },
+	{ label: 'After day', has: 'afterDay', spec: obj({ afterDay: COUNT }) },
+	{ label: 'Day', has: 'day', spec: obj({ day: COUNT }) },
+	{ label: 'Night', has: 'night', spec: obj({ night: COUNT }) },
+	// The partner's reminder on this character's player: not one of this character's own.
+	{ label: 'Marked', has: 'marked', spec: obj({ marked: STR }) },
+	{ label: 'Partner marked', has: 'partnerMarked', spec: obj({ partnerMarked: TOKEN }) },
+	{ label: 'Alignment', has: 'alignment', spec: obj({ alignment: oneOf(ALIGNMENTS) }) },
+	{
+		label: 'Partner alignment',
+		has: 'partnerAlignment',
+		spec: obj({ partnerAlignment: oneOf(ALIGNMENTS) })
+	},
+	{ label: 'Alive', has: 'alive', spec: obj({ alive: CHARACTER }) },
+	{ label: 'In play', has: 'inPlay', spec: obj({ inPlay: CHARACTER }) }
+];
+export const CONDITION_FIELD: FieldSpec = { kind: 'variants', variants: CONDITION_VARIANTS };
+CONDITION_VARIANTS.push({ label: 'Not', has: 'not', spec: obj({ not: CONDITION_FIELD }) });
 
 const NUMBER_CONDITIONS = ['afterDay', 'day', 'night'] as const;
 const LABEL_CONDITIONS = ['marked', 'partnerMarked', 'alive', 'inPlay'] as const;

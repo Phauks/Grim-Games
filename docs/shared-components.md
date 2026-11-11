@@ -56,7 +56,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - The rules behind a screen a mode or rule opens: `features/modes/RuleHeader.svelte` with `spawnedBy(gameId, has)` (`spawned-by.ts`): name, description, Inspect (enforced by review)
 - Cancel and Confirm in a modal: `ui/primitives/ModalActions.svelte` (enforced by `grim/modal-actions`)
 - A file's contents (a mode file, a script's JSON): `ui/primitives/FileView.svelte`: name, Copy and Download in its header, line numbers; to start it closed, put it in a Collapsible (enforced by review)
-- Editing a rule's value with fields (the Character builder's Add a rule): `features/character-builder/RuleValueField.svelte`, drawn from the rule's field description (`core/data/field-spec.ts`; each part's `field` is its spec in `core/data/parts/`, a jinx's effects and conditions in `core/data/jinx-fields.ts`, M79); a new part or jinx verb gets its fields there, never a dialog of its own (enforced by `core/data/parts/part-fields.test.ts` and `jinx-fields.test.ts`)
+- Editing a rule's value with fields (the Character builder's Add a rule): `features/character-builder/RuleValueField.svelte`, drawn from the rule's field description (`core/data/field-spec.ts`; each part's `field` is its spec in `core/data/parts/`, a jinx's effects in `core/data/jinx-read.ts` and its conditions in `core/data/jinx-conditions.ts`, M79); a new part or jinx verb gets its fields there, never a dialog of its own (enforced by `core/data/parts/part-fields.test.ts` and `jinx-read-fields.test.ts`)
 - A JSON value as readable labelled rows (objects as rows, lists numbered, nothing as "None"): `features/reference/DataTree.svelte`, used by the Character reference's All data view; pair it with a FileView for the raw file (enforced by review)
 - Report an issue from a script's own actions: `features/reports/ReportButton.svelte` (the form takes the script on screen: `offerScriptToReports`) (enforced by review)
 - Sending a report to the Worker: `reportOutbox.send` (`features/reports/outbox.svelte.ts`), which saves it on the device first and sends it once the connection is back; never `sendReport` directly (enforced by `e2e/report-offline.e2e.ts`)
@@ -221,8 +221,10 @@ and one line in the index, never an edit to `character-rules.ts`. A new part is 
 reader (`readSpec`, `data/read-spec.ts`), its value's type (`SpecValue`) and the Character
 builder's fields, with a `refine` for a check the spec can't say (and, where the rule's value
 is not the shape written, the value it reads as: a preset expanded, a setting kept to one kind).
-Every part has its field; the only hand-written reader left is the jinxes part's, whose fields
-are `data/jinx-fields.ts`. An official name that stands for a building block (a learns or
+Every part has its field. A jinx verb is built the same way (`verb` in `data/jinx-read.ts`):
+its settings are one object spec, which gives the jinxes part's fields and its reader, with a
+`refine` typed by the verb's effect in `data/jinx-rules.ts`. A jinx that changes one
+character's own rules is a `patch` of those parts, never a new verb. An official name that stands for a building block (a learns or
 answers question, a game end or hold, a jinx end) is a preset in a `presetTable`
 (`data/presets.ts`), which expands it and keeps the name as `preset`; never a new `switch`.
 
