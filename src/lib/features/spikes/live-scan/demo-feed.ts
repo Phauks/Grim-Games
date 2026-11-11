@@ -91,11 +91,17 @@ export async function pictureSheet(file: Blob): Promise<HTMLCanvasElement> {
 	return sheet;
 }
 
-/** The pretend camera: `draw(now)` paints the frame for that moment on `canvas`. */
-export function demoFeed(sheet: HTMLCanvasElement) {
+/**
+ * The pretend camera: `draw(now)` paints the frame for that moment on `canvas`. A photo
+ * (`photo`) already is a camera's picture, glare and all: it fills a frame of its own size and
+ * gets the hand's movement but no drawn lamp, so what it shows is what the camera saw.
+ */
+export function demoFeed(sheet: HTMLCanvasElement, photo = false) {
 	const canvas = document.createElement('canvas');
-	canvas.width = 900;
-	canvas.height = 1200;
+	const long = photo ? Math.min(2000, Math.max(sheet.width, sheet.height)) : 1200;
+	const fit = photo ? long / Math.max(sheet.width, sheet.height) : 1;
+	canvas.width = photo ? Math.round(sheet.width * fit) : 900;
+	canvas.height = photo ? Math.round(sheet.height * fit) : 1200;
 	const ctx = canvas.getContext('2d')!;
 	const started = performance.now();
 	return {
@@ -124,10 +130,13 @@ export function demoFeed(sheet: HTMLCanvasElement) {
 			ctx.translate(canvas.width / 2 + pose.x, canvas.height / 2 + pose.y);
 			ctx.rotate((pose.turn * Math.PI) / 180);
 			// As big as fits with the table showing round it, so its corners can be found.
-			const size = Math.min(pose.scale, 1120 / sheet.height, 840 / sheet.width);
+			const size = photo
+				? fit * (1 + 0.15 * (pose.scale - 0.86))
+				: Math.min(pose.scale, 1120 / sheet.height, 840 / sheet.width);
 			ctx.scale(size, size);
 			ctx.drawImage(sheet, -sheet.width / 2, -sheet.height / 2);
 			ctx.restore();
+			if (photo) return;
 			// The lamp's reflection: it stays put in the room, so it slides over the sheet.
 			const gx = canvas.width / 2 - pose.x * 4 + 60;
 			const gy = canvas.height * 0.42 - pose.y * 4;
