@@ -17,7 +17,7 @@ import {
 	type ReminderLabel
 } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/day-reminder-rules.ts';
+import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/parts/day-reminders.ts';
 import { dayRulesOf, detectDayReminders } from './day-reminders.ts';
 import { describeImpairable, describeWhen } from './describe.ts';
 import { MAX_DEALT_PLAYERS } from './distribution.ts';

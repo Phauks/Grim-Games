@@ -16,8 +16,6 @@ import {
 	oneOf,
 	opt,
 	optObj,
-	STR,
-	STRS,
 	T,
 	TOKEN,
 	TOKENS,
@@ -31,14 +29,6 @@ import type * as PARTS from './parts/index.ts';
 const TYPES = oneOf(CHARACTER_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
-const DAY_GROUPS = oneOf([
-	'madness',
-	'day-ability',
-	'nomination',
-	'vote',
-	'execution-death',
-	'announcement'
-]);
 const ANSWER_NAMES = [
 	'count',
 	'any',
@@ -92,46 +82,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		),
 		wakes: opt(oneOf(['marked'])),
 		falseToken: opt(TOKEN)
-	}),
-	dayReminders: obj({
-		impairable: opt(T),
-		reminders: opt(
-			list(
-				obj({
-					group: DAY_GROUPS,
-					template: list(
-						variants(
-							{ label: 'Its player', has: 'self', spec: obj({ self: T }) },
-							{ label: 'Its target', has: 'target', spec: obj({ target: T }) },
-							{ label: 'The nominee', has: 'nominee', spec: obj({ nominee: T }) },
-							{ label: 'Text', has: 'text', spec: obj({ text: STR }) },
-							{
-								label: 'A value',
-								has: 'value',
-								spec: obj({ value: STR, placeholder: STR })
-							}
-						)
-					),
-					when: opt(
-						optObj({
-							self: oneOf(['alive', 'dead', 'any']),
-							reminder: TOKEN,
-							noReminder: TOKEN,
-							cause: STRS,
-							minAlive: NUM,
-							targetAlive: B,
-							nomineeChose: T,
-							noWish: T,
-							day: NUM
-						})
-					)
-				})
-			)
-		),
-		interactions: opt(
-			list(obj({ other: STR, group: DAY_GROUPS, text: STR, otherNoReminder: opt(TOKEN) }))
-		),
-		none: opt(STR)
 	}),
 	gameEnd: obj({
 		ends: opt(

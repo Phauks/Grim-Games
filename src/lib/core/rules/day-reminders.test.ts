@@ -472,10 +472,25 @@ describe('homebrew', () => {
 		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
 			'rules.dayReminders.impairable',
 			'rules.dayReminders.reminders[0].group',
-			'rules.dayReminders.reminders[1].when.reminder',
 			'rules.dayReminders.reminders[2].when.self',
 			'rules.dayReminders.reminders[2].when.reminder',
-			'rules.dayReminders.interactions[0].other',
+			'rules.dayReminders.interactions[0].other'
+		]);
+		// Once the shape is right, settings that must go together are checked too.
+		const together = new Issues();
+		parseCharacterRules(
+			{
+				dayReminders: {
+					none: 'night action',
+					reminders: [{ group: 'vote', template: [{ target: true }] }]
+				}
+			},
+			'rules',
+			together,
+			['Mad']
+		);
+		expect(together.list.map((i) => i.split(': ')[0])).toEqual([
+			'rules.dayReminders.reminders[0].when.reminder',
 			'rules.dayReminders.none'
 		]);
 	});

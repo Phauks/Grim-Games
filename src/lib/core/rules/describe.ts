@@ -10,7 +10,7 @@ import type {
 	DayCondition,
 	DayReminderSpec,
 	DeathCauseMatch
-} from '#lib/core/data/day-reminder-rules.ts';
+} from '#lib/core/data/parts/day-reminders.ts';
 
 type Named = Pick<Character, 'name' | 'type'>;
 
