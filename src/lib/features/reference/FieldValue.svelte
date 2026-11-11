@@ -96,7 +96,7 @@
 	/** Beside each reminder: when it goes down and who it may go on, e.g. "Placed at setup · Goes on: Good players". */
 	function tokenNote(token: ReferenceToken): string | undefined {
 		const target = reminderTargetLabel(
-			character.id,
+			character,
 			token.label,
 			(id) => officialData.current?.byId.get(id)?.name ?? id
 		);

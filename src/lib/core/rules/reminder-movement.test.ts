@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/commands.ts';
 import { newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { undo } from '#lib/core/engine/log.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacter } from '#lib/core/testing/committed-data.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Character } from '#lib/core/data/types.ts';
@@ -160,8 +160,8 @@ describe('isFixedReminder', () => {
 
 describe('isFixedLabel', () => {
 	it('reads the same rule from the token’s own character (https://wiki.bloodontheclocktower.com/Fortune_Teller)', () => {
-		expect(isFixedLabel({ id: 'fortuneteller', edition: 'tb' }, 'Red Herring')).toBe(true);
-		expect(isFixedLabel({ id: 'monk', edition: 'tb' }, 'Safe')).toBe(false);
+		expect(isFixedLabel(committedCharacter('fortuneteller'), 'Red Herring')).toBe(true);
+		expect(isFixedLabel(committedCharacter('monk'), 'Safe')).toBe(false);
 		// A custom character has only its own rules, even with an official id (M58).
 		expect(isFixedLabel({ id: 'fortuneteller' }, 'Red Herring')).toBe(false);
 	});

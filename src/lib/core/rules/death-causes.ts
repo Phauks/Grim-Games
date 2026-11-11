@@ -54,7 +54,7 @@ export interface DeathCauseOption {
 	kind: DeathKind | 'unknown';
 }
 
-/** A character's `deathCause` rule: its own (a custom character's) or our overlay file's. */
+/** A character's `deathCause` rule, from the rules block it carries. */
 function deathCauseRule(id: CharacterId, characters: CharacterLookup): DeathCauseRule | undefined {
 	return rulesOf(id, characters)?.deathCause;
 }

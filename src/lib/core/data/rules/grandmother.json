@@ -1,4 +1,7 @@
 {
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
 	"reminderTargets": {
 		"Grandchild": {
 			"seat": "other",

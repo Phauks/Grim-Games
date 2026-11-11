@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { cardsOfCharacter, characterCardsFor } from './character-cards.ts';
 
 const data = committedGameData();
@@ -8,19 +8,21 @@ const data = committedGameData();
 describe('character cards', () => {
 	it('load only for characters on the script, in script order', () => {
 		const ids = ['yaggababble', 'chef', 'mezepheles'];
-		expect(characterCardsFor(ids).map((c) => c.characterId)).toEqual(['yaggababble', 'mezepheles']);
-		expect(characterCardsFor(['chef'])).toEqual([]);
+		expect(characterCardsFor(ids, committedCharacters()).map((c) => c.characterId)).toEqual([
+			'yaggababble',
+			'mezepheles'
+		]);
+		expect(characterCardsFor(['chef'], committedCharacters())).toEqual([]);
 	});
 
 	it('have ids that cannot clash with standard or custom ones', () => {
-		expect(characterCardsFor(['mezepheles', 'yaggababble']).map((c) => c.id)).toEqual([
-			'character:mezepheles:secret-word',
-			'character:yaggababble:secret-phrase'
-		]);
+		expect(
+			characterCardsFor(['mezepheles', 'yaggababble'], committedCharacters()).map((c) => c.id)
+		).toEqual(['character:mezepheles:secret-word', 'character:yaggababble:secret-phrase']);
 	});
 
 	it("are only the secret word, phrase and goal, in Trevor's wording, until he approves more", () => {
-		const all = characterCardsFor([...data.byId.keys()]);
+		const all = characterCardsFor([...data.byId.keys()], committedCharacters());
 		expect(all.map((c) => [c.characterId, c.source]).sort()).toEqual([
 			['mezepheles', 'own'],
 			['yaggababble', 'own'],
@@ -40,6 +42,6 @@ describe('character cards', () => {
 		expect(cardsOfCharacter(custom)).toMatchObject([
 			{ id: 'character:whisperer:secret-phrase', fillKey: 'info-tokens.fill.phrase' }
 		]);
-		expect(characterCardsFor(['whisperer'])).toEqual([]);
+		expect(characterCardsFor(['whisperer'], committedCharacters())).toEqual([]);
 	});
 });

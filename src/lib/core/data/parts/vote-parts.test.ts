@@ -5,6 +5,7 @@
  * (M9b) changes voting for the whole table: the Voudon (/Voudon), Organ Grinder
  * (/Organ_Grinder) and Ferryman (/Ferryman).
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '../character-rules.ts';
 import { rulesOf } from '../rules/index.ts';
@@ -42,9 +43,18 @@ describe('voteWeight', () => {
 	});
 
 	it('is in the Thief’s, Bureaucrat’s and God of Ug’s rules', () => {
-		expect(rulesOf('thief')?.voteWeight).toEqual({ reminder: 'Negative Vote', weight: -1 });
-		expect(rulesOf('bureaucrat')?.voteWeight).toEqual({ reminder: '3 Votes', weight: 3 });
-		expect(rulesOf('godofug')?.voteWeight).toEqual({ reminder: 'Hat', weight: 2 });
+		expect(rulesOf('thief', committedCharacters())?.voteWeight).toEqual({
+			reminder: 'Negative Vote',
+			weight: -1
+		});
+		expect(rulesOf('bureaucrat', committedCharacters())?.voteWeight).toEqual({
+			reminder: '3 Votes',
+			weight: 3
+		});
+		expect(rulesOf('godofug', committedCharacters())?.voteWeight).toEqual({
+			reminder: 'Hat',
+			weight: 2
+		});
 	});
 });
 
@@ -76,9 +86,12 @@ describe('voter', () => {
 	});
 
 	it('is in the Butler’s, Zealot’s and Beggar’s rules', () => {
-		expect(rulesOf('butler')?.voter).toEqual({ onlyWith: 'Master' });
-		expect(rulesOf('zealot')?.voter).toEqual({ must: true, minAlive: 5 });
-		expect(rulesOf('beggar')?.voter).toEqual({ needsToken: true, learnsGiver: true });
+		expect(rulesOf('butler', committedCharacters())?.voter).toEqual({ onlyWith: 'Master' });
+		expect(rulesOf('zealot', committedCharacters())?.voter).toEqual({ must: true, minAlive: 5 });
+		expect(rulesOf('beggar', committedCharacters())?.voter).toEqual({
+			needsToken: true,
+			learnsGiver: true
+		});
 	});
 });
 
@@ -110,12 +123,14 @@ describe('voting', () => {
 	});
 
 	it('is in the Voudon’s, Organ Grinder’s and Ferryman’s rules', () => {
-		expect(rulesOf('voudon')?.voting).toEqual({
+		expect(rulesOf('voudon', committedCharacters())?.voting).toEqual({
 			voters: 'self-and-dead',
 			deadNeedNoToken: true,
 			noMajority: true
 		});
-		expect(rulesOf('organgrinder')?.voting).toEqual({ secret: true });
-		expect(rulesOf('ferryman')?.voting).toEqual({ deadRegainToken: 'final-day' });
+		expect(rulesOf('organgrinder', committedCharacters())?.voting).toEqual({ secret: true });
+		expect(rulesOf('ferryman', committedCharacters())?.voting).toEqual({
+			deadRegainToken: 'final-day'
+		});
 	});
 });

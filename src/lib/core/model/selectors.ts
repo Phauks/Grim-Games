@@ -24,10 +24,7 @@ import type {
  * character's works too (M58). The Zombuul's first death: "you live but register as dead"
  * (https://wiki.bloodontheclocktower.com/Zombuul).
  */
-export function registersAsDeadToken(
-	reminder: Reminder,
-	characters: CharacterLookup | undefined
-): boolean {
+export function registersAsDeadToken(reminder: Reminder, characters: CharacterLookup): boolean {
 	const label = rulesOf(reminder.characterId, characters)?.gameEnd?.aliveWhileDead?.untilToken;
 	return label !== undefined && label === reminder.label;
 }

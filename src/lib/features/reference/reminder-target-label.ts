@@ -1,20 +1,21 @@
 /**
  * Who a reminder token may go on, in a few words for the Reference (Trevor, 2026-10-18:
- * "who we believe a token could properly be placed upon"). Read from the same curated rules
- * the board uses to show fitting seats (`REMINDER_TARGETS`), so the two never disagree.
+ * "who we believe a token could properly be placed upon"). Read from the character's own
+ * `reminderTargets`, the rules the board uses to show fitting seats, so the two never disagree
+ * and a custom character's rules show too.
  */
-import type { CharacterId } from '#lib/core/data/index.ts';
-import { REMINDER_TARGETS, type TargetRule } from '#lib/core/rules/reminder-targets.ts';
+import type { Character, CharacterId } from '#lib/core/data/index.ts';
+import type { TargetRule } from '#lib/core/rules/reminder-targets.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { TYPE_PLURALS } from './labels.ts';
 
 /** The rule's words, or undefined for a token with no rule (homebrew, unlisted labels). */
 export function reminderTargetLabel(
-	characterId: CharacterId,
+	character: Pick<Character, 'rules'>,
 	label: string,
 	nameOf: (id: CharacterId) => string
 ): string | undefined {
-	const rule = REMINDER_TARGETS[characterId]?.labels[label];
+	const rule = character.rules?.reminderTargets?.[label];
 	return rule ? describeTarget(rule, nameOf) : undefined;
 }
 

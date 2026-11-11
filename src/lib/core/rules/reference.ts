@@ -108,7 +108,7 @@ export interface ReferenceToken {
 	firstDay: number;
 }
 
-/** A character's setup tokens, from its own rules block or our overlay file. */
+/** A character's setup tokens, from the rules block it carries. */
 const setupSpecs = (character: Character) =>
 	setupPrepOf(character.id, new Map([[character.id, character]]))?.reminders ?? [];
 
@@ -285,7 +285,7 @@ export function characterReference(data: GameData): ReferenceEntry[] {
 		const jinxes = jinxesFor(data.jinxes, character.id).map((j) => ({
 			with: j.characters[0] === character.id ? j.characters[1] : j.characters[0],
 			reason: j.reason,
-			exclusive: jinxIsExclusive(j)
+			exclusive: jinxIsExclusive(j, data.byId)
 		}));
 		const tokens = referenceTokens(character);
 		for (const spec of setupSpecs(character)) {

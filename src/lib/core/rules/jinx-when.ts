@@ -46,7 +46,7 @@ export function jinxApplies(
 	self: CharacterId,
 	partner: CharacterId,
 	effect: JinxEffect | undefined,
-	characters?: CharacterLookup,
+	characters: CharacterLookup,
 	at: JinxAt = {}
 ): boolean {
 	return (effect?.when ?? []).every((c) => check(game, self, partner, c, characters, at) !== false);

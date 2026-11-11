@@ -1,3 +1,4 @@
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from './character-rules.ts';
 import { rulesOf } from './rules/index.ts';
@@ -49,12 +50,12 @@ describe('choice and evil info rules', () => {
 
 	// https://wiki.bloodontheclocktower.com/Poppy_Grower and /Snitch: what each step must remember.
 	it('holds the official notes and Savant facts in the rules files', () => {
-		expect(rulesOf('poppygrower')?.evilInfo?.hidesDemon).toBe(true);
-		expect(rulesOf('snitch')?.evilInfo?.notes?.minioninfo).toBeUndefined();
-		expect(rulesOf('snitch')?.evilInfo?.notes?.demoninfo).toBeDefined();
-		expect(rulesOf('monk')?.marksChoice).toEqual(['Safe']);
-		expect(rulesOf('chef')?.infoKind).toEqual({ number: true });
-		expect(rulesOf('artist')?.infoKind).toEqual({ oncePerGame: true });
-		expect(rulesOf('lunatic')?.choosesLikeDemon).toBe('Chosen');
+		expect(rulesOf('poppygrower', committedCharacters())?.evilInfo?.hidesDemon).toBe(true);
+		expect(rulesOf('snitch', committedCharacters())?.evilInfo?.notes?.minioninfo).toBeUndefined();
+		expect(rulesOf('snitch', committedCharacters())?.evilInfo?.notes?.demoninfo).toBeDefined();
+		expect(rulesOf('monk', committedCharacters())?.marksChoice).toEqual(['Safe']);
+		expect(rulesOf('chef', committedCharacters())?.infoKind).toEqual({ number: true });
+		expect(rulesOf('artist', committedCharacters())?.infoKind).toEqual({ oncePerGame: true });
+		expect(rulesOf('lunatic', committedCharacters())?.choosesLikeDemon).toBe('Chosen');
 	});
 });

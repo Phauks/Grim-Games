@@ -14,8 +14,8 @@ if (!out) {
 	console.error('Usage: npm run export:setup-prep -- <output.json>');
 	process.exit(1);
 }
-const characters = readGameData().characters;
-const rows = characters.map((c) => ({ id: c.id, prep: setupPrep(c.id, c.name) }));
+const { characters, byId } = readGameData();
+const rows = characters.map((c) => ({ id: c.id, prep: setupPrep(c.id, c.name, byId) }));
 writeFileSync(out, `${JSON.stringify(rows, null, '\t')}\n`);
 console.log(
 	`Wrote ${rows.length} characters (${rows.filter((r) => r.prep.length > 0).length} with prep) to ${out}`

@@ -71,8 +71,8 @@ function busyGame() {
 
 describe('publicProjection', () => {
 	it('has names, seat order, deaths and ghost votes', () => {
-		const { game, seats } = busyGame();
-		expect(publicProjection(game)).toEqual({
+		const { game, seats, ctx } = busyGame();
+		expect(publicProjection(game, undefined, undefined, undefined, ctx.characters)).toEqual({
 			ruleCharacters: ['djinn'],
 			seats: [
 				{ seatId: seats[1], seatNumber: 1, playerName: 'Ben', dead: false },

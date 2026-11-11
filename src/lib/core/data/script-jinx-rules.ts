@@ -30,7 +30,6 @@ import { jinxPartnerIssues } from './jinx-needs.ts';
 import { jinxNoOps, type NoOpContext } from './jinx-no-ops.ts';
 import type { JinxRules } from './jinx-rules.ts';
 import { readJinxRules } from './jinx-read.ts';
-import { rulesOf } from './rules/index.ts';
 import type { Character, CharacterId, Jinx } from './types.ts';
 import { Issues, isObject, type Json } from './validate.ts';
 
@@ -67,7 +66,7 @@ function scriptRules(
 	return (id) => {
 		const c = byId.get(id);
 		if (!c) return undefined;
-		const rules = (homebrew.has(id) ? c.rules : rulesOf(id)) ?? ({} as CharacterRules);
+		const rules = c.rules ?? ({} as CharacterRules);
 		const rest = without(rules, 'jinxes');
 		const own = homebrew.has(id) ? c.rules?.jinxes : undefined;
 		return { ...rest, ...(own ? { jinxes: own } : {}) } as Json;

@@ -1,4 +1,7 @@
 {
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
 	"actsWhenDead": true,
 	"onDeath": {
 		"by": "any"

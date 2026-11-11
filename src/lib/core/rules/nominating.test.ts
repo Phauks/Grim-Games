@@ -7,6 +7,7 @@
  * - https://wiki.bloodontheclocktower.com/Gnome: when the Gnome's amigo is nominated, the Gnome
  *   may kill the nominator, as often as it happens (`onNominated.carrier`).
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -83,7 +84,7 @@ describe('Bishop: only the Storyteller nominates', () => {
 
 describe('Golem: may only nominate once per game', () => {
 	it('keeps its day ability use (the nominated player dies unless the Demon)', () => {
-		expect(rulesOf('golem')).toMatchObject({
+		expect(rulesOf('golem', committedCharacters())).toMatchObject({
 			nominating: { perGame: 1 },
 			dayUse: { who: 'nominated', kills: true, spentToken: 'May Not Nominate' }
 		});

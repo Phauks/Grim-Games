@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { baseCounts } from '#lib/core/rules/distribution.ts';
 import {
 	canRedraft,
@@ -329,7 +329,9 @@ describe('Ivory draft', () => {
 	};
 
 	it('marks the characters that make an extra evil player', () => {
-		const marked = data.characters.filter((c) => rulesOf(c.id)?.makesExtraEvil).map((c) => c.id);
+		const marked = data.characters
+			.filter((c) => rulesOf(c.id, committedCharacters())?.makesExtraEvil)
+			.map((c) => c.id);
 		expect(marked.sort()).toEqual(
 			[
 				'bountyhunter',
@@ -428,7 +430,7 @@ describe('a drafted character that may really be a hidden one', () => {
 		);
 
 	it('is named by its rules file', () => {
-		expect(rulesOf('atheist')?.orHiddenAs).toBe('drunk');
+		expect(rulesOf('atheist', committedCharacters())?.orHiddenAs).toBe('drunk');
 		expect(start().orHidden).toEqual({ atheist: 'drunk' });
 		expect(start([]).orHidden).toBeUndefined();
 	});
@@ -479,7 +481,7 @@ describe('a drafted character that gains another character’s ability', () => {
 	const kept = () => takeOffer({ ...start(), offer: ['alchemist'] }, 'alchemist', seeded(4));
 
 	it('is named by its rules file', () => {
-		expect(rulesOf('alchemist')?.gainsAbilityOf).toBe('minion');
+		expect(rulesOf('alchemist', committedCharacters())?.gainsAbilityOf).toBe('minion');
 		expect(start().gains).toEqual({ alchemist: 'minion' });
 	});
 
@@ -548,7 +550,10 @@ describe('a drafted character that turns players into another type', () => {
 		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(kazali), seeded(6));
 
 	it('is named by its rules file, with the type’s usual count', () => {
-		expect(rulesOf('kazali')?.turnsPlayersInto).toEqual({ type: 'minion', players: 'chosen' });
+		expect(rulesOf('kazali', committedCharacters())?.turnsPlayersInto).toEqual({
+			type: 'minion',
+			players: 'chosen'
+		});
 		expect(start().turns).toEqual({
 			kazali: { type: 'minion', players: 'chosen', usual: baseCounts(7).minion }
 		});
@@ -597,7 +602,7 @@ describe('a drafted character whose neighbours turn into another type', () => {
 	const none = { townsfolk: 0, outsider: 0, minion: 0, demon: 0 };
 
 	it('is named by its rules file', () => {
-		expect(rulesOf('lordoftyphon')?.turnsPlayersInto).toEqual({
+		expect(rulesOf('lordoftyphon', committedCharacters())?.turnsPlayersInto).toEqual({
 			type: 'minion',
 			players: 'neighbours'
 		});
@@ -659,7 +664,10 @@ describe('a drafted character that turns its own player into another type', () =
 		startDraft({ ...config, modifiers: true }, baseCounts(7), tb.concat(monsta), seeded(8));
 
 	it('is named by its rules file, and offered by a draft though never dealt', () => {
-		expect(rulesOf('lilmonsta')?.turnsPlayersInto).toEqual({ type: 'minion', players: 'drafter' });
+		expect(rulesOf('lilmonsta', committedCharacters())?.turnsPlayersInto).toEqual({
+			type: 'minion',
+			players: 'drafter'
+		});
 		expect(draftedTurned(data.characters).map((c) => c.id)).toEqual(['lilmonsta']);
 	});
 

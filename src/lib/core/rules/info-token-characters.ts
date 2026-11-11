@@ -69,8 +69,7 @@ export interface StepCard {
 }
 
 /**
- * A character's `infoTokenCharacters` rule: a homebrew character's own only (its text is its
- * own), else our overlay file's.
+ * A character's `infoTokenCharacters` rule, from the rules block it carries.
  */
 export function infoTokenCharacterRulesOf(
 	character: Pick<Character, 'id' | 'edition' | 'rules'>

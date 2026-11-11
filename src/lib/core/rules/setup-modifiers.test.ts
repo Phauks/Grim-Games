@@ -117,7 +117,12 @@ describe('bracket reader', () => {
 	});
 
 	it('reads a homebrew copy of an official id from its own text', () => {
-		const baron = { ...data.byId.get('baron')!, edition: undefined, ability: 'x [+1 Outsider]' };
+		const baron = {
+			...data.byId.get('baron')!,
+			edition: undefined,
+			rules: undefined,
+			ability: 'x [+1 Outsider]'
+		};
 		expect(setupModifierFor(baron)).toMatchObject({
 			source: 'ability-text',
 			ops: [{ values: [1] }]

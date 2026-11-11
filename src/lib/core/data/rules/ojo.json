@@ -1,4 +1,7 @@
 {
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
 	"kills": {
 		"by": "demon",
 		"chooses": "character"

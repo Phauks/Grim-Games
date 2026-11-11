@@ -7,7 +7,7 @@
  *   the author chose the wording. With no rules at all the jinx is text, and only its wording
  *   may still say that just one of the two can be in play (`isExclusiveJinx`);
  * - otherwise the pair's rules come from both characters' `jinxes` blocks (`jinxRulesBetween`):
- *   a custom character's own `rules`, else our overlay file.
+ *   each character's own rules block (an official one carries our file).
  * Each effect says whose behaviour it changes (`who`), so `owner`'s rules for a partner are the
  * effects on `owner` from both sides (`pairView`).
  */
@@ -17,7 +17,7 @@ import { flipCondition, subjectOf } from '#lib/core/data/jinx-needs.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, Jinx } from '#lib/core/data/types.ts';
 
-export type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
+export type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules; edition?: string }>;
 
 /** Where a reader finds the script's own jinxes: the game's `Script`, or a loaded list. */
 export interface JinxScope {
@@ -76,13 +76,16 @@ export function rulesForJinx(
 	scope: JinxScope | undefined,
 	a: CharacterId,
 	b: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): JinxRules | undefined {
 	if (a === b) return undefined;
 	const own = scriptJinxFor(scope, a, b);
 	if (!own) return jinxRulesBetween(a, b, characters);
 	const side = (x: CharacterId, y: CharacterId): JinxRules | undefined => {
-		const custom = characters?.get(x)?.rules?.jinxes?.[y];
+		// A script's jinx replaces TPI's for the pair, so an official character's file says
+		// nothing here; a custom character's own `rules.jinxes` still adds to it.
+		const character = characters.get(x);
+		const custom = character?.edition === undefined ? character?.rules?.jinxes?.[y] : undefined;
 		const written = own.characters[0] === x ? own.rules : undefined;
 		return custom && written ? { ...custom, ...written } : (written ?? custom);
 	};
@@ -104,7 +107,7 @@ export function rulesForJinx(
 export function jinxRulesBetween(
 	a: CharacterId,
 	b: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): JinxRules | undefined {
 	return pairView(rulesOf(a, characters)?.jinxes?.[b], rulesOf(b, characters)?.jinxes?.[a]);
 }

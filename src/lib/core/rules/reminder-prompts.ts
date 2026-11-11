@@ -38,26 +38,23 @@ export const REMINDER_PROMPTS: readonly ReminderPromptRule[] = (() => {
 const BY_LABEL = new Map(REMINDER_PROMPTS.map((rule) => [rule.label.toLowerCase(), rule.prompt]));
 
 /**
- * The question placing this reminder asks, if any. With the reminder's character, that
- * character's own rules block decides first, so a custom character's reminders can ask too.
+ * The question placing this reminder asks, if any. A character's reminder asks what its own
+ * rules block says (`reminderPrompts`), official or custom alike, and never borrows another
+ * character's prompt by its words. A reminder with no character (a generic token) asks what an
+ * official reminder with the same words does.
  */
 export function reminderPrompt(
 	label: string,
-	characterId?: CharacterId,
-	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
+	characterId: CharacterId | undefined,
+	characters: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
 ): ReminderPrompt | undefined {
 	const key = label.trim().toLowerCase();
-	const own = characterId ? rulesOf(characterId, characters)?.reminderPrompts : undefined;
-	const mine = own && Object.entries(own).find(([l]) => l.toLowerCase() === key)?.[1];
-	return mine ?? BY_LABEL.get(key);
+	if (characterId === undefined) return BY_LABEL.get(key);
+	const own = rulesOf(characterId, characters)?.reminderPrompts;
+	return own && Object.entries(own).find(([l]) => l.toLowerCase() === key)?.[1];
 }
 
 /** Whether the prompt applies to a seat in this state: mark the living dead, revive the dead. */
 export function promptApplies(prompt: ReminderPrompt, dead: boolean): boolean {
 	return prompt === 'markDead' ? !dead : dead;
-}
-
-/** A reminder that records a death ("Dead", "Died Today"). */
-export function marksDeath(label: string): boolean {
-	return reminderPrompt(label) === 'markDead';
 }

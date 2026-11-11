@@ -181,6 +181,7 @@ describe('deathCauses', () => {
 	it('offers a homebrew Demon as a killer and other homebrew characters as unknown', () => {
 		const brew = (id: string, type: Character['type']): Character => ({
 			...(data.byId.get('imp') as Character),
+			rules: undefined,
 			id,
 			name: id,
 			type

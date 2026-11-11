@@ -4,7 +4,7 @@
  * they encode.
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -376,6 +376,7 @@ describe('homebrew', () => {
 		const copy = {
 			...data.byId.get('chef')!,
 			edition: undefined,
+			rules: undefined,
 			ability: 'Each day, publicly cook.'
 		};
 		expect(texts({ seats: [seat('chef')] }, [copy])).toEqual(['[Chef] may act today']);
@@ -484,11 +485,11 @@ describe('isOnceOnlyDayAbility', () => {
 	it('is true for once-per-game day abilities marked with "No Ability"', () => {
 		// https://wiki.bloodontheclocktower.com/Slayer, /Artist, /Virgin
 		for (const id of ['slayer', 'artist', 'virgin', 'fisherman']) {
-			expect(isOnceOnlyDayAbility(id), id).toBe(true);
+			expect(isOnceOnlyDayAbility(id, committedCharacters()), id).toBe(true);
 		}
 		// https://wiki.bloodontheclocktower.com/Gossip: every day.
 		for (const id of ['gossip', 'savant', 'juggler', 'imp']) {
-			expect(isOnceOnlyDayAbility(id), id).toBe(false);
+			expect(isOnceOnlyDayAbility(id, committedCharacters()), id).toBe(false);
 		}
 	});
 });

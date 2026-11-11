@@ -13,6 +13,7 @@
  * - https://wiki.bloodontheclocktower.com/Klutz, /Moonchild, /Cacklejack (choose a player)
  * - https://wiki.bloodontheclocktower.com/Damsel (a Minion guesses)
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
@@ -32,10 +33,10 @@ import {
 
 describe('dayClaim', () => {
 	it('reads each character’s claim from its rules block', () => {
-		expect(dayClaim('juggler')).toBe('guesses');
-		expect(dayClaim('gossip')).toBe('statement');
-		expect(dayClaim('savant')).toBe('statements');
-		expect(dayClaim('washerwoman')).toBeUndefined();
+		expect(dayClaim('juggler', committedCharacters())).toBe('guesses');
+		expect(dayClaim('gossip', committedCharacters())).toBe('statement');
+		expect(dayClaim('savant', committedCharacters())).toBe('statements');
+		expect(dayClaim('washerwoman', committedCharacters())).toBeUndefined();
 	});
 
 	it('reads a custom character’s own block', () => {
@@ -46,25 +47,28 @@ describe('dayClaim', () => {
 
 describe('dayUseWho', () => {
 	it('reads who marking the ability used asks for', () => {
-		expect(dayUseWho('slayer')).toBe('chosen');
-		expect(dayUseWho('virgin')).toBe('nominator');
-		expect(dayUseWho('judge')).toBe('nominee');
+		expect(dayUseWho('slayer', committedCharacters())).toBe('chosen');
+		expect(dayUseWho('virgin', committedCharacters())).toBe('nominator');
+		expect(dayUseWho('judge', committedCharacters())).toBe('nominee');
 		// The Artist's question and the Fisherman's advice are about no player.
-		expect(dayUseWho('artist')).toBeUndefined();
-		expect(dayUseWho('fisherman')).toBeUndefined();
+		expect(dayUseWho('artist', committedCharacters())).toBeUndefined();
+		expect(dayUseWho('fisherman', committedCharacters())).toBeUndefined();
 	});
 
 	it('reads whether the player dies, and the token that marks it used', () => {
 		for (const id of ['slayer', 'psychopath', 'gangster', 'gunslinger', 'golem'])
-			expect(dayUseOf(id)?.kills, id).toBe(true);
+			expect(dayUseOf(id, committedCharacters())?.kills, id).toBe(true);
 		for (const id of ['klutz', 'moonchild', 'cacklejack', 'damsel', 'virgin'])
-			expect(dayUseOf(id)?.kills, id).toBeUndefined();
-		expect(dayUseOf('golem')).toEqual({
+			expect(dayUseOf(id, committedCharacters())?.kills, id).toBeUndefined();
+		expect(dayUseOf('golem', committedCharacters())).toEqual({
 			who: 'nominated',
 			kills: true,
 			spentToken: 'May Not Nominate'
 		});
-		expect(dayUseOf('damsel')).toEqual({ who: 'guesser', spentToken: 'Guess Used' });
+		expect(dayUseOf('damsel', committedCharacters())).toEqual({
+			who: 'guesser',
+			spentToken: 'Guess Used'
+		});
 	});
 
 	it('reads a custom character’s own block', () => {
@@ -200,7 +204,7 @@ describe('correctGuesses', () => {
 
 describe('guessLimit', () => {
 	it('is 5 for the Juggler, from its rules block', () => {
-		expect(guessLimit('juggler')).toBe(5);
-		expect(guessLimit('gossip')).toBeUndefined();
+		expect(guessLimit('juggler', committedCharacters())).toBe(5);
+		expect(guessLimit('gossip', committedCharacters())).toBeUndefined();
 	});
 });

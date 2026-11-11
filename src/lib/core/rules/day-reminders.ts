@@ -26,7 +26,7 @@ import {
 	type DayReminderSpec,
 	type DeathCauseMatch
 } from '#lib/core/data/day-reminder-rules.ts';
-import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { effectDayLines, type DayLineEffect } from './reminder-effects.ts';
 import { grantedWishSeats } from './wishes.ts';
@@ -179,23 +179,22 @@ export function daySentence(segments: readonly ReminderSegment[]): {
 }
 
 /**
- * A character's `dayReminders` rules: a homebrew character's own block only, else its rules
- * block (a custom character's own, or our overlay file); its optional rule's when the game
- * turned that on (`optionalRules`).
+ * A character's `dayReminders` rules, from the rules block it carries; its optional rule's when
+ * the game turned that on (`optionalRules`).
  */
 function rulesFor(
 	characterId: CharacterId,
 	character: Character | undefined,
 	optionalRules: readonly CharacterId[] = []
 ): DayReminderRules | undefined {
-	const lookup = character ? new Map([[characterId, character]]) : undefined;
-	return rulesIn({ optionalRules }, characterId, lookup)?.dayReminders;
+	if (!character) return undefined;
+	return rulesIn({ optionalRules }, characterId, new Map([[characterId, character]]))?.dayReminders;
 }
 
 /** A character's `dayReminders` rules, as `rulesFor` reads them. */
 export function dayRulesOf(
 	characterId: CharacterId,
-	lookup?: CharacterLookup
+	lookup: CharacterLookup
 ): DayReminderRules | undefined {
 	return rulesFor(characterId, lookup?.get(characterId));
 }
@@ -284,8 +283,7 @@ export function dayStateFromGame(
 
 /** A character's rules block, a homebrew one's own included. */
 function ruleBlock(state: DayState, id: CharacterId) {
-	const character = state.character(id);
-	return rulesOf(id, character ? new Map([[id, character]]) : undefined);
+	return state.character(id)?.rules;
 }
 
 /** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
@@ -726,7 +724,7 @@ export function dayReminders(state: DayState): DayReminders {
  * reminder token (the Slayer, Artist, Fisherman, Virgin, Fool), so the day panel offers a
  * one-tap "Used" (`UseAbility` places the token).
  */
-export function isOnceOnlyDayAbility(characterId: CharacterId, lookup?: CharacterLookup): boolean {
+export function isOnceOnlyDayAbility(characterId: CharacterId, lookup: CharacterLookup): boolean {
 	return (
 		dayRulesOf(characterId, lookup)?.reminders?.some((r) => r.when?.noReminder === 'No Ability') ??
 		false

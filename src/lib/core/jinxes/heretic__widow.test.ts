@@ -42,7 +42,12 @@ describe('Heretic + Widow jinx', () => {
 	});
 
 	it('warns at setup when both are chosen, and not when one is', () => {
-		const jinxes = scriptJinxes(data.jinxes, ['heretic', 'widow', 'chef']);
+		const jinxes = scriptJinxes(
+			data.jinxes,
+			['heretic', 'widow', 'chef'],
+			undefined,
+			committedCharacters()
+		);
 		expect(jinxes.map((j) => j.exclusive)).toEqual([true]);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'widow'])).toHaveLength(1);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'chef'])).toEqual([]);

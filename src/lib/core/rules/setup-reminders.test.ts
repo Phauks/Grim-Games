@@ -12,7 +12,7 @@ import {
 import type { Command } from '#lib/core/engine/commands.ts';
 import { dispatch, redo, undo, type GameSession } from '#lib/core/engine/log.ts';
 import type { EngineContext } from '#lib/core/engine/context.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -430,14 +430,14 @@ describe('custom characters', () => {
 describe('setupPrep', () => {
 	// https://wiki.bloodontheclocktower.com/Drunk and https://wiki.bloodontheclocktower.com/Knight
 	it('lists each character’s preparation, one step per text', () => {
-		expect(setupPrep('drunk', 'Drunk')).toEqual([
+		expect(setupPrep('drunk', 'Drunk', committedCharacters())).toEqual([
 			{
 				text: 'Put [Is The Drunk] on the Drunk; choose a not-in-play Townsfolk they think they are',
 				tokens: ['Is The Drunk'],
 				target: 'the Drunk'
 			}
 		]);
-		expect(setupPrep('knight', 'Knight')).toEqual([
+		expect(setupPrep('knight', 'Knight', committedCharacters())).toEqual([
 			{
 				text: 'Choose 2 players who aren’t the Demon: put [Know] on each',
 				tokens: ['Know', 'Know'],
@@ -445,32 +445,32 @@ describe('setupPrep', () => {
 			}
 		]);
 		// https://wiki.bloodontheclocktower.com/Noble: 1 evil and 2 good, so no single target.
-		expect(setupPrep('noble', 'Noble')).toEqual([
+		expect(setupPrep('noble', 'Noble', committedCharacters())).toEqual([
 			{
 				text: 'Choose 3 players for the Noble, exactly 1 evil: put [Know] on each',
 				tokens: ['Know', 'Know', 'Know']
 			}
 		]);
 		// https://wiki.bloodontheclocktower.com/Mezepheles: a secret word, no token.
-		expect(setupPrep('mezepheles', 'Mezepheles')).toEqual([
+		expect(setupPrep('mezepheles', 'Mezepheles', committedCharacters())).toEqual([
 			{ text: 'Choose the Mezepheles’ secret word', tokens: [] }
 		]);
-		expect(setupPrep('chef', 'Chef')).toEqual([]);
+		expect(setupPrep('chef', 'Chef', committedCharacters())).toEqual([]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Grandmother, /Village_Idiot (Trevor’s review)
 	it('uses the reviewed wording for the Grandmother and Village Idiot', () => {
-		expect(setupPrep('grandmother', 'Grandmother')[0].text).toBe(
+		expect(setupPrep('grandmother', 'Grandmother', committedCharacters())[0].text).toBe(
 			'Choose a good player: put [Grandchild] on them'
 		);
-		expect(setupPrep('villageidiot', 'Village Idiot')[0].text).toBe(
+		expect(setupPrep('villageidiot', 'Village Idiot', committedCharacters())[0].text).toBe(
 			'If multiple Village Idiots, mark one as [Drunk] on them'
 		);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Yaggababble: the Storyteller picks the phrase.
 	it('asks for a value where the Storyteller chooses one', () => {
-		expect(setupPrep('yaggababble', 'Yaggababble')).toEqual([
+		expect(setupPrep('yaggababble', 'Yaggababble', committedCharacters())).toEqual([
 			{
 				text: 'Choose the Yaggababble’s secret phrase',
 				tokens: [],
@@ -483,14 +483,15 @@ describe('setupPrep', () => {
 describe('prepTokens', () => {
 	// https://wiki.bloodontheclocktower.com/Fortune_Teller and /Village_Idiot
 	it('lists the tokens placed before the first night, not on the first day', () => {
-		expect(prepTokens('fortuneteller')).toEqual(['Red Herring']);
-		expect(prepTokens('villageidiot')).toEqual(['Drunk']);
-		expect(prepTokens('chef')).toEqual([]);
+		expect(prepTokens('fortuneteller', committedCharacters())).toEqual(['Red Herring']);
+		expect(prepTokens('villageidiot', committedCharacters())).toEqual(['Drunk']);
+		expect(prepTokens('chef', committedCharacters())).toEqual([]);
 		for (const entry of SETUP_REMINDER_ENTRIES) {
 			const firstDay = entry.reminders.filter((r) => r.timing === 'first-day').map((r) => r.label);
 			const setup = entry.reminders.filter((r) => r.timing !== 'first-day').map((r) => r.label);
 			for (const label of firstDay) {
-				if (!setup.includes(label)) expect(prepTokens(entry.id), entry.id).not.toContain(label);
+				if (!setup.includes(label))
+					expect(prepTokens(entry.id, committedCharacters()), entry.id).not.toContain(label);
 			}
 		}
 	});

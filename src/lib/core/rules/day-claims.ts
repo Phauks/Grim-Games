@@ -14,12 +14,12 @@ type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
  * (`dayClaim` in its rules block; Trevor, 2026-10-23: L56). Guesses (the Juggler), one
  * statement the Storyteller marks true or false (the Gossip), or two statements (the Savant).
  */
-export function dayClaim(characterId: CharacterId, characters?: RulesLookup): DayClaim | undefined {
+export function dayClaim(characterId: CharacterId, characters: RulesLookup): DayClaim | undefined {
 	return rulesOf(characterId, characters)?.dayClaim;
 }
 
 /** How many guesses a character's claim may hold a day (`guessLimit` in its rules block). */
-export function guessLimit(characterId: CharacterId, characters?: RulesLookup): number | undefined {
+export function guessLimit(characterId: CharacterId, characters: RulesLookup): number | undefined {
 	return rulesOf(characterId, characters)?.guessLimit;
 }
 
@@ -30,13 +30,13 @@ export function guessLimit(characterId: CharacterId, characters?: RulesLookup): 
  */
 export function dayUseWho(
 	characterId: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): DayUseWho | undefined {
 	return rulesOf(characterId, characters)?.dayUse?.who;
 }
 
 /** A character's whole `dayUse` rule: who, whether they die, and the token that marks it. */
-export function dayUseOf(characterId: CharacterId, characters?: RulesLookup): DayUse | undefined {
+export function dayUseOf(characterId: CharacterId, characters: RulesLookup): DayUse | undefined {
 	return rulesOf(characterId, characters)?.dayUse;
 }
 
@@ -44,7 +44,7 @@ export function dayUseOf(characterId: CharacterId, characters?: RulesLookup): Da
  * The characters no player holds whose day ability any living player may use, once each per
  * game (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer).
  */
-export function anyoneDayUses(game: Game, characters?: RulesLookup): CharacterId[] {
+export function anyoneDayUses(game: Game, characters: RulesLookup): CharacterId[] {
 	return game.ruleCharacters.filter((id) => rulesOf(id, characters)?.dayUse?.anyone);
 }
 
@@ -62,11 +62,7 @@ export function dayUseUsers(game: Game, characterId: CharacterId): SeatId[] {
  * Whether enough players live for `characterId`'s day ability (`dayUse.minAlive`: the
  * Doomsayer needs 4, https://wiki.bloodontheclocktower.com/Doomsayer). True without a limit.
  */
-export function dayUseOpen(
-	game: Game,
-	characterId: CharacterId,
-	characters?: RulesLookup
-): boolean {
+export function dayUseOpen(game: Game, characterId: CharacterId, characters: RulesLookup): boolean {
 	const min = rulesOf(characterId, characters)?.dayUse?.minAlive;
 	return min === undefined || game.seating.filter((s) => !game.seats[s].dead).length >= min;
 }
@@ -78,7 +74,7 @@ export function dayUseOpen(
 export function dayUseCandidates(
 	game: Game,
 	characterId: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): SeatId[] {
 	if (!rulesOf(characterId, characters)?.dayUse?.anyone) return [];
 	if (!dayUseOpen(game, characterId, characters)) return [];

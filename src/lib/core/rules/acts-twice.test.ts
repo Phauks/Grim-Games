@@ -9,7 +9,7 @@ import { Issues } from '#lib/core/data/validate.ts';
 import { actsTwice as actsTwicePart } from '#lib/core/data/parts/acts-twice.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { actsTwice, actsTwiceSource, dayUsesAllowed, withActsTwiceSteps } from './acts-twice.ts';
 import { nightStepAlerts } from './night-alerts.ts';
@@ -32,7 +32,7 @@ const warnings = (s: Scenario): string[] =>
 
 describe('actsTwice part', () => {
 	it('is read from the rules block, naming one of the character’s own reminders', () => {
-		expect(rulesOf('barista')?.actsTwice).toEqual({ token: 'Acts Twice' });
+		expect(rulesOf('barista', committedCharacters())?.actsTwice).toEqual({ token: 'Acts Twice' });
 		const issues = new Issues();
 		const block = { actsTwice: { token: 'Nope' } };
 		expect(actsTwicePart.read(block, 'actsTwice', 'rules', issues, ['Acts Twice'])).toBeUndefined();

@@ -244,7 +244,7 @@ export function keptAfterPartner(
 	game: Game,
 	seatId: SeatId,
 	tokenOwner: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): boolean {
 	const own = characters
 		? trueCharacter(game, seatId, characters)
@@ -295,7 +295,7 @@ export function killsMarkedBy(
 	game: Game,
 	killer: CharacterId,
 	seatId: SeatId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId | undefined {
 	const reminders = game.seats[seatId]?.reminders ?? [];
 	return ownJinxEffects(game, killer, 'killsMarked', characters).find(({ partner, effect }) =>
@@ -313,11 +313,11 @@ export function killsMarkedBy(
 export function madAsPartners(
 	game: Pick<Game, 'script'>,
 	owner: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	const own = rulesOf(owner, characters);
 	const mine = own?.madAs?.characters ?? [];
-	const lookup = characters as CharacterLookup | undefined;
+	const lookup = characters as CharacterLookup;
 	const out = ownJinxes(game, owner, () => true, characters).flatMap(({ partner, rule }) =>
 		jinxPatches(rule, { partner, own }).flatMap((patch) => {
 			const also = patch.parts.madAs?.characters ?? [];
@@ -361,11 +361,13 @@ export function uncountedVoteBy(
 	game: Pick<Game, 'script'>,
 	voter: CharacterId,
 	secretBy: CharacterId | undefined,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId | undefined {
 	if (secretBy === undefined) return undefined;
 	const effect = ownJinxRules(game, voter, secretBy, characters)?.voter;
-	return effect && jinxApplies(game, voter, secretBy, effect) ? secretBy : undefined;
+	return effect && jinxApplies(game, voter, secretBy, effect, characters as CharacterLookup)
+		? secretBy
+		: undefined;
 }
 
 /**
@@ -376,7 +378,7 @@ export function uncountedVoteBy(
 export function hiddenPartnersOf(
 	game: Pick<Game, 'script'>,
 	owner: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	return ownJinxEffects(game, owner, 'notShown', characters, (e) => e.what === 'partner-seat').map(
 		(j) => j.partner

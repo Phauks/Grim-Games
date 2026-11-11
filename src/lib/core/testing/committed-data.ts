@@ -12,7 +12,6 @@ import {
 	type GameData
 } from '#lib/core/data/index.ts';
 import { sheetWithOwnPlaces } from '#lib/core/rules/night-order.ts';
-import { HIDDEN_OFFICIAL_RULES } from './parity/official-rules.ts';
 
 const dataDir = new URL('../../../../static/data/', import.meta.url);
 
@@ -35,8 +34,8 @@ export function committedGameData(): GameData {
 
 /**
  * The parity run (M57, vitest.parity.config.ts): every official character as a custom one. No
- * edition, its rules block carried on the character as a script's custom character carries
- * `rules`, and no place on TPI's night sheet. TPI's jinx texts stay: a script's own jinxes
+ * edition and no place on TPI's night sheet; its rules block already travels on the character,
+ * as a script's custom character's `rules` does. TPI's jinx texts stay: a script's own jinxes
  * carry the same words, and their rules are in the characters' blocks.
  */
 function asCustom(data: GameData): GameData {
@@ -44,8 +43,7 @@ function asCustom(data: GameData): GameData {
 	const characters = data.characters.map((c): Character => {
 		const custom: Character = { ...c };
 		delete custom.edition;
-		const rules = HIDDEN_OFFICIAL_RULES.get(c.id);
-		return rules ? { ...custom, rules } : custom;
+		return custom;
 	});
 	const markers = (night: readonly string[]) => night.filter((id) => !data.byId.has(id));
 	return {
@@ -60,8 +58,8 @@ function asCustom(data: GameData): GameData {
 }
 
 /**
- * Every official character by id, to pass where a reader takes `characters`: in the parity run
- * each carries its own rules block, so a test reads its data as a custom character's (M57).
+ * Every official character by id, each carrying its rules block, to pass where a reader takes
+ * `characters`. In the parity run each is a custom character (M57).
  */
 export function committedCharacters(): ReadonlyMap<CharacterId, Character> {
 	return committedGameData().byId;

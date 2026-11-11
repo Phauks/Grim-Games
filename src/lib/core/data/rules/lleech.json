@@ -1,4 +1,7 @@
 {
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
 	"protects": {
 		"who": "self",
 		"from": "any",

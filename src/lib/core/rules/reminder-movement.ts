@@ -14,7 +14,7 @@ import { neighbourSeats } from './reminder-targets.ts';
 
 export type { ReminderMovementRules };
 
-/** A character's `reminderMovement` rule: its own (a custom character's) or our overlay file's. */
+/** A character's `reminderMovement` rule, from the rules block it carries. */
 export function reminderMovementOf(
 	characterId: CharacterId,
 	characters: CharacterLookup
