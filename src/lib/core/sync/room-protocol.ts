@@ -21,7 +21,7 @@ import type { SeatRole } from './room-roles.ts';
 import type { SeatPresence } from './seat-presence.ts';
 import type { PictureReportView } from './room-pictures.ts';
 import type { PlayerMessage } from './room-messages.ts';
-import type { GameOver, RoomMember, RoomRequest } from './room.ts';
+import type { GameOver, RoomMember } from './room.ts';
 import type { TransferDetails, TransferStatus } from './room-transfer.ts';
 import type { PushAddress } from './web-push.ts';
 import type { RemovedMember } from './room-removed.ts';
@@ -222,8 +222,6 @@ export interface HostView {
 	type: 'host-view';
 	/** A name another phone at this game already has comes numbered (room-names.ts). */
 	members: RoomMember[];
-	/** Always empty now; kept for Storytellers' apps built while players asked. */
-	requests: RoomRequest[];
 	/** The open vote's count of spectators' choices; absent when no vote is open. */
 	vote?: VoteTally;
 	/** Players' feedback on the ended game, once any has come. */

@@ -6,7 +6,7 @@
  * belong to the room and the server.
  */
 
-/** Bump with a migration when the saved shape changes: older builds may have saved feedback. */
+/** Bump when the saved shape changes; another version is not read (no migrations). */
 export const FEEDBACK_VERSION = 1;
 
 /** The accolades a player can give the Storyteller (Trevor, 2026-10-22). Labels live in i18n. */

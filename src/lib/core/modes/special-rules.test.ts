@@ -8,7 +8,7 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { analyseSetup, canDuplicate, type AnyDuplicates } from '#lib/core/rules/index.ts';
 import { combineRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
-import { SPECIAL_RULES, upgradeModeChoice } from './rules/index.ts';
+import { SPECIAL_RULES } from './rules/index.ts';
 import { SCRIPT_RULE_ID, scriptSpecialRule } from './script-rule.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 import { parseGameMode, parseModeOrRule, parseSpecialRule } from './validate.ts';
@@ -150,7 +150,7 @@ describe('reading a special rule file', () => {
 		expect(good.ok && good.rule.rules).toEqual({ demonAttack: { target: 'script-order' } });
 	});
 
-	it('says where each part that moved into the rules block went', () => {
+	it('refuses parts that are now in the rules block as unknown', () => {
 		const parsed = parseSpecialRule({
 			...rule('x', {}),
 			parts: {
@@ -162,11 +162,11 @@ describe('reading a special rule file', () => {
 			}
 		});
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'parts.countChanges: moved to rules.setupModifier',
-			'parts.demonAttacks: moved to rules.demonAttack',
-			'parts.abilities: moved to rules.deadKeepAbilities',
-			'parts.nightSteps: moved to rules.nightWakes',
-			'parts.nominations: moved to rules.onNominated'
+			'parts.countChanges: unknown part',
+			'parts.demonAttacks: unknown part',
+			'parts.abilities: unknown part',
+			'parts.nightSteps: unknown part',
+			'parts.nominations: unknown part'
 		]);
 	});
 
@@ -300,21 +300,6 @@ describe("a script's own rule", () => {
 		expect(r?.parts).toEqual({ text: ['Seat 7 remains empty.'] });
 		expect(scriptSpecialRule({ name: 'x' })).toBeUndefined();
 		expect(scriptSpecialRule({ name: 'x', bootlegger: [' '] })).toBeUndefined();
-	});
-});
-
-describe('games saved in a mode that became a rule', () => {
-	// Trevor, 2026-10-18: Specters and Infinite Possibilities stack on a mode now.
-	it('read as Standard with that rule', () => {
-		expect(upgradeModeChoice('specters')).toEqual({ modeId: 'standard', ruleIds: ['specters'] });
-		expect(upgradeModeChoice('infinite-possibilities', ['seat-7'])).toEqual({
-			modeId: 'standard',
-			ruleIds: ['infinite-possibilities', 'seat-7']
-		});
-		expect(upgradeModeChoice('sushi-buffet', ['specters'])).toEqual({
-			modeId: 'sushi-buffet',
-			ruleIds: ['specters']
-		});
 	});
 });
 

@@ -34,7 +34,6 @@ import {
 	unseat,
 	viewerFailed,
 	viewersLocked,
-	withoutRequests,
 	MAX_VIEWER_FAILS,
 	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
@@ -109,18 +108,6 @@ describe('the live room', () => {
 		expect(seat(named, 'alex', 'zz')).toBe(named);
 		expect(seat(named, 'alex', 7)).toBe(named);
 		expect(seat(named, 'nobody', 'a')).toBe(named);
-	});
-
-	it('turns requests saved before approval went into names', () => {
-		const old = { ...roomWith('alex', 'sam') };
-		old.requests = [
-			{ requestId: 'r1', memberId: 'alex', name: 'Alex', seatId: s('a'), at: 1 },
-			{ requestId: 'r2', memberId: 'gone', name: 'Eve', at: 2 }
-		];
-		const room = withoutRequests(old);
-		expect(room.requests).toEqual([]);
-		expect(room.members).toEqual([{ memberId: 'alex', name: 'Alex' }, { memberId: 'sam' }]);
-		expect(withoutRequests(room)).toBe(room);
 	});
 
 	it('moves an earlier phone out of a seat the Storyteller gives to someone else', () => {

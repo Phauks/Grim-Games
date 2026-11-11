@@ -127,7 +127,7 @@ const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 /**
  * One live room (07-accounts-and-multi-device.md §4.2). The rules live in
  * `core/sync/room.ts`; this object stores the state, checks who is talking, and sends
- * each device its own view: the Storyteller sees members and requests, a player sees the
+ * each device its own view: the Storyteller sees members, a player sees the
  * public table and their own place in it.
  */
 export class Room extends DurableObject<RoomEnv> {

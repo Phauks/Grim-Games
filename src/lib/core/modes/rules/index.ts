@@ -32,21 +32,6 @@ export const SPECIAL_RULES: readonly SpecialRule[] = [
 	TRAINED_KILLER
 ];
 
-/**
- * Game modes that became special rules (Trevor, 2026-10-18), by id: a game saved in one of
- * them reads as Standard with that rule.
- */
-const MODES_NOW_RULES: readonly string[] = ['specters', 'infinite-possibilities'];
-
-/** A saved game's mode and rules, with a mode that became a rule read as Standard plus it. */
-export function upgradeModeChoice(
-	modeId: string,
-	ruleIds: readonly string[] = []
-): { modeId: string; ruleIds: string[] } {
-	if (!MODES_NOW_RULES.includes(modeId)) return { modeId, ruleIds: [...ruleIds] };
-	return { modeId: 'standard', ruleIds: [modeId, ...ruleIds.filter((id) => id !== modeId)] };
-}
-
 export function specialRuleById(id: string): SpecialRule | undefined {
 	return SPECIAL_RULES.find((r) => r.id === id);
 }

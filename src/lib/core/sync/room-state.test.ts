@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SeatId } from '#lib/core/model/index.ts';
-import { join, newRoom, type RoomState } from './room.ts';
+import { newRoom, type RoomState } from './room.ts';
 import { loadRoomState, newStoredRoom, ROOM_STATE_VERSION } from './room-state.ts';
 
 describe('stored room versions', () => {
@@ -9,16 +8,9 @@ describe('stored room versions', () => {
 		expect(loadRoomState(undefined)).toBeUndefined();
 	});
 
-	it('turns a room from before versions, with requests, into names', () => {
-		const old: RoomState = join(join(newRoom('hash'), 'alex')!, 'sam')!;
-		old.requests = [
-			{ requestId: 'r1', memberId: 'alex', name: 'Alex', seatId: 'a' as SeatId, at: 1 }
-		];
-		const room = loadRoomState(old)!;
-		expect(room.schemaVersion).toBe(1);
-		expect(room.requests).toEqual([]);
-		expect(room.members.find((m) => m.memberId === 'alex')?.name).toBe('Alex');
-		expect(old.requests).toHaveLength(1);
+	it('drops a room from before versions instead of converting it', () => {
+		const old: RoomState = newRoom('hash');
+		expect(loadRoomState(old)).toBeUndefined();
 	});
 
 	it('reads a current room as it is', () => {

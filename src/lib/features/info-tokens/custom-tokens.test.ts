@@ -3,20 +3,9 @@ import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from '#lib/core/data/info-
 import { MAX_CHOICES, parseAsks, parseStoredInfoTokens } from './custom-tokens.ts';
 
 describe('stored custom info tokens', () => {
-	it('reads version 1, turning its bold (drawn red) into red text', () => {
+	it('reads text as stored, bold staying bold', () => {
 		const stored = parseStoredInfoTokens({
-			version: 1,
-			custom: [{ id: 'a', text: 'You are **mad** and *sad*' }]
-		});
-		expect(stored).toEqual({
 			version: 3,
-			custom: [{ id: 'a', text: 'You are [red]mad[/red] and *sad*', source: 'custom' }]
-		});
-	});
-
-	it('reads version 2 as stored, bold staying bold', () => {
-		const stored = parseStoredInfoTokens({
-			version: 2,
 			custom: [{ id: 'a', text: '**You** are [blue]mad[/blue]' }]
 		});
 		expect(stored.custom[0].text).toBe('**You** are [blue]mad[/blue]');
@@ -25,12 +14,15 @@ describe('stored custom info tokens', () => {
 	it('falls back to empty for unknown versions or junk', () => {
 		expect(parseStoredInfoTokens(null).custom).toEqual([]);
 		expect(parseStoredInfoTokens({ version: 4, custom: [] }).custom).toEqual([]);
+		expect(
+			parseStoredInfoTokens({ version: 2, custom: [{ id: 'a', text: 'Old card' }] }).custom
+		).toEqual([]);
 		expect(parseStoredInfoTokens('nope').custom).toEqual([]);
 	});
 
 	it('drops blank, malformed and duplicate entries', () => {
 		const stored = parseStoredInfoTokens({
-			version: 1,
+			version: 3,
 			custom: [
 				{ id: 'a', text: ' ' },
 				{ id: 1, text: 'x' },
@@ -44,23 +36,9 @@ describe('stored custom info tokens', () => {
 });
 
 describe('what a custom card asks for', () => {
-	it('moves version 2 "with characters" to 3 characters and "fill in" to text', () => {
+	it('reads the characters a card belongs to, and cards without them', () => {
 		const parsed = parseStoredInfoTokens({
-			version: 2,
-			custom: [
-				{ id: 'a', text: 'You are mad', shows: 'characters', blank: true },
-				{ id: 'b', text: 'Hello', shows: 'player' }
-			]
-		});
-		expect(parsed.custom[0].asks).toEqual({ characters: 3, value: { kind: 'text' } });
-		expect(parsed.custom[1]).not.toHaveProperty('asks');
-		expect(parsed.custom[0]).not.toHaveProperty('blank');
-		expect(parsed.custom[0]).not.toHaveProperty('shows');
-	});
-
-	it('reads the characters a card belongs to, and older saves without them', () => {
-		const parsed = parseStoredInfoTokens({
-			version: 1,
+			version: 3,
 			custom: [
 				{ id: 'a', text: 'You are mad', characterIds: ['cerenovus', 7, 'cerenovus'] },
 				{ id: 'b', text: 'Old card' }

@@ -10,7 +10,7 @@ import { saveScriptToProfile } from '#lib/features/account/profile-scripts.svelt
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import {
-	migrateSavedScript,
+	readSavedScript,
 	reloadSavedScript,
 	type SavedScript,
 	type ScriptSource
@@ -146,9 +146,7 @@ export const QUICK_PLAY_ID = 'quick-play';
 /** Read once when this module loads in the browser (never inside a derived value). */
 function storedQuick(): SavedScript | undefined {
 	try {
-		return migrateSavedScript(
-			JSON.parse(globalThis.localStorage?.getItem(QUICK_PLAY_KEY) ?? 'null')
-		);
+		return readSavedScript(JSON.parse(globalThis.localStorage?.getItem(QUICK_PLAY_KEY) ?? 'null'));
 	} catch {
 		// No storage, or an unreadable copy: nothing to offer.
 		return undefined;

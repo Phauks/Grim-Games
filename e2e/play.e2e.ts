@@ -272,9 +272,10 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	await expect(page).toHaveURL(/\/library$/);
 });
 
-test('notes written on a seat by an older version are kept as titled notes', async ({ page }) => {
-	// A v4 notebook from when /play had a seat circle (notebook.ts migrateNotebook). The
-	// notebook's database opens with the Notes tab, so open it once first.
+test('a notebook saved in an older format starts fresh', async ({ page }) => {
+	// Stored data is never migrated (Trevor, 2026-11-10): a v4 notebook from when /play had a
+	// seat circle reads as none (notebook.ts readNotebook). The notebook's database opens with
+	// the Notes tab, so open it once first.
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	// A new notebook starts with no notes, only "+ New note" (Trevor, 2026-10-29).
 	await expect(page.locator('[data-note]')).toHaveCount(0);
@@ -306,8 +307,8 @@ test('notes written on a seat by an older version are kept as titled notes', asy
 	);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.locator('[data-note]')).toHaveCount(2);
-	await expectNotes(page, ['Mine: Chef 0', 'Seat 2 · Sam: Claimed Chef']);
+	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
+	await expect(page.locator('[data-note]')).toHaveCount(0);
 });
 
 test('the script tab lists characters by type with their abilities', async ({ page }) => {

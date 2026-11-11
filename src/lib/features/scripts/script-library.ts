@@ -4,7 +4,7 @@
  */
 import {
 	MAX_SAVED_SCRIPTS,
-	migrateSavedScript,
+	readSavedScript,
 	SAVED_SCRIPT_VERSION,
 	sameScript,
 	type SavedScript,
@@ -91,7 +91,7 @@ export class IdbScriptLibrary {
 	async #all(): Promise<SavedScript[]> {
 		const tx = (await this.#open()).transaction(SCRIPTS, 'readonly');
 		const raw: unknown[] = await done(tx.objectStore(SCRIPTS).getAll());
-		return raw.flatMap((r) => migrateSavedScript(r) ?? []);
+		return raw.flatMap((r) => readSavedScript(r) ?? []);
 	}
 
 	/** Saved scripts, most recently used first. */

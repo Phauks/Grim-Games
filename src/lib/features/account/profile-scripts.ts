@@ -8,7 +8,7 @@
  *   before editing it). It never changes unless the user changes it.
  *
  * Stored on the server as profile documents of kind `script` (07-accounts-and-multi-device.md
- * §2.1). Records carry `schemaVersion` because a newer build can read what an older one wrote.
+ * §2.1). Records carry `schemaVersion`; another version is not read (no migrations).
  * Official editions are built into the app, so they aren't saved.
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -59,8 +59,8 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Reads a stored record. Undefined when it can't be read or a newer build wrote it. */
-export function migrateProfileScript(raw: unknown): ProfileScript | undefined {
+/** Reads a stored record. Undefined when it can't be read or has another version. */
+export function readProfileScript(raw: unknown): ProfileScript | undefined {
 	if (!isObject(raw) || raw.schemaVersion !== PROFILE_SCRIPT_VERSION) return undefined;
 	if (typeof raw.name !== 'string' || !Array.isArray(raw.json) || !isObject(raw.source)) {
 		return undefined;

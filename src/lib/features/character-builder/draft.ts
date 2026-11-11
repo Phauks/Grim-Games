@@ -1,6 +1,6 @@
 /**
  * The character on the Character builder, kept on this device so leaving the page loses
- * nothing. Versioned, because a newer build can read a draft an older one wrote (CLAUDE.md).
+ * nothing. Versioned; another version is not read (no migrations, CLAUDE.md).
  */
 import { CHARACTER_TYPES, type CharacterType } from '#lib/core/data/index.ts';
 import { emptyCharacterFields, type CharacterFields } from '#lib/core/rules/character-builder.ts';

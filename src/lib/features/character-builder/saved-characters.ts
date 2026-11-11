@@ -1,6 +1,6 @@
 /**
- * Characters made in the Character builder, kept on this device. Versioned, because a newer
- * build can read what an older one saved (CLAUDE.md). Each is TPI's script character object
+ * Characters made in the Character builder, kept on this device. Versioned; another version is
+ * not read (no migrations, CLAUDE.md). Each is TPI's script character object
  * as the Script builder puts it on a script.
  */
 import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';

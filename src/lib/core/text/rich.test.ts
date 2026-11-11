@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boldToRed, editLines, parseRich, plainText, toSource } from './rich.ts';
+import { editLines, parseRich, plainText, toSource } from './rich.ts';
 
 const plain = (text: string) => ({ text, bold: false, italic: false });
 const bold = (text: string) => ({ text, bold: true, italic: false });
@@ -71,12 +71,6 @@ describe('colour', () => {
 		const runs = [plain('a '), { ...bold('b'), color: 'gold' as const }, plain(' c')];
 		expect(toSource(runs)).toBe('a [gold]**b**[/gold] c');
 		expect(parseRich(toSource(runs))).toEqual(runs);
-	});
-
-	it('turns old bold, which was drawn red, into red text', () => {
-		expect(boldToRed('You are **mad** and ***sad***')).toBe(
-			'You are [red]mad[/red] and [red]*sad*[/red]'
-		);
 	});
 });
 

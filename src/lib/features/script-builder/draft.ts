@@ -1,6 +1,6 @@
 /**
- * The script being built, kept on this device so leaving the page loses nothing. Versioned,
- * because a newer build can read a draft an older one wrote (CLAUDE.md).
+ * The script being built, kept on this device so leaving the page loses nothing. Versioned;
+ * another version is not read (no migrations, CLAUDE.md).
  */
 import {
 	MAX_EXPECTED_COUNT,

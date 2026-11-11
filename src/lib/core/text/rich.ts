@@ -250,15 +250,3 @@ export function plainText(source: string): string {
 		.map((run) => run.text)
 		.join('');
 }
-
-/**
- * Version 1 cards drew `**bold**` as red text, not heavier type (Trevor, 2026-10-16), so
- * they become red text and keep their look; italic stays italic.
- */
-export function boldToRed(source: string): string {
-	return toSource(
-		parseRich(source).map(
-			(run) => (run.bold ? { ...run, bold: false, color: run.color ?? 'red' } : run) // colour-ok: an ink name (INK_TOKENS)
-		)
-	);
-}

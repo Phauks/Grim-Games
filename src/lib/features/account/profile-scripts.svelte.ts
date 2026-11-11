@@ -21,7 +21,7 @@ import {
 	differs,
 	findMatch,
 	fromSavedScript,
-	migrateProfileScript,
+	readProfileScript,
 	removedElsewhere,
 	type ProfileScript,
 	type ProfileScriptEntry
@@ -32,7 +32,7 @@ export type ProfileScriptsStatus = 'idle' | 'loading' | 'ready' | 'error';
 // When both devices changed a script, this device's version is kept beside it, renamed.
 accountSync.register('script', {
 	copy: (body) => {
-		const script = migrateProfileScript(body);
+		const script = readProfileScript(body);
 		return script
 			? { ...script, name: t('account.sync.otherDevice', { name: script.name }) }
 			: body;
@@ -41,7 +41,7 @@ accountSync.register('script', {
 
 function toEntries(docs: ProfileDoc[]): ProfileScriptEntry[] {
 	return docs.flatMap((doc) => {
-		const script = migrateProfileScript(doc.body);
+		const script = readProfileScript(doc.body);
 		return script ? [{ id: doc.id, rev: doc.rev, updatedAt: doc.updatedAt, script }] : [];
 	});
 }

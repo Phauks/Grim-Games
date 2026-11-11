@@ -5,7 +5,7 @@ import {
 	differs,
 	findMatch,
 	fromSavedScript,
-	migrateProfileScript,
+	readProfileScript,
 	onlineSourceLabel,
 	removedElsewhere,
 	type ProfileScript,
@@ -58,11 +58,11 @@ describe('profile scripts', () => {
 
 	it('reads stored records and refuses ones it cannot read', () => {
 		const script = fromSavedScript(saved(), 1)!;
-		expect(migrateProfileScript(JSON.parse(JSON.stringify(script)))).toEqual(script);
-		expect(migrateProfileScript({ ...script, schemaVersion: 2 })).toBeUndefined();
-		expect(migrateProfileScript({ ...script, json: 'x' })).toBeUndefined();
+		expect(readProfileScript(JSON.parse(JSON.stringify(script)))).toEqual(script);
+		expect(readProfileScript({ ...script, schemaVersion: 2 })).toBeUndefined();
+		expect(readProfileScript({ ...script, json: 'x' })).toBeUndefined();
 		// A local source can never be marked online.
-		expect(migrateProfileScript({ ...script, online: true })?.online).toBe(false);
+		expect(readProfileScript({ ...script, online: true })?.online).toBe(false);
 	});
 
 	it('matches a newer version of the same BotC Scripts entry or link', () => {

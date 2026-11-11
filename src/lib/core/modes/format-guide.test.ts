@@ -36,7 +36,8 @@ const FORMAT_HASH: Record<number, string> = {
 	13: 'fe15a2228e3e0b50',
 	14: '42776f8f462d4766',
 	15: 'bcba7e8955601c85',
-	16: '69b4100e630e5d8a'
+	16: '69b4100e630e5d8a',
+	17: '9ccdc45d8f63d9eb'
 };
 
 function formatHash(): string {

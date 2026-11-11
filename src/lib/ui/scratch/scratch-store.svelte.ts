@@ -2,12 +2,12 @@
  * Scratch pads, kept in this browser's IndexedDB only (database `grim-games-scratch`, one
  * record per pad). Nothing is sent anywhere. Pads are listed by a namespaced base key, such
  * as `player:<script>`, so player pads and any later Storyteller pads never mix; each pad is
- * `<base>:<id>`, and a pad saved before v3 keeps the bare base key.
+ * `<base>:<id>`.
  */
 import {
 	commitStroke,
 	emptyPad,
-	migratePad,
+	readPad,
 	redo,
 	undo,
 	type ScratchHistory,
@@ -75,7 +75,7 @@ function done(tx: IDBTransaction): Promise<void> {
 	});
 }
 
-/** Every saved record whose key is `base` (a pad from before v3) or `base:<id>`. */
+/** Every saved record whose key is `base:<id>`. */
 async function list(base: string): Promise<{ key: string; value: unknown }[]> {
 	const store = (await open()).transaction(PADS).objectStore(PADS);
 	const range = IDBKeyRange.bound(base, `${base}\uffff`);
@@ -88,7 +88,7 @@ async function list(base: string): Promise<{ key: string; value: unknown }[]> {
 		.map((value) => ({ key: (value as { key?: unknown })?.key, value }))
 		.filter(
 			(r): r is { key: string; value: unknown } =>
-				r.key === base || (typeof r.key === 'string' && r.key.startsWith(`${base}:`))
+				typeof r.key === 'string' && r.key.startsWith(`${base}:`)
 		);
 }
 
@@ -131,7 +131,7 @@ export class ScratchPadState {
 
 	async load(): Promise<void> {
 		try {
-			const saved = migratePad(await read(this.key));
+			const saved = readPad(await read(this.key));
 			if (saved) this.#apply(saved);
 		} catch (e) {
 			// Drawings never go into an error report; IndexedDB errors carry none.
@@ -220,7 +220,7 @@ export class ScratchPads {
 			const records = await list(this.base);
 			this.pads = records
 				.map(({ key, value }) => {
-					const saved = migratePad(value);
+					const saved = readPad(value);
 					return saved && new ScratchPadState(key, saved);
 				})
 				.filter((p): p is ScratchPadState => !!p)
