@@ -14,7 +14,7 @@ import {
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
-import { toPx, type BoardSize } from './board-geometry.ts';
+import { toPx, type BoardSize } from '#lib/features/board/board-geometry.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 
 /** What arranging reads from the board, fresh on each call. */

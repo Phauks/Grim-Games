@@ -3,7 +3,7 @@
 	import type { CharacterNominationPrompt } from '#lib/core/rules/day/nominations.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';

@@ -8,9 +8,9 @@
 	import { counterMoves, type CounterMove } from '#lib/core/rules/reminders/counters.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import BoardReminder from './BoardReminder.svelte';
-	import SeatBadge from './SeatBadge.svelte';
-	import { placedLook } from './reminders.ts';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
+	import { placedLook } from '#lib/features/board/reminders.ts';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 

@@ -31,7 +31,7 @@
 	import { jinxesOnStep } from '#lib/core/rules/jinxes/jinxes.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/day/prevented-deaths.ts';

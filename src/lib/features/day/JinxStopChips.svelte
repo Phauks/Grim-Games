@@ -31,7 +31,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

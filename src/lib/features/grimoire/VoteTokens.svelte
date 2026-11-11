@@ -8,7 +8,7 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 
 	/**
 	 * The vote tokens a player holds who votes only with them (`voter.needsToken`: the Beggar,

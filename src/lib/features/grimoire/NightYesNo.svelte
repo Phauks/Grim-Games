@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';

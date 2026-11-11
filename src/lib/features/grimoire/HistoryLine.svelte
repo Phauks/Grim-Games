@@ -4,7 +4,7 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { HistoryPart } from './history.ts';
-	import { tokenLabel } from './reminders.ts';
+	import { tokenLabel } from '#lib/features/board/reminders.ts';
 
 	/** One History entry as words and badges: History, and an ended game's board. */
 	interface Props {

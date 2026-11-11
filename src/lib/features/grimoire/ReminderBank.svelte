@@ -2,21 +2,26 @@
 	import type { Snippet } from 'svelte';
 	import type { Reminder, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import BoardReminder from './BoardReminder.svelte';
-	import BankToken from './BankToken.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import BankToken from '#lib/features/board/BankToken.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import BankRunButton from './BankRunButton.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { StepFocus } from './step-focus.svelte.ts';
-	import { isGeneric, looksLike, onBoard, type StepReminders } from './reminders.ts';
+	import type { StepFocus } from '#lib/features/board/step-focus.svelte.ts';
+	import {
+		isGeneric,
+		looksLike,
+		onBoard,
+		type StepReminders
+	} from '#lib/features/board/reminders.ts';
 	import DeleteTokenConfirm from './DeleteTokenConfirm.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
-	import type { TrayGestures } from './tray-gestures.svelte.ts';
+	import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import ReminderHandPill from './ReminderHandPill.svelte';
 	import ReminderTray from './ReminderTray.svelte';
-	import { traySeats } from './setup-tray.ts';
+	import { traySeats } from '#lib/features/board/setup-tray.ts';
 	import {
 		BANK_CAPTIONS,
 		searchBank,
@@ -24,7 +29,7 @@
 		bankView,
 		type BankGroup,
 		type BankItem
-	} from './bank-items.ts';
+	} from '#lib/features/board/bank-items.ts';
 
 	/**
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it

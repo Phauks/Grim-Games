@@ -11,7 +11,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**

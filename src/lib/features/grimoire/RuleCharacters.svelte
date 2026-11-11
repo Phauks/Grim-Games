@@ -5,8 +5,8 @@
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import BoardReminder from './BoardReminder.svelte';
-	import ReminderTokenRow from './ReminderTokenRow.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -14,7 +14,7 @@
 	import { reminderPlacing } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { placedLook } from './reminders.ts';
+	import { placedLook } from '#lib/features/board/reminders.ts';
 	import { kindOf, type RuleKind } from './rule-stacks.ts';
 
 	/**

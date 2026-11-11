@@ -22,7 +22,7 @@ import { promptApplies, reminderPrompt } from '#lib/core/rules/reminders/reminde
 import { reminderOwnerDead } from '#lib/core/rules/abilities/dead-characters.ts';
 import { replacedByFlow } from '#lib/core/rules/abilities/token-flow.ts';
 import { type ReminderPrompt } from '#lib/core/data/parts/reminder-prompts.ts';
-import { reminderWords } from './reminders.ts';
+import { reminderWords } from '#lib/features/board/reminders.ts';
 
 /** Asks to change a seat's state; `cause` is the reminder's character when it can kill. */
 export interface PromptAsk {

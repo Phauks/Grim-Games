@@ -4,12 +4,12 @@
 		BIG_TOKENS,
 		DEFAULT_BOARD_LOOKS,
 		LOGO_OPACITY
-	} from '#lib/features/grimoire/board-looks.svelte.ts';
+	} from '#lib/features/board/board-looks.svelte.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
+	import ReminderLinesSetting from '#lib/features/board/ReminderLinesSetting.svelte';
 
 	/**
 	 * The board's device looks (Trevor, 2026-10-17: settings appear where they act and in

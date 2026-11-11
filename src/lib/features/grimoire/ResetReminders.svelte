@@ -3,8 +3,8 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import BoardReminder from './BoardReminder.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 

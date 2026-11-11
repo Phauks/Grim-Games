@@ -1,5 +1,5 @@
-import { boardLooks, DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.ts';
-import { DEFAULT_STEP_FOCUS, stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
+import { boardLooks, DEFAULT_BOARD_LOOKS } from '#lib/features/board/board-looks.svelte.ts';
+import { DEFAULT_STEP_FOCUS, stepFocus } from '#lib/features/board/step-focus.svelte.ts';
 import { DEFAULT_ASSISTANCE, type AssistKey } from '#lib/ui/assistance.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/ui/preferences.ts';

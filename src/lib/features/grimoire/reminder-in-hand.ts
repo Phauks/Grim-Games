@@ -3,10 +3,10 @@
  * be tapped where it goes (ReminderBank), with its ⋯ in its pill (ReminderInHand).
  */
 import type { ReminderId, ReminderInstance } from '#lib/core/model/index.ts';
-import type { BankItem } from './bank-items.ts';
+import type { BankItem } from '#lib/features/board/bank-items.ts';
 import { duplicateReminder } from './duplicate-reminder.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import { isGeneric } from './reminders.ts';
+import { isGeneric } from '#lib/features/board/reminders.ts';
 
 interface Row {
 	value: string;

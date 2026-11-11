@@ -4,7 +4,7 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
+	import ReminderLinesSetting from '#lib/features/board/ReminderLinesSetting.svelte';
 </script>
 
 <!-- Name, picture and laurel are in the Profile, from the button beside Settings' X (Trevor,

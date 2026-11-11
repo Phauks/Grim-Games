@@ -7,7 +7,7 @@
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';

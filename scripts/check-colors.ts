@@ -33,7 +33,7 @@ const allowed = [
 const mixesAllowed = [
 	...allowed,
 	'src/lib/ui/tokens/',
-	'src/lib/features/grimoire/backgrounds.ts',
+	'src/lib/features/board/backgrounds.ts',
 	'src/lib/core/frames/frames.ts',
 	'src/lib/core/achievements/laurel.ts'
 ];

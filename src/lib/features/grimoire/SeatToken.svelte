@@ -12,7 +12,7 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
+	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import type { TrueCharacterMark } from './true-character-marks.ts';
 

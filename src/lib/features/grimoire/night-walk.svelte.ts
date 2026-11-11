@@ -25,10 +25,10 @@ import { type Night } from '#lib/core/model/overrides.ts';
 import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import type { ReminderHand } from './reminder-hand.svelte.ts';
+import type { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';
 import { seatName } from './night-steps.ts';
 import { boardNightSteps, stepHolders, tonight } from '#lib/core/rules/night/board-steps.ts';
-import { stepReminders, stepTokenCharacter } from './reminders.ts';
+import { stepReminders, stepTokenCharacter } from '#lib/features/board/reminders.ts';
 
 /** What the walk-through reads from the board, fresh on each call. */
 export interface NightWalkContext {

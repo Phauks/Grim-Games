@@ -7,7 +7,7 @@ import {
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { onBoard } from './reminders.ts';
+import { onBoard } from '#lib/features/board/reminders.ts';
 import { deadOwner, freshAsks, type ReminderLook } from './reminder-ask.ts';
 
 const script: Script = {

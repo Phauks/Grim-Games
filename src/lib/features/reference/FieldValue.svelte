@@ -28,7 +28,7 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { cardsOfCharacter } from '#lib/features/info-tokens/character-cards.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

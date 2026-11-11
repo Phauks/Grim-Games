@@ -1,11 +1,11 @@
 /**
- * A player's side of the shared tray gestures (grimoire/tray-gestures.svelte.ts): where the
+ * A player's side of the shared tray gestures (board/tray-gestures.svelte.ts): where the
  * seats of their town are, and their tokens kept on this phone (PlayerReminderState). The
  * gestures themselves are the Storyteller bank's own (Trevor, 2026-11-10: "I just want them to
  * be the same"); the board's side is grimoire/board-tray-places.ts.
  */
 import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
-import { trayFace, type TrayPlaces } from '#lib/features/grimoire/tray-gestures.svelte.ts';
+import { trayFace, type TrayPlaces } from '#lib/features/board/tray-gestures.svelte.ts';
 import { copiesOf, placedKey, remindersOn, type PlayerReminder } from './player-reminders.ts';
 import type { PlayerReminderState } from './player-reminders.svelte.ts';
 

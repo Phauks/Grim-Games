@@ -22,7 +22,7 @@ import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { reminderFitWarning, warningText } from './board.ts';
-import { reminderKey } from './reminders.ts';
+import { reminderKey } from '#lib/features/board/reminders.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
 	type SeatLayout,

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { sideSwipe } from './side-swipe.ts';
 	import StepPiece from './StepPiece.svelte';
 	import NightAlerts from './NightAlerts.svelte';
@@ -65,7 +65,11 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { givesNumber, seatName, stepName } from './night-steps.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
-	import { reminderCopies, reminderKey, stepTokenCharacter } from './reminders.ts';
+	import {
+		reminderCopies,
+		reminderKey,
+		stepTokenCharacter
+	} from '#lib/features/board/reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { shownCommands } from './record-shown.ts';

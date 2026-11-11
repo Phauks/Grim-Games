@@ -19,7 +19,7 @@
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';

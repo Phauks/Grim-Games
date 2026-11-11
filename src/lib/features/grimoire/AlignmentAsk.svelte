@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AlignmentPill from './AlignmentPill.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';

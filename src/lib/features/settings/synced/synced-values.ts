@@ -7,9 +7,9 @@
  */
 import { parseMoving, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
 import { parseStill, type StillChoice } from '#lib/core/backgrounds/still.ts';
-import type { BackgroundChoice } from '#lib/features/grimoire/backgrounds.ts';
-import { parseBoardLooks, type BoardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
-import { parseStepFocus, type StepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
+import type { BackgroundChoice } from '#lib/features/board/backgrounds.ts';
+import { parseBoardLooks, type BoardLooks } from '#lib/features/board/board-looks.svelte.ts';
+import { parseStepFocus, type StepFocus } from '#lib/features/board/step-focus.svelte.ts';
 import { parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
 import type { TokenAppearance } from '#lib/ui/token/token-appearance.ts';
 

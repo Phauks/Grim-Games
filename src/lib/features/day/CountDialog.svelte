@@ -13,7 +13,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';

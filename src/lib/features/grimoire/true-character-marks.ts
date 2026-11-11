@@ -5,7 +5,7 @@ import {
 	type ReminderInstance,
 	type Seat
 } from '#lib/core/model/index.ts';
-import type { BigToken } from './board-looks.svelte.ts';
+import type { BigToken } from '#lib/features/board/board-looks.svelte.ts';
 
 /** An "Is The …" reminder on a seat, with the character it says the player really is. */
 export interface TrueCharacterMark {

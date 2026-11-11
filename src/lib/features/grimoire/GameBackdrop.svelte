@@ -2,11 +2,11 @@
 	import type { Game } from '#lib/core/model/index.ts';
 	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
-	import { backgroundFor, type BackgroundChoice } from './backgrounds.ts';
-	import BoardBackdrop from './BoardBackdrop.svelte';
-	import { boardBackground } from './board-background.svelte.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
-	import { drawnLook, lookOf } from './shared-look.ts';
+	import { backgroundFor, type BackgroundChoice } from '#lib/features/board/backgrounds.ts';
+	import BoardBackdrop from '#lib/features/board/BoardBackdrop.svelte';
+	import { boardBackground } from '#lib/features/board/board-background.svelte.ts';
+	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
+	import { drawnLook, lookOf } from '#lib/features/board/shared-look.ts';
 
 	/**
 	 * The game's background on the board: the choice kept on this device for this game (or all

@@ -2,7 +2,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';

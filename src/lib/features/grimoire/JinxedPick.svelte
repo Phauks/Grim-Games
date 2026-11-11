@@ -6,7 +6,7 @@
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { jinxBetween } from '#lib/features/game/game-jinxes.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 
 	/**

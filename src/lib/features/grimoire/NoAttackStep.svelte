@@ -2,9 +2,9 @@
 	import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 	import { noAttackState } from '#lib/core/rules/night/demon-attack.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placingAlignment } from './board.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';

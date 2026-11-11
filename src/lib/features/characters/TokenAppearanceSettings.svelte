@@ -18,13 +18,13 @@
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import TokenAppearanceRow from './TokenAppearanceRow.svelte';
 	import TokenAppearancePreview from './TokenAppearancePreview.svelte';
-	import NameSizeSlider from '#lib/features/grimoire/NameSizeSlider.svelte';
+	import NameSizeSlider from '#lib/features/board/NameSizeSlider.svelte';
 	import type { Snippet } from 'svelte';
 	import {
 		boardLooks,
 		DEFAULT_BOARD_LOOKS,
 		NAME_OFFSET
-	} from '#lib/features/grimoire/board-looks.svelte.ts';
+	} from '#lib/features/board/board-looks.svelte.ts';
 
 	interface Props {
 		value: TokenAppearance;

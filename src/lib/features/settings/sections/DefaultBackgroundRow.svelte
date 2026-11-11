@@ -4,10 +4,10 @@
 		saveBackground,
 		shrinkImage,
 		type BackgroundChoice
-	} from '#lib/features/grimoire/backgrounds.ts';
-	import BackgroundTiles from '#lib/features/grimoire/BackgroundTiles.svelte';
-	import BackgroundCustomise from '#lib/features/grimoire/BackgroundCustomise.svelte';
-	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
+	} from '#lib/features/board/backgrounds.ts';
+	import BackgroundTiles from '#lib/features/board/BackgroundTiles.svelte';
+	import BackgroundCustomise from '#lib/features/board/BackgroundCustomise.svelte';
+	import { defaultBackground } from '#lib/features/board/default-background.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';

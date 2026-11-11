@@ -6,7 +6,7 @@
 	import { IF_CHOSEN_KINDS } from '#lib/core/rules/night/night-alert.ts';
 	import type { AbilitySource } from '#lib/core/rules/abilities/ability.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**

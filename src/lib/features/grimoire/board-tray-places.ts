@@ -11,12 +11,12 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { bankLabel, bankLook, type BankItem } from './bank-items.ts';
+import { bankLabel, bankLook, type BankItem } from '#lib/features/board/bank-items.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import type { ReminderDragging } from './reminder-drag.svelte.ts';
+import type { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
 import type ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-import { isGeneric, looksLike, onBoard } from './reminders.ts';
-import type { TrayPlaces } from './tray-gestures.svelte.ts';
+import { isGeneric, looksLike, onBoard } from '#lib/features/board/reminders.ts';
+import type { TrayPlaces } from '#lib/features/board/tray-gestures.svelte.ts';
 
 export interface BoardTrayContext {
 	grimoire: Grimoire;

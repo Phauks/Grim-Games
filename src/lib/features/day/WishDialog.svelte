@@ -11,7 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	/**

@@ -9,15 +9,15 @@ import { untrack } from 'svelte';
 import { account } from '#lib/features/account/account.svelte.ts';
 import { accountSync } from '#lib/features/account/sync/sync.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
-import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+import { boardBackground } from '#lib/features/board/board-background.svelte.ts';
+import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 import {
 	clearBackground,
 	saveBackground,
 	type BackgroundChoice
-} from '#lib/features/grimoire/backgrounds.ts';
-import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
-import { stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
+} from '#lib/features/board/backgrounds.ts';
+import { defaultBackground } from '#lib/features/board/default-background.svelte.ts';
+import { stepFocus } from '#lib/features/board/step-focus.svelte.ts';
 import { linkedTo, markLinked } from '#lib/features/library/library-sync.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import {

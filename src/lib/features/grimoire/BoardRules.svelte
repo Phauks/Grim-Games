@@ -18,8 +18,8 @@
 	} from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { reminderPlacing } from '#lib/features/grimoire/board.ts';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import { isGeneric, reminderWords } from '#lib/features/grimoire/reminders.ts';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import { isGeneric, reminderWords } from '#lib/features/board/reminders.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { ruleStacks, type RuleKind } from './rule-stacks.ts';
 

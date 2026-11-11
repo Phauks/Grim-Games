@@ -12,11 +12,11 @@
 	import BoardPreview from './BoardPreview.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
-	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
-	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
-	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
-	import { movingMotion } from '#lib/features/grimoire/moving/motion.svelte.ts';
-	import MovingMotionRows from '#lib/features/grimoire/moving/MovingMotionRows.svelte';
+	import BoardBackgroundRow from '#lib/features/board/BoardBackgroundRow.svelte';
+	import { boardBackground } from '#lib/features/board/board-background.svelte.ts';
+	import { defaultBackground } from '#lib/features/board/default-background.svelte.ts';
+	import { movingMotion } from '#lib/features/board/moving/motion.svelte.ts';
+	import MovingMotionRows from '#lib/features/board/moving/MovingMotionRows.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';

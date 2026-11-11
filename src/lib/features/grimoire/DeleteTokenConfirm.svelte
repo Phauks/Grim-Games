@@ -3,7 +3,7 @@
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 
 	/**
 	 * Deleting one of the ∞ tokens of the Storyteller's bank or a player's tray (Trevor,

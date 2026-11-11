@@ -9,8 +9,8 @@
 	} from '#lib/core/rules/character-builder.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 
 	/**
 	 * The character as it will look, then what still stops it being saved, on the Character

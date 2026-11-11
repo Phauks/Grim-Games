@@ -15,7 +15,7 @@
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { DayPort } from './day-port.ts';
 	import PreventedSheet from './PreventedSheet.svelte';

@@ -11,11 +11,11 @@
 	import { abilityGivers } from '#lib/core/rules/abilities/gained-abilities.ts';
 	import { barredAbilities, jinxedPartners } from '#lib/core/rules/jinxes/jinxes.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import CharacterPicker from '#lib/features/grimoire/CharacterPicker.svelte';
 	import JinxedPick from '#lib/features/grimoire/JinxedPick.svelte';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import TableCheck from '#lib/features/grimoire/TableCheck.svelte';
 	import {
 		reminderPlacing,
@@ -23,7 +23,7 @@
 		SEAT_TYPES
 	} from '#lib/features/grimoire/board.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-	import { placedLook } from '#lib/features/grimoire/reminders.ts';
+	import { placedLook } from '#lib/features/board/reminders.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

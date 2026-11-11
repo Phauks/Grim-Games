@@ -4,7 +4,7 @@
 
 <script lang="ts">
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import { stepFocus } from './step-focus.svelte.ts';
+	import { stepFocus } from '#lib/features/board/step-focus.svelte.ts';
 
 	/**
 	 * How a walked-through night step's reminders are shown in the reminder bank (Trevor,
