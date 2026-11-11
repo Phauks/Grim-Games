@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { Issues } from '#lib/core/data/validate.ts';
-import { readGameEnd } from '#lib/core/data/game-end-rules.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { gameEnds } from './game-end.ts';
 
@@ -50,12 +50,11 @@ describe('dead-without-demon with night', () => {
 	it('reads night as an optional number', () => {
 		const issues = new Issues();
 		expect(
-			readGameEnd(
-				{ ends: [{ kind: 'dead-without-demon', winner: 'good', night: 3 }] },
-				'gameEnd',
-				issues,
-				undefined
-			)
+			parseCharacterRules(
+				{ gameEnd: { ends: [{ kind: 'dead-without-demon', winner: 'good', night: 3 }] } },
+				'rules',
+				issues
+			)?.gameEnd
 		).toEqual({
 			ends: [
 				{
@@ -67,11 +66,10 @@ describe('dead-without-demon with night', () => {
 				}
 			]
 		});
-		readGameEnd(
-			{ ends: [{ kind: 'dead-without-demon', winner: 'good' }] },
-			'gameEnd',
-			issues,
-			undefined
+		parseCharacterRules(
+			{ gameEnd: { ends: [{ kind: 'dead-without-demon', winner: 'good' }] } },
+			'rules',
+			issues
 		);
 		expect(issues.list).toEqual([]);
 	});

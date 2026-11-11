@@ -1,11 +1,10 @@
 /**
  * The Character builder's Rules section (M62, Trevor picked "Add a rule", 2026-11-09): the
- * rules block's parts as rows, each added or changed one at a time through its `field`, or as
- * its own rules text when the part has no field yet. Every key the form has no row for is kept.
+ * rules block's parts as rows, each added or changed one at a time through its `field`. A key
+ * no part has is edited as rules text, and every key the form has no row for is kept.
  */
 import * as PARTS from '#lib/core/data/parts/index.ts';
 import type { PartField, Reminders } from '#lib/core/data/parts/part.ts';
-import { RULE_FIELDS } from '#lib/core/data/rule-fields.ts';
 import { TEXT, uncovered } from '#lib/core/data/field-spec.ts';
 import { Issues, isObject } from '#lib/core/data/validate.ts';
 import type { CharacterFields } from './character-builder.ts';
@@ -34,7 +33,7 @@ export const BUILDER_RULES: readonly BuilderRule[] = Object.entries(PARTS)
 		key,
 		label: part.label,
 		description: part.description,
-		field: part.field ?? RULE_FIELDS[key as keyof typeof PARTS] ?? TEXT
+		field: part.field
 	}))
 	.sort((a, b) => a.label.localeCompare(b.label));
 

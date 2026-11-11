@@ -3,7 +3,6 @@
  * issue with a JSON path instead of throwing at the first problem, so a schema change
  * upstream is reported in full.
  */
-import { CHARACTER_TYPES, type CharacterType } from './types.ts';
 
 export class DataError extends Error {
 	readonly issues: readonly string[];
@@ -132,18 +131,4 @@ export function readEnum<T extends string>(
 		return undefined;
 	}
 	return value as T;
-}
-
-/** A list of character types at `key`; any other value is an error. */
-export function readTypes(
-	raw: Record<string, unknown>,
-	key: string,
-	path: string,
-	issues: Issues
-): CharacterType[] | undefined {
-	const list = readStringArray(raw, key, path, issues);
-	if (!list) return undefined;
-	const bad = list.filter((t) => !(CHARACTER_TYPES as readonly string[]).includes(t));
-	for (const t of bad) issues.add(`${path}.${key}`, `unknown type ${JSON.stringify(t)}`);
-	return bad.length > 0 ? undefined : (list as CharacterType[]);
 }

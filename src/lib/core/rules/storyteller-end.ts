@@ -3,7 +3,7 @@
  * even dead, may say who wins (`storyteller-executed`, the Atheist: good); otherwise evil wins
  * (https://wiki.bloodontheclocktower.com/Atheist).
  */
-import type { EndsGame } from '#lib/core/data/game-end-rules.ts';
+import type { EndsGame } from '#lib/core/data/parts/game-end.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { DayLog, SeatId } from '#lib/core/model/types.ts';
 import type { GameEnd } from './game-end.ts';

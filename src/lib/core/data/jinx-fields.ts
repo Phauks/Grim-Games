@@ -4,7 +4,7 @@
  * takes (`jinx-read.ts`, `jinx-conditions.ts`). Each effect may be written the short way (`true`
  * for a verb with nothing to say, or its main value alone) or in full, with `who` and `when`;
  * the builder offers both, so an official file's jinxes open in fields as they are written.
- * `rule-fields.test.ts` reads every official jinx through these.
+ * `parts/part-fields.test.ts` reads every official jinx through these.
  */
 import {
 	anyOf,

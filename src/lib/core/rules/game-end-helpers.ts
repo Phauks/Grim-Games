@@ -8,7 +8,7 @@ import type {
 	EndsGame,
 	GameEndRules,
 	HoldThen
-} from '#lib/core/data/game-end-rules.ts';
+} from '#lib/core/data/parts/game-end.ts';
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';

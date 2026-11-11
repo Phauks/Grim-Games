@@ -21,7 +21,7 @@ import {
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
 
-/** How the Character builder edits a part's value (`field-spec.ts`); absent: as rules text. */
+/** How the Character builder edits a part's value (`field-spec.ts`). */
 export type PartField = FieldSpec;
 
 export interface Part<T> {
@@ -29,8 +29,8 @@ export interface Part<T> {
 	label: string;
 	/** What the part does, in our own words. */
 	description: string;
-	/** How the Character builder edits it; absent: as rules text. */
-	field?: PartField;
+	/** How the Character builder edits it, and the shape the reader checks. */
+	field: PartField;
 	/**
 	 * Reads the part's value from `block[key]` (present), recording each problem in `issues`
 	 * under `path` (the block's path). Undefined when the value is unusable.
@@ -75,20 +75,6 @@ export function specPart<S extends FieldSpec, R = SpecValue<S>>(
 			if (value === undefined) return undefined;
 			return refine ? refine(value, at, issues, reminders) : (value as R);
 		}
-	};
-}
-
-/** A part whose value is read by `reader(value, path.key, issues, reminders)`. */
-export function objectPart<T>(
-	label: string,
-	description: string,
-	reader: (raw: unknown, path: string, issues: Issues, reminders: Reminders) => T | undefined
-): Part<T> {
-	return {
-		label,
-		description,
-		read: (block, key, path, issues, reminders) =>
-			reader(block[key], `${path}.${key}`, issues, reminders)
 	};
 }
 
