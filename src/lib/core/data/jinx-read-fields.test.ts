@@ -4,8 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { uncovered, type FieldSpec } from './field-spec.ts';
-import { JINX_FIELDS } from './jinx-fields.ts';
-import { JINX_RULE_KEYS } from './jinx-read.ts';
+import { JINX_FIELDS, JINX_RULE_KEYS } from './jinx-read.ts';
 
 const ofEntry = (JINX_FIELDS as Extract<FieldSpec, { kind: 'byCharacter' }>).of as Extract<
 	FieldSpec,

@@ -1,10 +1,29 @@
 /**
- * Reads the `jinxes` part of a rules block, and a script jinx's `rules`, in the format
- * `jinx-rules.ts` documents: one reader per verb (`VERBS`), each effect's `who` and `when`
- * (`jinx-conditions.ts`), and the prerequisites on this character's side (`JINX_NEEDS`). Split
- * from the format so each file stays one concern.
+ * The jinx verbs (refactor review B1): each verb's settings are one field spec, which is also
+ * the Character builder's field for it and the shape its reader checks (`readSpec`), the same
+ * pattern as a rules part (`parts/part.ts`). A verb whose settings must agree, or that has a
+ * default, says so in its `refine`, which returns the effect's own type (`jinx-rules.ts`), so
+ * the reader is typed by the format. Each effect's `who` and `when` are read here too
+ * (`jinx-conditions.ts`), and the prerequisites on this character's side (`JINX_NEEDS`).
  */
-import { readPlayersOfType, type TurnsPlayers } from './turns-players-rules.ts';
+import {
+	anyOf,
+	byCharacter,
+	COUNT,
+	list,
+	obj,
+	oneOf,
+	opt,
+	someOf,
+	STR,
+	T,
+	TEXT,
+	variants,
+	type FieldSpec,
+	type Spec,
+	type SpecValue,
+	type Variant
+} from './field-spec.ts';
 import {
 	ABNORMAL_COUNTS,
 	CHOOSES_VIA,
@@ -18,6 +37,7 @@ import {
 	JINX_END_SUBJECTS,
 	presetJinxEnd,
 	type JinxEnd,
+	type JinxEndKind,
 	JINX_WHO,
 	LEARNS,
 	NIGHT_CHOICE_CHOOSES,
@@ -33,398 +53,419 @@ import {
 	type JinxRules
 } from './jinx-rules.ts';
 import { parseCharacterRules } from './character-rules.ts';
-import { readCondition, readPositive } from './jinx-conditions.ts';
+import { CONDITION_FIELD, readCondition } from './jinx-conditions.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
+import { readSpec } from './read-spec.ts';
 import { jinxNeedsOn } from './jinx-needs.ts';
-import { ALIGNMENTS, CHARACTER_TYPES, type CharacterId } from './types.ts';
+import {
+	ALIGNMENTS,
+	CHARACTER_TYPES,
+	SEATED_TYPES,
+	type CharacterId,
+	type ReminderLabel
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
 	isObject,
 	readBoolean,
 	readEnum,
-	readString,
-	readStringArray,
 	type Issues,
 	type Json
 } from './validate.ts';
 
-/** How one verb's parameters are read: its fields, its main one (for a bare value), its reader. */
-interface Verb {
-	fields: readonly string[];
+/** One of the partner's reminders, by its label: not one of this character's own. */
+const LABEL = STR as Spec<ReminderLabel>;
+
+type VerbKey = Exclude<JinxRuleKey, 'exclusive'>;
+/** A verb's own settings, as its effect type has them. */
+type Params<K extends VerbKey> = Omit<NonNullable<JinxRules[K]>, 'who' | 'when'>;
+
+/** How one verb is written and read. */
+interface Verb<R> {
+	/** Its own settings, an object spec: the builder's field and what the reader checks. */
+	spec: Extract<FieldSpec, { kind: 'object' }>;
+	/** The setting it may be written as alone, `"noKill": "token"` for `{"on": "token"}`. */
 	main?: string;
-	read: (raw: Json, path: string, issues: Issues) => Json | undefined;
 	/** `both` is allowed as `who`. */
 	both?: true;
+	/** Its settings read, with `raw` (the whole effect, `who` and `when` too) for a check. */
+	read: (raw: Json, path: string, issues: Issues) => R | undefined;
 }
 
-const plain: Verb = { fields: [], read: () => ({}) };
-
-/** Who else becomes one of the type, in `turnsPlayersInto`'s words. */
-const ALSO_BECOMES = ['drafter', 'neighbours'] as const satisfies readonly TurnsPlayers[];
-
-const enumVerb = (field: string, values: readonly string[]): Verb => ({
-	fields: [field],
-	main: field,
-	read: (raw, path, issues) => {
-		const value = readEnum(raw, field, values, path, issues, true);
-		return value === undefined ? undefined : { [field]: value };
-	}
-});
-
-const labelVerb = (field: string): Verb => ({
-	fields: [field],
-	main: field,
-	read: (raw, path, issues) => {
-		const value = readString(raw, field, path, issues, true);
-		return value === undefined ? undefined : { [field]: value };
-	}
-});
-
-/** A verb whose one parameter is `true` (a patch that switches on one field of a part). */
-const flagVerb = (field: string): Verb => ({
-	fields: [field],
-	read: (raw, path, issues) => {
-		if (readBoolean(raw, field, path, issues) === true) return { [field]: true };
-		issues.add(`${path}.${field}`, 'expected true');
-		return undefined;
-	}
-});
-
-function readGivenInstead(raw: Json, path: string, issues: Issues): Json | undefined {
-	const instead = readEnum(raw, 'instead', GIVEN_INSTEAD, path, issues, true);
-	if (!instead) return undefined;
-	const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
-	const where = readEnum(raw, 'where', GIVEN_WHERE, path, issues, false);
-	const upTo = raw.upTo === undefined ? undefined : readPositive(raw, 'upTo', path, issues);
-	if (raw.upTo !== undefined && upTo === undefined) return undefined;
-	if (instead === 'a-minion' && (type || where || upTo !== undefined)) {
-		issues.add(path, '`type`, `upTo` and `where` only with `instead: "becomes"`');
-		return undefined;
-	}
-	if (upTo !== undefined && !type) {
-		issues.add(`${path}.upTo`, 'only with `type`');
-		return undefined;
-	}
+/**
+ * A verb whose settings are `spec`. `refine` adds what the spec can't say, recording problems
+ * in `issues` (undefined when unusable), and may narrow the type. `raw` is the effect as
+ * written, for a check about its `who` or `when`.
+ */
+function verb<S extends Spec<object>, R = SpecValue<S>>(
+	spec: S,
+	opts: {
+		main?: string;
+		both?: true;
+		refine?: (value: SpecValue<S>, path: string, issues: Issues, raw: Json) => R | undefined;
+	} = {}
+): Verb<R> {
+	const { main, both, refine } = opts;
 	return {
-		instead,
-		...(type ? { type } : {}),
-		...(upTo !== undefined ? { upTo } : {}),
-		...(where ? { where } : {})
+		spec: spec as Extract<FieldSpec, { kind: 'object' }>,
+		...(main ? { main } : {}),
+		...(both ? { both } : {}),
+		read: (raw, path, issues) => {
+			const own = Object.fromEntries(
+				Object.entries(raw).filter(([key]) => key !== 'who' && key !== 'when')
+			);
+			const value = readSpec(spec, own, path, issues, undefined);
+			if (value === undefined) return undefined;
+			return refine ? refine(value, path, issues, raw) : (value as R);
+		}
 	};
 }
 
-/** A non-empty list of known values, or undefined (with an issue) when it is not one. */
-function readEnumList<T extends string>(
-	raw: Json,
-	key: string,
-	values: readonly T[],
-	path: string,
-	issues: Issues
-): T[] | undefined {
-	const list = readStringArray(raw, key, path, issues);
-	if (!list) return undefined;
-	const bad = list.filter((v) => !(values as readonly string[]).includes(v));
-	for (const v of bad) issues.add(`${path}.${key}`, `unknown value ${JSON.stringify(v)}`);
-	if (bad.length > 0) return undefined;
-	if (list.length === 0) {
-		issues.add(`${path}.${key}`, 'empty');
-		return undefined;
-	}
-	return list as T[];
-}
+/** A verb with nothing to say but `who` and `when`. */
+const plain = () => verb(obj({}));
 
-function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
-	const kind = readEnum(raw, 'kind', JINX_END_KINDS, path, issues, true);
-	if (!kind) return undefined;
-	if (kind === 'condition') return readEndCondition(raw, path, issues);
-	const extra: readonly string[] = {
-		'nominated-marked-executed': ['token'],
-		'marked-executed': ['token'],
-		'day-without-execution': ['day'],
-		'ability-stopped': ['alive'],
-		'gained-end': ['end'],
-		'night-instead': ['chooser'],
-		executed: ['player']
-	}[kind];
-	const winnerless = kind === 'night-instead';
-	checkKeys(
-		raw,
-		['kind', ...(winnerless ? [] : ['winner']), ...extra, 'who', 'when'],
-		path,
-		issues
-	);
-	const winner = winnerless ? undefined : readEnum(raw, 'winner', ALIGNMENTS, path, issues, true);
-	if (!winnerless && !winner) return undefined;
-	const out: Json = { kind, ...(winner ? { winner } : {}) };
-	if (extra.includes('token')) {
-		const token = readString(raw, 'token', path, issues, kind === 'marked-executed');
-		if (token !== undefined) out.token = token;
-		if (kind === 'marked-executed' && token === undefined) return undefined;
-	}
-	for (const key of ['player', 'chooser'] as const) {
-		if (!extra.includes(key)) continue;
-		const who = readEnum(raw, key, JINX_WHO, path, issues, false);
-		if (who) out[key] = who;
-	}
-	if (extra.includes('end')) {
-		const end = readEnum(raw, 'end', GAINED_ENDS, path, issues, true);
-		if (!end) return undefined;
-		out.end = end;
-	}
-	// On the final day (`when` has `final-day`), `day` may be left out: the latest day that ended.
-	const finalDay = Array.isArray(raw.when) && raw.when.includes('final-day');
-	for (const key of ['day', 'alive'] as const) {
-		if (!extra.includes(key) || (key === 'day' && finalDay && raw.day === undefined)) continue;
-		const n = readPositive(raw, key, path, issues);
-		if (n === undefined) return undefined;
-		out[key] = n;
-	}
-	return presetJinxEnd(out as unknown as JinxEnd) as unknown as Json;
-}
+/** A verb whose one setting, `key`, is one of `values` and may be written alone. */
+const choice = <const K extends string, const V extends string>(key: K, values: readonly V[]) =>
+	verb(obj({ [key]: oneOf(values) } as { [P in K]: Spec<V> }), { main: key });
 
-/** A jinx `condition` end: an event about whose players, what must hold, and who wins. */
-function readEndCondition(raw: Json, path: string, issues: Issues): Json | undefined {
-	checkKeys(
-		raw,
-		[
-			'kind',
-			'event',
-			'subject',
-			'token',
-			'nominatedBySelf',
-			'died',
-			'noExecution',
-			'bothAlive',
-			'stops',
-			'day',
-			'alive',
-			'winner',
-			'who',
-			'when'
-		],
-		path,
-		issues
-	);
-	const event = readEnum(raw, 'event', JINX_END_EVENTS, path, issues, true);
-	const subject = readEnum(raw, 'subject', JINX_END_SUBJECTS, path, issues, false);
-	const winner = readEnum(raw, 'winner', ALIGNMENTS, path, issues, true);
-	const token = readString(raw, 'token', path, issues, subject === 'marked');
-	if (!event || !winner) return undefined;
-	const out: Json = { kind: 'condition', event, winner };
-	const before = issues.list.length;
-	if (subject) out.subject = subject;
-	if (token !== undefined) out.token = token;
-	for (const flag of ['nominatedBySelf', 'died', 'noExecution', 'bothAlive', 'stops'] as const)
-		if (readBoolean(raw, flag, path, issues)) out[flag] = true;
-	for (const key of ['day', 'alive'] as const) {
-		if (raw[key] === undefined) continue;
-		const n = readPositive(raw, key, path, issues);
-		if (n !== undefined) out[key] = n;
-	}
-	const only = (key: string, events: readonly string[]) => {
-		if (out[key] !== undefined && !events.includes(event))
-			issues.add(`${path}.${key}`, `only with event ${events.map((e) => `\`${e}\``).join(' or ')}`);
-	};
-	only('nominatedBySelf', ['executed']);
-	only('died', ['executed']);
-	only('noExecution', ['day-ends']);
-	only('bothAlive', ['day-ends']);
-	only('day', ['day-ends']);
-	only('stops', ['ability-used']);
-	only('alive', ['ability-used']);
-	if (event !== 'day-ends' && !subject) issues.add(`${path}.subject`, 'missing');
-	if (subject === 'marked' && token === undefined) return undefined;
-	if (token !== undefined && subject !== 'marked')
-		issues.add(`${path}.token`, 'only with subject `marked`');
-	return issues.list.length > before ? undefined : out;
-}
+/** Which players also become one of the type, in `turnsPlayersInto`'s words. */
+const ALSO_BECOMES = ['drafter', 'neighbours'] as const;
 
-const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
-	cannotCreate: enumVerb('via', ['givesAbility', 'changesCharacter']),
-	cannotChoose: plain,
-	givenInstead: {
-		fields: ['instead', 'type', 'upTo', 'where'],
-		main: 'instead',
-		read: readGivenInstead
-	},
-	noTurnGood: plain,
-	spareToken: plain,
-	storytellerChooses: {
-		fields: ['what', 'via', 'creating'],
-		main: 'what',
-		read: (raw, path, issues) => {
-			const what = readEnum(raw, 'what', STORYTELLER_CHOOSES, path, issues, true);
-			const via = readEnum(raw, 'via', CHOOSES_VIA, path, issues, false);
-			const creating = readEnum(raw, 'creating', ['partner'], path, issues, false);
-			if (via && what !== 'player') {
-				issues.add(`${path}.via`, 'only with `what: "player"`');
-				return undefined;
-			}
-			if (creating && (what !== 'player' || (via ?? 'changesCharacter') !== 'changesCharacter')) {
-				issues.add(`${path}.creating`, 'only with `what: "player"` by `changesCharacter`');
-				return undefined;
-			}
-			return what
-				? { what, ...(via ? { via } : {}), ...(creating ? { creating } : {}) }
-				: undefined;
-		}
-	},
-	wakes: enumVerb('how', ['one-by-one']),
-	// The Lord of Typhon's `turnsPlayersInto` words and reader (P12): `drafter` is the player
-	// made the partner, `neighbours` makes both their neighbours of `type`.
-	alsoBecomes: {
-		fields: ['type', 'players'],
-		main: 'type',
-		read: (raw, path, issues) => {
-			const read = readPlayersOfType(raw, path, issues, ALSO_BECOMES, 'drafter');
-			if (!read) return undefined;
-			return read.players === 'drafter' ? { type: read.type } : read;
-		}
-	},
-	carriedBy: {
-		fields: ['type', 'marked'],
-		read: (raw, path, issues) => {
-			const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
-			const marked = readString(raw, 'marked', path, issues, false);
-			if ((type === undefined) === (marked === undefined)) {
-				issues.add(path, 'needs type or marked, not both');
-				return undefined;
-			}
-			return type ? { type } : { marked };
-		}
-	},
-	diesWhenExecuted: plain,
-	registersTo: {
-		fields: ['alignments', 'types', 'always'],
-		read: (raw, path, issues) => {
-			const out: Json = {};
-			const alignments = readEnumList(raw, 'alignments', ALIGNMENTS, path, issues);
-			if (alignments) out.alignments = alignments;
-			const types = readEnumList(raw, 'types', CHARACTER_TYPES, path, issues);
-			if (types) out.types = types;
-			if (readBoolean(raw, 'always', path, issues)) out.always = true;
-			if (!out.alignments && !out.types) {
-				issues.add(path, 'needs alignments or types');
-				return undefined;
-			}
-			return out;
-		}
-	},
-	impairs: {
-		fields: ['kind', 'unlessImpaired'],
-		main: 'kind',
-		both: true,
-		read: (raw, path, issues) => {
-			const kind = readEnum(raw, 'kind', IMPAIR_KINDS, path, issues, true);
-			const unless = readBoolean(raw, 'unlessImpaired', path, issues);
-			if (!kind) return undefined;
-			// One about one player alone is a `patch` of the part `impairs`.
-			const gained = Array.isArray(raw.when) && raw.when.includes('has-partner-ability');
-			if (raw.who !== 'both' && !unless && !gained) {
-				issues.add(path, 'about one player alone: write a `patch` of the part `impairs`');
-				return undefined;
-			}
-			return { kind, ...(unless ? { unlessImpaired: true } : {}) };
-		}
-	},
-	noKill: {
-		fields: ['on', 'killer', 'token'],
-		main: 'on',
-		read: (raw, path, issues) => {
-			const killer = readEnum(raw, 'killer', ['demon'], path, issues, false);
-			const on = readEnum(raw, 'on', NO_KILL_TRIGGERS, path, issues, killer === undefined);
-			const token = readString(raw, 'token', path, issues, false);
-			if (killer && on) {
-				issues.add(path, 'needs `on` or `killer`, not both');
-				return undefined;
-			}
-			if (killer && !(Array.isArray(raw.when) && raw.when.length > 0)) {
-				issues.add(`${path}.when`, 'required with `killer`');
-				return undefined;
-			}
-			if (token !== undefined && on !== 'chosen') {
-				issues.add(`${path}.token`, 'only with `on: "chosen"`');
-				return undefined;
-			}
-			if (killer) return { killer };
-			return on ? { on, ...(token !== undefined ? { token } : {}) } : undefined;
-		}
-	},
-	protects: {
-		fields: ['from', 'night', 'by'],
-		main: 'from',
-		read: (raw, path, issues) => {
-			const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, false) ?? 'any';
-			const night = readBoolean(raw, 'night', path, issues);
-			const by = readEnum(raw, 'by', ['partner'], path, issues, false);
-			return { from, ...(night ? { night: true } : {}), ...(by ? { by } : {}) };
-		}
-	},
-	grimoire: {
-		fields: ['hides'],
-		main: 'hides',
-		read: (raw, path, issues) => {
-			if (raw.hides === 'all') return { hides: 'all' };
-			const hides = readEnumList(raw, 'hides', GRIMOIRE_HIDDEN, path, issues);
-			if (raw.hides === undefined) issues.add(`${path}.hides`, 'missing');
-			return hides ? { hides } : undefined;
-		}
-	},
-	endsGame: { fields: [], read: readEnd },
-	nightChoice: {
-		fields: ['chooses', 'partner'],
-		read: (raw, path, issues) => {
-			const chooses = readEnum(raw, 'chooses', NIGHT_CHOICE_CHOOSES, path, issues, true);
-			const partner = readEnum(raw, 'partner', NIGHT_CHOICE_PARTNER, path, issues, true);
-			return chooses && partner ? { chooses, partner } : undefined;
-		}
-	},
-	partnerSetup: plain,
-	partnerInPlay: plain,
-	learns: enumVerb('what', LEARNS),
-	trueInfo: plain,
-	notDeclared: plain,
-	keepsProtection: plain,
-	noExecuteNow: {
-		fields: ['player', 'token'],
-		main: 'player',
-		read: (raw, path, issues) => {
-			const player = readEnum(raw, 'player', NO_EXECUTE_NOW_PLAYER, path, issues, true);
-			const token = readString(raw, 'token', path, issues, player === 'marked');
-			if (!player || (player === 'marked' && token === undefined)) return undefined;
-			return player === 'marked' ? { player, token } : { player };
-		}
-	},
-	allEvilBecome: plain,
-	partnerKeepsAbility: plain,
-	storytellerHas: enumVerb('once', STORYTELLER_HAS),
-	arbitraryDeaths: plain,
-	changesCharacter: labelVerb('token'),
-	guessesPartner: plain,
-	notShown: enumVerb('what', NOT_SHOWN),
-	notSecondDemon: plain,
-	keepsAbility: flagVerb('afterDeath'),
-	survives: enumVerb('on', ['carrier-executed']),
-	killsMarked: labelVerb('token'),
-	thinksPartnerSetup: plain,
-	voter: flagVerb('countsOnlyWith'),
-	abnormalCounts: enumVerb('counts', ABNORMAL_COUNTS),
-	patch: { fields: ['parts'], read: readPatch }
+/** The settings each official end kind takes beside `kind` and `winner`. */
+const END_TAKES: Record<Exclude<JinxEndKind, 'condition'>, readonly (keyof JinxEnd)[]> = {
+	'nominated-marked-executed': ['token'],
+	'marked-executed': ['token'],
+	'day-without-execution': ['day'],
+	'ability-stopped': ['alive'],
+	'gained-end': ['end'],
+	'night-instead': ['chooser'],
+	executed: ['player']
+};
+/** The settings a `condition` end takes beside `kind`, `event` and `winner`. */
+const CONDITION_TAKES: readonly (keyof JinxEnd)[] = [
+	'subject',
+	'token',
+	'nominatedBySelf',
+	'died',
+	'noExecution',
+	'bothAlive',
+	'stops',
+	'day',
+	'alive'
+];
+/** The `condition` settings only one event takes. */
+const ONLY_WITH: Partial<Record<keyof JinxEnd, (typeof JINX_END_EVENTS)[number]>> = {
+	nominatedBySelf: 'executed',
+	died: 'executed',
+	noExecution: 'day-ends',
+	bothAlive: 'day-ends',
+	day: 'day-ends',
+	stops: 'ability-used',
+	alive: 'ability-used'
 };
 
-/** A `patch`'s parts, each read by its own part reader; never jinxes or an optional rule. */
-function readPatch(raw: Json, path: string, issues: Issues): Json | undefined {
+/**
+ * An `endsGame`: an official kind with the settings it takes (each read into the `condition`
+ * it is a preset of, `presetJinxEnd`), or a `condition` whose settings fit its event.
+ */
+function refineEnd(end: JinxEnd, path: string, issues: Issues, raw: Json): JinxEnd | undefined {
+	const before = issues.list.length;
+	const { kind } = end;
+	const set = (Object.keys(end) as (keyof JinxEnd)[]).filter((k) => k !== 'kind');
+	const unknown = (takes: readonly (keyof JinxEnd)[]) => {
+		for (const key of set) if (!takes.includes(key)) issues.add(`${path}.${key}`, 'unknown field');
+	};
+	if (kind === 'condition') {
+		unknown(['event', 'winner', ...CONDITION_TAKES]);
+		if (!end.event) issues.add(`${path}.event`, 'missing');
+		if (!end.winner) issues.add(`${path}.winner`, 'missing');
+		if (end.event) {
+			for (const [key, event] of Object.entries(ONLY_WITH))
+				if (end[key as keyof JinxEnd] !== undefined && end.event !== event)
+					issues.add(`${path}.${key}`, `only with event \`${event}\``);
+			if (end.event !== 'day-ends' && !end.subject) issues.add(`${path}.subject`, 'missing');
+		}
+		if (end.subject === 'marked' && end.token === undefined) issues.add(`${path}.token`, 'missing');
+		if (end.token !== undefined && end.subject !== 'marked')
+			issues.add(`${path}.token`, 'only with subject `marked`');
+		return issues.list.length > before ? undefined : end;
+	}
+	const takes = END_TAKES[kind];
+	const winnerless = kind === 'night-instead';
+	unknown([...(winnerless ? [] : (['winner'] as const)), ...takes]);
+	if (!winnerless && !end.winner) issues.add(`${path}.winner`, 'missing');
+	if (kind === 'marked-executed' && end.token === undefined) issues.add(`${path}.token`, 'missing');
+	if (kind === 'gained-end' && !end.end) issues.add(`${path}.end`, 'missing');
+	// On the final day (`when` has `final-day`), `day` may be left out: the latest day that ended.
+	const finalDay = Array.isArray(raw.when) && raw.when.includes('final-day');
+	if (kind === 'day-without-execution' && end.day === undefined && !finalDay)
+		issues.add(`${path}.day`, 'missing');
+	if (kind === 'ability-stopped' && end.alive === undefined) issues.add(`${path}.alive`, 'missing');
+	return issues.list.length > before ? undefined : presetJinxEnd(end);
+}
+
+/** `parts`, each read by its own part reader; never jinxes or an optional rule. */
+function refinePatch(
+	value: { parts: unknown },
+	path: string,
+	issues: Issues
+): Params<'patch'> | undefined {
 	const at = `${path}.parts`;
-	if (!isObject(raw.parts) || Object.keys(raw.parts).length === 0) {
-		issues.add(at, `expected an object of parts, got ${describe(raw.parts)}`);
+	if (!isObject(value.parts) || Object.keys(value.parts).length === 0) {
+		issues.add(at, `expected an object of parts, got ${describe(value.parts)}`);
 		return undefined;
 	}
 	for (const key of ['jinxes', 'optionalRule'])
-		if (raw.parts[key] !== undefined) issues.add(`${at}.${key}`, 'not in a patch');
-	const parts = parseCharacterRules(raw.parts, at, issues);
-	return parts ? { parts: parts as Json } : undefined;
+		if (value.parts[key] !== undefined) issues.add(`${at}.${key}`, 'not in a patch');
+	const parts = parseCharacterRules(value.parts, at, issues);
+	return parts ? { parts } : undefined;
 }
+
+/** Every verb, by its key. */
+const VERBS: { readonly [K in VerbKey]: Verb<Params<K>> } = {
+	cannotCreate: choice('via', ['givesAbility', 'changesCharacter']),
+	cannotChoose: plain(),
+	givenInstead: verb(
+		obj({
+			instead: oneOf(GIVEN_INSTEAD),
+			type: opt(oneOf(CHARACTER_TYPES)),
+			upTo: opt(COUNT),
+			where: opt(oneOf(GIVEN_WHERE))
+		}),
+		{
+			main: 'instead',
+			refine: (value, path, issues) => {
+				const { instead, type, upTo, where } = value;
+				if (instead === 'a-minion' && (type || where || upTo !== undefined)) {
+					issues.add(path, '`type`, `upTo` and `where` only with `instead: "becomes"`');
+					return undefined;
+				}
+				if (upTo !== undefined && !type) {
+					issues.add(`${path}.upTo`, 'only with `type`');
+					return undefined;
+				}
+				return value;
+			}
+		}
+	),
+	noTurnGood: plain(),
+	spareToken: plain(),
+	storytellerChooses: verb(
+		obj({
+			what: oneOf(STORYTELLER_CHOOSES),
+			via: opt(oneOf(CHOOSES_VIA)),
+			creating: opt(oneOf(['partner']))
+		}),
+		{
+			main: 'what',
+			refine: (value, path, issues) => {
+				const { what, via, creating } = value;
+				if (via && what !== 'player') {
+					issues.add(`${path}.via`, 'only with `what: "player"`');
+					return undefined;
+				}
+				if (creating && (what !== 'player' || (via ?? 'changesCharacter') !== 'changesCharacter')) {
+					issues.add(`${path}.creating`, 'only with `what: "player"` by `changesCharacter`');
+					return undefined;
+				}
+				return value;
+			}
+		}
+	),
+	wakes: choice('how', ['one-by-one']),
+	// The Lord of Typhon's `turnsPlayersInto` words (P12): `drafter`, the default, is the player
+	// made the partner; `neighbours` makes both their neighbours of `type`.
+	alsoBecomes: verb(obj({ type: oneOf(SEATED_TYPES), players: opt(oneOf(ALSO_BECOMES)) }), {
+		main: 'type',
+		refine: ({ type, players }) => (players === 'neighbours' ? { type, players } : { type })
+	}),
+	carriedBy: verb(obj({ type: opt(oneOf(CHARACTER_TYPES)), marked: opt(LABEL) }), {
+		refine: (value, path, issues) => {
+			if ((value.type === undefined) === (value.marked === undefined)) {
+				issues.add(path, 'needs type or marked, not both');
+				return undefined;
+			}
+			return value;
+		}
+	}),
+	diesWhenExecuted: plain(),
+	registersTo: verb(
+		obj({
+			alignments: opt(anyOf(ALIGNMENTS)),
+			types: opt(anyOf(CHARACTER_TYPES)),
+			always: opt(T)
+		}),
+		{
+			refine: (value, path, issues) => {
+				if (!value.alignments?.length && !value.types?.length) {
+					issues.add(path, 'needs alignments or types');
+					return undefined;
+				}
+				return value;
+			}
+		}
+	),
+	impairs: verb(obj({ kind: oneOf(IMPAIR_KINDS), unlessImpaired: opt(T) }), {
+		main: 'kind',
+		both: true,
+		refine: (value, path, issues, raw) => {
+			// One about one player alone is a `patch` of the part `impairs`.
+			const gained = Array.isArray(raw.when) && raw.when.includes('has-partner-ability');
+			if (raw.who !== 'both' && !value.unlessImpaired && !gained) {
+				issues.add(path, 'about one player alone: write a `patch` of the part `impairs`');
+				return undefined;
+			}
+			return value;
+		}
+	}),
+	noKill: verb(
+		obj({
+			on: opt(oneOf(NO_KILL_TRIGGERS)),
+			killer: opt(oneOf(['demon'])),
+			token: opt(LABEL)
+		}),
+		{
+			main: 'on',
+			refine: (value, path, issues, raw) => {
+				const { on, killer, token } = value;
+				if (killer === undefined && on === undefined) {
+					issues.add(`${path}.on`, 'missing');
+					return undefined;
+				}
+				if (killer && on) {
+					issues.add(path, 'needs `on` or `killer`, not both');
+					return undefined;
+				}
+				if (killer && !(Array.isArray(raw.when) && raw.when.length > 0)) {
+					issues.add(`${path}.when`, 'required with `killer`');
+					return undefined;
+				}
+				if (token !== undefined && on !== 'chosen') {
+					issues.add(`${path}.token`, 'only with `on: "chosen"`');
+					return undefined;
+				}
+				return value;
+			}
+		}
+	),
+	protects: verb(
+		obj({ from: opt(oneOf(PROTECTS_FROM)), night: opt(T), by: opt(oneOf(['partner'])) }),
+		{ main: 'from', refine: (value) => ({ ...value, from: value.from ?? 'any' }) }
+	),
+	grimoire: verb(
+		obj({
+			hides: variants(
+				{ label: 'All', is: 'string', spec: oneOf(['all']) },
+				{ label: 'Some', is: 'array', spec: anyOf(GRIMOIRE_HIDDEN) }
+			)
+		}),
+		{
+			main: 'hides',
+			refine: (value, path, issues) => {
+				if (value.hides.length === 0) {
+					issues.add(`${path}.hides`, 'empty');
+					return undefined;
+				}
+				return value;
+			}
+		}
+	),
+	endsGame: verb(
+		obj({
+			kind: oneOf(JINX_END_KINDS),
+			winner: opt(oneOf(ALIGNMENTS)),
+			end: opt(oneOf(GAINED_ENDS)),
+			chooser: opt(oneOf(JINX_WHO)),
+			token: opt(LABEL),
+			day: opt(COUNT),
+			alive: opt(COUNT),
+			player: opt(oneOf(JINX_WHO)),
+			event: opt(oneOf(JINX_END_EVENTS)),
+			subject: opt(oneOf(JINX_END_SUBJECTS)),
+			nominatedBySelf: opt(T),
+			died: opt(T),
+			noExecution: opt(T),
+			bothAlive: opt(T),
+			stops: opt(T)
+		}),
+		{ refine: refineEnd }
+	),
+	nightChoice: verb(
+		obj({ chooses: oneOf(NIGHT_CHOICE_CHOOSES), partner: oneOf(NIGHT_CHOICE_PARTNER) })
+	),
+	partnerSetup: plain(),
+	partnerInPlay: plain(),
+	learns: choice('what', LEARNS),
+	trueInfo: plain(),
+	notDeclared: plain(),
+	keepsProtection: plain(),
+	noExecuteNow: verb(obj({ player: oneOf(NO_EXECUTE_NOW_PLAYER), token: opt(LABEL) }), {
+		main: 'player',
+		refine: (value, path, issues) => {
+			if (value.player !== 'marked') return { player: value.player };
+			if (value.token === undefined) {
+				issues.add(`${path}.token`, 'missing');
+				return undefined;
+			}
+			return value;
+		}
+	}),
+	allEvilBecome: plain(),
+	partnerKeepsAbility: plain(),
+	storytellerHas: choice('once', STORYTELLER_HAS),
+	arbitraryDeaths: plain(),
+	changesCharacter: verb(obj({ token: LABEL }), { main: 'token' }),
+	guessesPartner: plain(),
+	notShown: choice('what', NOT_SHOWN),
+	notSecondDemon: plain(),
+	keepsAbility: verb(obj({ afterDeath: T })),
+	survives: choice('on', ['carrier-executed']),
+	killsMarked: verb(obj({ token: LABEL }), { main: 'token' }),
+	thinksPartnerSetup: plain(),
+	voter: verb(obj({ countsOnlyWith: T })),
+	abnormalCounts: choice('counts', ABNORMAL_COUNTS),
+	// Parts of the character's own rules in place of its own while the jinx holds: any part,
+	// so written as rules text.
+	patch: verb(obj({ parts: TEXT }), { refine: refinePatch })
+};
+
+/**
+ * A verb's builder field: written in full, its own settings with `who` and `when`; written
+ * short, `true` (a verb with no main setting) or its main setting's value alone.
+ */
+function verbField(v: Verb<unknown>): FieldSpec {
+	const who = oneOf(v.both ? [...JINX_WHO, 'both'] : JINX_WHO);
+	const full: FieldSpec = {
+		kind: 'object',
+		fields: [
+			...v.spec.fields,
+			{ key: 'who', spec: who, optional: true },
+			{ key: 'when', spec: list(CONDITION_FIELD), optional: true }
+		]
+	};
+	const main = v.main ? v.spec.fields.find((f) => f.key === v.main)?.spec : undefined;
+	const mainSpec = main?.kind === 'variants' ? main.variants[0].spec : main;
+	const short: Variant = mainSpec
+		? { label: 'Short', is: mainSpec.kind === 'count' ? 'number' : 'string', spec: mainSpec }
+		: { label: 'On', is: 'true', spec: T };
+	return variants(short, { label: 'With who and when', is: 'object', spec: full });
+}
+
+/**
+ * The Character builder's fields for a character's jinxes (M79): one entry per jinxed partner,
+ * each with the effects the jinx has, from the verbs above. Each effect may be written the
+ * short way or in full, so an official file's jinxes open in fields as they are written
+ * (`parts/part-fields.test.ts` reads every official jinx through these).
+ */
+export const JINX_FIELDS: FieldSpec = byCharacter(
+	someOf({
+		exclusive: T,
+		...Object.fromEntries(
+			Object.entries(VERBS).map(([key, v]) => [key, verbField(v as Verb<unknown>)])
+		)
+	})
+);
 
 /** Every key a jinx entry may have: `exclusive`, then each verb. */
 export const JINX_RULE_KEYS: readonly JinxRuleKey[] = [
@@ -439,36 +480,28 @@ function readEffect(
 	path: string,
 	issues: Issues
 ): JinxEffect | undefined {
-	const verb = VERBS[key];
+	const v = VERBS[key];
 	let obj: Json;
-	if (raw === true && verb.main === undefined) obj = {};
-	else if (verb.main !== undefined && (typeof raw === 'string' || typeof raw === 'number'))
-		obj = { [verb.main]: raw };
+	if (raw === true && v.main === undefined) obj = {};
+	else if (v.main !== undefined && (typeof raw === 'string' || typeof raw === 'number'))
+		obj = { [v.main]: raw };
 	else if (isObject(raw)) obj = raw;
 	else {
 		issues.add(
 			path,
-			`expected ${verb.main ? 'a value or object' : 'true or object'}, got ${describe(raw)}`
+			`expected ${v.main ? 'a value or object' : 'true or object'}, got ${describe(raw)}`
 		);
 		return undefined;
 	}
 	const before = issues.list.length;
-	if (key !== 'endsGame') checkKeys(obj, [...verb.fields, 'who', 'when'], path, issues);
-	const who = readEnum(
-		obj,
-		'who',
-		verb.both ? [...JINX_WHO, 'both'] : JINX_WHO,
-		path,
-		issues,
-		false
-	);
+	const who = readEnum(obj, 'who', v.both ? [...JINX_WHO, 'both'] : JINX_WHO, path, issues, false);
 	let when: JinxCondition[] | undefined;
 	if (obj.when !== undefined) {
 		if (!Array.isArray(obj.when) || obj.when.length === 0)
 			issues.add(`${path}.when`, `expected a list of conditions, got ${describe(obj.when)}`);
 		else when = obj.when.map((c, i) => readCondition(c, `${path}.when[${i}]`, issues)!);
 	}
-	const params = verb.read(obj, path, issues);
+	const params = v.read(obj, path, issues);
 	if (!params || issues.list.length > before) return undefined;
 	return { ...params, ...(who ? { who } : {}), ...(when ? { when } : {}) } as JinxEffect;
 }

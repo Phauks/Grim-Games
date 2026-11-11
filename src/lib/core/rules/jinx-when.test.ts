@@ -1,7 +1,7 @@
 /**
  * A jinx effect's `when` conditions (`jinx-when.ts`), read the same for every verb. The
  * conditions are the app's, not the wiki's: each jinx that uses one is tested with its jinx in
- * `src/lib/core/jinxes/`.
+ * `src/lib/core/rules-tests/jinxes/`.
  */
 import { describe, expect, it } from 'vitest';
 import { flipCondition } from '#lib/core/data/jinx-needs.ts';

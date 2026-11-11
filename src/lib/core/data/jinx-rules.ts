@@ -301,7 +301,7 @@ import type { CharacterRules } from './character-rules.ts';
 import { presetTable } from './presets.ts';
 import type { JinxCondition } from './jinx-conditions.ts';
 import type { PROTECTS_FROM } from './parts/protects.ts';
-import type { TurnsPlayers } from './turns-players-rules.ts';
+import type { TurnsPlayers } from './parts/turns-players-into.ts';
 
 export { JINX_FLAGS, type JinxCondition, type JinxFlag } from './jinx-conditions.ts';
 
