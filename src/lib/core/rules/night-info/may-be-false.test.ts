@@ -56,7 +56,7 @@ describe('falseInfo may (Fibbin)', () => {
 
 	it('is spent by false information: its No Ability goes on the Fibbin', () => {
 		const s = show(cast(), 0);
-		expect(s.game.ruleReminders?.fibbin?.map((r) => r.label)).toEqual(['No Ability']);
+		expect(s.game.ruleReminders.fibbin?.map((r) => r.label)).toEqual(['No Ability']);
 		const { allows } = empath(s);
 		expect(allows(0)).toBe(false);
 		expect(allows(1)).toBe(true);
@@ -64,7 +64,7 @@ describe('falseInfo may (Fibbin)', () => {
 
 	it('is not spent by true information', () => {
 		const s = show(cast(), 1);
-		expect(s.game.ruleReminders?.fibbin ?? []).toEqual([]);
+		expect(s.game.ruleReminders.fibbin ?? []).toEqual([]);
 		expect(empath(s).picker.anyAllowed).toBe(true);
 	});
 
@@ -72,7 +72,7 @@ describe('falseInfo may (Fibbin)', () => {
 		const s = show(cast(), 0);
 		const entry = s.game.today.entries.findLast((e) => e.kind === 'info')!;
 		const after = s.do({ type: 'RemoveDayEntry', entryId: entry.entryId });
-		expect(after.game.ruleReminders?.fibbin ?? []).toEqual([]);
+		expect(after.game.ruleReminders.fibbin ?? []).toEqual([]);
 		expect(empath(after).picker.anyAllowed).toBe(true);
 	});
 

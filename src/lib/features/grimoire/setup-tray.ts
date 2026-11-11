@@ -53,8 +53,8 @@ export function withoutOffSeat(
  */
 export function pendingSetup(game: Game, characters: CharacterLookup): TrayItem[] {
 	return withoutOffSeat(trayItems(setupReminders(game, characters)), [
-		...(game.looseReminders ?? []),
-		...Object.values(game.ruleReminders ?? {}).flat()
+		...game.looseReminders,
+		...Object.values(game.ruleReminders).flat()
 	]);
 }
 

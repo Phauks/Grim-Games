@@ -54,7 +54,7 @@ describe('a Lunatic’s fake world', () => {
 			info: { minions: [seats[3], seats[3], seats[0]], decoy: seats[6], decoyChose: [seats[5]] }
 		});
 		// Repeats and the Lunatic themselves are dropped.
-		expect(set.game.fakeEvilInfo?.[seats[0]]).toEqual({
+		expect(set.game.fakeEvilInfo[seats[0]]).toEqual({
 			minions: [seats[3]],
 			decoy: seats[6],
 			decoyChose: [seats[5]]
@@ -71,7 +71,7 @@ describe('a Lunatic’s fake world', () => {
 			seatId: seats[0],
 			info: { minions: [] }
 		});
-		expect(cleared.game.fakeEvilInfo?.[seats[0]]).toBeUndefined();
+		expect(cleared.game.fakeEvilInfo[seats[0]]).toBeUndefined();
 	});
 
 	it('refuses the Lunatic as their own decoy and warns for a player who is not one', () => {

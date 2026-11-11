@@ -311,7 +311,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	},
 
 	SetGenericToken(game, command, ctx, warn) {
-		const token = game.genericTokens?.find((t) => t.tokenId === command.tokenId);
+		const token = game.genericTokens.find((t) => t.tokenId === command.tokenId);
 		if (!token) refuse('unknown-token', `no ∞ token ${command.tokenId}`);
 		const look = genericLook(command.look);
 		if (
@@ -329,7 +329,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	},
 
 	RemoveGenericToken(game, command) {
-		if (!game.genericTokens?.some((t) => t.tokenId === command.tokenId))
+		if (!game.genericTokens.some((t) => t.tokenId === command.tokenId))
 			refuse('unknown-token', `no ∞ token ${command.tokenId}`);
 		return [{ type: 'GenericTokenRemoved', tokenId: command.tokenId }];
 	},

@@ -223,7 +223,7 @@ describe('Deus ex Fiasco', () => {
 			const s = scenario(['chef', 'imp', 'monk', 'empath', 'poisoner']).rule('deusexfiasco');
 			const token = { characterId: 'deusexfiasco', label: 'Whoopsie' };
 			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual(['global']);
-			expect(s.do(whoopsie).game.ruleReminders?.deusexfiasco).toMatchObject([token]);
+			expect(s.do(whoopsie).game.ruleReminders.deusexfiasco).toMatchObject([token]);
 		});
 
 		it('adds another Whoopsie for each mistake declared', () => {
@@ -234,7 +234,7 @@ describe('Deus ex Fiasco', () => {
 				.do(whoopsie)
 				.newDay()
 				.do(whoopsie);
-			expect(s.game.ruleReminders?.deusexfiasco).toHaveLength(2);
+			expect(s.game.ruleReminders.deusexfiasco).toHaveLength(2);
 		});
 	});
 });

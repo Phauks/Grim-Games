@@ -673,31 +673,30 @@ export interface Game {
 	 */
 	optionalRules?: CharacterId[];
 	/**
-	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17). Optional,
-	 * so older saved games read as before; removing the character takes its reminders away.
+	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17); removing the
+	 * character takes its reminders away.
 	 */
-	ruleReminders?: Record<CharacterId, ReminderInstance[]>;
+	ruleReminders: Record<CharacterId, ReminderInstance[]>;
 	/**
 	 * Reminders on the board that belong to no seat (Trevor, 2026-10-17: a reminder put down
 	 * anywhere "would not be assigned to a character, because we wouldn't be able to tell who
-	 * had it"). Where each one sits is the device's own; optional, so older games read as before.
+	 * had it"). Where each one sits is the device's own.
 	 */
-	looseReminders?: ReminderInstance[];
-	/** The bank's reusable ∞ tokens (plan B9), in the order made; absent until one is made. */
-	genericTokens?: GenericToken[];
+	looseReminders: ReminderInstance[];
+	/** The bank's reusable ∞ tokens (plan B9), in the order made. */
+	genericTokens: GenericToken[];
 	/** Demon bluffs; more than one set when more than one player gets bluffs. */
 	bluffs: CharacterId[][];
 	/**
 	 * Names the Storyteller gave bluff sets, by position (Trevor, 2026-10-17); an empty or
-	 * missing name means the set's default. Optional, so older saved games read as before.
+	 * missing name means the set's default.
 	 */
-	bluffNames?: string[];
+	bluffNames: string[];
 	/**
 	 * The world the Storyteller shows a player who believes they are the Demon (the Lunatic),
 	 * by that player's seat (Trevor, 2026-10-29). Private: never in the public projection.
-	 * Optional, so older saved games read as before.
 	 */
-	fakeEvilInfo?: Record<SeatId, FakeEvilInfo>;
+	fakeEvilInfo: Record<SeatId, FakeEvilInfo>;
 	bag?: Bag;
 	/** The Storyteller's changes to the night order, applied in this order. */
 	nightOrderOverrides: NightStepOverride[];
@@ -725,8 +724,8 @@ export interface Game {
 	/** Earlier day logs, oldest first, closed by "New day". */
 	pastDays: DayLog[];
 	/**
-	 * Who runs the game, shown to players (Trevor, 2026-10-19). Optional: absent when the
-	 * Storyteller gave none, and in games saved before version 10.
+	 * Who runs the game, shown to players (Trevor, 2026-10-19). Absent when the Storyteller
+	 * gave none.
 	 */
 	storytellerName?: string;
 	/** The two Storytellers, while a `twoStorytellers` rule character is set up. Absent until set. */

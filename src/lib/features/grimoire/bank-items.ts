@@ -335,7 +335,7 @@ export function bankItems(
 	const all = [
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
-		...genericStretch(game.genericTokens ?? []),
+		...genericStretch(game.genericTokens),
 		...rest.filter((i) => i.group === 'dead')
 	];
 	// "Only this character": the step's reminders, while a step is walked through, then the

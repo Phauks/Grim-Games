@@ -124,7 +124,7 @@ describe('reminders on Fabled and Loric', () => {
 			characterId: 'fibbin',
 			reminder: { characterId: 'fibbin', label: 'No Ability' }
 		});
-		const [held] = added.game.ruleReminders!.fibbin;
+		const [held] = added.game.ruleReminders.fibbin;
 		expect(held).toMatchObject({ characterId: 'fibbin', label: 'No Ability' });
 
 		// Onto another rule character, then onto a seat, then back.
@@ -133,14 +133,14 @@ describe('reminders on Fabled and Loric', () => {
 			reminderId: held.reminderId,
 			characterId: 'bootlegger'
 		});
-		expect(toLoric.game.ruleReminders!.fibbin).toEqual([]);
-		expect(toLoric.game.ruleReminders!.bootlegger).toEqual([held]);
+		expect(toLoric.game.ruleReminders.fibbin).toEqual([]);
+		expect(toLoric.game.ruleReminders.bootlegger).toEqual([held]);
 		const toSeat = run(toLoric, ctx, {
 			type: 'MoveReminder',
 			reminderId: held.reminderId,
 			toSeatId: seats[1]
 		});
-		expect(toSeat.game.ruleReminders!.bootlegger).toEqual([]);
+		expect(toSeat.game.ruleReminders.bootlegger).toEqual([]);
 		expect(toSeat.game.seats[seats[1]].reminders).toEqual([held]);
 		const back = run(toSeat, ctx, {
 			type: 'MoveReminderToRuleCharacter',
@@ -148,10 +148,10 @@ describe('reminders on Fabled and Loric', () => {
 			characterId: 'fibbin'
 		});
 		expect(back.game.seats[seats[1]].reminders).toEqual([]);
-		expect(back.game.ruleReminders!.fibbin).toEqual([held]);
+		expect(back.game.ruleReminders.fibbin).toEqual([held]);
 
 		const removed = run(back, ctx, { type: 'RemoveReminder', reminderId: held.reminderId });
-		expect(removed.game.ruleReminders!.fibbin).toEqual([]);
+		expect(removed.game.ruleReminders.fibbin).toEqual([]);
 	});
 
 	it("warns when the reminder isn't a Fabled's or Loric's, and refuses a holder not in play", () => {
@@ -215,12 +215,7 @@ describe('reminders on Fabled and Loric', () => {
 		expect(s.game.ruleReminders).toEqual({});
 		// Undo brings both back.
 		const undone = undo(s);
-		expect(undone.game.ruleReminders!.angel).toHaveLength(1);
-	});
-
-	it('reads an older game without rule reminders', () => {
-		const { session } = newGame(names);
-		expect(session.game.ruleReminders).toBeUndefined();
+		expect(undone.game.ruleReminders.angel).toHaveLength(1);
 	});
 });
 
@@ -242,8 +237,8 @@ describe('the generic reminder', () => {
 			{ type: 'PlaceLooseReminder', reminder: generic }
 		);
 		const onSeat = s.game.seats[seats[0]].reminders[0];
-		const onAngel = s.game.ruleReminders!.angel[0];
-		const loose = s.game.looseReminders![0];
+		const onAngel = s.game.ruleReminders.angel[0];
+		const loose = s.game.looseReminders[0];
 
 		const noted = run(
 			s,
@@ -253,8 +248,8 @@ describe('the generic reminder', () => {
 			{ type: 'SetReminderNote', reminderId: loose.reminderId, note: 'Vote' }
 		);
 		expect(noted.game.seats[seats[0]].reminders[0].note).toBe('Chose Sam');
-		expect(noted.game.ruleReminders!.angel[0].note).toBe('Day 2');
-		expect(noted.game.looseReminders![0].note).toBe('Vote');
+		expect(noted.game.ruleReminders.angel[0].note).toBe('Day 2');
+		expect(noted.game.looseReminders[0].note).toBe('Vote');
 		expect(
 			warned(noted, ctx, {
 				type: 'SetReminderNote',
@@ -412,7 +407,7 @@ describe('bank ∞ tokens', () => {
 			type: 'AddGenericToken',
 			look: { note: ' Chose Sam ', symbol: 'ph:skull', symbolColour: 'red' }
 		});
-		const [token] = made.game.genericTokens!;
+		const [token] = made.game.genericTokens;
 		expect(token).toEqual({
 			tokenId: token.tokenId,
 			note: 'Chose Sam',
@@ -431,20 +426,20 @@ describe('bank ∞ tokens', () => {
 			symbol: 'ph:skull',
 			symbolColour: 'red'
 		});
-		expect(placed.game.looseReminders![0].symbol).toBe('ph:skull');
+		expect(placed.game.looseReminders[0].symbol).toBe('ph:skull');
 		// A filled token's copies start filled (Trevor, 2026-10-23).
 		const filledToken = run(placed, ctx, {
 			type: 'SetGenericToken',
 			tokenId: token.tokenId,
 			look: { symbol: 'ph:skull', symbolFill: true }
 		});
-		expect(filledToken.game.genericTokens![0].symbolFill).toBe(true);
+		expect(filledToken.game.genericTokens[0].symbolFill).toBe(true);
 		const filledCopy = run(filledToken, ctx, {
 			type: 'PlaceLooseReminder',
 			reminder: generic,
 			tokenId: token.tokenId
 		});
-		expect(filledCopy.game.looseReminders![1].symbolFill).toBe(true);
+		expect(filledCopy.game.looseReminders[1].symbolFill).toBe(true);
 		expect(placed.game.seats[seats[0]].reminders[0]).not.toHaveProperty('symbolFill');
 		// The token stays in the bank, and changing it leaves the placed copies as they are.
 		const changed = run(placed, ctx, {
@@ -462,7 +457,7 @@ describe('bank ∞ tokens', () => {
 			})
 		).toContain('no-change');
 		const removed = run(changed, ctx, { type: 'RemoveGenericToken', tokenId: token.tokenId });
-		expect(removed.game).not.toHaveProperty('genericTokens');
+		expect(removed.game.genericTokens).toEqual([]);
 		expect(removed.game.seats[seats[0]].reminders).toHaveLength(1);
 		expect(undo(removed).game.genericTokens).toHaveLength(1);
 	});
@@ -481,7 +476,7 @@ describe('bank ∞ tokens', () => {
 			},
 			{ type: 'AddGenericToken', look: { like: { characterId: GENERIC_REMINDER_ID, label: '' } } }
 		);
-		const [token, plain] = made.game.genericTokens!;
+		const [token, plain] = made.game.genericTokens;
 		expect(token.like).toEqual(like);
 		expect(plain).not.toHaveProperty('like');
 		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
@@ -538,7 +533,7 @@ describe('loose reminders', () => {
 			type: 'PlaceLooseReminder',
 			reminder: { characterId: 'imp', label: 'Dead' }
 		});
-		const [loose] = placed.game.looseReminders!;
+		const [loose] = placed.game.looseReminders;
 		expect(loose).toMatchObject({ characterId: 'imp', label: 'Dead' });
 		expect(placed.game.seats[seats[1]].reminders).toEqual([]);
 
@@ -563,9 +558,9 @@ describe('loose reminders', () => {
 			characterId: 'angel'
 		});
 		expect(onAngel.game.looseReminders).toEqual([]);
-		expect(onAngel.game.ruleReminders!.angel).toEqual([loose]);
+		expect(onAngel.game.ruleReminders.angel).toEqual([loose]);
 		const offAngel = run(onAngel, ctx, { type: 'LoosenReminder', reminderId: loose.reminderId });
-		expect(offAngel.game.ruleReminders!.angel).toEqual([]);
+		expect(offAngel.game.ruleReminders.angel).toEqual([]);
 		expect(offAngel.game.looseReminders).toEqual([loose]);
 
 		const removed = run(offAngel, ctx, { type: 'RemoveReminder', reminderId: loose.reminderId });
@@ -573,9 +568,9 @@ describe('loose reminders', () => {
 		expect(undo(removed).game.looseReminders).toEqual([loose]);
 	});
 
-	it('refuses to loosen a reminder that is nowhere, and reads older games', () => {
+	it('refuses to loosen a reminder that is nowhere', () => {
 		const { session, ctx } = newGame(names);
-		expect(session.game.looseReminders).toBeUndefined();
+		expect(session.game.looseReminders).toEqual([]);
 		expect(refused(session, ctx, { type: 'LoosenReminder', reminderId: 'nope' })).toBe(
 			'unknown-reminder'
 		);

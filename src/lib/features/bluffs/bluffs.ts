@@ -114,7 +114,7 @@ export function showableBluffSets(game: Game, characters: CharacterLookup): Show
 			? [
 					{
 						set,
-						label: bluffSetLabel(set, lunatic, game.bluffNames?.[set]),
+						label: bluffSetLabel(set, lunatic, game.bluffNames[set]),
 						characterIds: [...ids]
 					}
 				]

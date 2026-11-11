@@ -59,7 +59,7 @@
 	const title = $derived(
 		demon
 			? t('bluffs.title')
-			: t('bluffs.setTitle', { set: bluffSetLabel(set, true, game.bluffNames?.[set]) })
+			: t('bluffs.setTitle', { set: bluffSetLabel(set, true, game.bluffNames[set]) })
 	);
 	const titleId = $derived(demon ? 'setup-bluffs-title' : `setup-bluffs-${set + 1}-title`);
 </script>
