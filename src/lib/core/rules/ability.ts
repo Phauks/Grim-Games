@@ -44,6 +44,7 @@ import { bothDrunkPair, gainedAbilityTaken, survivesCarrierBy } from './jinx-eff
 import { protectors } from './protection.ts';
 import { effectImpairment } from './reminder-effects.ts';
 import { drunkByWish } from './wishes.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -162,7 +163,7 @@ function abilityInPlay(game: Game, characterId: CharacterId, characters: Charact
 		if (trueCharacter(game, s, characters) === characterId) return true;
 		if (seat.abilities?.some((a) => a.characterId === characterId)) return true;
 		const gives = seat.characterId
-			? rulesOf(seat.characterId, characters)?.givesAbility
+			? rulesFor(game, seat.characterId, characters)?.givesAbility
 			: undefined;
 		return (
 			gives?.to === 'self' &&
@@ -350,7 +351,7 @@ function impairmentsOf(
 	// ability that is removed outright (`no-ability`) stays removed.
 	const sober = seat.reminders.some(
 		(r) =>
-			rulesOf(r.characterId, characters)?.impairs?.clears?.includes(r.label) &&
+			rulesFor(game, r.characterId, characters)?.impairs?.clears?.includes(r.label) &&
 			sourceWorks(game, seatId, r.characterId, characters, visiting)
 	);
 	const left = safe ? unharmed : out;
@@ -488,7 +489,7 @@ export function truthfulBy(
 	const seat = getSeat(game, seatId);
 	return seat?.reminders.find(
 		(r) =>
-			rulesOf(r.characterId, characters)?.impairs?.truthful?.includes(r.label) &&
+			rulesFor(game, r.characterId, characters)?.impairs?.truthful?.includes(r.label) &&
 			sourceWorks(game, seatId, r.characterId, characters, new Set([seatId]))
 	)?.characterId;
 }
@@ -576,17 +577,17 @@ function ownRegistration(
 	if (!alignment || !type) return undefined;
 	// Their own character's, else another ability they have: held (the Hermit's Recluse) or
 	// gained (the Cannibal who ate the Recluse, https://wiki.bloodontheclocktower.com/Cannibal).
-	const mine = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+	const mine = id ? rulesFor(game, id, characters)?.registersAs?.self : undefined;
 	const by =
 		id && mine && abilityState(game, seatId, characters).works
 			? id
 			: abilitiesOfSeat(game, seatId, characters).find(
 					(a) =>
 						a.how !== 'own' &&
-						rulesOf(a.characterId, characters)?.registersAs?.self &&
+						rulesFor(game, a.characterId, characters)?.registersAs?.self &&
 						hasAbilityOf(game, seatId, a.characterId, characters)
 				)?.characterId;
-	const self = by ? rulesOf(by, characters)?.registersAs?.self : undefined;
+	const self = by ? rulesFor(game, by, characters)?.registersAs?.self : undefined;
 	if (by && self) {
 		return {
 			seatId,
@@ -601,7 +602,7 @@ function ownRegistration(
 		};
 	}
 	for (const token of game.seats[seatId].reminders) {
-		const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
+		const rule = rulesFor(game, token.characterId, characters)?.registersAs?.tokens?.[token.label];
 		if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
 		if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
 		const source = game.seating.find(

@@ -7,8 +7,7 @@
  * https://wiki.bloodontheclocktower.com/Magician).
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import { abilityState } from './ability.ts';
 import { ownJinxEffects } from './jinxes.ts';
 import { hiddenPartnersOf } from './jinx-effects.ts';
@@ -23,7 +22,7 @@ import {
 
 const rulesAt = (game: Game, seatId: SeatId, characters: CharacterLookup) => {
 	const id = trueCharacter(game, seatId, characters);
-	return id === undefined ? undefined : rulesOf(id, characters);
+	return id === undefined ? undefined : rulesFor(game, id, characters);
 };
 
 /** Whether this player believes they are the Demon (the Lunatic). */
@@ -79,7 +78,7 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 	const out: DemonInfo = { shownAsMinions: [], shownAsDemon: [] };
 	for (const seatId of game.seating) {
 		const id = trueCharacter(game, seatId, characters);
-		const evilInfo = id === undefined ? undefined : rulesInPlay(game, id, characters)?.evilInfo;
+		const evilInfo = id === undefined ? undefined : rulesFor(game, id, characters)?.evilInfo;
 		// With its optional rule (`whileWorking`), a drunk or poisoned Poppy Grower hides nothing.
 		const hides =
 			evilInfo?.hidesMinions &&
@@ -163,7 +162,7 @@ export function fakeEvilInfoOf(game: Game, seatId: SeatId): FakeEvilInfo {
 /** The players this player marked as if they were the Demon (the Lunatic's Chosen), in seat order. */
 export function chosenLikeDemon(game: Game, seatId: SeatId, characters: CharacterLookup): SeatId[] {
 	const id = trueCharacter(game, seatId, characters);
-	const label = id === undefined ? undefined : rulesOf(id, characters)?.choosesLikeDemon;
+	const label = id === undefined ? undefined : rulesFor(game, id, characters)?.choosesLikeDemon;
 	if (!id || !label) return [];
 	return game.seating.filter((s) =>
 		game.seats[s].reminders.some((r) => r.characterId === id && r.label === label)

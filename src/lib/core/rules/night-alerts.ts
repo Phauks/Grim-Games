@@ -126,6 +126,7 @@ import {
 	type AbilitySource,
 	type Impairment
 } from './ability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Who a killing step's ability is: the Demon's kill, or another ability's. */
 export type KillBy = 'demon' | 'other';
@@ -347,7 +348,7 @@ export function nightStepAlerts(
 	// Not while its own first-night step still makes the Minions beside it (M22): the line
 	// only exists once it has.
 	if (
-		rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours' &&
+		rulesFor(game, characterId, characters)?.turnsPlayersInto?.players === 'neighbours' &&
 		characterChanger(game, characterId, characters) === undefined
 	)
 		for (const seatId of actors)
@@ -386,7 +387,7 @@ export function nightStepAlerts(
 	let noKill = false;
 	for (const seatId of actors) {
 		for (const r of game.seats[seatId].reminders) {
-			const rules = rulesOf(r.characterId, characters);
+			const rules = rulesFor(game, r.characterId, characters);
 			let waking = rules?.stopsWaking?.token === r.label;
 			const stops = waking ? rules?.stopsWaking : rules?.stopsKilling;
 			// Or the effect the Storyteller picked for it, on its own night (`pickedEffect`).
@@ -751,7 +752,7 @@ function deathAlerts(
 	// https://wiki.bloodontheclocktower.com/Grandmother).
 	if (killer.by === 'demon') {
 		for (const r of seat.reminders) {
-			const check = rulesOf(r.characterId, characters)?.deathCheck;
+			const check = rulesFor(game, r.characterId, characters)?.deathCheck;
 			if (check?.kind !== 'marked-killed-by-demon' || check.token !== r.label) continue;
 			const from = holder(r.characterId);
 			const character = characters.get(r.characterId);

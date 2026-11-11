@@ -7,9 +7,9 @@
  * (https://wiki.bloodontheclocktower.com/Pukka). The board asks before taking the earlier one
  * off; nothing here acts on its own.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * The reminders on `seatId` that `reminder` takes the place of: the same character's (and the
@@ -21,7 +21,7 @@ export function replacedByFlow(
 	reminder: ReminderInstance,
 	characters: CharacterLookup
 ): ReminderInstance[] {
-	const tokens = rulesOf(reminder.characterId, characters)?.tokenFlow?.tokens;
+	const tokens = rulesFor(game, reminder.characterId, characters)?.tokenFlow?.tokens;
 	const at = tokens?.indexOf(reminder.label) ?? -1;
 	if (!tokens || at <= 0) return [];
 	const earlier = tokens.slice(0, at);

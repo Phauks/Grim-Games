@@ -6,9 +6,9 @@
  * decides, so nothing here happens on its own.
  */
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** One token to count down: `to` is the next label, or undefined when it comes off. */
 export interface CountdownMove {
@@ -29,7 +29,7 @@ export function countdownMoves(
 	characters: CharacterLookup,
 	since?: Game
 ): CountdownMove[] {
-	const tokens = rulesOf(characterId, characters)?.countdown?.tokens;
+	const tokens = rulesFor(game, characterId, characters)?.countdown?.tokens;
 	if (!tokens) return [];
 	const before = since
 		? new Set(

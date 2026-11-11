@@ -5,7 +5,7 @@
  * of each day. The day timer counts this down from its own time used (`quietLeft`), so it
  * follows the Storyteller's Start and Pause; who the veterans are is the Storyteller's call.
  */
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import type { QuietStart } from '#lib/core/data/parts/quiet-start.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -27,7 +27,7 @@ export function quietStartRule(
 		if (id) ids.add(id);
 	}
 	for (const characterId of ids) {
-		const rule = rulesInPlay(game, characterId, characters)?.quietStart;
+		const rule = rulesFor(game, characterId, characters)?.quietStart;
 		if (rule) return { characterId, ...rule };
 	}
 	return undefined;

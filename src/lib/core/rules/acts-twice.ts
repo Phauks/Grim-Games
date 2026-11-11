@@ -11,13 +11,13 @@
  * token's character carries last night's token and is not doubled. Warns only: the Storyteller
  * may tick or skip any step.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import type { NightStep } from './night-order.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The token that makes a seat act twice, and whether its character's ability works now. */
 export interface ActsTwiceSource {
@@ -37,7 +37,7 @@ export function actsTwiceSource(
 ): ActsTwiceSource | undefined {
 	const seat = getSeat(game, seatId);
 	const token = seat?.reminders.find(
-		(r) => rulesOf(r.characterId, characters)?.actsTwice?.token === r.label
+		(r) => rulesFor(game, r.characterId, characters)?.actsTwice?.token === r.label
 	);
 	if (!token) return undefined;
 	const owners = game.seating.filter(

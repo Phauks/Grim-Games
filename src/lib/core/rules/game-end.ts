@@ -25,7 +25,6 @@
  * every day closed by Dawn ("New day") before it.
  */
 import type { EndKind } from '#lib/core/data/game-end-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, inPlay, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -59,6 +58,7 @@ import {
 	winnerFor
 } from './game-end-helpers.ts';
 import { storytellerExecuted } from './storyteller-end.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export { livesWhileDead } from './game-end-helpers.ts';
 
@@ -430,7 +430,7 @@ function usedOnLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 		for (const entry of log.entries) {
 			if (entry.kind !== 'ability' || entry.on === undefined) continue;
 			const { seatId, characterId, on } = entry;
-			const rules = rulesOf(characterId, characters);
+			const rules = rulesFor(game, characterId, characters);
 			const rule = rules?.gameEnd?.ends?.find(
 				(e) => e.kind === 'condition' && e.event === 'ability-used'
 			);

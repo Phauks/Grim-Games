@@ -21,7 +21,7 @@ import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwice } from './acts-twice.ts';
 import { dayNumber } from './night-order.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 
 export function wakeConditionMet(
 	game: Game,
@@ -31,7 +31,7 @@ export function wakeConditionMet(
 	diedTonight: ReadonlySet<SeatId>,
 	became: ReadonlySet<SeatId> = new Set()
 ): boolean {
-	const when = rulesInPlay(game, characterId, characters, { seatId: holder })?.wakesWhen;
+	const when = rulesFor(game, characterId, characters, { seatId: holder })?.wakesWhen;
 	if (!when) return true;
 	if (when.deadAtLeastLiving || when.deadAtLeast !== undefined) {
 		const dead = game.seating.filter((s) => game.seats[s].dead).length;

@@ -17,7 +17,7 @@
  */
 import type { Voting } from '#lib/core/data/parts/voting.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
@@ -37,7 +37,7 @@ export interface TableVoting {
 export function tableVoting(game: Game, characters: CharacterLookup): TableVoting[] {
 	const out: TableVoting[] = [];
 	const add = (characterId: CharacterId, seatId?: SeatId) => {
-		const rule = rulesInPlay(game, characterId, characters)?.voting;
+		const rule = rulesFor(game, characterId, characters)?.voting;
 		if (!rule) return;
 		if (out.some((t) => t.characterId === characterId && t.seatId === seatId)) return;
 		out.push({ characterId, ...(seatId !== undefined ? { seatId } : {}), rule });

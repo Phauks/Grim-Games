@@ -4,13 +4,13 @@
  * jinxes add to them (`abnormalCounts`, `data/jinx-rules.ts`). Part of `night-info.ts`.
  */
 import type { AbnormalCounts } from '#lib/core/data/jinx-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { ownJinxEffects } from '../jinxes.ts';
 import type { AbnormalUse } from './reliability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The partners whose jinx with `counter` says how they count (`abnormalCounts`). */
 function countedPartners(
@@ -55,7 +55,7 @@ export function abnormalSinceDawn(
 	);
 	for (const e of entries) {
 		// The counting ability's own information does not count (the Mathematician's).
-		const rule = rulesOf(e.characterId, characters)?.answers;
+		const rule = rulesFor(game, e.characterId, characters)?.answers;
 		if (rule?.question === 'count' && rule.among === 'abnormal') continue;
 		const causes = (e.abnormal ?? []).filter((c) => !own(e, c));
 		if (causes.length === 0) continue;
@@ -99,7 +99,7 @@ export function demonChoiceUses(
 	});
 	if (victims.length === 0) return [];
 	return countedPartners(game, counter, 'unlike-demon', characters).flatMap((partner) => {
-		const label = rulesOf(partner, characters)?.choosesLikeDemon;
+		const label = rulesFor(game, partner, characters)?.choosesLikeDemon;
 		if (!label) return [];
 		return game.seating.flatMap((seatId): AbnormalUse[] => {
 			if (trueCharacter(game, seatId, characters) !== partner) return [];

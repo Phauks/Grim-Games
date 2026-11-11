@@ -12,13 +12,13 @@
  *   who die even when it does not wake (the Pukka's Poisoned,
  *   https://wiki.bloodontheclocktower.com/Pukka); none while it is stopped from killing.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { chosenStopsKill } from './jinx-targets.ts';
 import { stoppedWaking } from './woke-tonight.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface NightKill {
 	max: number;
@@ -32,13 +32,13 @@ export function nightKill(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): NightKill | undefined {
-	const kills = rulesOf(characterId, characters)?.kills;
+	const kills = rulesFor(game, characterId, characters)?.kills;
 	if (!kills) return undefined;
 	const seat = game.seats[holder];
 	if (!seat) return undefined;
 	const noKill =
 		seat.reminders.some((r) => {
-			const stops = rulesOf(r.characterId, characters)?.stopsKilling;
+			const stops = rulesFor(game, r.characterId, characters)?.stopsKilling;
 			return (
 				stops?.token === r.label && (!stops.type || typeOf(game, holder, characters) === stops.type)
 			);

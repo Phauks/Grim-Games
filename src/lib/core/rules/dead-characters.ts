@@ -5,6 +5,7 @@ import type { CharacterLookup } from '../model/characters.ts';
 import type { Game, SeatId } from '../model/index.ts';
 import { trueCharacter, typeOf } from '../model/selectors.ts';
 import { keptAfterPartner } from './jinx-effects.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -38,7 +39,7 @@ export function keepsAbilityWhenDead(
 	const seat = game.seats[seatId];
 	if (!seat?.dead) return false;
 	return seat.reminders.some((r) => {
-		const keeps = rulesOf(r.characterId, characters)?.keepsAbility;
+		const keeps = rulesFor(game, r.characterId, characters)?.keepsAbility;
 		if (keeps?.token !== r.label) return false;
 		if (keeps.type && (!characters || typeOf(game, seatId, characters) !== keeps.type))
 			return false;

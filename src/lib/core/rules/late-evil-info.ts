@@ -4,16 +4,16 @@
  * its own step (the Poppy Grower's Evil Wakes: once it dies, the Minions and Demon learn each
  * other that night, https://wiki.bloodontheclocktower.com/Poppy_Grower).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { MARKER_TEXT, type Night, type NightStep } from './night-order.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The character whose wake token is on a player, if any. */
 function wokenBy(game: Game, characters: CharacterLookup): string | undefined {
 	for (const seatId of game.seating) {
 		for (const r of game.seats[seatId].reminders) {
-			const token = rulesOf(r.characterId, characters)?.evilInfo?.wakeToken;
+			const token = rulesFor(game, r.characterId, characters)?.evilInfo?.wakeToken;
 			if (token !== undefined && token === r.label) return r.characterId;
 		}
 	}

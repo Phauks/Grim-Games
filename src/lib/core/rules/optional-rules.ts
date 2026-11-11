@@ -5,10 +5,10 @@
  * at the start of the game and shown, on or off, with the special rules. The rules a game turns
  * on replace the character's own (`optionalRule` in a rules block, read by `rulesIn`).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** One character's optional rule in this game. */
 export interface OptionalRuleChoice {
@@ -29,7 +29,7 @@ export function optionalRuleChoices(game: Game, characters: CharacterLookup): Op
 		...game.seating.flatMap((id) => game.seats[id].characterId ?? [])
 	]);
 	return [...ids].flatMap((characterId) => {
-		const rules = rulesOf(characterId, characters);
+		const rules = rulesFor(game, characterId, characters);
 		if (rules?.optionalRule === undefined) return [];
 		const on = game.optionalRules?.includes(characterId) ?? false;
 		const text = rules.optionalRuleText;

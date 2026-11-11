@@ -20,7 +20,6 @@
  * seats and sources say who, so the UI shows values.
  */
 import type { DeathCheckKind } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -34,6 +33,7 @@ import {
 	type AbilitySource,
 	type Impairment
 } from './ability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -268,7 +268,7 @@ export function deathVerdict(
 	choice: DeathChoice,
 	characters: CharacterLookup
 ): DeathVerdict | undefined {
-	const rule = rulesOf(characterId, characters)?.deathCheck;
+	const rule = rulesFor(game, characterId, characters)?.deathCheck;
 	switch (rule?.kind) {
 		case 'wrong-guess':
 			return wrongGuess(game, seatId, choice, characters);
@@ -292,7 +292,7 @@ export function deathCheck(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): DeathCheck | undefined {
-	const rule = rulesOf(characterId, characters)?.deathCheck;
+	const rule = rulesFor(game, characterId, characters)?.deathCheck;
 	if (!rule) return undefined;
 	const needs = NEEDS[rule.kind];
 	const character = characters.get(characterId);

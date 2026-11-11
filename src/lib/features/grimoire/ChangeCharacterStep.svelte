@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/index.ts';
-	import { rulesInPlay } from '#lib/core/rules/rules-in-play.ts';
+	import { rulesFor } from '#lib/core/rules/rules-for.ts';
 	import {
 		alignmentOf,
 		scriptCharacterIds,
@@ -85,7 +85,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const rule = $derived(
-		abilityId ? rulesInPlay(game, abilityId, characters)?.changesCharacter : undefined
+		abilityId ? rulesFor(game, abilityId, characters)?.changesCharacter : undefined
 	);
 	const changer = $derived(abilityId ? characterChanger(game, abilityId, characters) : undefined);
 	const onlyDemons = $derived(rule?.types.length === 1 && rule.types[0] === 'demon');
@@ -182,7 +182,7 @@
 	});
 
 	const swaps = $derived(
-		abilityId ? rulesInPlay(game, abilityId, characters)?.swapsCharacters : undefined
+		abilityId ? rulesFor(game, abilityId, characters)?.swapsCharacters : undefined
 	);
 	// Any player with a character may be picked; the rule's left-out types are faded, as the
 	// Storyteller may still override.
@@ -238,7 +238,7 @@
 	// The Snake Charmer's choice: its player (or a Philosopher who took its token), and the two
 	// seats it swapped tonight.
 	const charms = $derived(
-		abilityId ? rulesInPlay(game, abilityId, characters)?.becomes?.into === 'swap' : false
+		abilityId ? rulesFor(game, abilityId, characters)?.becomes?.into === 'swap' : false
 	);
 	const charmer = $derived(
 		charms && abilityId ? swapPartner(game, abilityId, characters) : undefined

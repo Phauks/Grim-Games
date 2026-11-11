@@ -11,7 +11,7 @@
  * applies to them.
  */
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
@@ -65,14 +65,14 @@ export function weightSources(
 	if (!seat) return [];
 	const out: WeightSource[] = [];
 	for (const r of seat.reminders) {
-		const rule = rulesInPlay(game, r.characterId, characters)?.voteWeight;
+		const rule = rulesFor(game, r.characterId, characters)?.voteWeight;
 		if (!rule || !('reminder' in rule) || !same(rule.reminder, r.label)) continue;
 		if (out.some((s) => s.characterId === r.characterId)) continue;
 		if (!sourceWorks(game, seatId, r.characterId, characters)) continue;
 		out.push({ characterId: r.characterId, weight: rule.weight, reminderId: r.reminderId });
 	}
 	const own = trueCharacter(game, seatId, characters);
-	const rule = own === undefined ? undefined : rulesInPlay(game, own, characters)?.voteWeight;
+	const rule = own === undefined ? undefined : rulesFor(game, own, characters)?.voteWeight;
 	if (own !== undefined && rule && 'self' in rule && abilityState(game, seatId, characters).works)
 		out.push({ characterId: own, weight: rule.weight });
 	return out;
@@ -124,7 +124,7 @@ export function voterRule(
 ): { characterId: CharacterId; rule: VoterRule } | undefined {
 	const characterId = trueCharacter(game, seatId, characters);
 	if (characterId === undefined) return undefined;
-	const rule = rulesInPlay(game, characterId, characters)?.voter;
+	const rule = rulesFor(game, characterId, characters)?.voter;
 	if (!rule || !abilityState(game, seatId, characters).works) return undefined;
 	return { characterId, rule };
 }
@@ -135,9 +135,7 @@ export function voterRule(
  */
 export function takesVoteTokens(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const characterId = trueCharacter(game, seatId, characters);
-	return (
-		characterId !== undefined && !!rulesInPlay(game, characterId, characters)?.voter?.needsToken
-	);
+	return characterId !== undefined && !!rulesFor(game, characterId, characters)?.voter?.needsToken;
 }
 
 /**
@@ -286,7 +284,7 @@ export function tokenGiverInfo(
 ): TokenGiverInfo | undefined {
 	const characterId = trueCharacter(game, to, characters);
 	if (characterId === undefined) return undefined;
-	if (!rulesInPlay(game, characterId, characters)?.voter?.learnsGiver) return undefined;
+	if (!rulesFor(game, characterId, characters)?.voter?.learnsGiver) return undefined;
 	const alignment = alignmentOf(game, from);
 	if (alignment === undefined) return undefined;
 	const registered = registrations(game, characters, characterId).find((r) => r.seatId === from);

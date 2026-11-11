@@ -4,6 +4,7 @@ import type { CharacterLookup } from '../model/characters.ts';
 import { alignmentOf, trueCharacter, typeOf } from '../model/selectors.ts';
 import type { Game, SeatId } from '../model/types.ts';
 import { prepValueKey } from './day-reminders.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * The players woken and shown a character's token (`shownTo` in its rules block): every
@@ -16,7 +17,7 @@ export function shownToSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] | undefined {
-	const shownTo = rulesOf(characterId, characters)?.shownTo;
+	const shownTo = rulesFor(game, characterId, characters)?.shownTo;
 	if (!shownTo) return undefined;
 	return game.seating.filter(
 		(s) =>
@@ -34,7 +35,7 @@ export function shownToSeats(
  */
 export function shownAtMinionInfo(game: Game, characters: CharacterLookup): CharacterId[] {
 	const ids = game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []);
-	return [...new Set(ids)].filter((id) => rulesOf(id, characters)?.shownTo?.minions);
+	return [...new Set(ids)].filter((id) => rulesFor(game, id, characters)?.shownTo?.minions);
 }
 
 /**
@@ -55,7 +56,7 @@ export function evilLearns(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): EvilLearns | undefined {
-	const rule = rulesOf(characterId, characters)?.evilLearns;
+	const rule = rulesFor(game, characterId, characters)?.evilLearns;
 	if (!rule) return undefined;
 	const evil = game.seating.filter((s) => alignmentOf(game, s) === 'evil');
 	const seatId = game.seating.find((s) =>

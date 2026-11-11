@@ -10,13 +10,13 @@
  * token on its own player also needs its ability to work. The Storyteller can take the token
  * off or move it.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { isExecution } from './death-causes.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * One token to place on `seatId`, the ability's own player's or the executed player's. With
@@ -48,7 +48,7 @@ export function afterExecutionTokens(
 	const out: AfterExecutionToken[] = [];
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		const rules = characterId ? rulesOf(characterId, characters) : undefined;
+		const rules = characterId ? rulesFor(game, characterId, characters) : undefined;
 		const rule = rules?.afterExecution;
 		if (!characterId || !rule) continue;
 		if (game.seats[seatId]?.dead && !rules?.actsWhenDead) continue;

@@ -18,7 +18,7 @@
  *   the grimoire (https://wiki.bloodontheclocktower.com/Hermit, second example).
  * - Fabled and Loric are rule characters and never go in the bag.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
@@ -105,7 +105,7 @@ export function standInKind(
 	character: Character,
 	script: readonly Character[] = []
 ): StandInKind | undefined {
-	const rules = rulesOf(character.id, new Map([[character.id, character]]));
+	const rules = rulesOfCharacter(character);
 	if (rules?.believesType === 'demon') return 'demon';
 	const gives = rules?.givesAbility;
 	if (gives?.to === 'self' && gives.onScript) {

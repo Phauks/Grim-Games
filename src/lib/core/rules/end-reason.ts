@@ -12,6 +12,7 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { gameEnds, type GameEnd, type GameEndOptions } from './game-end.ts';
 import { isExecution } from './death-causes.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** `demon-dead` is the Demon's execution (saved under its first name, so old games still read). */
 export type EndReason = 'demon-dead' | 'two-alive' | `character:${CharacterId}` | 'other';
@@ -103,7 +104,7 @@ export function endCharacters(
 	}
 	const saved = endReasonCharacter(extra);
 	if (saved) present.add(saved);
-	const rules = (id: CharacterId) => rulesOf(id, characters)?.gameEnd;
+	const rules = (id: CharacterId) => rulesFor(game, id, characters)?.gameEnd;
 	const listed = [
 		...[...present].filter((id) => (rules(id)?.ends?.length ?? 0) > 0),
 		...[...present].filter((id) => killsDemon(id, characters)),
@@ -149,5 +150,5 @@ export function alwaysWinners(
 /** The `gameEnd` rules of the seat's true character. */
 function winRules(game: Game, seatId: SeatId, characters: CharacterLookup) {
 	const truly = trueCharacter(game, seatId, characters);
-	return truly === undefined ? undefined : rulesOf(truly, characters)?.gameEnd;
+	return truly === undefined ? undefined : rulesFor(game, truly, characters)?.gameEnd;
 }

@@ -4,13 +4,13 @@
  * new tile. It only suggests; the Storyteller changes, keeps or adds anyone before
  * confirming, and the counts check warns rather than blocks.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { analyseSelection } from './bag-plan.ts';
 import { isBagDisabled, isNotDealt, isReplacedAfterDraw } from './bag-characters.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from './distribution.ts';
 import { countByType, planLateSeat, type SeenSeat, type UndrawnTile } from './late-seat.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface LateSeatProposalInput {
 	game: Game;
@@ -122,10 +122,10 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 
 	const characters = new Map(input.scriptCharacters.map((c) => [c.id, c]));
 	const needed = new Set(
-		inPlay.map((id) => rulesOf(id, characters)?.setupModifier?.requires).filter(Boolean)
+		inPlay.map((id) => rulesFor(game, id, characters)?.setupModifier?.requires).filter(Boolean)
 	);
 	const keepInPlay = (id: CharacterId) =>
-		!!rulesOf(id, characters)?.setupModifier || needed.has(id);
+		!!rulesFor(game, id, characters)?.setupModifier || needed.has(id);
 	const scriptCounts = countByType(
 		input.scriptCharacters.filter((c) => isSeated(c.type)).map((c) => c.type as SeatedType)
 	);
@@ -147,8 +147,8 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 				!isBagDisabled(c) &&
 				!isNotDealt(c) &&
 				!isReplacedAfterDraw(c) &&
-				!rulesOf(c.id, characters)?.setupModifier &&
-				rulesOf(c.id, characters)?.believesType === undefined
+				!rulesFor(game, c.id, characters)?.setupModifier &&
+				rulesFor(game, c.id, characters)?.believesType === undefined
 		);
 		if (pool.length) {
 			const id = pool[Math.floor(random() * pool.length)].id;

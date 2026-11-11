@@ -20,7 +20,7 @@ import { ownJinxes } from './jinxes.ts';
  * about a player with the partner's ability (`has-partner-ability`) is left out here: that
  * player's rules are another character's.
  */
-export function rulesInPlay(
+export function rulesFor(
 	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup,

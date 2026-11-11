@@ -14,7 +14,7 @@ import {
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { rulesInPlay } from '#lib/core/rules/rules-in-play.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import {
 	DAY_MARKS,
 	dayUsesAllowed,
@@ -564,7 +564,7 @@ function checkClaimsPerDay(
 	ctx: EngineContext,
 	warn: Warn
 ): void {
-	const rules = rulesInPlay(game, note.characterId, ctx.characters);
+	const rules = rulesFor(game, note.characterId, ctx.characters);
 	const limit = rules?.claimsPerDay;
 	if (limit === undefined) return;
 	const counts = (e: Extract<DayEntry, { kind: 'note' }>) =>

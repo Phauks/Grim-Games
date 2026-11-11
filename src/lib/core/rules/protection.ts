@@ -5,7 +5,6 @@
  */
 import { type CharacterId, type ReminderLabel } from '#lib/core/data/types.ts';
 import type { PROTECTS_FROM, Protects } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -13,6 +12,7 @@ import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts'
 import { abilityHolders } from './gained-abilities.ts';
 import { diesWhenExecutedBy, jinxEffect, ownJinxes } from './jinxes.ts';
 import { aboutHolder, jinxApplies } from './jinx-when.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * Whether the protection of the ability at `seatId` works: its ability works, or (alive) it
@@ -135,7 +135,7 @@ export function protectors(
 	if (!seat) return [];
 	const out: Protector[] = [];
 	const add = (characterId: CharacterId) => {
-		const rule = rulesOf(characterId, characters)?.protects;
+		const rule = rulesFor(game, characterId, characters)?.protects;
 		if (!rule || rule.storytellerDecides || !stops(rule, by)) return;
 		if (out.some((p) => p.source.characterId === characterId)) return;
 		// A jinx may let this player die when executed (the Vizier babysitting Lil' Monsta).
@@ -148,7 +148,8 @@ export function protectors(
 	for (const r of seat.reminders) add(r.characterId);
 	for (const other of game.seating) {
 		const characterId = trueCharacter(game, other, characters);
-		if (characterId && rulesOf(characterId, characters)?.protects?.who === 'good') add(characterId);
+		if (characterId && rulesFor(game, characterId, characters)?.protects?.who === 'good')
+			add(characterId);
 	}
 	return [...out, ...jinxProtectors(game, seatId, characters, by, killer)];
 }
@@ -241,7 +242,7 @@ function savers(
 	}
 	const out: ExecutionSaver[] = [];
 	for (const characterId of ids) {
-		const rule = rulesOf(characterId, characters)?.protects;
+		const rule = rulesFor(game, characterId, characters)?.protects;
 		if (!rule || !stops(rule, by)) continue;
 		const from = seatOfCharacter(game, characterId, characters);
 		const source = protectionFor(game, seatId, characterId, rule, characters);
@@ -320,7 +321,7 @@ export function killRedirect(
 	by: 'demon' | 'other'
 ): AbilitySource | undefined {
 	const id = trueCharacter(game, seatId, characters);
-	const rule = id ? rulesOf(id, characters)?.redirectsKill : undefined;
+	const rule = id ? rulesFor(game, id, characters)?.redirectsKill : undefined;
 	if (!id || !rule || (rule.from === 'demon' && by !== 'demon')) return undefined;
 	return { characterId: id, seatId };
 }
@@ -342,7 +343,7 @@ export function firstDeathSaver(
 ): FirstDeathSaver | undefined {
 	const seat = getSeat(game, seatId);
 	const id = trueCharacter(game, seatId, characters);
-	const rule = id ? rulesOf(id, characters)?.survivesFirstDeath : undefined;
+	const rule = id ? rulesFor(game, id, characters)?.survivesFirstDeath : undefined;
 	if (!seat || !id || !rule) return undefined;
 	const spent = rule.spentToken.toLowerCase();
 	if (seat.reminders.some((r) => r.characterId === id && r.label.toLowerCase() === spent))

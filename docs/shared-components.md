@@ -207,7 +207,11 @@ for official characters (TPI's `roles.json` stays untouched), or `rules` in a cu
 character's script entry. Both are read by `parseCharacterRules`
 (`src/lib/core/data/character-rules.ts`), and `rulesOf` returns a character's block. A new entry for
 a moved table goes in the character's file, never in a TypeScript table. Rules code names no
-character: a rule becomes a behaviour with parameters that any character can use.
+character: a rule becomes a behaviour with parameters that any character can use. Game rules and
+the engine read a block only through `rulesFor(game, id, characters)` (`rules/rules-for.ts`), which
+lays the game's optional rule and jinx patches over it; `rulesOf` is for setup, the night sheet,
+Reference and the builders. Lint `grim/rules-for` enforces it, and its `RULES_OF_TODO` in
+`eslint.config.js` only shrinks.
 
 Each key of a rules block is one part, one file in `src/lib/core/data/parts/` with its reader,
 label and description, listed once in `parts/index.ts` (alphabetical). The block's type
@@ -335,7 +339,7 @@ The open items, with owners, are in the project's component review
 
 ## Characters' optional rules
 
-- A character's optional rule from its wiki page is `optionalRule` in its rules block: the keys that replace its own in a game that turns it on (`rulesIn` in `data/rules/index.ts`; never `rulesOf` for a behaviour an optional rule changes). The game keeps `optionalRules`; `optionalRuleChoices` (`rules/optional-rules.ts`) lists the characters in play with one. Chosen in Special rules' Optional rules section on Character selection (`SpecialRulesDialog.svelte`, from `GameOptions.svelte`): each character's standard `CharacterRow`, then the wiki's own rule line (`optionalRuleText`, live like the character page) and its switch beneath, shown in Game info (`ModeMenu.svelte`), and the character page puts the wiki's line in its own section (`wiki-page.ts`). Never a special rule (Trevor, 2026-10-30).
+- A character's optional rule from its wiki page is `optionalRule` in its rules block: the keys that replace its own in a game that turns it on (`rulesIn` in `data/rules/index.ts`; game rules read it through `rulesFor`). The game keeps `optionalRules`; `optionalRuleChoices` (`rules/optional-rules.ts`) lists the characters in play with one. Chosen in Special rules' Optional rules section on Character selection (`SpecialRulesDialog.svelte`, from `GameOptions.svelte`): each character's standard `CharacterRow`, then the wiki's own rule line (`optionalRuleText`, live like the character page) and its switch beneath, shown in Game info (`ModeMenu.svelte`), and the character page puts the wiki's line in its own section (`wiki-page.ts`). Never a special rule (Trevor, 2026-10-30).
 - The seven official ones, all data: the Hindu (`reincarnates.demonTo`), the Hatter (`changesCharacter.anyType`), the Poppy Grower (`evilInfo.whileWorking`), the Ogre (`becomes.follows`, offered by `followedAlignmentOffer` when the friend's alignment changes), and the God of Ug, Alsaahir and Wraith (their `dayReminders`; `DayState.optionalRules` carries the game's choices to `dayReminders`).
 
 ## Modes and special rules as rule sources
