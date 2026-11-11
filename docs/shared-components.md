@@ -216,7 +216,11 @@ Reference and the builders. Lint `grim/rules-for` enforces it, and its `RULES_OF
 Each key of a rules block is one part, one file in `src/lib/core/data/parts/` with its reader,
 label and description, listed once in `parts/index.ts` (alphabetical). The block's type
 (`CharacterRules`) and reader are built from that list, so a new behaviour is a new part file
-and one line in the index, never an edit to `character-rules.ts`.
+and one line in the index, never an edit to `character-rules.ts`. A new part is a `specPart`
+(`parts/part.ts`): its field spec (`data/field-spec.ts`) is its shape, from which come its
+reader (`readSpec`, `data/read-spec.ts`), its value's type (`SpecValue`) and the Character
+builder's fields, with a `refine` for a check the spec can't say. Parts still on a hand-written
+reader (`objectPart`) keep their builder fields in `data/rule-fields.ts` until they move.
 
 - Reminder prompts (`rules/reminder-prompts.ts`): `reminderPrompts`, moved
 - Reminder targets (`reminder-targets.ts`): `reminderTargets`, moved; `maxPlaced` keeps a token to that many players at once (the Goon's Drunk), new

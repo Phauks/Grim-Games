@@ -1,12 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readBoolean } from '../validate.ts';
-import { objectPart } from './part.ts';
-
-export interface ShownTo {
-	minions?: true;
-	carrier?: ReminderLabel;
-}
+import { optObj, T, TOKEN } from '../field-spec.ts';
+import { specPart, type PartValue } from './part.ts';
 
 /**
  * Who is woken and shown this character's token, in its own night step: every Minion (the
@@ -14,21 +7,15 @@ export interface ShownTo {
  * carrying its `carrier` reminder (the Widow's Know,
  * https://wiki.bloodontheclocktower.com/Widow).
  */
-export const shownTo = objectPart(
+export const shownTo = specPart(
 	'Shown to',
 	'Who is woken and shown this character’s token.',
-	(raw, path, issues, reminders): ShownTo | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['minions', 'carrier'], path, issues);
-		const minions = readBoolean(raw, 'minions', path, issues);
-		const carrier = readToken(raw, 'carrier', path, issues, reminders);
-		if (!minions && !carrier) {
-			issues.add(path, 'expected minions or carrier');
-			return undefined;
-		}
-		return { ...(minions ? { minions: true as const } : {}), ...(carrier ? { carrier } : {}) };
+	optObj({ minions: T, carrier: TOKEN }),
+	(value, path, issues) => {
+		if (value.minions || value.carrier) return value;
+		issues.add(path, 'expected minions or carrier');
+		return undefined;
 	}
 );
+
+export type ShownTo = PartValue<typeof shownTo>;

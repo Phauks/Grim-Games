@@ -1,8 +1,9 @@
 /**
  * How the Character builder edits a rule's value (M62): a small description of the value's
- * shape as written in a rules block, from which one form draws the rule's fields. The rule's
- * own reader (`parts/`) still checks the value; this only says which controls to draw.
+ * shape as written in a rules block, from which one form draws the rule's fields. A part made
+ * with `specPart` (`parts/part.ts`) is also read and checked by its spec (`read-spec.ts`).
  */
+import type { CharacterId, ReminderLabel } from './types.ts';
 
 /** One setting of an object: its key, how it is edited and whether it may be left out. */
 export interface ObjectField {
@@ -66,36 +67,75 @@ export type FieldSpec =
 export type FieldKind = FieldSpec['kind'];
 
 const OPTIONAL = Symbol('optional');
-type Optional = { [OPTIONAL]: true; spec: FieldSpec };
+type Optional<S extends FieldSpec = FieldSpec> = { [OPTIONAL]: true; spec: S };
 
-export const T: FieldSpec = { kind: 'true' };
-export const B: FieldSpec = { kind: 'boolean' };
-export const COUNT: FieldSpec = { kind: 'count' };
-export const NUM: FieldSpec = { kind: 'number' };
-export const INT: FieldSpec = { kind: 'integer' };
-export const STR: FieldSpec = { kind: 'string' };
-export const TOKEN: FieldSpec = { kind: 'token' };
-export const TOKENS: FieldSpec = { kind: 'tokens' };
-export const STRS: FieldSpec = { kind: 'strings' };
-export const NUMS: FieldSpec = { kind: 'numbers' };
-export const TEXT: FieldSpec = { kind: 'text' };
-export const oneOf = (values: readonly string[]): FieldSpec => ({ kind: 'enum', values });
-export const anyOf = (values: readonly string[]): FieldSpec => ({ kind: 'enums', values });
-export const list = (of: FieldSpec): FieldSpec => ({ kind: 'list', of });
-export const byToken = (of: FieldSpec): FieldSpec => ({ kind: 'byToken', of });
-export const byKey = (of: FieldSpec): FieldSpec => ({ kind: 'byKey', of });
-export const CHARACTER: FieldSpec = { kind: 'character' };
-export const byCharacter = (of: FieldSpec): FieldSpec => ({ kind: 'byCharacter', of });
-export const variants = (...options: Variant[]): FieldSpec => ({
-	kind: 'variants',
-	variants: options
+declare const VALUE: unique symbol;
+/**
+ * A field spec that carries the type of the value it reads (`read-spec.ts`), so a part's value
+ * type comes from its spec and is never written a second time. Type-only: nothing at run time.
+ */
+export type Spec<V> = FieldSpec & { readonly [VALUE]?: V };
+
+/** The value a spec reads. */
+export type SpecValue<S> = S extends { readonly [VALUE]?: infer V } ? V : unknown;
+
+type Simplify<T> = { [K in keyof T]: T[K] } & {};
+type Required<F> = { [K in keyof F]: F[K] extends Optional ? never : K }[keyof F];
+type Optionals<F> = { [K in keyof F]: F[K] extends Optional ? K : never }[keyof F];
+type Inner<O> = O extends Optional<infer S> ? S : O;
+/** The value of an object with `fields`: its optional settings may be absent. */
+type ObjectValue<F> = Simplify<
+	{ [K in Required<F>]: SpecValue<F[K]> } & { [K in Optionals<F>]?: SpecValue<Inner<F[K]>> }
+>;
+
+export const T: Spec<true> = { kind: 'true' };
+export const B: Spec<boolean> = { kind: 'boolean' };
+export const COUNT: Spec<number> = { kind: 'count' };
+export const NUM: Spec<number> = { kind: 'number' };
+export const INT: Spec<number> = { kind: 'integer' };
+export const STR: Spec<string> = { kind: 'string' };
+export const TOKEN: Spec<ReminderLabel> = { kind: 'token' };
+export const TOKENS: Spec<readonly ReminderLabel[]> = { kind: 'tokens' };
+export const STRS: Spec<readonly string[]> = { kind: 'strings' };
+export const NUMS: Spec<readonly number[]> = { kind: 'numbers' };
+export const TEXT: Spec<unknown> = { kind: 'text' };
+export const oneOf = <const V extends string>(values: readonly V[]): Spec<V> => ({
+	kind: 'enum',
+	values
 });
+export const anyOf = <const V extends string>(values: readonly V[]): Spec<readonly V[]> => ({
+	kind: 'enums',
+	values
+});
+export const list = <S extends FieldSpec>(of: S): Spec<readonly SpecValue<S>[]> => ({
+	kind: 'list',
+	of
+});
+export const byToken = <S extends FieldSpec>(
+	of: S
+): Spec<Readonly<Record<ReminderLabel, SpecValue<S>>>> => ({ kind: 'byToken', of });
+export const byKey = <S extends FieldSpec>(
+	of: S
+): Spec<Readonly<Record<string, SpecValue<S>>>> => ({
+	kind: 'byKey',
+	of
+});
+export const CHARACTER: Spec<CharacterId> = { kind: 'character' };
+export const byCharacter = <S extends FieldSpec>(
+	of: S
+): Spec<Readonly<Record<CharacterId, SpecValue<S>>>> => ({ kind: 'byCharacter', of });
+/** A value of one of several shapes; its value is any of theirs. */
+export const variants = <const V extends readonly Variant[]>(
+	...options: V
+): Spec<SpecValue<V[number]['spec']>> => ({ kind: 'variants', variants: options });
 
 /** A setting that may be left out. */
-export const opt = (spec: FieldSpec): Optional => ({ [OPTIONAL]: true, spec });
+export const opt = <S extends FieldSpec>(spec: S): Optional<S> => ({ [OPTIONAL]: true, spec });
 
 /** An object with these settings, in this order. */
-export function obj(fields: Record<string, FieldSpec | Optional>): FieldSpec {
+export function obj<const F extends Record<string, FieldSpec | Optional>>(
+	fields: F
+): Spec<ObjectValue<F>> {
 	return {
 		kind: 'object',
 		fields: Object.entries(fields).map(([key, field]): ObjectField =>
@@ -105,13 +145,18 @@ export function obj(fields: Record<string, FieldSpec | Optional>): FieldSpec {
 }
 
 /** An object of many optional settings, of which only those set are shown. */
-export function someOf(fields: Record<string, FieldSpec>): FieldSpec {
+export function someOf<const F extends Record<string, FieldSpec>>(
+	fields: F
+): Spec<Partial<ObjectValue<F>>> {
 	return { ...(optObj(fields) as Extract<FieldSpec, { kind: 'object' }>), pick: true };
 }
 
 /** An object whose settings may all be left out. */
-export function optObj(fields: Record<string, FieldSpec>): FieldSpec {
-	return obj(Object.fromEntries(Object.entries(fields).map(([k, s]) => [k, opt(s)])));
+export function optObj<const F extends Record<string, FieldSpec>>(
+	fields: F
+): Spec<Partial<ObjectValue<F>>> {
+	const all = Object.fromEntries(Object.entries(fields).map(([k, s]) => [k, opt(s)]));
+	return obj(all) as FieldSpec;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

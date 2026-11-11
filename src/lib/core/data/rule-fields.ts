@@ -110,7 +110,6 @@ const PLACEHOLDER_STEP = obj({
 
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
-	actsTwice: obj({ token: TOKEN }),
 	afterDeath: obj({ cause: STRS, nominations: opt(NUM), votes: opt(NUM) }),
 	afterExecution: obj({
 		of: opt(TYPES),
@@ -202,7 +201,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		),
 		none: opt(STR)
 	}),
-	dayTally: obj({ label: STR, kills: opt(T) }),
 	dayUse: optObj({
 		who: oneOf(['chosen', 'nominator', 'nominee', 'nominated', 'guesser', 'guessed', 'ally']),
 		vote: oneOf(['all-good-join']),
@@ -249,7 +247,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		whileWorking: opt(T),
 		none: opt(T)
 	}),
-	evilLearns: obj({ carrier: TOKEN, named: opt(STR) }),
 	execution: optObj({ insteadOf: oneOf(['same-alignment']), explodes: NUM }),
 	executionOutcome: optObj({
 		failsIf: oneOf(['only-evil-voted']),
@@ -477,8 +474,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		first: opt(T),
 		minAlive: opt(NUM)
 	}),
-	onNominating: obj({ carrier: opt(TOKEN), effect: oneOf(['kills-nominator']) }),
-	passesOn: optObj({ alive: T, alignment: ALIGNMENT }),
 	pickedEffect: obj({
 		token: TOKEN,
 		effects: anyOf([
@@ -500,8 +495,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		whileNeighboursGood: opt(T),
 		whileCarrierAlive: opt(TOKEN)
 	}),
-	quietStart: obj({ seconds: COUNT, players: oneOf(['veterans']) }),
-	redirectsKill: obj({ from: oneOf(PROTECTS_FROM) }),
 	registersAs: optObj({
 		self: optObj({ alignments: anyOf(ALIGNMENTS), types: SOME_TYPES }),
 		tokens: byToken(
@@ -527,7 +520,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		other: list(PLACEHOLDER_STEP),
 		note: STR
 	}),
-	reminderPrompts: byToken(oneOf(['markDead', 'revive'])),
 	reminderTargets: byToken(
 		optObj({
 			seat: oneOf(['self', 'other', 'any']),
@@ -625,10 +617,8 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		),
 		none: STR
 	}),
-	shownTo: optObj({ minions: T, carrier: TOKEN }),
 	stopsKilling: obj({ token: TOKEN, type: opt(TYPES) }),
 	stopsWaking: obj({ token: TOKEN, type: opt(TYPES) }),
-	survivesFirstDeath: obj({ spentToken: TOKEN }),
 	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
 	swapsForAbility: obj({ token: TOKEN, good: SOME_SEATED, evil: SOME_SEATED }),
 	tokenFlow: obj({ tokens: TOKENS }),

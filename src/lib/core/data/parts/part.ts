@@ -5,7 +5,8 @@
  * new part is a new file and one line there. The Character builder's Rules section lists the
  * parts by `label` and `description`, and edits a part with a `field` through that field (M62).
  */
-import type { FieldSpec } from '../field-spec.ts';
+import type { FieldSpec, SpecValue } from '../field-spec.ts';
+import { readSpec } from '../read-spec.ts';
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
 import {
@@ -45,6 +46,35 @@ export interface Part<T> {
 
 /** The value a part reads. */
 export type PartValue<P> = P extends Part<infer T> ? T : never;
+
+/**
+ * A part whose shape is its field spec: the builder edits it with `spec`, `readSpec` reads and
+ * checks it, and its value's type is the spec's. `refine` adds a check the spec can't say (two
+ * settings that go together, a list that needs two or more), recording problems in `issues`;
+ * undefined when the value is unusable.
+ */
+export function specPart<S extends FieldSpec>(
+	label: string,
+	description: string,
+	spec: S,
+	refine?: (
+		value: SpecValue<S>,
+		path: string,
+		issues: Issues,
+		reminders: Reminders
+	) => SpecValue<S> | undefined
+): Part<SpecValue<S>> {
+	return {
+		label,
+		description,
+		field: spec,
+		read: (block, key, path, issues, reminders) => {
+			const at = `${path}.${key}`;
+			const value = readSpec(spec, block[key], at, issues, reminders);
+			return value === undefined || !refine ? value : refine(value, at, issues, reminders);
+		}
+	};
+}
 
 /** A part whose value is read by `reader(value, path.key, issues, reminders)`. */
 export function objectPart<T>(
