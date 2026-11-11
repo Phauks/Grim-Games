@@ -115,12 +115,6 @@ function liftHeldReminder(
 }
 
 /** A shallow copy without the given keys. */
-/**
- * The note an old game's single general note becomes (`GameNotesSet`), and so does an old
- * seat's single note (`SeatNoteSet`).
- */
-const LEGACY_NOTE = 'n1';
-
 /** The game with these notes, or none when the list is empty. */
 function withNotes(game: Game, notes: GameNote[]): Game {
 	return notes.length ? { ...game, notes } : omit(game, 'notes');
@@ -224,23 +218,6 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 					? omit(seat, 'playerName')
 					: { ...seat, playerName: event.playerName }
 			);
-		case 'SeatNoteSet':
-			return updateSeat(game, event.seatId, (seat) =>
-				event.note === undefined
-					? withSeatNotes(
-							seat,
-							(seat.notes ?? []).filter((n) => n.noteId !== LEGACY_NOTE)
-						)
-					: withSeatNotes(
-							seat,
-							putNote(seat.notes, {
-								noteId: LEGACY_NOTE,
-								title: '',
-								text: event.note,
-								hidden: false
-							})
-						)
-			);
 		case 'SeatNoteSaved':
 			return updateSeat(game, event.seatId, (seat) =>
 				withSeatNotes(seat, putNote(seat.notes, event.note))
@@ -255,19 +232,11 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'SeatLookSet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const next: Seat = omit(seat, 'avatar', 'frame');
-				// A picture from the earlier icon set, in a game saved by that beta build, is dropped.
 				const avatar = parseAvatarId(event.avatar);
 				if (avatar !== undefined) next.avatar = avatar;
 				if (event.frame !== undefined) next.frame = event.frame;
 				return next;
 			});
-		case 'GameNotesSet':
-			return event.notes === undefined
-				? withNotes(
-						game,
-						(game.notes ?? []).filter((n) => n.noteId !== LEGACY_NOTE)
-					)
-				: setNote(game, { noteId: LEGACY_NOTE, title: '', text: event.notes, hidden: false });
 		case 'GameNoteSet':
 			return setNote(game, event.note);
 		case 'GameNoteDeleted':
@@ -705,8 +674,6 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			const entries = removeAt(game.today.entries, index);
 			return entries === game.today.entries ? game : { ...game, today: { ...game.today, entries } };
 		}
-		case 'DemonVotedSet':
-			return setDayMark(game, 'demon-voted', event.voted);
 		case 'DayMarkSet':
 			return setDayMark(game, event.mark, event.value);
 		case 'DayTallySet':

@@ -16,7 +16,7 @@ import type { GameId } from '#lib/core/model/index.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 31;
+export const SAVED_GAME_VERSION = 32;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;

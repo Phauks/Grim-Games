@@ -10,7 +10,6 @@ import { describe, expect, it } from 'vitest';
 import { newGame, refused, run, warned } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from './commands.ts';
 import { undo, type GameSession } from './log.ts';
-import { applyEvent } from './reducer.ts';
 import { dayAhead } from './dawns.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -179,13 +178,6 @@ describe('SetDayMark', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, { type: 'Nominate', nominator: seats[3], nominee: seats[0] });
 		expect(s.game.today.marks).toBeUndefined();
-	});
-
-	it("replays an older game's Demon voted as the demon-voted mark", () => {
-		const { session } = setup();
-		const game = applyEvent(session.game, { type: 'DemonVotedSet', voted: true });
-		expect(game.today.marks).toEqual({ 'demon-voted': true });
-		expect('marks' in applyEvent(game, { type: 'DemonVotedSet' }).today).toBe(false);
 	});
 
 	it('refuses a mark it does not know', () => {
