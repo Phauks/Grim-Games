@@ -23,7 +23,8 @@ import { Issues } from '#lib/core/data/validate.ts';
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import { isSeatable } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { abilityState, impairmentOfLabel, registrations, registrationWorlds } from './ability.ts';
+import { abilityState, impairmentOfLabel } from './ability.ts';
+import { registrations, registrationWorlds } from './registration.ts';
 import { executionSavers, firstDeathSaver, killRedirect, protection } from './protection.ts';
 
 const add =

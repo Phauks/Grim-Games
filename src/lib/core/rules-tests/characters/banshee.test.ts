@@ -22,7 +22,7 @@ import {
 	dayStateFromGame,
 	renderReminder
 } from '#lib/core/rules/day/day-reminders.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { voteWorth } from '#lib/core/rules/day/vote-weights.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';

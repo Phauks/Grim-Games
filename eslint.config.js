@@ -60,7 +60,7 @@ const RULES_OF_TODO = [
 	'src/lib/core/rules/game-end/end-reason.ts',
 	'src/lib/core/rules/night/info-token-characters.ts',
 	'src/lib/core/rules/jinxes/jinx-effects.ts',
-	'src/lib/core/rules/night/night-alerts.ts',
+	'src/lib/core/rules/night/night-killers.ts',
 	'src/lib/core/rules/night/info/steps.ts',
 	'src/lib/core/rules/reminders/reminder-effects.ts',
 	'src/lib/core/rules/reminders/reminder-movement.ts',

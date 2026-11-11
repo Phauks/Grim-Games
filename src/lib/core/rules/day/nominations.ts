@@ -21,7 +21,8 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, registrations } from '#lib/core/rules/abilities/ability.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { ownJinxEffects } from '#lib/core/rules/jinxes/jinxes.ts';
 

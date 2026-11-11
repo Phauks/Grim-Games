@@ -1,7 +1,7 @@
 /** Pairs of neighbours around the circle, and counts of them under per-pair registration. */
 import type { Learns } from '#lib/core/data/character-rules.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import type { Registration, RegistrationWorld } from '#lib/core/rules/abilities/ability.ts';
+import type { Registration, RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
 import type { InfoOption } from './picker.ts';
 
 /** Every two players sitting next to each other, around the whole circle. */

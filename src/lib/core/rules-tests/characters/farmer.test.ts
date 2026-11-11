@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { passOnSeats } from '#lib/core/rules/abilities/becomes.ts';
 import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';

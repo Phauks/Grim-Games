@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { nightKiller } from '#lib/core/rules/night/night-alerts.ts';
+	import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 	import { noAttackState } from '#lib/core/rules/night/demon-attack.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import SeatBadge from './SeatBadge.svelte';

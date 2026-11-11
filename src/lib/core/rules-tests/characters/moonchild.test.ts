@@ -18,11 +18,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
-import {
-	nightStepAlerts,
-	onDeathApplies,
-	onDeathTrigger
-} from '#lib/core/rules/night/night-alerts.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import {

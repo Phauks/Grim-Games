@@ -8,7 +8,8 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, registrations } from '#lib/core/rules/abilities/ability.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** A living player who may be executed instead of another, by their character's ability. */

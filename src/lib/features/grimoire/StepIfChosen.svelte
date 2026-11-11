@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
-	import type { NightAlert } from '#lib/core/rules/night/night-alerts.ts';
+	import type { NightAlert } from '#lib/core/rules/night/night-alert.ts';
 	import type { Impairment } from '#lib/core/rules/abilities/ability.ts';
-	import { IF_CHOSEN_KINDS, nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+	import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+	import { IF_CHOSEN_KINDS } from '#lib/core/rules/night/night-alert.ts';
 	import type { AbilitySource } from '#lib/core/rules/abilities/ability.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import SeatBadge from './SeatBadge.svelte';

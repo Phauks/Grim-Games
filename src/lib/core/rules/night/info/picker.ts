@@ -12,7 +12,7 @@ import {
 	type RegistrationWorld,
 	registrationWorlds,
 	registrations
-} from '#lib/core/rules/abilities/ability.ts';
+} from '#lib/core/rules/abilities/registration.ts';
 import { pretendGame } from '#lib/core/rules/abilities/pretend.ts';
 import { causesOf } from '#lib/core/rules/night/night-deaths.ts';
 import type { Night } from '#lib/core/model/overrides.ts';

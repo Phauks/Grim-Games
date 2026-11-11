@@ -39,7 +39,7 @@ import {
 	killRedirect,
 	protection
 } from '#lib/core/rules/abilities/protection.ts';
-import { nightKiller } from '#lib/core/rules/night/night-alerts.ts';
+import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 
 export type PreventedBecause =
 	| { kind: 'protected'; source: AbilitySource | 'override' }

@@ -18,11 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { madnessOffer } from '#lib/core/rules/day/madness.ts';
-import {
-	nightStepAlerts,
-	onDeathApplies,
-	onDeathTrigger
-} from '#lib/core/rules/night/night-alerts.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { reliability } from '#lib/core/rules/night/info/reliability.ts';

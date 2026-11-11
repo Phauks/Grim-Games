@@ -20,11 +20,8 @@ import {
 	nightChoosers,
 	withJinxChoiceSteps
 } from '#lib/core/rules/jinxes/jinx-choices.ts';
-import {
-	nightStepAlerts,
-	onDeathApplies,
-	onDeathTrigger
-} from '#lib/core/rules/night/night-alerts.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
 

@@ -24,11 +24,11 @@ import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import { aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import {
-	abilityState,
 	registrationWorlds,
 	type RegistrationWorld
-} from '#lib/core/rules/abilities/ability.ts';
+} from '#lib/core/rules/abilities/registration.ts';
 import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 
 import {

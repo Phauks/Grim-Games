@@ -14,15 +14,13 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, DayEntry, DayEntryId, Game, SeatId } from '#lib/core/model/types.ts';
+import { type Impairment, abilityState, truthfulBy } from '#lib/core/rules/abilities/ability.ts';
 import {
-	type Impairment,
 	type Registration,
 	type RegistrationWorld,
-	abilityState,
 	registrationWorlds,
-	registrations,
-	truthfulBy
-} from '#lib/core/rules/abilities/ability.ts';
+	registrations
+} from '#lib/core/rules/abilities/registration.ts';
 import { type ImpairmentReason } from '#lib/core/data/parts/impairs.ts';
 import { jinxEffect } from '#lib/core/rules/jinxes/jinxes.ts';
 import { type StorytellerVisit, storytellerVisit } from '#lib/core/rules/abilities/storytellers.ts';

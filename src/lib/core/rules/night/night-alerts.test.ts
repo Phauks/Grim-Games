@@ -13,13 +13,9 @@ import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import {
-	NIGHT_KILLERS,
-	ON_DEATH,
-	nightKiller,
-	nightStepAlerts,
-	type NightAlert
-} from './night-alerts.ts';
+import { nightStepAlerts } from './night-alerts.ts';
+import { NIGHT_KILLERS, ON_DEATH, nightKiller } from './night-killers.ts';
+import { type NightAlert } from './night-alert.ts';
 
 const add =
 	(i: number, characterId: string, label: string) =>
