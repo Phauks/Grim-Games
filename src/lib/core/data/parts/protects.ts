@@ -1,9 +1,7 @@
+import { obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
 import type { ReminderLabel } from '../types.ts';
-import { ownReminder, readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readBoolean, readEnum, readString } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { specPart } from './part.ts';
 
-const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
 /**
  * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
  * Advocate's, https://wiki.bloodontheclocktower.com/Devil%27s_Advocate), any death but an
@@ -46,52 +44,27 @@ export type Protects = (
  * with its `token` (the Monk's "Safe") or any good player's (`good`, the Pacifist), against
  * the Demon's kill only, any kill, or an execution only.
  */
-export const protects = objectPart(
+export const protects = specPart(
 	'Protects',
 	'The ability stops a death: its own player’s, a marked player’s or any good player’s.',
-	(raw, path, issues, reminders): Protects | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
+	obj({
+		who: oneOf(['self', 'marked', 'good']),
+		token: opt(TOKEN),
+		from: oneOf(PROTECTS_FROM),
+		night: opt(T),
+		storytellerDecides: opt(T),
+		whileNeighboursGood: opt(T),
+		whileCarrierAlive: opt(TOKEN)
+	}),
+	(value, path, issues): Protects | undefined => {
+		const { who, token, ...rest } = value;
+		if (who === 'marked') {
+			if (token) return { who, token, ...rest };
+			issues.add(`${path}.token`, 'missing');
 			return undefined;
 		}
-		checkKeys(
-			raw,
-			[
-				'who',
-				'token',
-				'from',
-				'night',
-				'storytellerDecides',
-				'whileNeighboursGood',
-				'whileCarrierAlive'
-			],
-			path,
-			issues
-		);
-		const who = readEnum(raw, 'who', PROTECTS_WHO, path, issues, true);
-		const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, true);
-		const carrier = readToken(raw, 'whileCarrierAlive', path, issues, reminders);
-		const flags = {
-			...(carrier ? { whileCarrierAlive: carrier } : {}),
-			...(readBoolean(raw, 'night', path, issues) ? { night: true as const } : {}),
-			...(readBoolean(raw, 'storytellerDecides', path, issues)
-				? { storytellerDecides: true as const }
-				: {}),
-			...(readBoolean(raw, 'whileNeighboursGood', path, issues)
-				? { whileNeighboursGood: true as const }
-				: {})
-		};
-		if (!who || !from) return undefined;
-		if (who !== 'marked') {
-			if (raw.token !== undefined) issues.add(`${path}.token`, 'only a marked player has a token');
-			return { who, from, ...flags };
-		}
-		const token = readString(raw, 'token', path, issues, true);
-		if (token === undefined) return undefined;
-		if (!ownReminder(token, reminders)) {
-			issues.add(`${path}.token`, 'not one of this character’s reminders');
-			return undefined;
-		}
-		return { who, token, from, ...flags };
+		if (token === undefined) return { who, ...rest };
+		issues.add(`${path}.token`, 'only a marked player has a token');
+		return undefined;
 	}
 );

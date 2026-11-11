@@ -28,7 +28,6 @@ import {
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
-import { PROTECTS_FROM } from './parts/protects.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
@@ -97,15 +96,6 @@ const INFO_TOKEN = obj({
 });
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
-	afterExecution: obj({
-		of: opt(TYPES),
-		alignment: opt(ALIGNMENT),
-		token: TOKEN,
-		on: opt(oneOf(['executed'])),
-		moves: opt(T),
-		marksSelf: opt(obj({ token: TOKEN, alignment: ALIGNMENT })),
-		when: opt(oneOf(['day']))
-	}),
 	answers: obj({
 		...ASKED,
 		token: opt(TOKEN),
@@ -256,15 +246,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		)
 	),
 	jinxes: JINX_FIELDS,
-	kills: obj({
-		by: oneOf(['demon', 'other']),
-		targets: opt(oneOf(['any', 'self'])),
-		ignoresProtection: opt(B),
-		count: opt(COUNT),
-		charged: opt(obj({ token: TOKEN, count: COUNT })),
-		delayed: opt(TOKEN),
-		chooses: opt(oneOf(['character', 'live-or-die']))
-	}),
 	learns: obj({
 		measure: oneOf([
 			'count',
@@ -313,33 +294,7 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		differsFromToken: opt(TOKEN)
 	}),
 	marksChoice: TOKENS,
-	nightWakes: list(
-		obj({
-			when: oneOf(['each-night', 'each-night-except-first', 'one-night']),
-			night: opt(COUNT),
-			characters: opt(STRS),
-			types: opt(SOME_SEATED),
-			dead: opt(T),
-			minutes: opt(COUNT)
-		})
-	),
 	nominationsAfterExecution: COUNT,
-	onNominated: obj({
-		by: opt(TYPES),
-		carrier: opt(TOKEN),
-		effect: oneOf(['execute-nominator', 'may-kill-nominator', 'evil-swap', 'nominator-may-die']),
-		first: opt(T),
-		minAlive: opt(NUM)
-	}),
-	protects: obj({
-		who: oneOf(['self', 'marked', 'good']),
-		token: opt(TOKEN),
-		from: oneOf(PROTECTS_FROM),
-		night: opt(T),
-		storytellerDecides: opt(T),
-		whileNeighboursGood: opt(T),
-		whileCarrierAlive: opt(TOKEN)
-	}),
 	reminderTargets: byToken(
 		optObj({
 			seat: oneOf(['self', 'other', 'any']),
