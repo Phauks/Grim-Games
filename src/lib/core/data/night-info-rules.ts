@@ -2,7 +2,7 @@
  * The `learns` and `answers` parts of a character's rules block: what its night information
  * is, worked out in `rules/night-info.ts`.
  */
-import { readTypes } from './target-rules.ts';
+import { readTypes } from './validate.ts';
 import { readToken } from './reminder-fields.ts';
 import { DAY_MARKS, type DayMark } from './parts/day-mark.ts';
 import {

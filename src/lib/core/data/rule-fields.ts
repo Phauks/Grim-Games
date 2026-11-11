@@ -9,7 +9,6 @@
 import {
 	anyOf,
 	B,
-	byToken,
 	COUNT,
 	list,
 	NUM,
@@ -264,34 +263,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		differsFromToken: opt(TOKEN)
 	}),
 	marksChoice: TOKENS,
-	nominationsAfterExecution: COUNT,
-	reminderTargets: byToken(
-		optObj({
-			seat: oneOf(['self', 'other', 'any']),
-			types: SOME_TYPES,
-			shown: SOME_TYPES,
-			characters: STRS,
-			alignment: oneOf([...ALIGNMENTS, 'same', 'opposite']),
-			sameAlignmentAs: STR,
-			alignmentCounts: optObj({ good: NUM, evil: NUM }),
-			maxPlaced: COUNT,
-			life: oneOf(['alive', 'dead']),
-			neighbour: obj({
-				of: STR,
-				ofType: opt(TYPES),
-				type: opt(TYPES),
-				alignment: opt(ALIGNMENT),
-				alive: opt(B),
-				both: opt(B)
-			}),
-			withLabel: STR,
-			notWithLabel: STR,
-			global: B,
-			minOwners: COUNT,
-			differsFromLastNight: oneOf(['player', 'type']),
-			info: B,
-			note: STR,
-			ambiguous: STR
-		})
-	)
+	nominationsAfterExecution: COUNT
 };

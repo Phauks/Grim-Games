@@ -20,7 +20,7 @@ import {
 	readString,
 	type Issues
 } from './validate.ts';
-import { readTypes } from './target-rules.ts';
+import { readTypes } from './validate.ts';
 
 /**
  * Ways an ability ends the game, each worked out in `rules/game-end.ts`:
