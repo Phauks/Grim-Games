@@ -12,7 +12,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { loadScript } from '#lib/core/data/script.ts';
 import { ruleSources, scriptOrderSource } from '#lib/core/modes/rule-effects.ts';
 import { scriptRules, startingRuleCharacters } from './script-rules.ts';
-import { setupModifierFor } from './setup-modifiers.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 
 const data = committedGameData();
 

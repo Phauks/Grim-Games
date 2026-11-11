@@ -4,7 +4,7 @@
  * so the game state itself only stores ids.
  */
 import type { Character, CharacterId, GameData, Script } from '#lib/core/data/index.ts';
-import { bootleggerWithRules, scriptRulesCarrier } from '#lib/core/rules/script-rules.ts';
+import { bootleggerWithRules, scriptRulesCarrier } from '#lib/core/data/script-rules.ts';
 
 export type CharacterLookup = ReadonlyMap<CharacterId, Character>;
 

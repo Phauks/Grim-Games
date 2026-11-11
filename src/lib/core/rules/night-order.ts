@@ -43,11 +43,12 @@ import {
 import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
 import type { HeldAbility } from '#lib/core/model/types.ts';
+import type { Night, NightStepOverride } from '#lib/core/model/overrides.ts';
 import type { NightStepInfo } from './night-info.ts';
 import type { JinxChoiceStep } from './jinx-choices.ts';
 import { evilTeamInfoRemovedBy, hasEvilTeamInfo } from './teensyville.ts';
 
-export type Night = 'first' | 'other';
+export type { Night, NightStepOverride };
 
 export interface NightOrderInput {
 	night: Night;
@@ -75,32 +76,6 @@ export interface NightOrderInput {
 	 */
 	noAbility?: readonly CharacterId[];
 }
-
-/**
- * A Storyteller override of the night order, stored with the game. `night` limits it to
- * the first night or to other nights; without it, it applies to both. `after` is the id of
- * the step to follow (`null`: first, before everything else).
- * - `hide`: leave a step out (it is listed in `omitted`);
- * - `edit`: replace a step's text;
- * - `move`: put a step after another;
- * - `add`: a step of the Storyteller's own, with their own unique `id`.
- */
-export type NightStepOverride =
-	| { kind: 'hide'; id: string; night?: Night }
-	| { kind: 'edit'; id: string; text: string; night?: Night }
-	| { kind: 'move'; id: string; after: string | null; night?: Night }
-	| {
-			kind: 'add';
-			id: string;
-			text: string;
-			/** Short heading for a step with no character. */
-			title?: string;
-			characterId?: CharacterId;
-			/** The step's own info token fills (`NightStep.infoTokenCharacters`). */
-			infoTokenCharacters?: InfoTokenCharacterRules;
-			after: string | null;
-			night?: Night;
-	  };
 
 /** Why a step is where it is. */
 /** `night-sheet`: TPI's sheet, or the character's own `nightOrder` place (M59). */

@@ -21,7 +21,7 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import { dispatch } from '#lib/core/engine/index.ts';
 import { activeJinxes, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
-import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
+import { startingRuleCharacters } from '#lib/core/data/script-rules.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';

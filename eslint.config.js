@@ -7,6 +7,18 @@ import globals from 'globals';
 import ts from 'typescript-eslint';
 import grim from './scripts/lint/plugin.js';
 
+// Imports no file in src/lib/core may make (04-architecture.md §2).
+const CORE_IMPORT_PATTERNS = [
+	{ group: ['svelte', 'svelte/*'], message: 'core must not depend on Svelte.' },
+	{ group: ['$app/*', '@sveltejs/*'], message: 'core must not depend on SvelteKit.' },
+	{ regex: '^#lib/(features|ui)/', message: 'core must not import features or ui.' },
+	{ group: ['**/features/**', '**/ui/**'], message: 'core must not import features or ui.' },
+	{ group: ['@ark-ui/*'], message: 'core must not depend on UI libraries.' }
+];
+// The core layers built on data and the model. A regex, since a gitignore-style group reads a
+// leading `#` as a comment.
+const UPPER_CORE_LAYERS = 'rules|engine|modes|jinxes|abilities|sync|town|lab';
+
 /**
  * Files still reaching localStorage directly instead of #lib/ui/stored.ts; only ever shrinks
  * (component review, 2026-10-18).
@@ -133,14 +145,46 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{
+					patterns: CORE_IMPORT_PATTERNS
+				}
+			]
+		}
+	},
+	{
+		// Layers inside core (refactor plan step 4): data, then model, then rules, then engine.
+		// Data and the model never import the layers built on them, so a type the model stores
+		// lives in the model (`model/overrides.ts`) and the rules import it from there. Tests
+		// and test support may reach up.
+		files: ['src/lib/core/model/**/*.ts', 'src/lib/core/data/**/*.ts'],
+		ignores: ['**/*.test.ts', '**/*.test-support.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
 					patterns: [
-						{ group: ['svelte', 'svelte/*'], message: 'core must not depend on Svelte.' },
-						{ group: ['$app/*', '@sveltejs/*'], message: 'core must not depend on SvelteKit.' },
+						...CORE_IMPORT_PATTERNS,
 						{
-							group: ['#lib/features/*', '#lib/ui/*', '**/features/**', '**/ui/**'],
-							message: 'core must not import features or ui.'
-						},
-						{ group: ['@ark-ui/*'], message: 'core must not depend on UI libraries.' }
+							regex: `^#lib/core/(${UPPER_CORE_LAYERS})/`,
+							message: 'data and model sit below the rules: move the shared piece down instead.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		files: ['src/lib/core/data/**/*.ts'],
+		ignores: ['**/*.test.ts', '**/*.test-support.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						...CORE_IMPORT_PATTERNS,
+						{
+							regex: `^#lib/core/(model|${UPPER_CORE_LAYERS})/`,
+							message: 'data sits below the model: move the shared piece down instead.'
+						}
 					]
 				}
 			]
