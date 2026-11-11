@@ -88,10 +88,7 @@ describe('dayTally', () => {
 
 	it('reads a label and an optional kills', () => {
 		const issues = new Issues();
-		parseCharacterRules({ dayTally: { kills: 'yes' } }, 'x', issues);
-		expect(issues.list).toEqual([
-			'x.dayTally.label: missing',
-			'x.dayTally.kills: expected boolean, got string'
-		]);
+		parseCharacterRules({ dayTally: { kills: false } }, 'x', issues);
+		expect(issues.list).toEqual(['x.dayTally.label: missing', 'x.dayTally.kills: expected true']);
 	});
 });

@@ -12,7 +12,6 @@ import {
 	byKey,
 	byToken,
 	COUNT,
-	INT,
 	list,
 	NUM,
 	NUMS,
@@ -551,17 +550,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		none: STR
 	}),
 	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
-	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) }),
-	voteWeight: variants(
-		{ label: 'Its reminder', has: 'reminder', spec: obj({ reminder: TOKEN, weight: INT }) },
-		{ label: 'Its player', has: 'self', spec: obj({ self: T, weight: INT }) }
-	),
-	voter: optObj({ onlyWith: TOKEN, must: T, minAlive: NUM, needsToken: T, learnsGiver: T }),
-	voting: optObj({
-		voters: oneOf(['self-and-dead']),
-		deadNeedNoToken: T,
-		noMajority: T,
-		secret: T,
-		deadRegainToken: oneOf(['final-day'])
-	})
+	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) })
 };
