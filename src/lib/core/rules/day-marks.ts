@@ -1,11 +1,11 @@
 /**
  * Today's yes-or-no facts the Storyteller marks by hand (whether the Demon voted, whether a
- * Minion nominated), for the characters whose `dayMark` rule (`data/day-mark-rules.ts`) says
+ * Minion nominated), for the characters whose `dayMark` rule (`data/parts/day-mark.ts`) says
  * they learn one at night. Marking a fact swaps the character's two tokens on its seat, as the
  * wiki's How to Run does each day (https://wiki.bloodontheclocktower.com/Flowergirl,
  * https://wiki.bloodontheclocktower.com/Town_Crier).
  */
-import { DAY_MARKS, type DayMark, type DayMarkRule } from '#lib/core/data/day-mark-rules.ts';
+import { DAY_MARKS, type DayMark, type DayMarkRule } from '#lib/core/data/parts/day-mark.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { actsWhenDead, keepsAbilityWhenDead } from '#lib/core/rules/dead-characters.ts';

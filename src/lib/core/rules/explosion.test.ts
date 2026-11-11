@@ -48,8 +48,8 @@ describe('explosionOf', () => {
 		parseCharacterRules({ execution: { explodes: 0 } }, 'y', issues);
 		parseCharacterRules({ execution: { explodes: 1.5 } }, 'z', issues);
 		expect(issues.list).toEqual([
-			'y.execution.explodes: expected a whole number of survivors, 1 or more',
-			'z.execution.explodes: expected a whole number of survivors, 1 or more'
+			'y.execution.explodes: expected a whole number above 0, got 0',
+			'z.execution.explodes: expected a whole number above 0, got 1.5'
 		]);
 	});
 });

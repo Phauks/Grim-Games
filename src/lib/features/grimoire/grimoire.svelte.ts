@@ -23,7 +23,7 @@ import {
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-import type { CounterTime } from '#lib/core/data/counter-rules.ts';
+import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { reminderFitWarning, warningText } from './board.ts';

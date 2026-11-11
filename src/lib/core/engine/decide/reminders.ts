@@ -7,7 +7,7 @@ import {
 	type Reminder,
 	type ReminderInstance
 } from '#lib/core/model/index.ts';
-import { COUNTER_TIMES } from '#lib/core/data/counter-rules.ts';
+import { COUNTER_TIMES } from '#lib/core/data/parts/counter.ts';
 import {
 	REMINDER_EFFECTS,
 	counterMoves,

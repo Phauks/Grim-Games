@@ -1,9 +1,11 @@
-import { readKeepsAbility } from '../keeps-ability-rules.ts';
-import { objectPart } from './part.ts';
+import { specPart, type PartValue } from './part.ts';
+import { TOKEN_ON_TYPE } from './stops-waking.ts';
 
-/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
-export const keepsAbility = objectPart(
+/** Its token on a dead player keeps that player's ability (the same shape as `stopsWaking`). */
+export const keepsAbility = specPart(
 	'Keeps ability',
 	'Its token on a dead player keeps that player’s ability.',
-	readKeepsAbility
+	TOKEN_ON_TYPE
 );
+
+export type KeepsAbility = PartValue<typeof keepsAbility>;

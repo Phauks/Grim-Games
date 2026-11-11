@@ -158,9 +158,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		minMinions: opt(NUM),
 		outward: opt(T)
 	}),
-	countdown: obj({ tokens: TOKENS }),
-	counter: obj({ tokens: TOKENS, at: oneOf(['dawn', 'dusk']), replaces: opt(T) }),
-	dayMark: obj({ mark: oneOf(['minion-nominated', 'demon-voted']), yes: TOKEN, no: TOKEN }),
 	dayReminders: obj({
 		impairable: opt(T),
 		reminders: opt(
@@ -247,7 +244,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		whileWorking: opt(T),
 		none: opt(T)
 	}),
-	execution: optObj({ insteadOf: oneOf(['same-alignment']), explodes: NUM }),
 	executionOutcome: optObj({
 		failsIf: oneOf(['only-evil-voted']),
 		force: oneOf(['pass-or-fail']),
@@ -376,7 +372,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		)
 	),
 	jinxes: JINX_FIELDS,
-	keepsAbility: obj({ token: TOKEN, type: opt(TYPES) }),
 	kills: obj({
 		by: oneOf(['demon', 'other']),
 		targets: opt(oneOf(['any', 'self'])),
@@ -507,7 +502,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			})
 		)
 	}),
-	reincarnates: obj({ first: COUNT, demonTo: opt(SEATED) }),
 	reminderEnds: byToken(
 		variants(
 			{ label: 'At a time', is: 'string', spec: oneOf(REMINDER_ENDS) },
@@ -617,11 +611,8 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		),
 		none: STR
 	}),
-	stopsKilling: obj({ token: TOKEN, type: opt(TYPES) }),
-	stopsWaking: obj({ token: TOKEN, type: opt(TYPES) }),
 	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
 	swapsForAbility: obj({ token: TOKEN, good: SOME_SEATED, evil: SOME_SEATED }),
-	tokenFlow: obj({ tokens: TOKENS }),
 	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) }),
 	voteWeight: variants(
 		{ label: 'Its reminder', has: 'reminder', spec: obj({ reminder: TOKEN, weight: INT }) },

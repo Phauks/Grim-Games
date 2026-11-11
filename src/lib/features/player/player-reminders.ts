@@ -4,7 +4,7 @@
  * per game (`gameKey`), like the player's guesses; nothing here reaches the room.
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/counter-rules.ts';
+import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/parts/counter.ts';
 import {
 	GENERIC_REMINDER_ID,
 	REMINDER_NUMBER_MAX,

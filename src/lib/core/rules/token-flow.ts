@@ -1,6 +1,6 @@
 /**
  * Tokens that take each other's place on a player, by a character's `tokenFlow` rule
- * (`data/token-flow-rules.ts`; Trevor, 2026-11-06: "placing has should request taking mad
+ * (`data/parts/token-flow.ts`; Trevor, 2026-11-06: "placing has should request taking mad
  * off"). The Pixie's Has Ability goes where its Mad was
  * (https://wiki.bloodontheclocktower.com/Pixie), the Shabaloth's Alive where its Dead was
  * (https://wiki.bloodontheclocktower.com/Shabaloth), the Pukka's Dead where its Poisoned was
