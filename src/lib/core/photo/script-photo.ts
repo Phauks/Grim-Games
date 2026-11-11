@@ -359,11 +359,12 @@ export function titleOf(text: string): string {
 export function photoScriptJson(
 	name: string,
 	characters: readonly Character[],
-	author = ''
+	author = '',
+	version = ''
 ): unknown[] {
 	return scriptToJson({
 		name,
-		meta: author ? { name, author } : { name },
+		meta: { name, ...(author && { author }), ...(version && { version }) },
 		characters: [...characters],
 		homebrew: characters.filter((c) => !c.edition).map((c) => c.id),
 		homebrewJinxes: [],

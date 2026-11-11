@@ -34,6 +34,7 @@
 	import { reloadSavedScript } from './saved-scripts.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ImportLogDialog from './ImportLogDialog.svelte';
+	import ScriptNameFields from './ScriptNameFields.svelte';
 	import { describeFile, failureText, importLog, logLine } from './import-log.svelte.ts';
 
 	/**
@@ -62,6 +63,8 @@
 	let picks = $state<Record<number, string>>({});
 	let fileInput: HTMLInputElement | undefined = $state();
 	let logOpen = $state(false);
+	/** The name, author and version as typed over what was read (Trevor, 2026-11-10). */
+	let typed = $state<{ name?: string; author?: string; version?: string }>({});
 
 	const LEAVE_OUT = '';
 
@@ -82,6 +85,9 @@
 	});
 
 	const result = $derived(readScriptLines(lines, pool));
+	const name = $derived(typed.name ?? result.title);
+	const author = $derived(typed.author ?? result.author);
+	const version = $derived(typed.version ?? '');
 	const kept = $derived(result.found.filter((f) => !left.has(f.character.id)));
 	const picked = $derived(
 		result.unmatched
@@ -192,6 +198,7 @@
 		lines = [];
 		left.clear();
 		picks = {};
+		typed = {};
 		failed = false;
 	}
 
@@ -210,8 +217,7 @@
 	function confirm() {
 		if (!data) return;
 		open = false;
-		const name = result.title;
-		const json = photoScriptJson(name, chosen, result.author);
+		const json = photoScriptJson(name.trim(), chosen, author.trim(), version.trim());
 		const loaded = loadScript(json, data);
 		importLog.add(
 			`Confirmed: "${name}" with ${chosen.length} characters, ${loaded.problems.length} problem(s)`
@@ -227,15 +233,7 @@
 			? t('scripts.photo.reading', { percent: Math.round(progress * 100) })
 			: failed
 				? t('scripts.photo.failed')
-				: result.author
-					? t('scripts.photo.titleBy', {
-							title: result.title || t('common.none'),
-							author: result.author
-						})
-					: result.title || t('common.none')
-	);
-	const summary = $derived(
-		t('scripts.photo.summary', { found: result.found.length, check: closeCount })
+				: t('scripts.photo.summary', { found: result.found.length, check: closeCount })
 	);
 </script>
 
@@ -251,7 +249,6 @@
 	<div class="banner" data-testid="photo-banner">
 		<div class="said" aria-live="polite">
 			<p class="name">{heading}</p>
-			<p class="summary">{summary}</p>
 		</div>
 		<!-- What happened, step by step (Trevor, 2026-11-06), in a window of its own. -->
 		<IconButton
@@ -259,6 +256,17 @@
 			label={t('scripts.photo.log')}
 			disabled={importLog.entries.length === 0}
 			onclick={() => (logOpen = true)}
+		/>
+	</div>
+	<div class="details">
+		<ScriptNameFields
+			{name}
+			{author}
+			{version}
+			disabled={reading}
+			onName={(v) => (typed = { ...typed, name: v })}
+			onAuthor={(v) => (typed = { ...typed, author: v })}
+			onVersion={(v) => (typed = { ...typed, version: v })}
 		/>
 	</div>
 	{#each groups as group (group.type)}
@@ -352,8 +360,10 @@
 	.name {
 		font-weight: 700;
 	}
-	.summary {
-		color: var(--on-surface-muted);
+	.details {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
 	}
 	h3 {
 		margin: var(--space-3) 0 var(--space-1);

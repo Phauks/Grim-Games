@@ -8,6 +8,7 @@ import {
 	pageSize,
 	warp,
 	sheetCorners,
+	sharpness,
 	type Point
 } from './frame-checks.ts';
 
@@ -96,6 +97,25 @@ describe('frame checks', () => {
 		);
 		expect(difference(a, a)).toBe(0);
 		expect(difference(a, b)).toBeCloseTo(10, 0);
+	});
+});
+
+describe('sharpness', () => {
+	it('scores a crisp edge above the same edge blurred', () => {
+		const crisp = grayOf(
+			frame(20, 20, (x) => (x < 10 ? [0, 0, 0] : [255, 255, 255])),
+			20,
+			20
+		);
+		const blurred = grayOf(
+			frame(20, 20, (x) => {
+				const v = Math.max(0, Math.min(255, (x - 6) * 32));
+				return [v, v, v];
+			}),
+			20,
+			20
+		);
+		expect(sharpness(crisp)).toBeGreaterThan(sharpness(blurred) * 2);
 	});
 });
 

@@ -46,7 +46,7 @@
 	import LibraryBrowser from '#lib/features/library/LibraryBrowser.svelte';
 	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import type { ScriptRow } from '#lib/features/library/ScriptPane.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import ScriptNameFields from '#lib/features/scripts/ScriptNameFields.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -436,23 +436,14 @@
 	{#snippet side()}
 		<ErrorBoundary area="script-builder">
 			<section class="details" aria-label={t('script-builder.details')}>
-				<TextField
-					label={t('script-builder.name')}
-					value={d.name}
-					oninput={(v) => draft.setName(v)}
+				<ScriptNameFields
+					name={d.name}
+					author={d.author}
+					version={d.scriptVersion ?? ''}
+					onName={(v) => draft.setName(v)}
+					onAuthor={(v) => draft.setAuthor(v)}
+					onVersion={(v) => draft.setScriptVersion(v)}
 				/>
-				<div class="byline">
-					<TextField
-						label={t('script-builder.author')}
-						value={d.author}
-						oninput={(v) => draft.setAuthor(v)}
-					/>
-					<TextField
-						label={t('script-builder.version')}
-						value={d.scriptVersion ?? ''}
-						oninput={(v) => draft.setScriptVersion(v)}
-					/>
-				</div>
 				<!-- Full or Teensyville (Trevor, 2026-10-18): sets the counts the script is measured by. -->
 				<Toggle
 					label={t('script-builder.teensyville')}
@@ -690,12 +681,6 @@
 	.list {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-	}
-	/* Author and version share a row; the version is short. */
-	.byline {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
-		gap: var(--space-2);
 	}
 	/* The counts and search stay in view, at the top of the screen, while the list scrolls. */
 	.counts {

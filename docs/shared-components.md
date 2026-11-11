@@ -39,6 +39,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A labelled text field, one line or several: `ui/primitives/TextField.svelte`; `lists` makes Enter carry a typed list on, "- ", "1. ", "a) " (`core/text/lists.ts`; notes) (enforced by `grim/text-field`)
 - Text with bold, italic, underline and colour (notes, info cards): `ui/primitives/RichTextField.svelte`, tools in a row above the box, stored as marks (`core/text/rich.ts`, drawn by `features/info-tokens/InfoTokenText.svelte`); `multiline` and `lists` as in TextField (Trevor, 2026-10-31: one box for notes and cards) (enforced by review)
 - A search box: `ui/primitives/SearchField.svelte` (enforced by `grim/text-field`)
+- A script's name, author and version fields (Script builder, a photo's review): `features/scripts/ScriptNameFields.svelte` (enforced by review)
 - A list of short texts with add and remove: `ui/primitives/TextListField.svelte` (enforced by review)
 - The clear X on a field: `ui/primitives/ClearableField.svelte` (TextField has it) (enforced by `grim/clearable-field`)
 - A short code typed one character to a box (room code): `ui/primitives/CodeField.svelte` (enforced by review)
