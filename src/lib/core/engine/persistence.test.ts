@@ -1,21 +1,15 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { newGame, run, testContext } from '#lib/core/model/fixtures.test-support.ts';
-import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
+import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { dispatch, openSession, redo, undo } from './log.ts';
 import {
-	MIGRATIONS,
 	MemoryGameStore,
 	SAVED_GAME_VERSION,
 	SavedGameError,
 	listSavedGames,
-	migrateSavedGame,
-	runMigrations,
+	readSavedGame,
 	summariseSavedGame,
 	toSavedGame,
-	withGameId,
-	type Migration,
-	type SavedDocument
+	withGameId
 } from './persistence.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -48,7 +42,7 @@ describe('saved games', () => {
 		const { session, saved } = savedGame();
 		expect(saved.schemaVersion).toBe(SAVED_GAME_VERSION);
 		expect(saved.gameId).toBe(session.game.gameId);
-		const loaded = migrateSavedGame(JSON.parse(JSON.stringify(saved)));
+		const loaded = readSavedGame(JSON.parse(JSON.stringify(saved)));
 		expect(openSession(loaded.log).game).toEqual(session.game);
 	});
 
@@ -120,330 +114,22 @@ describe('saved games', () => {
 			{ ...saved, log: { ...saved.log, cursor: 99 } },
 			{ ...saved, log: { ...saved.log, entries: [1] } }
 		]) {
-			expect(problem(() => migrateSavedGame(raw))).toBe('invalid');
+			expect(problem(() => readSavedGame(raw))).toBe('invalid');
 		}
 	});
 
 	it('refuses a game saved by a newer build instead of guessing', () => {
 		const { saved } = savedGame();
-		expect(
-			problem(() => migrateSavedGame({ ...saved, schemaVersion: SAVED_GAME_VERSION + 1 }))
-		).toBe('too-new');
-	});
-
-	it('has a migration for every version below the current one', () => {
-		const expected = Array.from({ length: SAVED_GAME_VERSION - 1 }, (_, i) => String(i + 1));
-		expect(Object.keys(MIGRATIONS)).toEqual(expected);
-	});
-});
-
-describe('version 1 saves', () => {
-	/** A game saved before causes of death and night or day overrides existed. */
-	const readV1 = (): unknown =>
-		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v1.json', import.meta.url), 'utf8'));
-
-	it('migrates to the current version with no causes and no overrides', () => {
-		const raw = readV1();
-		const loaded = migrateSavedGame(raw);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual((raw as { log: unknown }).log);
-		const { game } = openSession(loaded.log);
-		expect(game.seats.b).toEqual({
-			seatId: 'b',
-			dead: true,
-			ghostVoteUsed: false,
-			overrides: [],
-			reminders: []
-		});
-		expect(game.nightOrderOverrides).toEqual([]);
-		expect(game.dayReminderOverrides).toEqual([]);
-		expect(raw).toEqual(readV1());
-	});
-
-	it('keeps the redo stack, and the migrated game takes new commands', () => {
-		const loaded = migrateSavedGame(readV1());
-		const session = redo(openSession(loaded.log));
-		expect(session.game.seats.c.dead).toBe(true);
-		const caused = dispatch(
-			session,
-			{ type: 'SetDeathCause', seatId: 'b', cause: 'execution' },
-			testContext()
+		expect(problem(() => readSavedGame({ ...saved, schemaVersion: SAVED_GAME_VERSION + 1 }))).toBe(
+			'too-new'
 		);
-		if (!caused.ok) throw new Error(caused.error.message);
-		expect(caused.session.game.seats.b.deathCause).toBe('execution');
-		expect(undo(caused.session).game.seats.b.deathCause).toBeUndefined();
-	});
-});
-
-describe('version 2 saves', () => {
-	/** A game saved before the day log existed. */
-	const readV2 = (): unknown =>
-		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v2.json', import.meta.url), 'utf8'));
-
-	it('migrates to the current version with an empty day log and no past days', () => {
-		const raw = readV2();
-		const loaded = migrateSavedGame(raw);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual((raw as { log: unknown }).log);
-		const { game } = openSession(loaded.log);
-		expect(game.today).toEqual({ entries: [] });
-		expect(game.pastDays).toEqual([]);
-		expect(game.seats.b).toMatchObject({ dead: true, deathCause: 'execution' });
-		expect(game.dayReminderOverrides).toHaveLength(1);
-		expect(raw).toEqual(readV2());
 	});
 
-	it('takes day-log commands after migrating', () => {
-		const session = openSession(migrateSavedGame(readV2()).log);
-		const ctx = testContext();
-		const nominated = dispatch(session, { type: 'Nominate', nominator: 'a', nominee: 'c' }, ctx);
-		if (!nominated.ok) throw new Error(nominated.error.message);
-		expect(nominated.session.game.today.entries).toHaveLength(1);
-		const saved = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(nominated.session, 1))));
-		expect(openSession(saved.log).game.today).toEqual(nominated.session.game.today);
-	});
-});
-
-describe('version 4 saves', () => {
-	/** A game saved before the script could be changed mid-game. */
-	const readV4 = (): unknown =>
-		JSON.parse(readFileSync(new URL('./fixtures/saved-game-v4.json', import.meta.url), 'utf8'));
-
-	it('migrates to the current version with the log unchanged', () => {
-		const raw = readV4();
-		const loaded = migrateSavedGame(raw);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual((raw as { log: unknown }).log);
-		const { game } = openSession(loaded.log);
-		expect(game.script.meta?.name).toBe('Older Brewing');
-		expect(game.prepValues).toEqual({ 'yaggababble.phrase': 'hello' });
-		expect(raw).toEqual(readV4());
-	});
-
-	it('takes ChangeScript after migrating, and the summary names the new script', () => {
-		const session = openSession(migrateSavedGame(readV4()).log);
-		const script = { meta: { name: 'Newer Brewing' }, entries: [] };
-		const changed = dispatch(session, { type: 'ChangeScript', script }, testContext());
-		if (!changed.ok) throw new Error(changed.error.message);
-		expect(changed.warnings.map((w) => w.message)).toEqual(['Imp is not on the script']);
-		const saved = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(changed.session, 1))));
-		expect(openSession(saved.log).game.script).toEqual(script);
-		expect(summariseSavedGame(saved).scriptName).toBe('Newer Brewing');
-		const undone = { ...saved, log: { ...saved.log, cursor: saved.log.cursor - 1 } };
-		expect(summariseSavedGame(undone).scriptName).toBe('Older Brewing');
-	});
-});
-
-describe('version 8 saves', () => {
-	// Before reminders took text: the log loads unchanged, and a note set afterwards is saved.
-	it('migrate with the log unchanged and then keep a reminder note', () => {
-		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const placed = run(session, ctx, {
-			type: 'AddReminder',
-			seatId: seats[0],
-			reminder: { characterId: GENERIC_REMINDER_ID, label: '' }
-		});
-		const v8 = { ...JSON.parse(JSON.stringify(toSavedGame(placed, 1))), schemaVersion: 8 };
-		const loaded = migrateSavedGame(v8);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v8.log);
-		const opened = openSession(loaded.log);
-		const reminder = opened.game.seats[seats[0]].reminders[0];
-		expect(reminder).not.toHaveProperty('note');
-		const noted = run(opened, ctx, {
-			type: 'SetReminderNote',
-			reminderId: reminder.reminderId,
-			note: 'Chose Sam'
-		});
-		const again = migrateSavedGame(JSON.parse(JSON.stringify(toSavedGame(noted, 2))));
-		expect(openSession(again.log).game.seats[seats[0]].reminders[0].note).toBe('Chose Sam');
-	});
-});
-
-describe('version 10 saves', () => {
-	// Before the Storyteller's name: the log loads unchanged, and a name set afterwards is saved.
-	it('migrate with the log unchanged and then keep a Storyteller name', () => {
-		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v10 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 10 };
-		const loaded = migrateSavedGame(v10);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v10.log);
-		const opened = openSession(loaded.log);
-		expect(opened.game).not.toHaveProperty('storytellerName');
-		const named = run(opened, ctx, { type: 'SetStorytellerName', name: 'Trev' });
-		const again = openSession(migrateSavedGame(toSavedGame(named, 2)).log);
-		expect(again.game.storytellerName).toBe('Trev');
-	});
-});
-
-describe('version 25 saves', () => {
-	// Seats not in play yet (Trevor, 2026-10-31): every seat of an older game is in play.
-	it('migrates a version 25 game with every seat in play, then adds one not in play', () => {
-		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v25 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 25 };
-		const loaded = migrateSavedGame(v25);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v25.log);
-		const opened = openSession(loaded.log);
-		expect(Object.values(opened.game.seats).some((s) => s.notInPlay)).toBe(false);
-		const added = run(opened, ctx, { type: 'AddSeat', playerName: 'Bo', notInPlay: true });
-		const again = openSession(migrateSavedGame(toSavedGame(added, 2)).log);
-		const bo = Object.values(again.game.seats).find((s) => s.playerName === 'Bo');
-		expect(bo?.notInPlay).toBe(true);
-	});
-});
-
-describe('version 26 saves', () => {
-	// Before a character change kept who made it (the Pit-Hag's jinxes): none is recorded.
-	it('migrates a version 26 game with no changes recorded, then records one', () => {
-		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v26 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 26 };
-		const loaded = migrateSavedGame(v26);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v26.log);
-		const opened = openSession(loaded.log);
-		expect(Object.values(opened.game.seats).some((s) => s.changedBy)).toBe(false);
-		const changed = run(opened, ctx, {
-			type: 'AssignCharacter',
-			seatId: seats[0],
-			characterId: 'saint',
-			alignment: 'evil',
-			by: 'philosopher'
-		});
-		const again = openSession(migrateSavedGame(toSavedGame(changed, 2)).log);
-		expect(again.game.seats[seats[0]].changedBy).toEqual({ via: 'philosopher', alignment: 'evil' });
-	});
-});
-
-describe('version 18 saves', () => {
-	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
-	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.
-	it('migrates a version 23 game with no one reincarnated, then reincarnates one', () => {
-		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v23 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 23 };
-		const loaded = migrateSavedGame(v23);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v23.log);
-		const opened = openSession(loaded.log);
-		expect(opened.game.reincarnated).toBeUndefined();
-		const reborn = run(
-			opened,
-			ctx,
-			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
-			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'demon' },
-			{ type: 'Reincarnate', seatId: seats[0], characterId: 'gangster' }
-		);
-		const again = openSession(migrateSavedGame(toSavedGame(reborn, 2)).log);
-		expect(again.game.reincarnated).toEqual([seats[0]]);
-		expect(again.game.seats[seats[0]]).toMatchObject({ characterId: 'gangster', dead: false });
-	});
-
-	it('migrates a version 21 game with no Storyteller abilities, then takes one', () => {
-		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v21 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 21 };
-		const loaded = migrateSavedGame(v21);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v21.log);
-		const opened = openSession(loaded.log);
-		expect(opened.game.storytellerAbilities).toBeUndefined();
-		const held = run(opened, ctx, {
-			type: 'SetStorytellerAbility',
-			via: 'plaguedoctor',
-			characterId: 'poisoner'
-		});
-		const again = openSession(migrateSavedGame(toSavedGame(held, 2)).log);
-		expect(again.game.storytellerAbilities).toEqual([
-			{ characterId: 'poisoner', via: 'plaguedoctor' }
-		]);
-	});
-
-	it('migrates a version 20 game with no held abilities, then takes one', () => {
-		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const v20 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 20 };
-		const loaded = migrateSavedGame(v20);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v20.log);
-		const opened = openSession(loaded.log);
-		expect(opened.game.seats[seats[0]].abilities).toBeUndefined();
-		const held = run(opened, ctx, {
-			type: 'SetHeldAbility',
-			seatId: seats[0],
-			via: 'boffin',
-			characterId: 'chef'
-		});
-		const again = openSession(migrateSavedGame(toSavedGame(held, 2)).log);
-		expect(again.game.seats[seats[0]].abilities).toEqual([{ characterId: 'chef', via: 'boffin' }]);
-	});
-
-	it("migrate with the log unchanged and keep a seat's note as its first", () => {
-		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
-		const saved = JSON.parse(JSON.stringify(toSavedGame(session, 1)));
-		saved.log.entries.push({
-			at: 2,
-			command: 'SetSeatNote',
-			events: [{ type: 'SeatNoteSet', seatId: seats[1], note: 'Secret word: lantern' }]
-		});
-		saved.log.cursor += 1;
-		const v18 = { ...saved, schemaVersion: 18 };
-		const loaded = migrateSavedGame(v18);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		expect(loaded.log).toEqual(v18.log);
-		const opened = openSession(loaded.log);
-		expect(opened.game.seats[seats[1]].notes).toEqual([
-			{ noteId: 'n1', title: '', text: 'Secret word: lantern', hidden: false }
-		]);
-		const more = run(opened, ctx, {
-			type: 'SetSeatNote',
-			seatId: seats[1],
-			title: 'Claim',
-			text: 'Chef: 1',
-			hidden: false
-		});
-		const again = openSession(migrateSavedGame(toSavedGame(more, 3)).log);
-		expect(again.game.seats[seats[1]].notes?.map((n) => n.noteId)).toEqual(['n1', 'n2']);
-	});
-});
-
-describe('migration chain', () => {
-	// A made-up history: v1 stored `name`, v2 renamed it to `title`, v3 added `tags`.
-	const chain: Record<number, Migration> = {
-		1: ({ name, ...rest }) => ({ ...rest, title: name, schemaVersion: 2 }),
-		2: (doc) => ({ ...doc, tags: [], schemaVersion: 3 })
-	};
-
-	it('runs each step in order up to the target', () => {
-		const v1: SavedDocument = { schemaVersion: 1, name: 'Old game' };
-		expect(runMigrations(v1, chain, 3)).toEqual({ schemaVersion: 3, title: 'Old game', tags: [] });
-		expect(runMigrations({ schemaVersion: 2, title: 'T' }, chain, 3)).toEqual({
-			schemaVersion: 3,
-			title: 'T',
-			tags: []
-		});
-		expect(v1).toEqual({ schemaVersion: 1, name: 'Old game' });
-	});
-
-	it('leaves a current document alone', () => {
-		const doc: SavedDocument = { schemaVersion: 3, title: 'T', tags: [] };
-		expect(runMigrations(doc, chain, 3)).toBe(doc);
-	});
-
-	it('fails on a gap in the chain or a step that skips a version', () => {
-		expect(problem(() => runMigrations({ schemaVersion: 1 }, { 2: chain[2] }, 3))).toBe(
-			'missing-migration'
-		);
-		const skipping: Record<number, Migration> = { 1: (doc) => ({ ...doc, schemaVersion: 3 }) };
-		expect(() => runMigrations({ schemaVersion: 1 }, skipping, 3)).toThrow(/produced format 3/);
-	});
-
-	it('runs through migrateSavedGame into a current saved game', () => {
+	it('refuses a game saved by an older build instead of converting it', () => {
 		const { saved } = savedGame();
-		// Pretend the current saved game is version 2 and version 1 called the log `events`.
-		const { log, ...rest } = saved;
-		const v1 = { ...rest, schemaVersion: 1, events: log };
-		const toV2: Migration = ({ events, ...doc }) => ({ ...doc, log: events, schemaVersion: 2 });
-		const loaded = migrateSavedGame(v1, { 1: toV2 }, 2);
-		expect(loaded.log).toEqual(log);
-		expect(loaded.schemaVersion).toBe(2);
+		expect(problem(() => readSavedGame({ ...saved, schemaVersion: SAVED_GAME_VERSION - 1 }))).toBe(
+			'invalid'
+		);
 	});
 });
 
@@ -493,67 +179,8 @@ describe('a copy of a game under another id', () => {
 		const { session, saved } = savedGame();
 		const copy = withGameId(saved, 'copy');
 		expect(copy.gameId).toBe('copy');
-		const opened = openSession(migrateSavedGame(copy).log);
+		const opened = openSession(readSavedGame(copy).log);
 		expect(opened.game).toEqual({ ...session.game, gameId: 'copy' });
 		expect(saved.gameId).not.toBe('copy');
-	});
-});
-
-describe('version 29 saves', () => {
-	// M46 gave the jinx values written for one official pair general shapes: a custom script's
-	// own jinxes, kept in the game's script, open with the new ones.
-	it("migrates a version 29 game's script jinxes to their new shapes", () => {
-		const { session, ctx, seats } = newGame(names);
-		const v29 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 29 };
-		const created = v29.log.entries[0].events.find(
-			(e: { type: string }) => e.type === 'GameCreated'
-		);
-		const gloom = {
-			id: 'gloom',
-			name: 'Gloom',
-			type: 'demon',
-			ability: 'Each night*, choose a player: they die.',
-			setup: false,
-			reminders: [],
-			rules: {
-				jinxes: { lamplighter: { noBluffs: true, wakesOneByOne: { when: ['partner-alive'] } } }
-			}
-		};
-		created.script = {
-			...created.script,
-			entries: [...created.script.entries, { kind: 'custom', character: gloom }],
-			jinxes: [
-				{ characters: ['riot', 'atheist'], reason: 'Voted on.', rules: { storytellerVote: true } },
-				{ characters: ['monk', 'chef'], reason: 'Drunk.', rules: { impairs: { kind: 'drunk' } } }
-			]
-		};
-		const loaded = migrateSavedGame(v29);
-		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
-		const script = openSession(loaded.log).game.script;
-		expect(script.jinxes?.map((j) => j.rules)).toEqual([
-			{ storytellerChooses: { what: 'own-execution' } },
-			{ impairs: { kind: 'drunk' } }
-		]);
-		const custom = script.entries.find((e) => e.kind === 'custom');
-		expect(custom?.kind === 'custom' && custom.character.rules?.jinxes).toEqual({
-			lamplighter: {
-				notShown: { what: 'bluffs' },
-				wakes: { how: 'one-by-one', when: ['partner-alive'] }
-			}
-		});
-		// The rest of the log is as it was, and the game takes new commands.
-		expect(loaded.log.entries.slice(1)).toEqual(v29.log.entries.slice(1));
-		const next = run(openSession(loaded.log), ctx, {
-			type: 'SetDead',
-			seatId: seats[0],
-			dead: true
-		});
-		expect(next.game.seats[seats[0]].dead).toBe(true);
-	});
-
-	it('leaves a version 29 game with no old jinx values as it was', () => {
-		const { session } = newGame(names);
-		const v29 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 29 };
-		expect(migrateSavedGame(v29).log).toEqual(v29.log);
 	});
 });

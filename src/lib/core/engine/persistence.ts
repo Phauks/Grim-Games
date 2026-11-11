@@ -1,19 +1,17 @@
 /**
  * Saved games and the storage port.
  *
- * The app is an offline-first PWA: a newer build can open a game saved by an older one
- * (CLAUDE.md). Every saved game carries `schemaVersion`; loading runs it through the
- * migration chain up to the current version. A game saved by a *newer* build is refused
- * rather than guessed at.
+ * Every saved game carries `schemaVersion`. There are no migrations (Trevor, 2026-11-10:
+ * "there should be none ... old games not working is fine"): a game saved in any other
+ * format is refused with a load error, never converted. One saved by a *newer* build says so,
+ * so the app can offer its newer build.
  *
  * To change the saved shape (including any event shape in `events.ts`): bump
- * `SAVED_GAME_VERSION`, add a migration from the previous version to `MIGRATIONS`, and
- * add a fixture of the old shape to `persistence.test.ts`.
+ * `SAVED_GAME_VERSION`. Games saved in the old shape then stop opening.
  */
 import { APP_NAME } from '#lib/core/app-name.ts';
 import { scriptLogo } from '#lib/core/data/script-logo.ts';
 import { scriptEdition } from '#lib/core/data/script.ts';
-import { upgradeScriptJinxes } from '#lib/core/data/jinx-renames.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import type { GameLog, GameSession } from './log.ts';
@@ -54,14 +52,15 @@ export interface UnreadableGame {
 export interface GameStore {
 	/** Saves (or replaces) the game with `saved.gameId`. */
 	save(saved: SavedGame): Promise<void>;
-	/** Loads and migrates a game. Undefined when there is none; throws `SavedGameError` when it cannot be read. */
+	/** Loads a game. Undefined when there is none; throws `SavedGameError` when it cannot be read. */
 	load(gameId: GameId): Promise<SavedGame | undefined>;
 	/** All saved games, most recently saved first. */
 	list(): Promise<{ games: SavedGameSummary[]; unreadable: UnreadableGame[] }>;
 	delete(gameId: GameId): Promise<void>;
 }
 
-export type SavedGameProblem = 'invalid' | 'too-new' | 'missing-migration';
+/** `too-new`: saved by a newer build. `invalid`: anything else that can't be opened, older formats included. */
+export type SavedGameProblem = 'invalid' | 'too-new';
 
 export class SavedGameError extends Error {
 	constructor(
@@ -72,293 +71,6 @@ export class SavedGameError extends Error {
 		this.name = 'SavedGameError';
 	}
 }
-
-/** A stored document of any version. */
-export type SavedDocument = { schemaVersion: number } & Record<string, unknown>;
-
-/** Turns a document of version `n` into version `n + 1`. Must not mutate its input. */
-export type Migration = (doc: SavedDocument) => SavedDocument;
-
-/**
- * Version 2 (2026-10-15) added causes of death (`DeathSet.cause`, `DeathCauseSet`) and the
- * Storyteller's night-order and day-reminder overrides (`NightStepOverride*` and
- * `DayReminderOverride*` events, `Game.nightOrderOverrides` and `Game.dayReminderOverrides`).
- * Saved games hold the event log, not the game, so the new fields are defaulted on replay:
- * a version 1 death has no recorded cause, and `GameCreated` starts both override lists
- * empty. The log itself needs no change. The version bump makes older builds refuse a
- * version 2 save as too new instead of meeting events they cannot apply.
- */
-const migrateV1toV2: Migration = (doc) => ({ ...doc, schemaVersion: 2 });
-
-/**
- * Version 3 (2026-10-15) added the day log: `Game.today` and `Game.pastDays`, and the
- * `DayEntryAdded`, `DayEntryReplaced`, `DayEntryRemoved`, `DemonVotedSet` and `DayStarted`
- * events. As with version 2, the log needs no change: `GameCreated` starts an empty day
- * log on replay, so a version 2 game opens with nothing logged today and no past days.
- */
-const migrateV2toV3: Migration = (doc) => ({ ...doc, schemaVersion: 3 });
-
-/**
- * Version 4 (2026-10-15) added values chosen during prep (`Game.prepValues`, the
- * `PrepValueSet` event), such as the Yaggababble's phrase. The log needs no change: an
- * older game simply has none set.
- */
-const migrateV3toV4: Migration = (doc) => ({ ...doc, schemaVersion: 4 });
-
-/**
- * Version 5 (2026-10-15) added changing the script mid-game (the `ScriptChanged` event,
- * 08-script-loading.md §5.6). The log needs no change: an older game never changed its
- * script. The bump makes older builds refuse a version 5 save instead of failing on the
- * unknown event.
- */
-const migrateV4toV5: Migration = (doc) => ({ ...doc, schemaVersion: 5 });
-
-/**
- * Version 6 (2026-10-16) added the Storyteller's note on a seat (`Seat.note`, the
- * `SeatNoteSet` event). The log needs no change: an older game has no notes. The bump makes
- * older builds refuse a version 6 save instead of failing on the unknown event.
- */
-const migrateV5toV6: Migration = (doc) => ({ ...doc, schemaVersion: 6 });
-
-/**
- * Version 7 (2026-10-17) added reminders held by a Fabled or Loric (`Game.ruleReminders`,
- * the `RuleReminderAdded` and `ReminderMovedToRuleCharacter` events). The log needs no
- * change: an older game has none. The bump makes older builds refuse a version 7 save
- * instead of failing on the unknown events.
- */
-const migrateV6toV7: Migration = (doc) => ({ ...doc, schemaVersion: 7 });
-
-/**
- * Version 8 (2026-10-17) added reminders loose on the board, held by no seat
- * (`Game.looseReminders`, the `LooseReminderPlaced` and `ReminderLoosened` events). The log
- * needs no change; the bump makes older builds refuse a version 8 save.
- */
-const migrateV7toV8: Migration = (doc) => ({ ...doc, schemaVersion: 8 });
-
-/**
- * Version 9 (2026-10-18) added the Storyteller's text on a reminder (`ReminderInstance.note`,
- * the `ReminderNoteSet` event), for the generic ∞ reminder. The log needs no change: an
- * older game has no notes. The bump makes older builds refuse a version 9 save instead of
- * failing on the unknown event.
- */
-const migrateV8toV9: Migration = (doc) => ({ ...doc, schemaVersion: 9 });
-
-/**
- * Version 10 (2026-10-19) added the Storyteller's general notes on a game (`Game.notes`, the
- * `GameNotesSet` event). The log needs no change: an older game has none. The bump makes
- * older builds refuse a version 10 save instead of failing on the unknown event.
- */
-const migrateV9toV10: Migration = (doc) => ({ ...doc, schemaVersion: 10 });
-
-/**
- * Version 11 (2026-10-19) added the Storyteller's name (`Game.storytellerName`, the
- * `StorytellerNameSet` event). The log needs no change: an older game has no name. The bump
- * makes older builds refuse a version 11 save instead of failing on the unknown event.
- */
-const migrateV10toV11: Migration = (doc) => ({ ...doc, schemaVersion: 11 });
-
-/**
- * Version 12 (2026-10-19) added the generic reminder's own symbol (`ReminderInstance.symbol`,
- * the `ReminderSymbolSet` event). The log needs no change: an older reminder has none. The bump
- * makes older builds refuse a version 12 save instead of failing on the unknown event.
- */
-const migrateV11toV12: Migration = (doc) => ({ ...doc, schemaVersion: 12 });
-
-/**
- * Version 13 (2026-10-20) added the colour of the generic reminder's symbol
- * (`ReminderInstance.symbolColour`, the `ReminderSymbolColourSet` event). The log needs no
- * change: an older reminder has none. The bump makes older builds refuse a version 13 save
- * instead of failing on the unknown event.
- */
-const migrateV12toV13: Migration = (doc) => ({ ...doc, schemaVersion: 13 });
-
-/**
- * Version 14 (2026-10-23) added the avatar and frame a player picked on their phone
- * (`Seat.avatar`, `Seat.frame`, the `SeatLookSet` event, plan R6). The log needs no change:
- * an older seat has neither. The bump makes older builds refuse a version 14 save instead of
- * failing on the unknown event.
- */
-const migrateV13toV14: Migration = (doc) => ({ ...doc, schemaVersion: 14 });
-
-/**
- * Version 15 (2026-10-23) added the bank's reusable ∞ tokens (`Game.genericTokens`, the
- * `GenericToken…` events, plan B9). The log needs no change: an older game has none. The bump
- * makes older builds refuse a version 15 save instead of failing on the unknown events.
- */
-const migrateV14toV15: Migration = (doc) => ({ ...doc, schemaVersion: 15 });
-
-/**
- * Version 16 (2026-10-23) added the filled symbol of a generic reminder or bank ∞ token
- * (`symbolFill`, the `ReminderSymbolFillSet` event). The log needs no change: an older
- * reminder has none. The bump makes older builds refuse a version 16 save instead of failing
- * on the unknown event.
- */
-const migrateV15toV16: Migration = (doc) => ({ ...doc, schemaVersion: 16 });
-
-/**
- * Version 17 (2026-10-23) gave the Storyteller several titled game notes (`Game.notes` as a
- * list, the `GameNoteSet` and `GameNoteDeleted` events). The log needs no change: an older
- * game's `GameNotesSet` replays as the untitled first note. The bump makes older builds
- * refuse a version 17 save instead of failing on the unknown events.
- */
-const migrateV16toV17: Migration = (doc) => ({ ...doc, schemaVersion: 17 });
-
-/**
- * Version 18 (2026-10-24) made the Flowergirl's Demon voted one of several day marks
- * (`DayLog.marks`, the `DayMarkSet` event), adding the Town Crier's Minion nominated. The log
- * needs no change: an older game's `DemonVotedSet` replays as the `demon-voted` mark. The bump
- * makes older builds refuse a version 18 save instead of failing on the unknown event.
- */
-const migrateV17toV18: Migration = (doc) => ({ ...doc, schemaVersion: 18 });
-
-/**
- * Version 19 (2026-10-26) gave each seat several titled notes, like the game's (`Seat.notes`,
- * the `SeatNoteSaved` and `SeatNoteDeleted` events). The log needs no change: an older game's
- * `SeatNoteSet` replays as the seat's untitled first note. The bump makes older builds refuse
- * a version 19 save instead of failing on the unknown events.
- */
-const migrateV18toV19: Migration = (doc) => ({ ...doc, schemaVersion: 19 });
-
-/**
- * Version 20 (2026-10-29) added what a player who believes they are the Demon is shown
- * (`Game.fakeEvilInfo`, the `FakeEvilInfoSet` event). The log needs no change: an older game
- * has none. The bump makes older builds refuse a version 20 save instead of failing on the
- * unknown event.
- */
-const migrateV19toV20: Migration = (doc) => ({ ...doc, schemaVersion: 20 });
-
-/**
- * Version 21 (2026-10-30) added abilities a player holds without their token (`Seat.abilities`,
- * the `HeldAbilitySet` event: the Boffin's good ability on the Demon). The log needs no
- * change: an older game has none. The bump makes older builds refuse a version 21 save
- * instead of failing on the unknown event.
- */
-const migrateV20toV21: Migration = (doc) => ({ ...doc, schemaVersion: 21 });
-
-/**
- * Version 22 (2026-10-30) added abilities the Storyteller holds (`Game.storytellerAbilities`,
- * the `StorytellerAbilitySet` event: the Plague Doctor's Minion). The log needs no change:
- * an older game has none. The bump makes older builds refuse a version 22 save instead of
- * failing on the unknown event.
- */
-const migrateV21toV22: Migration = (doc) => ({ ...doc, schemaVersion: 22 });
-
-/**
- * Version 23 (2026-10-30) added a late player joining mid-draw (the `TileRecast`, `TileAdded`
- * and `TileRemoved` events). The log needs no change; the bump makes older builds refuse a
- * version 23 save instead of failing on the unknown events.
- */
-const migrateV22toV23: Migration = (doc) => ({ ...doc, schemaVersion: 23 });
-
-/**
- * Version 24 (2026-10-30) added players reborn as Travellers (`Game.reincarnated`, the
- * `Reincarnate` command and `SeatReincarnated` event: the Hindu). The log needs no change: an
- * older game has none. The bump makes older builds refuse a version 24 save instead of
- * failing on the unknown event.
- */
-const migrateV23toV24: Migration = (doc) => ({ ...doc, schemaVersion: 24 });
-
-/**
- * Version 25 (2026-10-31) added characters' optional rules (`Game.optionalRules`, the
- * `SetOptionalRule` command and `OptionalRuleSet` event). The log needs no change: an older
- * game has none on. The bump makes older builds refuse a version 25 save.
- */
-const migrateV24toV25: Migration = (doc) => ({ ...doc, schemaVersion: 25 });
-
-/**
- * Version 26 (2026-10-31) added seats not in play yet (`Seat.notInPlay`, `SeatAdded.notInPlay`,
- * the `SetInPlay` command and `SeatInPlaySet` event). The log needs no change: every seat of an
- * older game is in play. The bump makes older builds refuse a version 26 save.
- */
-const migrateV25toV26: Migration = (doc) => ({ ...doc, schemaVersion: 26 });
-
-/**
- * Version 27 (2026-11-01) added the character whose ability changed a player's character
- * (`AssignCharacter.by`, `CharacterAssigned.by`, `Seat.changedBy`: the Pit-Hag's, for its
- * jinxes). The log needs no change: an older change has none. The bump makes older builds
- * refuse a version 27 save.
- */
-const migrateV26toV27: Migration = (doc) => ({ ...doc, schemaVersion: 27 });
-
-/**
- * Version 28 (2026-11-02) added the Storyteller's pretend evil team (`Game.pretend`, the
- * `PretendSet` event, M26). The log needs no change: an older game has none. The bump makes
- * older builds refuse a version 28 save.
- */
-const migrateV27toV28: Migration = (doc) => ({ ...doc, schemaVersion: 28 });
-
-/**
- * Version 29 (2026-11-03) added the character a player is mad as, recorded on its reminder
- * (`ReminderInstance.madAs`, the `ReminderMadAsSet` event: the Cerenovus's Mad, M36). The log
- * needs no change: an older reminder has none. The bump makes older builds refuse a version 29
- * save.
- */
-const migrateV28toV29: Migration = (doc) => ({ ...doc, schemaVersion: 29 });
-
-/**
- * Version 30 (2026-11-04) gave the jinx values written for one official pair general shapes
- * (M46, `data/jinx-rules.ts`). A custom script's jinx rules are kept in the game's script
- * (`GameCreated`, `ScriptChanged`), so each old value there becomes its new shape
- * (`upgradeScriptJinxes`); anything else is left as it was.
- */
-const migrateV29toV30: Migration = (doc) => {
-	const log = doc.log;
-	if (!isRecord(log) || !Array.isArray(log.entries)) return { ...doc, schemaVersion: 30 };
-	const entries = log.entries.map((entry: unknown) => {
-		if (!isRecord(entry) || !Array.isArray(entry.events)) return entry;
-		const events = entry.events.map((event: unknown) =>
-			isRecord(event) &&
-			(event.type === 'GameCreated' || event.type === 'ScriptChanged') &&
-			event.script !== undefined
-				? { ...event, script: upgradeScriptJinxes(event.script) }
-				: event
-		);
-		return { ...entry, events };
-	});
-	return { ...doc, schemaVersion: 30, log: { ...log, entries } };
-};
-
-/**
- * Version 31 (2026-11-05) added number tokens that count up each dawn or dusk
- * (`ReminderInstance.countsUp`, the `ReminderCountsUpSet` event, plan M53) and the
- * `AdvanceCounters` command. The log needs no change: an older reminder never counts up. The
- * bump makes older builds refuse a version 31 save.
- */
-const migrateV30toV31: Migration = (doc) => ({ ...doc, schemaVersion: 31 });
-
-/** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
-export const MIGRATIONS: Readonly<Record<number, Migration>> = {
-	1: migrateV1toV2,
-	2: migrateV2toV3,
-	3: migrateV3toV4,
-	4: migrateV4toV5,
-	5: migrateV5toV6,
-	6: migrateV6toV7,
-	7: migrateV7toV8,
-	8: migrateV8toV9,
-	9: migrateV9toV10,
-	10: migrateV10toV11,
-	11: migrateV11toV12,
-	12: migrateV12toV13,
-	13: migrateV13toV14,
-	14: migrateV14toV15,
-	15: migrateV15toV16,
-	16: migrateV16toV17,
-	17: migrateV17toV18,
-	18: migrateV18toV19,
-	19: migrateV19toV20,
-	20: migrateV20toV21,
-	21: migrateV21toV22,
-	22: migrateV22toV23,
-	23: migrateV23toV24,
-	24: migrateV24toV25,
-	25: migrateV25toV26,
-	26: migrateV26toV27,
-	27: migrateV27toV28,
-	28: migrateV28toV29,
-	29: migrateV29toV30,
-	30: migrateV30toV31
-};
 
 /**
  * The session as a saved game. Its log is shared, not copied (memory sweep, 2026-10-31): a log
@@ -398,35 +110,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Runs `doc` through `chain` until it reaches `target`. */
-export function runMigrations(
-	doc: SavedDocument,
-	chain: Readonly<Record<number, Migration>>,
-	target: number
-): SavedDocument {
-	let current = doc;
-	if (current.schemaVersion > target) {
-		throw new SavedGameError(
-			'too-new',
-			`saved by a newer version of ${APP_NAME} (format ${current.schemaVersion}, this build reads up to ${target})`
-		);
-	}
-	while (current.schemaVersion < target) {
-		const from = current.schemaVersion;
-		const migration = Object.hasOwn(chain, from) ? chain[from] : undefined;
-		if (!migration) {
-			throw new SavedGameError('missing-migration', `no migration from format ${from}`);
-		}
-		current = migration(current);
-		if (current.schemaVersion !== from + 1) {
-			throw new Error(`migration from format ${from} produced format ${current.schemaVersion}`);
-		}
-	}
-	return current;
-}
-
 /** Checks that a document has the current saved-game shape. */
-function checkCurrent(doc: SavedDocument): SavedGame {
+function checkCurrent(doc: Record<string, unknown>): SavedGame {
 	const log = doc.log;
 	if (
 		typeof doc.gameId !== 'string' ||
@@ -446,19 +131,28 @@ function checkCurrent(doc: SavedDocument): SavedGame {
 }
 
 /**
- * Reads a stored document (from IndexedDB or an imported file) as a current saved game.
- * Throws `SavedGameError` when it is not a saved game, was saved by a newer build, or
- * has no migration path.
+ * Reads a stored document (from IndexedDB, a room or an imported file) as a saved game.
+ * Throws `SavedGameError` when it was saved by a newer build (`too-new`), or is not a saved
+ * game of this build's format (`invalid`): older formats are not converted.
  */
-export function migrateSavedGame(
-	raw: unknown,
-	chain: Readonly<Record<number, Migration>> = MIGRATIONS,
-	target: number = SAVED_GAME_VERSION
-): SavedGame {
-	if (!isRecord(raw) || !Number.isInteger(raw.schemaVersion) || (raw.schemaVersion as number) < 1) {
+export function readSavedGame(raw: unknown): SavedGame {
+	if (!isRecord(raw) || !Number.isInteger(raw.schemaVersion)) {
 		throw new SavedGameError('invalid', `not a ${APP_NAME} saved game`);
 	}
-	return checkCurrent(runMigrations(raw as SavedDocument, chain, target));
+	const version = raw.schemaVersion as number;
+	if (version > SAVED_GAME_VERSION) {
+		throw new SavedGameError(
+			'too-new',
+			`saved by a newer version of ${APP_NAME} (format ${version}, this build reads ${SAVED_GAME_VERSION})`
+		);
+	}
+	if (version !== SAVED_GAME_VERSION) {
+		throw new SavedGameError(
+			'invalid',
+			`saved by an older version of ${APP_NAME} (format ${version}), which this build can't open`
+		);
+	}
+	return checkCurrent(raw);
 }
 
 /** A game's script's logo (`scriptLogo`), as the saved games list shows it. */
@@ -505,7 +199,7 @@ export function listSavedGames(records: readonly unknown[]): {
 	const unreadable: UnreadableGame[] = [];
 	for (const raw of records) {
 		try {
-			games.push(summariseSavedGame(migrateSavedGame(raw)));
+			games.push(summariseSavedGame(readSavedGame(raw)));
 		} catch (e) {
 			if (!(e instanceof SavedGameError)) throw e;
 			const gameId = isRecord(raw) && typeof raw.gameId === 'string' ? raw.gameId : undefined;
@@ -526,7 +220,7 @@ export class MemoryGameStore implements GameStore {
 
 	async load(gameId: GameId): Promise<SavedGame | undefined> {
 		const raw = this.#records.get(gameId);
-		return raw === undefined ? undefined : migrateSavedGame(structuredClone(raw));
+		return raw === undefined ? undefined : readSavedGame(structuredClone(raw));
 	}
 
 	async list() {

@@ -5,12 +5,12 @@
  * Two kinds of version are involved:
  * - the IndexedDB database version (`DB_VERSION`) covers object stores and indexes, and
  *   is upgraded in `onupgradeneeded`;
- * - each saved game's `schemaVersion` covers the game data, and is migrated by core on
- *   load (`migrateSavedGame`), so documents are stored exactly as they were written.
+ * - each saved game's `schemaVersion` covers the game data, and is checked by core on
+ *   load (`readSavedGame`), which refuses any other format rather than converting it.
  */
 import {
 	listSavedGames,
-	migrateSavedGame,
+	readSavedGame,
 	type GameStore,
 	type SavedGame,
 	type SavedGameSummary,
@@ -82,7 +82,7 @@ export class IdbGameStore implements GameStore {
 	async load(gameId: string): Promise<SavedGame | undefined> {
 		const tx = (await this.#open()).transaction(GAMES, 'readonly');
 		const raw: unknown = await done(tx.objectStore(GAMES).get(gameId));
-		return raw === undefined ? undefined : migrateSavedGame(raw);
+		return raw === undefined ? undefined : readSavedGame(raw);
 	}
 
 	async list(): Promise<{ games: SavedGameSummary[]; unreadable: UnreadableGame[] }> {

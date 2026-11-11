@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { migrateSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
+	import { readSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 	import { dayTimers } from '#lib/core/rules/index.ts';
@@ -60,7 +60,7 @@
 
 	async function show(next: SharedGrimoire) {
 		try {
-			const saved = migrateSavedGame(next.saved);
+			const saved = readSavedGame(next.saved);
 			const data = await loadOfficialData();
 			if (shared !== next) return;
 			let drawn = board;

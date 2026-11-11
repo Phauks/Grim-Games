@@ -1,4 +1,4 @@
-import { migrateSavedGame, withGameId } from '#lib/core/engine/index.ts';
+import { readSavedGame, withGameId } from '#lib/core/engine/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 import { gameStore } from '#lib/features/game/session.svelte.ts';
@@ -34,7 +34,7 @@ export async function keepGrimoire(
 	gameId?: GameId
 ): Promise<GameId | undefined> {
 	try {
-		const read = migrateSavedGame(grimoire.saved);
+		const read = readSavedGame(grimoire.saved);
 		const saved = gameId === undefined ? read : withGameId(read, gameId);
 		await gameStore().save(saved);
 		const id = saved.gameId as GameId;
