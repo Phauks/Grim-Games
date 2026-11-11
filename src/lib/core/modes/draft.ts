@@ -65,7 +65,7 @@
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
 import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
-import type { TurnsPlayersInto } from '#lib/core/data/turns-players-rules.ts';
+import type { TurnsPlayersInto } from '#lib/core/data/parts/turns-players-into.ts';
 import { isSeated, keptForNeighbours, rulesFor, type ReservedHidden } from './draft-seats.ts';
 
 export {

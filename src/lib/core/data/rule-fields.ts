@@ -14,7 +14,6 @@ import {
 	COUNT,
 	list,
 	NUM,
-	NUMS,
 	obj,
 	oneOf,
 	opt,
@@ -28,14 +27,12 @@ import {
 	type FieldSpec
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
-import { TURNS_PLAYERS } from './turns-players-rules.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
 import { REMINDER_ENDS } from './parts/reminder-ends.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
-const SEATED = oneOf(SEATED_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
 const SOME_SEATED = anyOf(SEATED_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
@@ -121,32 +118,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		),
 		wakes: opt(oneOf(['marked'])),
 		falseToken: opt(TOKEN)
-	}),
-	becomes: obj({
-		token: TOKEN,
-		into: oneOf(['demon', 'evil', 'swap', 'carrier-alignment']),
-		when: opt(oneOf(['placed', 'removed'])),
-		follows: opt(T),
-		evenIfImpaired: opt(T),
-		spent: opt(TOKEN)
-	}),
-	changesCharacter: obj({
-		types: SOME_SEATED,
-		notInPlay: opt(T),
-		notTravellers: opt(T),
-		alignment: opt(ALIGNMENT),
-		token: opt(TOKEN),
-		spent: opt(TOKEN),
-		onlyFrom: opt(STRS),
-		notMarked: opt(TOKEN),
-		sameType: opt(T),
-		anyType: opt(T),
-		afterDeath: opt(T),
-		firstNight: opt(T),
-		upTo: opt(oneOf(['minions'])),
-		extraMinions: opt(NUM),
-		minMinions: opt(NUM),
-		outward: opt(T)
 	}),
 	dayReminders: obj({
 		impairable: opt(T),
@@ -435,30 +406,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			note: STR,
 			ambiguous: STR
 		})
-	),
-	setupModifier: obj({
-		summary: STR,
-		ops: list(
-			obj({
-				kind: oneOf(['delta', 'set', 'any']),
-				type: SEATED,
-				values: opt(
-					variants(
-						{ label: 'Numbers', is: 'array', spec: NUMS },
-						{ label: 'Most', is: 'string', spec: oneOf(['most']) }
-					)
-				),
-				also: opt(NUMS),
-				minUsual: opt(NUM)
-			})
-		),
-		requires: opt(STR),
-		alignments: opt(list(obj({ type: SEATED, alignment: ALIGNMENT, count: COUNT }))),
-		copies: opt(NUMS),
-		duplicates: opt(anyOf(ALIGNMENTS)),
-		notes: opt(STRS),
-		readsBrackets: opt(T)
-	}),
-	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
-	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) })
+	)
 };

@@ -4,7 +4,7 @@
  * (https://wiki.bloodontheclocktower.com/Abilities, https://wiki.bloodontheclocktower.com/Setup).
  *
  * Each character's change is the `setupModifier` key of its rules block (our overlay files for
- * official characters, or a custom character's own `rules`; `data/setup-modifier-rules.ts`).
+ * official characters, or a custom character's own `rules`; `data/parts/setup-modifier.ts`).
  * Characters without one fall back to reading the bracket text, flagged as auto-detected.
  * The reminder text is our own words.
  */
@@ -13,7 +13,7 @@ import type {
 	AlignmentOp,
 	CountOp,
 	SetupModifierRules
-} from '#lib/core/data/setup-modifier-rules.ts';
+} from '#lib/core/data/parts/setup-modifier.ts';
 import type { Alignment, Character, CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
