@@ -62,8 +62,10 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 
 	// No lock (L48): the second cycles on its own and the pair stays one of each.
 	await expect(savant.getByRole('button', { name: /^Keep statement/ })).toHaveCount(0);
-	const first = await lines.nth(0).locator('.sentence').innerText();
-	const second = await lines.nth(1).locator('.sentence').innerText();
+	// textContent, not innerText: the seat badges in a sentence lay out as their own boxes, so
+	// innerText breaks lines around them and never equals the text toHaveText reads.
+	const first = (await lines.nth(0).locator('.sentence').textContent()) ?? '';
+	const second = (await lines.nth(1).locator('.sentence').textContent()) ?? '';
 	await savant.getByRole('button', { name: 'Another statement 2' }).tap();
 	await expect(lines.nth(0).locator('.sentence')).toHaveText(first);
 	await expect(lines.nth(1).locator('.sentence')).not.toHaveText(second);
