@@ -194,7 +194,7 @@ describe('checkCoverage', () => {
 		const cite = `// ${wikiUrl('Chef')}\n`;
 		abilityTests.set('chef.test.ts', `${cite}it('Example 1: two evil pairs', () => {});`);
 		expect(checkCoverage({ ...input, abilityTests }).problems).toEqual([
-			'src/lib/core/abilities/chef.test.ts: writes wiki examples without `scenario` (src/lib/core/testing/scenario.ts)'
+			'src/lib/core/rules-tests/characters/chef.test.ts: writes wiki examples without `scenario` (src/lib/core/testing/scenario.ts)'
 		]);
 		abilityTests.set(
 			'chef.test.ts',
@@ -209,8 +209,8 @@ describe('checkCoverage', () => {
 		abilityTests.delete('chef.test.ts');
 		const report = checkCoverage({ ...input, abilityTests, jinxTests: new Map() });
 		expect(report.problems).toEqual([
-			'src/lib/core/abilities/chef.test.ts: missing (character chef)',
-			'src/lib/core/jinxes/devilsadvocate__lilmonsta.test.ts: missing (jinx lilmonsta + devilsadvocate)'
+			'src/lib/core/rules-tests/characters/chef.test.ts: missing (character chef)',
+			'src/lib/core/rules-tests/jinxes/devilsadvocate__lilmonsta.test.ts: missing (jinx lilmonsta + devilsadvocate)'
 		]);
 	});
 
@@ -222,8 +222,8 @@ describe('checkCoverage', () => {
 			['devilsadvocate__lilmonsta.test.ts', `// ${wikiUrl("Lil' Monsta")}\nit.todo('rule');`]
 		]);
 		expect(checkCoverage({ ...input, abilityTests, jinxTests }).problems).toEqual([
-			'src/lib/core/abilities/chef.test.ts: does not cite https://wiki.bloodontheclocktower.com/Chef',
-			'src/lib/core/jinxes/devilsadvocate__lilmonsta.test.ts: does not cite https://wiki.bloodontheclocktower.com/Devil%27s_Advocate'
+			'src/lib/core/rules-tests/characters/chef.test.ts: does not cite https://wiki.bloodontheclocktower.com/Chef',
+			'src/lib/core/rules-tests/jinxes/devilsadvocate__lilmonsta.test.ts: does not cite https://wiki.bloodontheclocktower.com/Devil%27s_Advocate'
 		]);
 	});
 
@@ -236,8 +236,8 @@ describe('checkCoverage', () => {
 			abilityTests: new Map(input.abilityTests)
 		});
 		expect(report.problems).toEqual([
-			'src/lib/core/abilities/devilsadvocate.test.ts: no character with this id in roles.json',
-			'src/lib/core/jinxes/devilsadvocate__lilmonsta.test.ts: no jinx for this pair in jinxes.json (file names are <a>__<b>.test.ts, ids sorted)'
+			'src/lib/core/rules-tests/characters/devilsadvocate.test.ts: no character with this id in roles.json',
+			'src/lib/core/rules-tests/jinxes/devilsadvocate__lilmonsta.test.ts: no jinx for this pair in jinxes.json (file names are <a>__<b>.test.ts, ids sorted)'
 		]);
 	});
 
@@ -247,8 +247,8 @@ describe('checkCoverage', () => {
 			['lilmonsta__devilsadvocate.test.ts', renderJinxTest(monsta, advocate)]
 		]);
 		expect(checkCoverage({ ...input, jinxTests }).problems).toEqual([
-			'src/lib/core/jinxes/devilsadvocate__lilmonsta.test.ts: missing (jinx lilmonsta + devilsadvocate)',
-			'src/lib/core/jinxes/lilmonsta__devilsadvocate.test.ts: no jinx for this pair in jinxes.json (file names are <a>__<b>.test.ts, ids sorted)'
+			'src/lib/core/rules-tests/jinxes/devilsadvocate__lilmonsta.test.ts: missing (jinx lilmonsta + devilsadvocate)',
+			'src/lib/core/rules-tests/jinxes/lilmonsta__devilsadvocate.test.ts: no jinx for this pair in jinxes.json (file names are <a>__<b>.test.ts, ids sorted)'
 		]);
 	});
 });

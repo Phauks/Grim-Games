@@ -10,8 +10,8 @@ import { defaultAlignment } from '../../src/lib/core/data/character-type.ts';
 import type { Character, CharacterId, Jinx, NightSheet } from '../../src/lib/core/data/types.ts';
 
 export const WIKI_BASE = 'https://wiki.bloodontheclocktower.com/';
-export const ABILITIES_DIR = 'src/lib/core/abilities';
-export const JINXES_DIR = 'src/lib/core/jinxes';
+export const ABILITIES_DIR = 'src/lib/core/rules-tests/characters';
+export const JINXES_DIR = 'src/lib/core/rules-tests/jinxes';
 
 /**
  * The wiki page title for a character is its name with spaces as underscores; the wiki has a

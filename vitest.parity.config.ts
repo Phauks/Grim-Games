@@ -15,7 +15,7 @@ export default defineConfig({
 	test: {
 		name: 'parity',
 		environment: 'node',
-		include: ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'],
+		include: ['src/lib/core/rules-tests/characters/**/*.test.ts', 'src/lib/core/rules-tests/jinxes/**/*.test.ts'],
 		isolate: false,
 		expect: { requireAssertions: true },
 		env: { GRIM_PARITY: '1' }

@@ -48,8 +48,8 @@ If Chromium is already installed somewhere (for example a sandbox), set `PLAYWRI
 
 Every character and every jinx has a test file, based on the [BotC wiki](https://wiki.bloodontheclocktower.com) (the rules authority):
 
-- `src/lib/core/abilities/<characterId>.test.ts`: data checks generated from `roles.json` (type, default alignment, edition, setup, reminders, night sheet, `special`), then one `it.todo` per example in the wiki page's Examples section;
-- `src/lib/core/jinxes/<a>__<b>.test.ts` (ids sorted): the jinx is in `jinxes.json` and applies only with both characters, then an `it.todo` for the rule it imposes.
+- `src/lib/core/rules-tests/characters/<characterId>.test.ts`: data checks generated from `roles.json` (type, default alignment, edition, setup, reminders, night sheet, `special`), then one `it.todo` per example in the wiki page's Examples section;
+- `src/lib/core/rules-tests/jinxes/<a>__<b>.test.ts` (ids sorted): the jinx is in `jinxes.json` and applies only with both characters, then an `it.todo` for the rule it imposes.
 
 To write a scenario, read the example on the wiki page and replace its `it.todo` with a test that sets up seats, characters and reminders, runs the action and checks the resulting state, prompts or warnings. Paraphrase it: the wiki has no licence, so never copy its prose. Keep the wiki URL at the top of the file. These files run in the `rules` Vitest project without per-file isolation (that keeps 300+ files fast), so don't use `vi.mock` or leave module state behind; read data with `#lib/core/testing/committed-data.ts`.
 

@@ -1,7 +1,7 @@
 /**
  * Test support only (never import from app code): the TPI data committed in static/data,
- * loaded with the same parsers the app uses. The rules tests in src/lib/core/abilities,
- * src/lib/core/jinxes and src/lib/core/rules read characters and jinxes from here.
+ * loaded with the same parsers the app uses. The rules tests in src/lib/core/rules-tests/characters,
+ * src/lib/core/rules-tests/jinxes and src/lib/core/rules read characters and jinxes from here.
  * Uses `node:fs`, so `src/lib/core/testing/` is excluded from the Worker typecheck.
  */
 import { readFileSync } from 'node:fs';

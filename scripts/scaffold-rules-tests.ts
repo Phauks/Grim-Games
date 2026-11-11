@@ -1,7 +1,7 @@
 /**
  * Creates the missing rules test files (04-architecture.md §10): one per character in
- * src/lib/core/abilities/<id>.test.ts and one per jinx pair in
- * src/lib/core/jinxes/<a>__<b>.test.ts. Existing files are never touched, so run it after a
+ * src/lib/core/rules-tests/characters/<id>.test.ts and one per jinx pair in
+ * src/lib/core/rules-tests/jinxes/<a>__<b>.test.ts. Existing files are never touched, so run it after a
  * data sync adds a character or jinx, then write the scenarios.
  *
  *   npm run scaffold:rules-tests                      generic `it.todo('wiki examples')`
