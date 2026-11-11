@@ -9,7 +9,7 @@
 	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import SeatNoteEntry from '#lib/features/grimoire/SeatNoteEntry.svelte';
+	import SeatNoteEntry from '#lib/features/grimoire/seats/SeatNoteEntry.svelte';
 	import type { PlayerNote } from './notebook.ts';
 
 	interface Props {

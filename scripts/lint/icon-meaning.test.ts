@@ -8,7 +8,7 @@ const eslint = new ESLint({ cwd: root });
 
 async function problems(
 	template: string,
-	filePath = 'src/lib/features/grimoire/ReminderBank.svelte'
+	filePath = 'src/lib/features/grimoire/reminders/ReminderBank.svelte'
 ) {
 	const code = `<script lang="ts">
 	import Button from '#lib/ui/primitives/Button.svelte';

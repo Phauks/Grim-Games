@@ -21,15 +21,18 @@
 	import ReminderTethers from '#lib/features/board/ReminderTethers.svelte';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { NightWalk } from './night-walk.svelte.ts';
+	import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 	import type { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
-	import type { SeatArranging } from './seat-arranging.svelte.ts';
-	import type { SeatHints } from './seat-hints.svelte.ts';
+	import type { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import type { SeatHints } from '#lib/features/grimoire/seats/seat-hints.svelte.ts';
 	import type { PhaseFlow } from './phase-flow.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import SeatMarksSheet from './SeatMarksSheet.svelte';
-	import SeatToken from './SeatToken.svelte';
-	import { remindersBeside, trueCharacterMarks } from './true-character-marks.ts';
+	import SeatMarksSheet from '#lib/features/grimoire/seats/SeatMarksSheet.svelte';
+	import SeatToken from '#lib/features/grimoire/seats/SeatToken.svelte';
+	import {
+		remindersBeside,
+		trueCharacterMarks
+	} from '#lib/features/grimoire/seats/true-character-marks.ts';
 
 	type SeatPart = 'note' | 'nominate' | 'avatar';
 

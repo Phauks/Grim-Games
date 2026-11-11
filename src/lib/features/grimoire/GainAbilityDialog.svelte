@@ -8,7 +8,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { SEAT_TYPES } from './board.ts';
-	import CharacterPicker from './CharacterPicker.svelte';
+	import CharacterPicker from '#lib/features/grimoire/seats/CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**

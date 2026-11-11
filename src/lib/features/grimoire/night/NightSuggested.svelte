@@ -1,0 +1,790 @@
+<script lang="ts">
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import type { AnswerOption } from '#lib/core/rules/night/info/answers.ts';
+	import type {
+		AnswerValue,
+		NightAnswer,
+		Reliability,
+		Why
+	} from '#lib/core/rules/night/info/reliability.ts';
+	import type {
+		ChosenPlayers,
+		ChosenPlayersRow
+	} from '#lib/core/rules/night/info/chosen-players.ts';
+	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
+	import type { LearnedRole, LearnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import type { ValidInfo } from '#lib/core/rules/night/info/valid-info.ts';
+	import { answerOptions } from '#lib/core/rules/night/info/answers.ts';
+	import { chosenPlayers } from '#lib/core/rules/night/info/chosen-players.ts';
+	import { learnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+	import { validInformation } from '#lib/core/rules/night/info/valid-info.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import NightReasonTag from './NightReasonTag.svelte';
+	import NightWhy from './NightWhy.svelte';
+	import CharacterSet from '#lib/features/grimoire/seats/CharacterSet.svelte';
+	import DayMarkAnswer from './DayMarkAnswer.svelte';
+	import { answerValueText } from './night-steps.ts';
+
+	/**
+	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`: the
+	 * answer the grimoire gives (the Undertaker's executed character), the truthful options for an
+	 * info picker, or who dies. Suggestions only: nothing is applied, and an answer the player's
+	 * ability can't be trusted for is marked. Values and names only, no new rules wording.
+	 */
+	interface Props {
+		grimoire: Grimoire;
+		step: NightStep;
+		/** One line, for the walk-through strip. */
+		compact?: boolean;
+		/** Show a character to the player. */
+		onShow?: (characterId: CharacterId) => void;
+		/** Show a set of characters to the player at once (the Godfather's Outsiders). */
+		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
+		/** Show the "Your number is" info token with a suggested number (a number step). */
+		onShowNumber?: (n: number) => void;
+		/** Show a yes or no answer as the Yes/No info token does (Trevor, 2026-11-02: Flowergirl). */
+		onShowAnswer?: (answer: string) => void;
+		/**
+		 * Show a player's character on the step's card that is filled from the player chosen
+		 * (the Dreamer's "This player is"), where the other token is picked too.
+		 */
+		onShowChosen?: (seatId: SeatId, characterId: CharacterId) => void;
+		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
+		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
+	}
+
+	let {
+		grimoire,
+		step,
+		compact = false,
+		onShow,
+		onShowCharacters,
+		onShowNumber,
+		onShowAnswer,
+		onShowChosen,
+		onRecord
+	}: Props = $props();
+	const headingId = $props.id();
+
+	const game = $derived(grimoire.game);
+	const characters = $derived(grimoire.open.characters);
+	const assistance = $derived(preferences.current.assistance);
+	const info = $derived(step.info);
+	/**
+	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn after
+	 * the text, so their characters show as badges. Who made the player drunk or poisoned is the
+	 * step's Afflictions, not repeated here (Trevor, 2026-10-27).
+	 */
+	interface Flag {
+		text: string;
+		/** A rule that changes what may be given (the Vortox), drawn as a warning. */
+		warn?: boolean;
+		/** The character it is about, shown before the text (the Vortox). */
+		character?: CharacterId;
+		/** Players named after the text, each with their character. */
+		seats?: readonly SeatId[];
+		allowed?: readonly AnswerValue[];
+	}
+	function flags(r: Reliability & { possible?: AnswerValue[] }, listed = false): Flag[] {
+		const out: Flag[] = [];
+		// A listed answer's rows already say which values the Vortox allows.
+		if (r.falseBy && !listed) out.push({ text: 'must be false', warn: true, character: r.falseBy });
+		// The rows say it when listed (NightReasonTag); a lone answer says it here (the Fibbin).
+		if (r.mayBeFalse && !r.unreliable && !listed)
+			out.push({ text: 'might be false', warn: true, character: r.mayBeFalse });
+		if (r.misregister.length > 0)
+			out.push({ text: 'Might register falsely:', seats: r.misregister });
+		if (r.possible && r.possible.length > 1 && !listed)
+			out.push({ text: 'Allowed:', allowed: r.possible });
+		return out;
+	}
+
+	/**
+	 * Every answer that may be given while the player is drunk, poisoned or under the Vortox
+	 * (Trevor, 2026-10-27: "when poisoned, need to offer alternative information"), from core's
+	 * `answerOptions`; empty while only the truth may be given.
+	 */
+	const options = (a: NightAnswer): AnswerOption[] => answerOptions(game, a, characters);
+	/**
+	 * Every valid piece of information, never one pick (Trevor, 2026-10-18: "show all valid
+	 * information"), from core's `validInformation`.
+	 */
+	const valid = (p: InfoPicker): ValidInfo[] => validInformation(game, p);
+	/**
+	 * Only number information is suggested (Trevor, 2026-10-18: "only show info suggest for
+	 * numbers, not sets of characters"); players and characters are left to the Storyteller.
+	 */
+	const numberPickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.filter((p) => valid(p).some((v) => v.number !== undefined))
+			: []
+	);
+	/**
+	 * The valid numbers themselves, in brackets (Trevor, 2026-10-22: "1 valid" read as if 1
+	 * were the number to give; the closed step should be enough to run the night).
+	 */
+	const validLists = $derived(
+		numberPickers.map((p) => {
+			const options = valid(p).map((v) => (v.number === undefined ? 'Any other' : v.number));
+			return {
+				seatId: numberPickers.length > 1 ? p.seatId : undefined,
+				list: `(${options.join(', ')})`
+			};
+		})
+	);
+	/**
+	 * The logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the players it is
+	 * worked out from and what it becomes if one registers otherwise. Beside the information in the
+	 * opened step, with no Why button to press (Trevor, 2026-10-22).
+	 */
+	const hasWhy = (why: Why | undefined): why is Why =>
+		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
+	/**
+	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's Minion),
+	 * from core's `learnedRoles`: the row the board's reminders mark first, then true ones, then
+	 * each player who may register as the type, whose character is picked here.
+	 */
+	const rolePickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.flatMap((picker) => {
+					const roles = learnedRoles(game, picker, characters);
+					if (!roles || !(roles.rows.length > 0 || roles.none || roles.anyOther)) return [];
+					const extras = (roles.none ? 1 : 0) + (roles.anyOther ? 1 : 0);
+					return [{ picker, roles, ...fold(roles.rows, extras) }];
+				})
+			: []
+	);
+	/**
+	 * Once the board's reminders mark a row, the other valid rows fold under a caret, one tap away
+	 * (Trevor, 2026-10-27: "When other valid info exists, but one has been marked, allow carrot
+	 * menu collapsing the other valid info"). `others` counts them, with "None" and "Any other";
+	 * nothing marked leaves every row in the list.
+	 */
+	function fold<R extends { marked?: true }>(rows: readonly R[], extras: number) {
+		const marked = rows.filter((r) => r.marked);
+		const rest = marked.length > 0 ? rows.filter((r) => !r.marked) : [...rows];
+		return { marked, rest, others: marked.length > 0 ? rest.length + extras : 0 };
+	}
+	/** A marked choice that isn't valid keeps the valid ones open beneath it. */
+	const markedValid = (rows: readonly { reason: string }[]) =>
+		rows.some((r) => r.reason !== 'invalid');
+	const rowKey = (p: InfoPicker, row: LearnedRole) =>
+		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
+	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
+	let shownAs = $state<Record<string, CharacterId>>({});
+	/** `record` without `key`: a drop-down's "None" puts it back to nothing chosen. */
+	const withoutKey = (record: Record<string, CharacterId>, key: string) =>
+		Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
+	/**
+	 * Which rows' "Shown as" lists are open: Show to player with nothing picked opens the list
+	 * instead of doing nothing (Trevor, 2026-10-28: with the Investigator drunk it wasn't clear
+	 * a character had to be picked first).
+	 */
+	let listOpen = $state<Record<string, boolean>>({});
+	/** Show the picked character, or open the row's list to pick one. */
+	function showOrPick(key: string, id: CharacterId | undefined) {
+		if (id) onShow?.(id);
+		else listOpen = { ...listOpen, [key]: true };
+	}
+	/** Shows a role and records it: whole once the second player of a pair is known. */
+	function showRole(p: InfoPicker, row: LearnedRole, key: string, id: CharacterId | undefined) {
+		if (id && onShowChosen && !row.other) onShowChosen(row.target, id);
+		else showOrPick(key, id);
+		const seats = row.other ? [row.target, row.other] : [row.target];
+		if (id) onRecord?.(p, { seats, characterId: id });
+	}
+	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
+		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
+	/**
+	 * One badge per character the strip's line names, in row order, the ones the board's
+	 * reminders mark emphasised (Trevor, 2026-10-26).
+	 */
+	const roleIds = (all: readonly { roles: LearnedRoles }[]) => {
+		const out: { id: CharacterId; marked: boolean }[] = [];
+		for (const { roles } of all) {
+			for (const r of roles.rows) {
+				const id = r.characterIds[0];
+				const seen = out.find((o) => o.id === id);
+				if (seen) seen.marked ||= !!r.marked;
+				else if (id) out.push({ id, marked: !!r.marked });
+			}
+		}
+		return out;
+	};
+	/**
+	 * The players a "learn players" step could show (Steward, Noble), from core's
+	 * `chosenPlayers`: the ones the board's Know reminders mark first (Trevor, 2026-10-26).
+	 */
+	const playerPickers = $derived(
+		info?.kind === 'picker'
+			? info.pickers.flatMap((picker) => {
+					const players = chosenPlayers(game, picker);
+					if (!players || !(players.rows.length > 0 || players.anyOther)) return [];
+					return [{ picker, players, ...fold(players.rows, players.anyOther ? 1 : 0) }];
+				})
+			: []
+	);
+	const playerRowKey = (p: InfoPicker, row: ChosenPlayersRow) =>
+		JSON.stringify([p.seatId, row.target, row.seats, row.reason, row.exact ?? false]);
+	/** The players the strip's line names: the marked rows' players, else each row's player. */
+	const playerSeats = (all: readonly { players: ChosenPlayers }[]) => {
+		const out: { seatId: SeatId; marked: boolean }[] = [];
+		for (const { players } of all) {
+			const marked = players.rows.filter((r) => r.marked);
+			for (const r of marked.length > 0 ? marked : players.rows) {
+				for (const seatId of r.exact ? [r.target, ...r.seats] : [r.target]) {
+					const seen = out.find((o) => o.seatId === seatId);
+					if (seen) seen.marked ||= !!r.marked;
+					else out.push({ seatId, marked: !!r.marked });
+				}
+			}
+		}
+		return out;
+	};
+
+	const showAnswers = $derived(assistance.nightAnswers);
+	const showPickers = $derived(assistance.infoSuggestions);
+	const has = $derived(
+		(info?.kind === 'answer' && showAnswers && info.answers.length > 0) ||
+			(info?.kind === 'picker' &&
+				showPickers &&
+				(numberPickers.length > 0 || rolePickers.length > 0 || playerPickers.length > 0)) ||
+			(info?.kind === 'death' &&
+				showAnswers &&
+				info.checks.some((c) => c.verdict && c.verdict.kind !== 'choose'))
+	);
+
+	/**
+	 * The strip's one line: the first answer, or how many are valid; a character as a badge,
+	 * players as their name badges (`seats` after the text, `valid` each before its numbers).
+	 */
+	const line = $derived.by(
+		(): {
+			characterId?: CharacterId;
+			/** A set of characters (the Godfather's Outsiders), drawn as badges. */
+			set?: Extract<AnswerValue, { kind: 'characters' }>;
+			text: string;
+			seats?: readonly SeatId[];
+			valid?: typeof validLists;
+			roles?: { id: CharacterId; marked: boolean }[];
+			players?: { seatId: SeatId; marked: boolean }[];
+		} => {
+			if (!info || !has) return { text: '' };
+			if (info.kind === 'answer') {
+				const a = info.answers[0];
+				const note = a.unreliable ? ' (not reliable)' : '';
+				if (a.kind === 'characters') return { set: a, text: note };
+				return a.kind === 'character'
+					? { characterId: a.value, text: note }
+					: { text: `${answerValueText(a)}${note}` };
+			}
+			if (info.kind === 'picker') {
+				return {
+					text: '',
+					...(rolePickers.length > 0 ? { roles: roleIds(rolePickers) } : {}),
+					...(playerPickers.length > 0 ? { players: playerSeats(playerPickers) } : {}),
+					...(rolePickers.length === 0 && playerPickers.length === 0 ? { valid: validLists } : {})
+				};
+			}
+			const v = info.checks.find((c) => c.verdict && c.verdict.kind !== 'choose')?.verdict;
+			if (v?.kind === 'dies') return { text: 'Dead: ', seats: v.seatIds };
+			if (v?.kind === 'ask') return { text: 'Dead? ', seats: v.ifYes };
+			return { text: v?.kind === 'no-death' ? 'No death' : '' };
+		}
+	);
+</script>
+
+<!-- A player as the badge with its player: their true character and their name (Trevor,
+     2026-10-17; one piece, 2026-11-02). -->
+{#snippet badge(id: CharacterId, interactive = true)}<CharacterPiece
+		template="badge"
+		characterId={id}
+		character={characters.get(id)}
+		{interactive}
+	/>{/snippet}
+
+{#snippet player(
+	seatId: SeatId,
+	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
+)}<span class="player"><SeatBadge {game} {characters} {seatId} {characterId} /></span>{/snippet}
+
+{#snippet players(seats: readonly SeatId[])}{#each seats as seatId, n (seatId)}{n
+			? ', '
+			: ''}{@render player(seatId)}{/each}{/snippet}
+
+{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}{@render badge(
+			v.value
+		)}{:else if v.kind === 'characters'}<CharacterSet
+			value={v}
+			{characters}
+		/>{:else}{answerValueText(v)}{/if}{/snippet}
+
+{#snippet flagBody(flag: Flag)}{#if flag.character}{@render badge(flag.character)}
+	{/if}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ' '}{@render player(
+			seatId
+		)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
+			v
+		)}{/each}{/snippet}
+
+{#snippet flagLines(list: Flag[])}{#each list as flag (flag.text)}
+		<span class="flag" class:warn={flag.warn}>
+			{#if flag.warn}<Icon name="warning" />{/if}{@render flagBody(flag)}
+		</span>
+	{/each}{/snippet}
+
+{#snippet answer(a: NightAnswer)}
+	{@const listed = options(a)}
+	<li data-unreliable={a.unreliable && listed.length === 0 ? '' : undefined}>
+		{#if listed.length > 0}
+			{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
+					>{@render player(a.seatId)}:</span
+				>{/if}
+			<ul class="valid" aria-label="Valid information" data-testid="answer-options">
+				{#each listed as o, i (i)}{@render answerRow(a, o, i)}{/each}
+			</ul>
+			{@render flagLines(flags(a, true))}
+			{#if hasWhy(a.why)}<NightWhy {grimoire} why={a.why} />{/if}
+		{:else}
+			{@render answerOnly(a)}
+		{/if}
+	</li>
+{/snippet}
+
+<!-- The character a player is shown, picked from those that fit; "None" clears it. -->
+{#snippet shownAsSelect(key: string, id: CharacterId | undefined, ids: readonly CharacterId[])}
+	<Select
+		label="Shown as"
+		hideLabel
+		placeholder="Shown as"
+		attention={!id}
+		bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
+		value={id}
+		options={ids.map((c) => ({
+			value: c,
+			// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
+			label: characters.get(c)?.name ?? c
+		}))}
+		onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+		onClear={() => (shownAs = withoutKey(shownAs, key))}
+	>
+		{#snippet item(option)}{@render badge(option.value, false)}{/snippet}
+		{#snippet selected(option)}{@render badge(option.value, false)}{/snippet}
+	</Select>
+{/snippet}
+
+<!-- One answer that may be given, with Show to player for a number or a character. -->
+{#snippet answerRow(a: NightAnswer, o: AnswerOption, i: number)}
+	{@const key = `${a.seatId}:other`}
+	{@const id = o.otherCharacters
+		? shownAs[key]
+		: o.value.kind === 'character'
+			? o.value.value
+			: undefined}
+	<li data-reason={o.reason}>
+		<span class="main option">
+			{#if o.otherCharacters}
+				<strong>Any other</strong>
+				{@render shownAsSelect(key, id, o.otherCharacters)}
+			{:else if o.anyOther}
+				<strong>Any other</strong>
+			{:else if o.value.kind === 'character'}
+				{@render badge(o.value.value)}
+			{:else if o.value.kind === 'characters'}
+				<CharacterSet value={o.value} {characters} />
+			{:else}
+				<strong>{answerValueText(o.value)}</strong>
+			{/if}
+			{#if i === 0 && a.because.length > 0}<span class="because"
+					>({@render players(a.because)})</span
+				>{/if}
+		</span>
+		<NightReasonTag {grimoire} reason={o.reason} source={a} />
+		{#if o.value.kind === 'number' && onShowNumber}
+			{@const n = o.value.value}
+			<ShowToPlayerButton onclick={() => onShowNumber(n)} />
+		{:else if o.value.kind === 'yes-no' && onShowAnswer}
+			{@const text = answerValueText(o.value)}
+			<ShowToPlayerButton onclick={() => onShowAnswer(text)} />
+		{:else if o.value.kind === 'character' && onShow}
+			<ShowToPlayerButton onclick={() => showOrPick(key, id)} />
+		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
+			{@const v = o.value}
+			<ShowToPlayerButton onclick={() => onShowCharacters(v)} />
+		{/if}
+	</li>
+{/snippet}
+
+{#snippet answerOnly(a: NightAnswer)}
+	<span class="main">
+		{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
+				>{@render player(a.seatId)}:</span
+			>{/if}
+		{#if a.kind === 'character'}
+			{@render badge(a.value)}
+		{:else if a.kind === 'characters'}
+			<CharacterSet value={a} {characters} />
+		{:else}
+			<strong>{answerValueText(a)}</strong>
+		{/if}
+		{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
+	</span>
+	{@render flagLines(flags(a))}
+	{#if hasWhy(a.why)}<NightWhy {grimoire} why={a.why} />{/if}
+	{#if a.kind === 'character' && onShow}
+		{@const id = a.value}
+		<ShowToPlayerButton onclick={() => onShow(id)} />
+	{:else if a.kind === 'characters' && onShowCharacters}
+		<ShowToPlayerButton onclick={() => onShowCharacters(a)} />
+	{:else if a.kind === 'number' && onShowNumber}
+		{@const n = a.value}
+		<ShowToPlayerButton onclick={() => onShowNumber(n)} />
+	{:else if a.kind === 'yes-no' && onShowAnswer}
+		{@const text = answerValueText(a)}
+		<ShowToPlayerButton onclick={() => onShowAnswer(text)} />
+	{:else if a.kind === 'none'}
+		<DayMarkAnswer {grimoire} {step} />
+	{/if}
+{/snippet}
+
+{#if compact}
+	{#if has}<span class="compact" data-testid="night-suggested"
+			>Valid Information: {#if line.characterId}{@render badge(
+					line.characterId,
+					false
+				)}{/if}{#if line.set}<CharacterSet
+					value={line.set}
+					{characters}
+					interactive={false}
+				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge
+					{game}
+					{characters}
+					{seatId}
+				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<SeatBadge
+						{game}
+						{characters}
+						seatId={v.seatId}
+					/>
+				{/if}{v.list}{/each}{#each line.roles ?? [] as { id, marked }, n (id)}{n ? ', ' : ''}<span
+					class="item"
+					class:marked
+					>{#if marked}<Icon name="reminder" />{/if}{@render badge(id, false)}</span
+				>{/each}{#each line.players ?? [] as { seatId, marked }, n (seatId)}{n ? ', ' : ''}<span
+					class="item"
+					class:marked
+					>{#if marked}<Icon name="reminder" />{/if}<SeatBadge {game} {characters} {seatId} /></span
+				>{/each}</span
+		>{/if}
+{:else if has && info}
+	<!-- A plain section under its heading, like the step's others (Trevor, 2026-10-19). -->
+	<section aria-labelledby={headingId} data-testid="night-suggested">
+		<h3 id={headingId}>Valid Information</h3>
+		<ul>
+			{#if info.kind === 'answer'}
+				{#each info.answers as a (a.seatId)}{@render answer(a)}{/each}
+			{:else if info.kind === 'picker'}
+				{#each numberPickers as p (p.seatId)}
+					<li data-unreliable={p.unreliable ? '' : undefined}>
+						{#if numberPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
+							>{/if}
+						<ul class="valid" aria-label="Valid information">
+							{#each valid(p) as v, i (i)}
+								<li data-reason={v.reason}>
+									<span class="main option">
+										{#if v.anyOther}<strong>Any other</strong>{/if}
+										{#if v.number !== undefined}<strong>{v.number}</strong>{/if}
+										{#if v.none}<strong>None</strong>{:else if v.yes !== undefined}<strong
+												>{v.yes ? 'Yes' : 'No'}</strong
+											>{/if}
+										{#each v.characterIds ?? [] as id, n (id)}{n ? ' / ' : ''}{@render badge(
+												id
+											)}{/each}
+										{#if v.target}<SeatBadge {game} {characters} seatId={v.target} />
+											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
+										{@render players(v.seats)}
+									</span>
+									<NightReasonTag
+										{grimoire}
+										reason={v.reason}
+										registered={v.registered}
+										source={p}
+									/>
+									{#if v.number !== undefined && onShowNumber}
+										{@const n = v.number}
+										<ShowToPlayerButton
+											onclick={() => {
+												onShowNumber(n);
+												onRecord?.(p, { seats: [], number: n });
+											}}
+										/>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						{@render flagLines(flags(p))}
+						{#if hasWhy(p.why)}<NightWhy {grimoire} why={p.why} />{/if}
+					</li>
+				{/each}
+				{#each rolePickers as { picker: p, roles, marked, rest, others } (p.seatId)}
+					<li data-unreliable={p.unreliable ? '' : undefined}>
+						{#if rolePickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
+						<div class="options" data-testid="learned-roles">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (rowKey(p, row))}
+									{@render roleRow(p, row)}
+								{/each}
+								{#if marked.length === 0}{@render roleExtras(roles)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (rowKey(p, row))}{@render roleRow(p, row)}{/each}
+										{@render roleExtras(roles)}
+									</ul>
+								</Collapsible>
+							{/if}
+						</div>
+						<!-- Who may register otherwise is in the rows; only why any info is allowed here. -->
+						{@render flagLines(flags(p).filter((f) => !f.seats))}
+					</li>
+				{/each}
+				{#each playerPickers as { picker: p, players: choices, marked, rest, others } (p.seatId)}
+					<li data-unreliable={p.unreliable ? '' : undefined}>
+						{#if playerPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
+							>{/if}
+						<div class="options" data-testid="chosen-players">
+							<ul class="valid" aria-label="Valid information">
+								{#each marked.length > 0 ? marked : rest as row (playerRowKey(p, row))}
+									{@render playerRow(row)}
+								{/each}
+								{#if marked.length === 0}{@render playerExtras(choices)}{/if}
+							</ul>
+							{#if marked.length > 0 && others > 0}
+								<Collapsible
+									title="Other valid information"
+									level={4}
+									defaultOpen={!markedValid(marked)}
+									count={others}
+								>
+									<ul class="valid" aria-label="Other valid information">
+										{#each rest as row (playerRowKey(p, row))}{@render playerRow(row)}{/each}
+										{@render playerExtras(choices)}
+									</ul>
+								</Collapsible>
+							{/if}
+						</div>
+						{@render flagLines(flags(p).filter((f) => !f.seats))}
+					</li>
+				{/each}
+			{:else}
+				{#each info.checks as c (c.seatId)}
+					{@const v = c.verdict}
+					{#if v && v.kind !== 'choose'}
+						<li>
+							<span class="main"
+								>{#if v.kind === 'dies'}<strong>Dead:</strong>
+									{@render players(v.seatIds)}{:else if v.kind === 'ask'}<strong>Dead?</strong>
+									{@render players(v.ifYes)}{:else}<strong>No death</strong>{/if}</span
+							>
+						</li>
+					{/if}
+				{/each}
+			{/if}
+		</ul>
+	</section>
+{/if}
+
+<!-- The rows after the roles: "None" (no Outsiders) and "Any other", never marked. -->
+{#snippet roleExtras(roles: LearnedRoles)}
+	{#if roles.none}
+		<li data-reason={roles.none}>
+			<span class="main option"><strong>None</strong></span>
+			<NightReasonTag {grimoire} reason={roles.none} />
+			{#if onShowNumber}
+				<ShowToPlayerButton onclick={() => onShowNumber(0)} />
+			{/if}
+		</li>
+	{/if}
+	{#if roles.anyOther}
+		<li data-reason={roles.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			<NightReasonTag {grimoire} reason={roles.anyOther} />
+		</li>
+	{/if}
+{/snippet}
+
+{#snippet playerRow(row: ChosenPlayersRow)}
+	<li
+		data-reason={row.reason}
+		data-marked={row.marked ? '' : undefined}
+		data-marked-row={row.marked ? '' : undefined}
+	>
+		<span class="main option">
+			{#if row.exact}{@render players([row.target, ...row.seats])}{:else}{@render player(
+					row.target
+				)}{#if row.seats.length > 0}<span class="with">and two of</span>
+					{@render players(row.seats)}{/if}{/if}
+		</span>
+		{#if row.marked}<span class="visually-hidden">Marked</span>{/if}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
+	</li>
+{/snippet}
+
+{#snippet playerExtras(choices: ChosenPlayers)}
+	{#if choices.anyOther}
+		<li data-reason={choices.anyOther}>
+			<span class="main option"><strong>Any other</strong></span>
+			<NightReasonTag {grimoire} reason={choices.anyOther} />
+		</li>
+	{/if}
+{/snippet}
+
+<!--
+	One role to show: the character (picked here when several are allowed), the player who is
+	it and the second player, and Show to player for the character's token.
+-->
+{#snippet roleRow(p: InfoPicker, row: LearnedRole)}
+	{@const key = rowKey(p, row)}
+	{@const id = shownRole(p, row)}
+	<li
+		data-reason={row.reason}
+		data-marked={row.marked ? '' : undefined}
+		data-marked-row={row.marked ? '' : undefined}
+	>
+		<span class="main option">
+			<!-- The player's badge alone when it shows the character already (Trevor, 2026-11-09: the
+			     Dreamer's Valid Information "shows character and player info twice"). -->
+			{#if row.characterIds.length === 1}
+				{#if game.seats[row.target]?.characterId !== row.characterIds[0]}{@render badge(
+						row.characterIds[0]
+					)}{/if}
+			{:else}
+				{@render shownAsSelect(key, id, row.characterIds)}
+			{/if}
+			<SeatBadge {game} {characters} seatId={row.target} />
+			{#if p.seatCount > 1}
+				<span class="with">and</span>
+				{#if row.other}<SeatBadge {game} {characters} seatId={row.other} />{:else}<span class="with"
+						>any other player</span
+					>{/if}
+			{/if}
+		</span>
+		{#if row.marked}<span class="visually-hidden">Marked</span>{/if}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} source={p} />
+		{#if onShow}
+			<ShowToPlayerButton onclick={() => showRole(p, row, key, id)} />
+		{/if}
+	</li>
+{/snippet}
+
+<style>
+	.player {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	/* The same heading as the step's Info token and Reminders (GuidedStep). */
+	h3 {
+		margin: var(--space-2) 0 var(--space-1);
+		font-size: 1rem;
+	}
+	ul {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+	}
+	.main {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	.whose,
+	.because {
+		color: var(--on-surface-muted);
+	}
+	.flag {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		width: 100%;
+		font-size: 0.85rem;
+		color: var(--on-surface-muted);
+		--icon-size: 1em;
+	}
+	.flag.warn {
+		color: var(--evil-text);
+	}
+	/* An answer that may not be the truth is greyed, its warning in red. */
+	li[data-unreliable] > .main {
+		opacity: 0.6;
+	}
+	/* Every valid row, each with why it is valid when not simply true. */
+	.valid {
+		width: 100%;
+		gap: var(--space-1);
+	}
+	.valid > li + li {
+		padding-top: var(--space-1);
+		border-top: 1px solid var(--border);
+	}
+	.with {
+		color: var(--on-surface-muted);
+	}
+	/*
+	 * A row the character's reminders on the board mark: the one the Storyteller already
+	 * chose, emphasised above the other valid rows (Trevor, 2026-10-26) with the shared
+	 * marked edge (base.css [data-marked-row]) and no word beside it.
+	 */
+	.valid > li[data-marked] {
+		padding-block: var(--space-1);
+		padding-inline-end: var(--space-2);
+	}
+	.valid > li[data-marked] + li {
+		border-top: none;
+	}
+	.item.marked {
+		color: var(--heading);
+		font-weight: 600;
+	}
+	.item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		--icon-size: 1em;
+	}
+	/* The rows a step shows, the other valid ones folded beneath once one is marked. */
+	.options {
+		width: 100%;
+		--section-title-size: 0.85rem;
+	}
+	.compact {
+		display: block;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 0.85rem;
+	}
+</style>

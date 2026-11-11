@@ -6,7 +6,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SeatChooser from '#lib/features/grimoire/SeatChooser.svelte';
+	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import type { DayPort } from './day-port.ts';
 

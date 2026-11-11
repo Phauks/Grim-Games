@@ -31,7 +31,7 @@
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import SetupActions from './SetupActions.svelte';
-	import { openingSeating } from '#lib/features/grimoire/seating-mode.svelte.ts';
+	import { openingSeating } from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { remindersHref } from './setup-steps.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

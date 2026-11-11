@@ -27,7 +27,7 @@
 	import type { EndedGame } from './device-notes.ts';
 	import { gameStageText, storytellerGames } from './storyteller-games.ts';
 	import { gameModeName } from './game-mode-name.ts';
-	import AlignmentPill from './AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);

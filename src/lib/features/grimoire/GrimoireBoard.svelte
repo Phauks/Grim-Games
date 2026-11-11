@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
-	import GuidedStep from './GuidedStep.svelte';
-	import NightStrip from './NightStrip.svelte';
+	import GuidedStep from '#lib/features/grimoire/night/GuidedStep.svelte';
+	import NightStrip from '#lib/features/grimoire/night/NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { revivedToday, tonightFromLog } from './night-steps.ts';
+	import { revivedToday, tonightFromLog } from '#lib/features/grimoire/night/night-steps.ts';
 	import { boardNightSteps, stepWakes } from '#lib/core/rules/night/board-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
-	import AlignmentDraw from './AlignmentDraw.svelte';
+	import AlignmentDraw from '#lib/features/grimoire/seats/AlignmentDraw.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
@@ -66,8 +66,11 @@
 		boardAspect
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import { enterSeating, seatingRequested } from './seating-mode.svelte.ts';
+	import { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import {
+		enterSeating,
+		seatingRequested
+	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
@@ -88,14 +91,14 @@
 	import SavantAsk from '#lib/features/savant/SavantAsk.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
-	import SeatSheet from './SeatSheet.svelte';
-	import SeatProfileDialog from './SeatProfileDialog.svelte';
+	import SeatSheet from '#lib/features/grimoire/seats/SeatSheet.svelte';
+	import SeatProfileDialog from '#lib/features/grimoire/seats/SeatProfileDialog.svelte';
 	import NominationChooser from './NominationChooser.svelte';
-	import ReminderBank from './ReminderBank.svelte';
+	import ReminderBank from '#lib/features/grimoire/reminders/ReminderBank.svelte';
 	import { stepFocusOf } from '#lib/features/board/reminders.ts';
 	import { stepFocus } from '#lib/features/board/step-focus.svelte.ts';
-	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-	import BankReminderDialog from './BankReminderDialog.svelte';
+	import ReminderMoveConfirm from '#lib/features/grimoire/reminders/ReminderMoveConfirm.svelte';
+	import BankReminderDialog from '#lib/features/grimoire/reminders/BankReminderDialog.svelte';
 	import { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import { boardTrayPlaces } from './board-tray-places.ts';
 	import BoardCorner from './BoardCorner.svelte';
@@ -107,7 +110,7 @@
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
-	import AlignmentAsk from './AlignmentAsk.svelte';
+	import AlignmentAsk from '#lib/features/grimoire/night/AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { screenshotPart } from '#lib/ui/screenshot.ts';
@@ -115,21 +118,24 @@
 	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
-	import StarPassPrompt from './StarPassPrompt.svelte';
-	import FirstDeathAsk from './FirstDeathAsk.svelte';
-	import DawnDuskAsks from './DawnDuskAsks.svelte';
-	import ExplosionAsk from './ExplosionAsk.svelte';
-	import ReincarnateAsk from './ReincarnateAsk.svelte';
-	import ReminderAsk from './ReminderAsk.svelte';
-	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
+	import StarPassPrompt from '#lib/features/grimoire/night/StarPassPrompt.svelte';
+	import FirstDeathAsk from '#lib/features/grimoire/night/FirstDeathAsk.svelte';
+	import DawnDuskAsks from '#lib/features/grimoire/night/DawnDuskAsks.svelte';
+	import ExplosionAsk from '#lib/features/grimoire/night/ExplosionAsk.svelte';
+	import ReincarnateAsk from '#lib/features/grimoire/night/ReincarnateAsk.svelte';
+	import ReminderAsk from '#lib/features/grimoire/reminders/ReminderAsk.svelte';
+	import {
+		NightWalk,
+		type NightWalkContext
+	} from '#lib/features/grimoire/night/night-walk.svelte.ts';
 	import { PhaseFlow } from './phase-flow.svelte.ts';
-	import { SeatHints } from './seat-hints.svelte.ts';
+	import { SeatHints } from '#lib/features/grimoire/seats/seat-hints.svelte.ts';
 	import GrimCoverActions from './GrimCoverActions.svelte';
 	import type { BoardPlayerSource } from './board-player-source.ts';
 	import { BoardStatus } from './board-status.svelte.ts';
 	import PhaseDialogs from './PhaseDialogs.svelte';
 	import ExecutionPickBar from './ExecutionPickBar.svelte';
-	import NominationAsk from './NominationAsk.svelte';
+	import NominationAsk from '#lib/features/grimoire/night/NominationAsk.svelte';
 
 	interface Props {
 		grimoire: Grimoire;

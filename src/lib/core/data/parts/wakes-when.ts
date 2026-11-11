@@ -4,7 +4,7 @@ import { specPart, type PartValue } from './part.ts';
 
 /**
  * The `wakesWhen` part of a character's rules block: a condition its night step needs before
- * its player wakes, on top of having an ability (`features/grimoire/night-steps.ts`):
+ * its player wakes, on top of having an ability (`features/grimoire/night/night-steps.ts`):
  * - `deadAtLeastLiving`: the dead equal or outnumber the living (the King,
  *   https://wiki.bloodontheclocktower.com/King);
  * - `deadAtLeast`: at least this many players are dead; with `deadAtLeastLiving` too, either

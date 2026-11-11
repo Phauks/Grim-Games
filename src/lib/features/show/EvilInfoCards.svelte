@@ -24,8 +24,8 @@
 		showableBluffSets
 	} from '#lib/features/bluffs/bluffs.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import { seatName } from '#lib/features/grimoire/night-steps.ts';
-	import SeatChooser from '#lib/features/grimoire/SeatChooser.svelte';
+	import { seatName } from '#lib/features/grimoire/night/night-steps.ts';
+	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';

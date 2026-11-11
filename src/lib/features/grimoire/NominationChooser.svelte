@@ -14,7 +14,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { recordNomination } from './record-nomination.ts';
-	import SeatChooser from './SeatChooser.svelte';
+	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
 
 	/**
 	 * Who a seat nominated today (`made`), or who nominated it (`received`), for the board's

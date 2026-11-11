@@ -18,7 +18,7 @@ const WAKE = obj({
 });
 export type NightWake = SpecValue<typeof WAKE>;
 
-/** Players it wakes at night, on top of the night order (`features/grimoire/night-steps.ts`). */
+/** Players it wakes at night, on top of the night order (`features/grimoire/night/night-steps.ts`). */
 export const nightWakes = specPart(
 	'Night wakes',
 	'Players it wakes at night, on top of the night order.',

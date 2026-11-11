@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import type { GenericGuess } from './grim-guesses.ts';
 
 	/**

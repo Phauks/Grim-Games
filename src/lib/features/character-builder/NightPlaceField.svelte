@@ -7,8 +7,8 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import StepPiece from '#lib/features/grimoire/StepPiece.svelte';
-	import type { NamedStep } from '#lib/features/grimoire/night-steps.ts';
+	import StepPiece from '#lib/features/grimoire/night/StepPiece.svelte';
+	import type { NamedStep } from '#lib/features/grimoire/night/night-steps.ts';
 
 	/**
 	 * Where a custom character wakes on one night (M59, Trevor 2026-11-06: mockup C): the
