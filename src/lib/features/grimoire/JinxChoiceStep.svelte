@@ -11,7 +11,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { stepHolders } from './night-steps.ts';
+	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
 	import SeatChooser from './SeatChooser.svelte';
 
 	/**

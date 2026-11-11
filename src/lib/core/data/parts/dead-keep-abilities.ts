@@ -6,7 +6,7 @@ import { specPart, type PartValue } from './part.ts';
  * Who has an ability while a rule source with this part is in play: dead players keep theirs,
  * except those of a `deadLose` type, and living players of a `livingLose` type have none until
  * they die (The Phantom Detectives,
- * https://schnauzerclub.neocities.org/scripts/thephantomdetectives; `modes/rule-effects.ts`).
+ * https://schnauzerclub.neocities.org/scripts/thephantomdetectives; `rules/rule-sources.ts`).
  */
 export const deadKeepAbilities = specPart(
 	'Dead keep abilities',

@@ -23,7 +23,7 @@ import {
 	nominationPrompts,
 	ruleSources,
 	scriptOrderSource
-} from './rule-effects.ts';
+} from '#lib/core/rules/rule-sources.ts';
 import { TRAINED_KILLER } from './rules/trained-killer.ts';
 import { DJINNS_BARGAIN } from './rules/djinns-bargain.ts';
 import { WARRENS } from './rules/warrens.ts';

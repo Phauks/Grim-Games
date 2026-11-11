@@ -150,7 +150,7 @@ export type WholeGameSection = (typeof WHOLE_GAME_SECTIONS)[number];
 /**
  * What a file does in play, as a rules block (M61e, Trevor 2026-11-06: "build modes from rule
  * parts"): the same parts a character's block has (`data/parts/`), read by the same reader, so
- * a mode or rule is a rule source like a Fabled or Loric (`rule-effects.ts`). Count changes are
+ * a mode or rule is a rule source like a Fabled or Loric (`rules/rule-sources.ts`). Count changes are
  * `setupModifier`, who the Demon attacks `demonAttack.target`, who keeps an ability
  * `deadKeepAbilities`, extra night wakes `nightWakes`, and what a nomination sets off
  * `onNominated`.

@@ -385,7 +385,7 @@ describe('Binary Supernovae', () => {
 
 // https://beardytas.com/garden-of-djinn/the-warrens/ and
 // https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination;
-// the board offers them when one is recorded (rule-effects.test.ts).
+// the board offers them when one is recorded (rule-sources.test.ts).
 describe.each([
 	['warrens', { effect: 'evil-swap', minAlive: 5 }],
 	['djinns-bargain', { effect: 'nominator-may-die' }]

@@ -4,7 +4,7 @@ import { specPart, type PartValue } from './part.ts';
 /**
  * Whom the Demon attacks, when the rule decides it: `script-order` is the next living in-play
  * character in script order, after the last one it killed (Trained Killer,
- * https://beardytas.com/garden-of-djinn/trained-killer/; `modes/rule-effects.ts`).
+ * https://beardytas.com/garden-of-djinn/trained-killer/; `rules/rule-sources.ts`).
  */
 const DEMON_TARGETS = ['script-order'] as const;
 export type DemonTarget = (typeof DEMON_TARGETS)[number];

@@ -88,9 +88,4 @@ export {
 	chosenPlayers
 } from './night-info/chosen-players.ts';
 export { type YesNoAnswer, yesNoAnswers, yesNoSeats } from './night-info/yes-no.ts';
-export {
-	type NightStepInfo,
-	characterStepSeats,
-	wakesMarked,
-	withNightInfo
-} from './night-info/steps.ts';
+export { type NightStepInfo, withNightInfo } from './night-info/steps.ts';

@@ -8,7 +8,7 @@
  *   way (https://botc-script-viewer.sthom.kiwi/wc25/), and some split one rule over two lines,
  *   so the lines are joined with a space. A script may also say what its lines do, as a rules
  *   block in `_meta.bootleggerRules` (M61f, an app extension): the Bootlegger in play carries it,
- *   so the engine acts on it the way it does on any Fabled or Loric (`modes/rule-effects.ts`).
+ *   so the engine acts on it the way it does on any Fabled or Loric (`rules/rule-sources.ts`).
  * - A game starts with the script's Fabled and Loric in play, plus the Bootlegger when the
  *   script has rules (Trevor, 2026-10-18) or homebrew characters (the wiki's Bootlegger). A `jinxesOnly` character (the Djinn) is left out: the
  *   app never mentions it, since jinxes show on their own (Trevor, 2026-10-17).

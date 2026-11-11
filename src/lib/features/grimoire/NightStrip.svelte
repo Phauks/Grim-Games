@@ -12,7 +12,8 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName, stepHolders, stepName } from './night-steps.ts';
+	import { seatName, stepName } from './night-steps.ts';
+	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
 	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
 	import StepPiece from './StepPiece.svelte';
 

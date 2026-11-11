@@ -5,7 +5,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placingAlignment } from './board.ts';
-	import { stepHolders } from './night-steps.ts';
+	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
 
 	/**
 	 * M15a: the Demon's step while a rule lets it choose not to attack (`demonAttack`, the

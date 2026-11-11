@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { NominationPrompt } from '#lib/core/modes/index.ts';
+	import type { NominationPrompt } from '#lib/core/rules/rule-sources.ts';
 	import type { CharacterNominationPrompt } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';

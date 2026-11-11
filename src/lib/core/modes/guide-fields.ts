@@ -9,7 +9,7 @@ import type { ModeSection, RuleOnlySection } from './types.ts';
  * with every change to the format, however small. A numbered version replaces it at launch.
  * A file may say which revision it was written for in `revision`; it is read either way.
  */
-export const GAME_MODE_REVISION = 19;
+export const GAME_MODE_REVISION = 20;
 
 export interface GuideField {
 	name: string;

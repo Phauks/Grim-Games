@@ -14,17 +14,18 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
+import { type SpecialRule } from '#lib/core/modes/index.ts';
 import {
 	nextScriptOrderTarget,
 	ruleSources,
-	scriptOrderSource,
-	type SpecialRule
-} from '#lib/core/modes/index.ts';
+	scriptOrderSource
+} from '#lib/core/rules/rule-sources.ts';
 import { abilityState, type Night, type NightStep } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type { ReminderHand } from './reminder-hand.svelte.ts';
-import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
+import { seatName } from './night-steps.ts';
+import { boardNightSteps, stepHolders, tonight } from '#lib/core/rules/night/board-steps.ts';
 import { stepReminders, stepTokenCharacter } from './reminders.ts';
 
 /** What the walk-through reads from the board, fresh on each call. */

@@ -12,7 +12,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import { gameEnds, infoPicker, noAttackState, type NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { boardNightSteps, stepWakes, tonight } from '../night-steps.ts';
+import { boardNightSteps, stepWakes, tonight } from '#lib/core/rules/night/board-steps.ts';
 
 const data = committedGameData();
 const tb = toScript(editionScript('tb', data)!);

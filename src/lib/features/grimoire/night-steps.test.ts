@@ -5,14 +5,13 @@ import { characterLookup, type DeathCause, type Game } from '#lib/core/model/ind
 import { ON_DEATH, type NightStep } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
+import { givesNumber, stepName } from './night-steps.ts';
 import {
 	boardNightSteps,
-	givesNumber,
 	ruleNightSteps,
 	stepHolders,
-	stepName,
 	stepWakes
-} from './night-steps.ts';
+} from '#lib/core/rules/night/board-steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 const data = committedGameData();

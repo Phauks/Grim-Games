@@ -89,7 +89,7 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 		if (add.forced) setup.forced = joinForced(setup.forced, add.forced);
 	}
 
-	// Rules blocks stay each file's own (a rule source each, `rule-effects.ts`), but two that set
+	// Rules blocks stay each file's own (a rule source each, `rules/rule-sources.ts`), but two that set
 	// one part differently can't both have their way.
 	const ruleSetBy = new Map<string, { id: string; value: unknown }>();
 	for (const file of [mode, ...rules])

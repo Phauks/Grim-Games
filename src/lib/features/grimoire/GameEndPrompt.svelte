@@ -27,7 +27,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { dismissedGameEnds } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
-	import { tonight } from './night-steps.ts';
+	import { tonight } from '#lib/core/rules/night/board-steps.ts';
 	import { isGeneric, reminderWords } from './reminders.ts';
 
 	/**
