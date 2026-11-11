@@ -8,7 +8,7 @@
  */
 import type { CharacterId, ScriptMeta } from '#lib/core/data/types.ts';
 import { modifierFromText } from '#lib/core/rules/setup-modifiers.ts';
-import { scriptRules } from '#lib/core/rules/script-rules.ts';
+import { scriptRules } from '#lib/core/data/script-rules.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 
 /** The id of a script's own rule; no library or custom rule may use it. */

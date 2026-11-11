@@ -13,7 +13,7 @@ import {
 } from '#lib/core/data/index.ts';
 import { MAX_DEALT_PLAYERS } from '#lib/core/rules/distribution.ts';
 import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
-import { scriptRulesCarrier, withScriptRules } from '#lib/core/rules/script-rules.ts';
+import { scriptRulesCarrier, withScriptRules } from '#lib/core/data/script-rules.ts';
 import { isNightMarker, nightOrder, type Night } from '#lib/core/rules/night-order.ts';
 
 export interface TypeGroup {

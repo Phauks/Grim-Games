@@ -8,7 +8,7 @@ export * from './setup-modifiers.ts';
 export * from './setup.ts';
 export * from './jinxes.ts';
 export * from './jinx-choices.ts';
-export * from './script-rules.ts';
+export * from '#lib/core/data/script-rules.ts';
 export * from './draw-lock.ts';
 export * from './script-facts.ts';
 export * from './script-builder.ts';
