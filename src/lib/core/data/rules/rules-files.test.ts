@@ -245,7 +245,7 @@ describe('parseCharacterRules', () => {
 			'rules.actsWhenDead: expected boolean, got string'
 		]);
 		expect(parse({ reminderPrompts: { Dead: 'explode' } }).issues).toEqual([
-			'rules.reminderPrompts.Dead: unknown prompt "explode"'
+			'rules.reminderPrompts.Dead: unknown value "explode"'
 		]);
 		expect(parse({ reminderPrompts: { Alive: 'revive' } }).issues).toEqual([
 			'rules.reminderPrompts.Alive: not one of this character’s reminders'

@@ -1,7 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readEnum } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { obj, oneOf, opt, TOKEN } from '../field-spec.ts';
+import { specPart, type PartValue } from './part.ts';
 
 /**
  * What nominating sets off:
@@ -15,24 +13,10 @@ export type NominatingEffect = (typeof NOMINATING_EFFECTS)[number];
  * A nomination by its own player, or with `carrier`, by the player carrying that reminder of
  * the character (the Witch's Cursed), that sets off `effect`.
  */
-export interface OnNominating {
-	carrier?: ReminderLabel;
-	effect: NominatingEffect;
-}
-
-/** When its player (or the `carrier`) nominates, `effect` happens (the Witch). */
-export const onNominating = objectPart(
+export const onNominating = specPart(
 	'On nominating',
 	'When its player, or the player with one of its reminders, nominates, something happens.',
-	(raw, path, issues, reminders): OnNominating | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['carrier', 'effect'], path, issues);
-		const carrier = readToken(raw, 'carrier', path, issues, reminders);
-		const effect = readEnum(raw, 'effect', NOMINATING_EFFECTS, path, issues, true);
-		if (!effect || (raw.carrier !== undefined && !carrier)) return undefined;
-		return { ...(carrier ? { carrier } : {}), effect };
-	}
+	obj({ carrier: opt(TOKEN), effect: oneOf(NOMINATING_EFFECTS) })
 );
+
+export type OnNominating = PartValue<typeof onNominating>;
