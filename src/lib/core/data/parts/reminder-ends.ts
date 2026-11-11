@@ -1,7 +1,6 @@
-import { ALIGNMENTS, type Alignment, type ReminderLabel } from '../types.ts';
-import { ownReminder } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readEnum } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { byToken, obj, oneOf, variants, type SpecValue } from '../field-spec.ts';
+import { ALIGNMENTS } from '../types.ts';
+import { specPart } from './part.ts';
 
 /**
  * When a reminder comes off by itself: at the next Dawn, at the next Dusk, at the dusk after
@@ -17,12 +16,15 @@ export type ReminderEnd = (typeof REMINDER_ENDS)[number];
  * Nominate Evil and Nominate Good, https://wiki.bloodontheclocktower.com/Bishop). While one is
  * still on, ending the day warns that nominations may not end yet.
  */
-export interface EndsOnNomination {
-	nominated: Alignment;
-}
+const ENDS_ON_NOMINATION = obj({ nominated: oneOf(ALIGNMENTS) });
+export type EndsOnNomination = SpecValue<typeof ENDS_ON_NOMINATION>;
 
 /** When one of its reminders comes off: at a time of day, or at a nomination. */
-export type ReminderEndRule = ReminderEnd | EndsOnNomination;
+const END = variants(
+	{ label: 'At a time', is: 'string', spec: oneOf(REMINDER_ENDS) },
+	{ label: 'At a nomination', has: 'nominated', spec: ENDS_ON_NOMINATION }
+);
+export type ReminderEndRule = SpecValue<typeof END>;
 
 /**
  * Its reminders whose effect lasts only until the next Dawn or Dusk, keyed by label (the Monk's
@@ -34,33 +36,13 @@ export type ReminderEndRule = ReminderEnd | EndsOnNomination;
  * nominated (`{ "nominated": "evil" }`). The app takes each off then
  * (`rules/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
  */
-export const reminderEnds = objectPart(
+export const reminderEnds = specPart(
 	'Reminders that come off',
 	'Its reminders that come off by themselves at dawn, at dusk, at a nomination or when its player dies.',
-	(raw, path, issues, reminders): Readonly<Record<ReminderLabel, ReminderEndRule>> | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		const out: Record<ReminderLabel, ReminderEndRule> = {};
-		for (const [label, end] of Object.entries(raw)) {
-			const at = `${path}.${label}`;
-			if (!ownReminder(label, reminders)) {
-				issues.add(at, 'not one of this character’s reminders');
-				continue;
-			}
-			if (isObject(end)) {
-				checkKeys(end, ['nominated'], at, issues);
-				const nominated = readEnum(end, 'nominated', ALIGNMENTS, at, issues, true);
-				if (nominated) out[label] = { nominated };
-				continue;
-			}
-			if (!(REMINDER_ENDS as readonly unknown[]).includes(end)) {
-				issues.add(at, `unknown value ${JSON.stringify(end)}`);
-				continue;
-			}
-			out[label] = end as ReminderEnd;
-		}
-		return Object.keys(out).length > 0 ? out : undefined;
+	byToken(END),
+	(value, path, issues) => {
+		if (Object.keys(value).length > 0) return value;
+		issues.add(path, 'expected at least one reminder');
+		return undefined;
 	}
 );

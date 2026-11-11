@@ -36,9 +36,12 @@ describe('readSpec', () => {
 		});
 	});
 
-	it('drops an optional setting left out or switched off', () => {
+	it('reads an optional setting left out as absent, and an on-only setting set to false as a slip', () => {
 		const spec = obj({ token: TOKEN, replaces: opt(T) });
-		expect(readAs(spec, { token: 'Drunk', replaces: false }).value).toEqual({ token: 'Drunk' });
+		expect(readAs(spec, { token: 'Drunk' }).value).toEqual({ token: 'Drunk' });
+		expect(readAs(spec, { token: 'Drunk', replaces: false }).issues).toEqual([
+			'x.replaces: expected true'
+		]);
 	});
 
 	it('records each problem under its path and reads nothing', () => {

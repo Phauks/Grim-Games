@@ -4,7 +4,7 @@
  */
 import { readTypes } from './target-rules.ts';
 import { readToken } from './reminder-fields.ts';
-import { DAY_MARKS, type DayMark } from './day-mark-rules.ts';
+import { DAY_MARKS, type DayMark } from './parts/day-mark.ts';
 import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
@@ -192,7 +192,7 @@ export interface Learns {
  * A player matches when they register as `alignment` and as one of `types`, every one of the
  * group when neither is given. What is learnt about the group:
  * - `count`: how many match;
- * - `any`: yes when any matches. `mark` is the Storyteller's day mark (`day-mark-rules.ts`)
+ * - `any`: yes when any matches. `mark` is the Storyteller's day mark (`parts/day-mark.ts`)
  *   that answers it when set and the group recorded today says otherwise, or says nothing.
  *   With `onlyYes`, a no is nothing to learn (the Godfather only wakes when one died);
  * - `character`: the character of the latest player in the group who matches;

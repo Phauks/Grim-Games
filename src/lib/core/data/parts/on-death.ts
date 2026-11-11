@@ -1,45 +1,27 @@
-import type { ReminderLabel } from '../types.ts';
-import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readBoolean, readEnum } from '../validate.ts';
-import { objectPart } from './part.ts';
-
-/** Who did the killing: the Demon's kill, another ability's, or either. */
-const KILLED_BY = ['demon', 'other', 'any'] as const;
-export type KilledBy = (typeof KILLED_BY)[number];
+import { obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
+import { specPart } from './part.ts';
 
 /**
- * The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage); with
- * `night`, only a death at night, never an execution (the Ravenkeeper's "if you die at night").
- * With `places`, one of its reminders, the death is when that reminder goes on its player (the
- * Barber's "Haircuts Tonight"): the board asks to place it once the player is marked dead. With
- * `placesOn: chosen` as well, it goes on a player the Storyteller picks instead (the
- * Sweetheart's Drunk, "you choose any one player to become drunk").
+ * The ability is set off by its player's death, by `by`: the Demon's kill, another ability's,
+ * or either (the Ravenkeeper, the Sage); with `night`, only a death at night, never an
+ * execution (the Ravenkeeper's "if you die at night"). With `places`, one of its reminders, the
+ * death is when that reminder goes on its player (the Barber's "Haircuts Tonight"): the board
+ * asks to place it once the player is marked dead. With `placesOn: chosen` as well, it goes on
+ * a player the Storyteller picks instead (the Sweetheart's Drunk, "you choose any one player
+ * to become drunk").
  */
-export const onDeath = objectPart(
+export const onDeath = specPart(
 	'On death',
 	'The ability is set off by its player’s death.',
-	(
-		raw,
-		path,
-		issues,
-		reminders
-	): { by: KilledBy; night?: true; places?: ReminderLabel; placesOn?: 'chosen' } | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['by', 'night', 'places', 'placesOn'], path, issues);
-		const by = readEnum(raw, 'by', KILLED_BY, path, issues, true);
-		const night = readBoolean(raw, 'night', path, issues);
-		const places = readToken(raw, 'places', path, issues, reminders);
-		const placesOn = readEnum(raw, 'placesOn', ['chosen'] as const, path, issues, false);
-		if (placesOn && !places) issues.add(`${path}.placesOn`, 'only with "places"');
-		if (!by) return undefined;
-		return {
-			by,
-			...(night ? { night } : {}),
-			...(places ? { places } : {}),
-			...(places && placesOn ? { placesOn } : {})
-		};
+	obj({
+		by: oneOf(['demon', 'other', 'any']),
+		night: opt(T),
+		places: opt(TOKEN),
+		placesOn: opt(oneOf(['chosen']))
+	}),
+	(value, path, issues) => {
+		if (!value.placesOn || value.places) return value;
+		issues.add(`${path}.placesOn`, 'only with "places"');
+		return undefined;
 	}
 );

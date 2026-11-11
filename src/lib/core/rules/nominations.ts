@@ -5,7 +5,7 @@
  * a dead nominator). Special rules that act on a nomination read them from here.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { AfterDeath } from '#lib/core/data/after-death-rules.ts';
+import type { AfterDeath } from '#lib/core/data/parts/after-death.ts';
 import type {
 	NominatedEffect,
 	NominatingEffect,

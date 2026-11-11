@@ -3,7 +3,7 @@
  * Storyteller will need before the first night (and at the start of the first day),
  * suggested so they can be placed in one go (Trevor, 2026-10-15).
  *
- * Each character's tokens are the `setupPrep` key of its rules block (`data/setup-prep-rules.ts`;
+ * Each character's tokens are the `setupPrep` key of its rules block (`data/parts/setup-prep.ts`;
  * Trevor reviews and edits the official ones). A suggestion names the token and, when
  * the grimoire settles it, the seat it goes on (the Drunk's "Is The Drunk" on the Drunk;
  * the Washerwoman's TOWNSFOLK on the only Townsfolk). Otherwise `choice` says what the
@@ -21,7 +21,7 @@ import type {
 	SetupReminderSpec,
 	SetupTarget,
 	SetupTiming
-} from '#lib/core/data/setup-prep-rules.ts';
+} from '#lib/core/data/parts/setup-prep.ts';
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';

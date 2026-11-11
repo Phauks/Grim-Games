@@ -6,8 +6,8 @@
  * (`#lib/core/engine/persistence.ts`).
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
-import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
-import type { CounterTime } from '#lib/core/data/counter-rules.ts';
+import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
+import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';

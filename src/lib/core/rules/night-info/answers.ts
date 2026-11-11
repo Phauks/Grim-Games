@@ -3,7 +3,7 @@
  * `answers` question in a character's rules block. Part of `night-info.ts`.
  */
 import type { AnswerGroup, Answers } from '#lib/core/data/character-rules.ts';
-import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
 import {

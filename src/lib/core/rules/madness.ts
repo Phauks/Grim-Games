@@ -1,11 +1,11 @@
 /**
  * Breaking madness (https://wiki.bloodontheclocktower.com/Madness): a player a character's
  * ability made mad who the Storyteller judges broke it may be executed or die, by that
- * character's `madness` rule (`data/madness-rules.ts`). The day view offers it on the
+ * character's `madness` rule (`data/parts/madness.ts`). The day view offers it on the
  * madness reminder; the Storyteller decides, so nothing here happens on its own.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { MadnessBreaking } from '#lib/core/data/madness-rules.ts';
+import type { MadnessBreaking } from '#lib/core/data/parts/madness.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';

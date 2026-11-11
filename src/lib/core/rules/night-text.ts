@@ -18,12 +18,12 @@
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
-import type { NightTextOverride } from '#lib/core/data/night-text-rules.ts';
+import type { NightTextOverride } from '#lib/core/data/parts/night-text.ts';
 import type {
 	PlaceholderAction,
 	ReminderPlaceholder,
 	ReminderPlaceholderRules
-} from '#lib/core/data/reminder-placeholder-rules.ts';
+} from '#lib/core/data/parts/reminder-placeholders.ts';
 import { OFFICIAL_RULES, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 
 /** A character's night: `<characterId>:<first|other>`. */

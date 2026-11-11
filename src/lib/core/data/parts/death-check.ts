@@ -1,7 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readEnum } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { obj, oneOf, opt, TOKEN, type SpecValue } from '../field-spec.ts';
+import { specPart } from './part.ts';
 
 /**
  * Night deaths the ability itself decides (`rules/night-deaths.ts`):
@@ -11,34 +9,17 @@ import { objectPart } from './part.ts';
  * - `marked-killed-by-demon`: the player dies when the Demon kills whoever carries `token`
  *   (the Grandmother's Grandchild).
  */
-const DEATH_CHECK_KINDS = [
-	'wrong-guess',
-	'chose-impaired',
-	'chosen-good-dies',
-	'marked-killed-by-demon'
-] as const;
-export type DeathCheckKind = (typeof DEATH_CHECK_KINDS)[number];
-export interface DeathCheckRule {
-	kind: DeathCheckKind;
-	token?: ReminderLabel;
-}
+const KIND = oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked-killed-by-demon']);
+export type DeathCheckKind = SpecValue<typeof KIND>;
 
 /** A night death its own ability decides (`rules/night-deaths.ts`). */
-export const deathCheck = objectPart(
+export const deathCheck = specPart(
 	'Death check',
 	'A night death its own ability decides.',
-	(raw, path, issues, reminders): DeathCheckRule | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['kind', 'token'], path, issues);
-		const kind = readEnum(raw, 'kind', DEATH_CHECK_KINDS, path, issues, true);
-		const token = readToken(raw, 'token', path, issues, reminders);
-		if (kind === 'marked-killed-by-demon' && raw.token === undefined) {
-			issues.add(`${path}.token`, 'missing');
-			return undefined;
-		}
-		return kind ? { kind, ...(token ? { token } : {}) } : undefined;
+	obj({ kind: KIND, token: opt(TOKEN) }),
+	(value, path, issues) => {
+		if (value.kind !== 'marked-killed-by-demon' || value.token) return value;
+		issues.add(`${path}.token`, 'missing');
+		return undefined;
 	}
 );

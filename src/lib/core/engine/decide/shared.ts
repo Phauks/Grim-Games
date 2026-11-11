@@ -7,7 +7,7 @@ import {
 	type CharacterId,
 	type Script
 } from '#lib/core/data/index.ts';
-import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/counter-rules.ts';
+import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/parts/counter.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	GENERIC_REMINDER_ID,

@@ -44,8 +44,9 @@ function read(
 		case 'text':
 			return raw;
 		case 'true':
-			// False is the same as leaving the setting out.
-			return typeof raw === 'boolean' ? raw || undefined : expected('boolean');
+			// On, or left out: `false` says nothing and is most likely a slip.
+			if (raw === true) return true;
+			return typeof raw === 'boolean' ? issues.add(path, 'expected true') : expected('true');
 		case 'boolean':
 			return typeof raw === 'boolean' ? raw : expected('boolean');
 		case 'count':

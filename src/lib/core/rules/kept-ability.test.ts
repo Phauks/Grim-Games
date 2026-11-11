@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { readImpairs } from '#lib/core/data/impairs-rules.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { abilityState } from './ability.ts';
 import { deadCharacters, keepsAbilityWhenDead } from './dead-characters.ts';
 import { wokeTonight } from './woke-tonight.ts';
@@ -97,26 +97,28 @@ describe('kept ability (keepsAbility)', () => {
 	});
 });
 
-describe('readImpairs whileKept', () => {
+describe('impairs whileKept', () => {
 	const reminders = ['Has Ability', 'Poisoned'];
 	it('reads a token and an optional nearest type', () => {
 		const issues = new Issues();
-		const out = readImpairs(
+		const out = parseCharacterRules(
 			{
-				tokens: {
-					Poisoned: {
-						reason: 'poisoned',
-						on: 'carrier',
-						whileKept: { token: 'Has Ability', nearest: 'townsfolk' }
+				impairs: {
+					tokens: {
+						Poisoned: {
+							reason: 'poisoned',
+							on: 'carrier',
+							whileKept: { token: 'Has Ability', nearest: 'townsfolk' }
+						}
 					}
 				}
 			},
-			'impairs',
+			'rules',
 			issues,
 			reminders
 		);
 		expect(issues.list).toEqual([]);
-		expect(out?.tokens?.Poisoned?.whileKept).toEqual({
+		expect(out?.impairs?.tokens?.Poisoned?.whileKept).toEqual({
 			token: 'Has Ability',
 			nearest: 'townsfolk'
 		});
@@ -124,14 +126,18 @@ describe('readImpairs whileKept', () => {
 
 	it('rejects a token the character does not have', () => {
 		const issues = new Issues();
-		readImpairs(
-			{ tokens: { Poisoned: { reason: 'poisoned', on: 'carrier', whileKept: { token: 'Safe' } } } },
-			'impairs',
+		parseCharacterRules(
+			{
+				impairs: {
+					tokens: { Poisoned: { reason: 'poisoned', on: 'carrier', whileKept: { token: 'Safe' } } }
+				}
+			},
+			'rules',
 			issues,
 			reminders
 		);
 		expect(issues.list).toEqual([
-			expect.stringMatching(/^impairs.tokens.Poisoned.whileKept.token: /)
+			expect.stringMatching(/^rules.impairs.tokens.Poisoned.whileKept.token: /)
 		]);
 	});
 });

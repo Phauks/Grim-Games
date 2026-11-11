@@ -16,7 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
-import type { ReminderPlaceholder } from '#lib/core/data/reminder-placeholder-rules.ts';
+import type { ReminderPlaceholder } from '#lib/core/data/parts/reminder-placeholders.ts';
 import { committedCharacter, committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterNames } from './character-names.ts';
 import {
@@ -356,8 +356,17 @@ describe('night text of ours', () => {
 		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
 			'rules.nightText.dusk',
 			'rules.nightText.first.draft',
-			'rules.nightText.first.reviewed.reason',
-			'rules.nightText.other.full.text'
+			'rules.nightText.first.reviewed.reason'
+		]);
+		// Once the shape is right, full text naming no token is reported too.
+		const full = new Issues();
+		parseCharacterRules(
+			{ nightText: { other: { full: { text: 'Do it. :reminder:', reason: 'Names it.' } } } },
+			'rules',
+			full
+		);
+		expect(full.list).toEqual([
+			'rules.nightText.other.full.text: uses :reminder:; name the token instead'
 		]);
 	});
 
@@ -380,10 +389,15 @@ describe('night text of ours', () => {
 		);
 		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
 			'rules.reminderPlaceholders.dusk',
-			'rules.reminderPlaceholders.other[0].tokens',
 			'rules.reminderPlaceholders.other[1].tokens[0].action',
-			'rules.reminderPlaceholders.other[2].either',
-			'rules.reminderPlaceholders.other[2].tokens[0].label'
+			'rules.reminderPlaceholders.other[2].tokens[0].label',
+			'rules.reminderPlaceholders.other[2].either'
+		]);
+		// Once the shape is right, a placeholder with no tokens is reported too.
+		const empty = new Issues();
+		parseCharacterRules({ reminderPlaceholders: { other: [{ tokens: [] }] } }, 'rules', empty);
+		expect(empty.list).toEqual([
+			'rules.reminderPlaceholders.other[0].tokens: expected a list of tokens'
 		]);
 	});
 });

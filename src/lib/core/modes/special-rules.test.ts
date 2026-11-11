@@ -139,7 +139,6 @@ describe('reading a special rule file', () => {
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
 			'rules.sleeps: unknown rule',
 			'rules.demonAttack.target: unknown value "anyone"',
-			'rules.demonAttack: expected maySkip or target',
 			'rules.setupModifier.ops[0].type: unknown value "fabled"',
 			'rules.nightWakes[0].characters[0]: unknown character nobody'
 		]);

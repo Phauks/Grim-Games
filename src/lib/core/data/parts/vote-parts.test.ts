@@ -78,8 +78,10 @@ describe('voter', () => {
 			'rules.voter.minAlive: only with must'
 		]);
 		expect(parse({ voter: { must: true, minAlive: 0 } }).issues).toHaveLength(1);
-		expect(parse({ voter: { must: false } }).issues).toHaveLength(2);
-		expect(parse({ voter: { onlyWith: 'Hat' } }, ['Master']).issues).toHaveLength(2);
+		expect(parse({ voter: { must: false } }).issues).toEqual(['rules.voter.must: expected true']);
+		expect(parse({ voter: { onlyWith: 'Hat' } }, ['Master']).issues).toEqual([
+			'rules.voter.onlyWith: not one of this character’s reminders'
+		]);
 		expect(parse({ voter: { mustNot: true, must: true } }).issues).toEqual([
 			'rules.voter.mustNot: unknown field'
 		]);

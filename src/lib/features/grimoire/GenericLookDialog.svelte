@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Character, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
+	import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';

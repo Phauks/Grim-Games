@@ -6,7 +6,7 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { Alignment, CharacterId, PlayerName, ReminderLabel } from '#lib/core/data/index.ts';
 import { applyEvents, type GameEvent, type LogEntry } from '#lib/core/engine/index.ts';
-import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
 import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/index.ts';
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
 import { slot, splitSlots } from '#lib/features/characters/slots.ts';

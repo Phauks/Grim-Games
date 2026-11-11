@@ -16,7 +16,7 @@
 		type SymbolColourPreset
 	} from '#lib/core/model/index.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
+	import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { foldForSearch, matchesSearch } from '#lib/features/characters/character-search.ts';

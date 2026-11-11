@@ -51,9 +51,10 @@ export type PartValue<P> = P extends Part<infer T> ? T : never;
  * A part whose shape is its field spec: the builder edits it with `spec`, `readSpec` reads and
  * checks it, and its value's type is the spec's. `refine` adds a check the spec can't say (two
  * settings that go together, a list that needs two or more), recording problems in `issues`;
- * undefined when the value is unusable.
+ * undefined when the value is unusable. It may also narrow the value's type, when the spec's is
+ * looser than the rule (a setting that only one kind of change takes).
  */
-export function specPart<S extends FieldSpec>(
+export function specPart<S extends FieldSpec, R = SpecValue<S>>(
 	label: string,
 	description: string,
 	spec: S,
@@ -62,8 +63,8 @@ export function specPart<S extends FieldSpec>(
 		path: string,
 		issues: Issues,
 		reminders: Reminders
-	) => SpecValue<S> | undefined
-): Part<SpecValue<S>> {
+	) => R | undefined
+): Part<R> {
 	return {
 		label,
 		description,
@@ -71,7 +72,8 @@ export function specPart<S extends FieldSpec>(
 		read: (block, key, path, issues, reminders) => {
 			const at = `${path}.${key}`;
 			const value = readSpec(spec, block[key], at, issues, reminders);
-			return value === undefined || !refine ? value : refine(value, at, issues, reminders);
+			if (value === undefined) return undefined;
+			return refine ? refine(value, at, issues, reminders) : (value as R);
 		}
 	};
 }

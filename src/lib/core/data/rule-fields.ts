@@ -12,10 +12,8 @@ import {
 	byKey,
 	byToken,
 	COUNT,
-	INT,
 	list,
 	NUM,
-	NUMS,
 	obj,
 	oneOf,
 	opt,
@@ -29,20 +27,14 @@ import {
 	type FieldSpec
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
-import { DEATH_KINDS } from './death-cause-rules.ts';
-import { INFO_CARDS } from './choice-rules.ts';
-import { TURNS_PLAYERS } from './turns-players-rules.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
-import { REMINDER_ENDS } from './parts/reminder-ends.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
-const SEATED = oneOf(SEATED_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
 const SOME_SEATED = anyOf(SEATED_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
-const IMPAIRMENTS = oneOf(['drunk', 'poisoned', 'no-ability']);
 const DAY_GROUPS = oneOf([
 	'madness',
 	'day-ability',
@@ -103,14 +95,8 @@ const INFO_TOKEN = obj({
 	token: opt(STR),
 	after: opt(STR)
 });
-const PLACEHOLDER_STEP = obj({
-	tokens: list(obj({ label: TOKEN, action: oneOf(['place', 'remove']) })),
-	either: opt(B)
-});
-
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
-	afterDeath: obj({ cause: STRS, nominations: opt(NUM), votes: opt(NUM) }),
 	afterExecution: obj({
 		of: opt(TYPES),
 		alignment: opt(ALIGNMENT),
@@ -132,35 +118,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		wakes: opt(oneOf(['marked'])),
 		falseToken: opt(TOKEN)
 	}),
-	becomes: obj({
-		token: TOKEN,
-		into: oneOf(['demon', 'evil', 'swap', 'carrier-alignment']),
-		when: opt(oneOf(['placed', 'removed'])),
-		follows: opt(T),
-		evenIfImpaired: opt(T),
-		spent: opt(TOKEN)
-	}),
-	changesCharacter: obj({
-		types: SOME_SEATED,
-		notInPlay: opt(T),
-		notTravellers: opt(T),
-		alignment: opt(ALIGNMENT),
-		token: opt(TOKEN),
-		spent: opt(TOKEN),
-		onlyFrom: opt(STRS),
-		notMarked: opt(TOKEN),
-		sameType: opt(T),
-		anyType: opt(T),
-		afterDeath: opt(T),
-		firstNight: opt(T),
-		upTo: opt(oneOf(['minions'])),
-		extraMinions: opt(NUM),
-		minMinions: opt(NUM),
-		outward: opt(T)
-	}),
-	countdown: obj({ tokens: TOKENS }),
-	counter: obj({ tokens: TOKENS, at: oneOf(['dawn', 'dusk']), replaces: opt(T) }),
-	dayMark: obj({ mark: oneOf(['minion-nominated', 'demon-voted']), yes: TOKEN, no: TOKEN }),
 	dayReminders: obj({
 		impairable: opt(T),
 		reminders: opt(
@@ -210,57 +167,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		anyone: T,
 		minAlive: NUM,
 		beforeNominations: T
-	}),
-	deadKeepAbilities: obj({ deadLose: SOME_SEATED, livingLose: SOME_SEATED }),
-	deathCause: variants(
-		{ label: 'None', has: 'none', spec: obj({ none: STR }) },
-		{
-			label: 'Causes a death',
-			has: 'kind',
-			spec: obj({
-				kind: oneOf(DEATH_KINDS),
-				onlyWith: opt(STRS),
-				afterChanging: opt(SEATED),
-				victim: opt(
-					obj({
-						who: oneOf(['self', 'not-self', 'alive-neighbour', 'registers']),
-						as: opt(oneOf(['demon', 'not-demon', 'good', 'townsfolk'])),
-						notSelf: opt(T)
-					})
-				)
-			})
-		}
-	),
-	deathCheck: obj({
-		kind: oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked-killed-by-demon']),
-		token: opt(TOKEN)
-	}),
-	demonAttack: optObj({ maySkip: T, mustSkipOnce: TOKEN, target: oneOf(['script-order']) }),
-	evilInfo: obj({
-		notes: opt(optObj({ minioninfo: STR, demoninfo: STR })),
-		lateNote: opt(STR),
-		wakeToken: opt(STR),
-		hidesDemon: opt(T),
-		anyPlayerCount: opt(T),
-		hidesMinions: opt(T),
-		shownAsOtherEvil: opt(T),
-		whileWorking: opt(T),
-		none: opt(T)
-	}),
-	execution: optObj({ insteadOf: oneOf(['same-alignment']), explodes: NUM }),
-	executionOutcome: optObj({
-		failsIf: oneOf(['only-evil-voted']),
-		force: oneOf(['pass-or-fail']),
-		executeNow: oneOf(['good-voted'])
-	}),
-	falseInfo: optObj({ types: SOME_TYPES, may: T, alignment: ALIGNMENT, spentToken: TOKEN }),
-	gainedFrom: obj({
-		token: TOKEN,
-		pending: opt(TOKEN),
-		swapped: opt(T),
-		wakes: opt(T),
-		ifEvil: opt(TOKEN),
-		choose: opt(SOME_SEATED)
 	}),
 	gameEnd: obj({
 		ends: opt(
@@ -343,32 +249,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		alwaysWinsWith: opt(ALIGNMENT),
 		contest: opt(obj({ chooser: TYPES, tie: ALIGNMENT }))
 	}),
-	givesAbility: obj({
-		to: oneOf(['demon', 'storyteller', 'self']),
-		types: SOME_SEATED,
-		notInPlay: opt(T),
-		onScript: opt(T),
-		token: opt(TOKEN),
-		whileWorks: opt(T),
-		setup: opt(T),
-		standIns: opt(TOKENS)
-	}),
-	impairs: optObj({
-		self: obj({ reason: IMPAIRMENTS, aliveAtMost: opt(NUM) }),
-		tokens: byToken(
-			obj({
-				reason: IMPAIRMENTS,
-				on: oneOf(['carrier', 'others']),
-				type: opt(TYPES),
-				whileWorks: opt(B),
-				whileKept: opt(obj({ token: TOKEN, nearest: opt(TYPES) }))
-			})
-		),
-		clears: TOKENS,
-		truthful: TOKENS
-	}),
-	infoCard: oneOf(INFO_CARDS),
-	infoKind: optObj({ number: T, oncePerGame: T }),
 	infoTokenCharacters: byKey(
 		variants(
 			{ label: 'One step', is: 'object', spec: INFO_TOKEN },
@@ -376,7 +256,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		)
 	),
 	jinxes: JINX_FIELDS,
-	keepsAbility: obj({ token: TOKEN, type: opt(TYPES) }),
 	kills: obj({
 		by: oneOf(['demon', 'other']),
 		targets: opt(oneOf(['any', 'self'])),
@@ -433,18 +312,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		killer: opt(T),
 		differsFromToken: opt(TOKEN)
 	}),
-	madAs: obj({
-		token: TOKEN,
-		mad: oneOf(['self', 'carrier']),
-		choose: opt(SOME_SEATED),
-		characters: opt(STRS)
-	}),
-	madness: obj({
-		token: opt(TOKEN),
-		breaking: oneOf(['execution', 'death']),
-		alsoDies: opt(TOKEN),
-		chosenBy: opt(oneOf(['nominee']))
-	}),
 	marksChoice: TOKENS,
 	nightWakes: list(
 		obj({
@@ -456,35 +323,13 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			minutes: opt(COUNT)
 		})
 	),
-	nominating: variants(
-		{ label: 'Only the Storyteller', has: 'by', spec: obj({ by: oneOf(['storyteller']) }) },
-		{ label: 'Times a game', has: 'perGame', spec: obj({ perGame: COUNT }) }
-	),
 	nominationsAfterExecution: COUNT,
-	onDeath: obj({
-		by: oneOf(['demon', 'other', 'any']),
-		night: opt(T),
-		places: opt(TOKEN),
-		placesOn: opt(oneOf(['chosen']))
-	}),
 	onNominated: obj({
 		by: opt(TYPES),
 		carrier: opt(TOKEN),
 		effect: oneOf(['execute-nominator', 'may-kill-nominator', 'evil-swap', 'nominator-may-die']),
 		first: opt(T),
 		minAlive: opt(NUM)
-	}),
-	pickedEffect: obj({
-		token: TOKEN,
-		effects: anyOf([
-			'other',
-			'poisoned',
-			'mad',
-			'dies',
-			'no-kill',
-			'no-vote-today',
-			'no-ability-today'
-		])
 	}),
 	protects: obj({
 		who: oneOf(['self', 'marked', 'good']),
@@ -494,31 +339,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		storytellerDecides: opt(T),
 		whileNeighboursGood: opt(T),
 		whileCarrierAlive: opt(TOKEN)
-	}),
-	registersAs: optObj({
-		self: optObj({ alignments: anyOf(ALIGNMENTS), types: SOME_TYPES }),
-		tokens: byToken(
-			optObj({
-				alignments: anyOf(ALIGNMENTS),
-				types: SOME_TYPES,
-				carrierAlignment: ALIGNMENT,
-				asAnything: T,
-				whileToken: TOKEN
-			})
-		)
-	}),
-	reincarnates: obj({ first: COUNT, demonTo: opt(SEATED) }),
-	reminderEnds: byToken(
-		variants(
-			{ label: 'At a time', is: 'string', spec: oneOf(REMINDER_ENDS) },
-			{ label: 'At a nomination', has: 'nominated', spec: obj({ nominated: ALIGNMENT }) }
-		)
-	),
-	reminderMovement: optObj({ fixed: TOKENS, why: STR, relocates: STR, followsNeighbours: TOKENS }),
-	reminderPlaceholders: optObj({
-		first: list(PLACEHOLDER_STEP),
-		other: list(PLACEHOLDER_STEP),
-		note: STR
 	}),
 	reminderTargets: byToken(
 		optObj({
@@ -548,103 +368,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			note: STR,
 			ambiguous: STR
 		})
-	),
-	setupModifier: obj({
-		summary: STR,
-		ops: list(
-			obj({
-				kind: oneOf(['delta', 'set', 'any']),
-				type: SEATED,
-				values: opt(
-					variants(
-						{ label: 'Numbers', is: 'array', spec: NUMS },
-						{ label: 'Most', is: 'string', spec: oneOf(['most']) }
-					)
-				),
-				also: opt(NUMS),
-				minUsual: opt(NUM)
-			})
-		),
-		requires: opt(STR),
-		alignments: opt(list(obj({ type: SEATED, alignment: ALIGNMENT, count: COUNT }))),
-		copies: opt(NUMS),
-		duplicates: opt(anyOf(ALIGNMENTS)),
-		notes: opt(STRS),
-		readsBrackets: opt(T)
-	}),
-	setupPrep: optObj({
-		reminders: list(
-			obj({
-				label: TOKEN,
-				text: STR,
-				target: variants(
-					{ label: 'Its player', has: 'self', spec: obj({ self: T }) },
-					{
-						label: 'A chosen player',
-						has: 'choose',
-						spec: obj({
-							choose: oneOf([
-								'demon',
-								'townsfolk',
-								'outsider',
-								'minion',
-								'good',
-								'evil',
-								'any',
-								'not-demon',
-								'same-alignment',
-								'copies',
-								'nearest-townsfolk-anticlockwise',
-								'nearest-townsfolk-clockwise'
-							]),
-							choice: STR,
-							notSelf: opt(B)
-						})
-					}
-				),
-				reason: STR,
-				timing: opt(oneOf(['setup', 'first-day'])),
-				when: opt(optObj({ minOutsiders: NUM, exactOutsiders: NUM, minCopies: NUM })),
-				first: opt(T)
-			})
-		),
-		notes: list(
-			obj({
-				text: STR,
-				tokens: opt(TOKENS),
-				value: opt(obj({ key: STR, label: STR, character: opt(oneOf(['good'])) }))
-			})
-		),
-		none: STR
-	}),
-	stopsKilling: obj({ token: TOKEN, type: opt(TYPES) }),
-	stopsWaking: obj({ token: TOKEN, type: opt(TYPES) }),
-	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
-	swapsForAbility: obj({ token: TOKEN, good: SOME_SEATED, evil: SOME_SEATED }),
-	tokenFlow: obj({ tokens: TOKENS }),
-	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) }),
-	voteWeight: variants(
-		{ label: 'Its reminder', has: 'reminder', spec: obj({ reminder: TOKEN, weight: INT }) },
-		{ label: 'Its player', has: 'self', spec: obj({ self: T, weight: INT }) }
-	),
-	voter: optObj({ onlyWith: TOKEN, must: T, minAlive: NUM, needsToken: T, learnsGiver: T }),
-	voting: optObj({
-		voters: oneOf(['self-and-dead']),
-		deadNeedNoToken: T,
-		noMajority: T,
-		secret: T,
-		deadRegainToken: oneOf(['final-day'])
-	}),
-	wakesWhen: optObj({
-		deadAtLeastLiving: T,
-		deadAtLeast: COUNT,
-		diedTonight: obj({ characters: STRS, by: opt(oneOf(['demon'])) }),
-		diedToday: obj({ types: SOME_TYPES, token: opt(TOKEN) }),
-		nobodyDiedToday: T,
-		untilToken: TOKEN,
-		noneMarked: TOKEN,
-		markedDied: TOKEN,
-		nightAfterDay: COUNT,
-		becameToday: T
-	})
+	)
 };

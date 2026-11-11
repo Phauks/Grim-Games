@@ -2,11 +2,11 @@
  * Moving the counting reminders at dawn or dusk (plan M53, Trevor 2026-11-04: "certain tokens
  * stack on each other, they are relational ... make these automatically tick up, or offer that
  * as an option"): a character's run of day or night tokens (`counter` in its rules,
- * `data/counter-rules.ts`) gains the one for the new day or night, and a number token set to
+ * `data/parts/counter.ts`) gains the one for the new day or night, and a number token set to
  * count up (`countsUp`) goes up by one. Which happens, and whether the Storyteller is asked
  * first, is their setting; this only says what would move.
  */
-import type { CounterTime } from '#lib/core/data/counter-rules.ts';
+import type { CounterTime } from '#lib/core/data/parts/counter.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { looseReminders } from '#lib/core/model/selectors.ts';

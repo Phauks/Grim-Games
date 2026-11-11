@@ -1,11 +1,11 @@
 /**
  * Token integrity: whether a reminder should stay on the seat it was first placed on,
  * and what to say when the Storyteller moves one anyway. Each character's
- * `reminderMovement` rule (`data/reminder-movement-rules.ts`) says which of its tokens stay.
+ * `reminderMovement` rule (`data/parts/reminder-movement.ts`) says which of its tokens stay.
  */
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import type { ReminderMovementRules } from '#lib/core/data/reminder-movement-rules.ts';
+import type { ReminderMovementRules } from '#lib/core/data/parts/reminder-movement.ts';
 import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, Reminder, ReminderId, SeatId } from '#lib/core/model/types.ts';

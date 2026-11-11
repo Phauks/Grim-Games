@@ -1,7 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { ownReminder } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readBoolean, readNumber, readString } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { COUNT, optObj, T, TOKEN } from '../field-spec.ts';
+import { specPart, type PartValue } from './part.ts';
 
 /**
  * How its own player votes, while the character's ability works:
@@ -14,59 +12,22 @@ import { objectPart } from './part.ts';
  *   Storyteller privately tells them the alignment of each player who gives them one
  *   (`tokenGiverInfo` in `rules/vote-weights.ts`).
  */
-export interface Voter {
-	onlyWith?: ReminderLabel;
-	must?: true;
-	minAlive?: number;
-	needsToken?: true;
-	learnsGiver?: true;
-}
-
-export const voter = objectPart(
+export const voter = specPart(
 	'How its player votes',
 	'Its player may vote only with another, must vote, or needs a vote token to vote.',
-	(raw, path, issues, reminders): Voter | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['onlyWith', 'must', 'minAlive', 'needsToken', 'learnsGiver'], path, issues);
-		const out: Voter = {};
-		let ok = true;
-		const onlyWith = readString(raw, 'onlyWith', path, issues, false);
-		if (onlyWith !== undefined) {
-			if (ownReminder(onlyWith, reminders)) out.onlyWith = onlyWith;
-			else {
-				issues.add(`${path}.onlyWith`, 'not one of this character’s reminders');
-				ok = false;
-			}
-		}
-		for (const key of ['must', 'needsToken', 'learnsGiver'] as const) {
-			const value = readBoolean(raw, key, path, issues);
-			if (value === true) out[key] = true;
-			else if (value === false) {
-				issues.add(`${path}.${key}`, 'expected true');
-				ok = false;
-			}
-		}
-		if (out.learnsGiver && !out.needsToken) {
+	optObj({ onlyWith: TOKEN, must: T, minAlive: COUNT, needsToken: T, learnsGiver: T }),
+	(value, path, issues) => {
+		const before = issues.list.length;
+		if (value.learnsGiver && !value.needsToken) {
 			issues.add(`${path}.learnsGiver`, 'only with needsToken');
-			ok = false;
 		}
-		const minAlive = readNumber(raw, 'minAlive', path, issues);
-		if (minAlive !== undefined) {
-			if (!out.must) {
-				issues.add(`${path}.minAlive`, 'only with must');
-				ok = false;
-			} else if (!Number.isInteger(minAlive) || minAlive < 1) {
-				issues.add(`${path}.minAlive`, 'expected a whole number, 1 or more');
-				ok = false;
-			} else out.minAlive = minAlive;
-		}
-		if (!out.onlyWith && !out.must && !out.needsToken) {
+		if (value.minAlive !== undefined && !value.must)
+			issues.add(`${path}.minAlive`, 'only with must');
+		if (!value.onlyWith && !value.must && !value.needsToken) {
 			issues.add(path, 'expected onlyWith, must or needsToken');
-			ok = false;
 		}
-		return ok ? out : undefined;
+		return issues.list.length > before ? undefined : value;
 	}
 );
+
+export type Voter = PartValue<typeof voter>;

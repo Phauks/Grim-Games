@@ -1,6 +1,6 @@
 /**
  * Whether a character's own condition for waking holds tonight (`wakesWhen` in its rules
- * block, `data/wakes-when-rules.ts`): the King once the dead equal or outnumber the living,
+ * block, `data/parts/wakes-when.ts`): the King once the dead equal or outnumber the living,
  * the Choirboy when the Demon killed the King tonight, the Godfather on a later night only when
  * an Outsider died today, the Zombuul when nobody died today, the
  * Seamstress until its once-per-game ability is used (unless its player acts twice,

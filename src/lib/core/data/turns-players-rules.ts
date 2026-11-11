@@ -1,10 +1,9 @@
 /**
- * Players a character turns into characters of another type at setup: the `turnsPlayersInto`
- * part of its rules block, read here and worked out in `modes/draft.ts` (Sushi Buffet). It names
- * a behaviour and its type, never a character.
+ * Which players a character turns into characters of another type: the `turnsPlayersInto`
+ * part (`parts/turns-players-into.ts`) and a jinx's `alsoBecomes` (`jinx-read.ts`) share these.
  */
 import { SEATED_TYPES, type SeatedType } from './types.ts';
-import { checkKeys, describe, isObject, readEnum, type Issues, type Json } from './validate.ts';
+import { readEnum, type Issues, type Json } from './validate.ts';
 
 /**
  * Which players:
@@ -17,11 +16,6 @@ import { checkKeys, describe, isObject, readEnum, type Issues, type Json } from 
  */
 export const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
 export type TurnsPlayers = (typeof TURNS_PLAYERS)[number];
-
-export interface TurnsPlayersInto {
-	type: SeatedType;
-	players: TurnsPlayers;
-}
 
 /**
  * Reads `type` and `players` from the object `raw` at `path`, `players` one of `allowed` and
@@ -40,20 +34,4 @@ export function readPlayersOfType<P extends TurnsPlayers>(
 		readEnum(raw, 'players', allowed, path, issues, fallback === undefined) ??
 		(raw.players === undefined ? fallback : undefined);
 	return type && players ? { type, players } : undefined;
-}
-
-/** Reads `raw`, the `turnsPlayersInto` of the rules block at `path`; left out, undefined. */
-export function readTurnsPlayersInto(
-	raw: unknown,
-	path: string,
-	issues: Issues
-): TurnsPlayersInto | undefined {
-	if (raw === undefined) return undefined;
-	path = `${path}.turnsPlayersInto`;
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['type', 'players'], path, issues);
-	return readPlayersOfType(raw, path, issues, TURNS_PLAYERS);
 }

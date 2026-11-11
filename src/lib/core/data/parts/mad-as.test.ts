@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { readMadAs } from './mad-as-rules.ts';
-import { Issues } from './validate.ts';
+import { parseCharacterRules } from '../character-rules.ts';
+import { Issues } from '../validate.ts';
 
-describe('readMadAs', () => {
+describe('madAs', () => {
 	const read = (raw: unknown) => {
 		const issues = new Issues();
-		return { value: readMadAs(raw, 'madAs', issues, ['Mad']), issues: issues.list };
+		const rules = parseCharacterRules({ madAs: raw }, 'x', issues, ['Mad']);
+		return { value: rules?.madAs, issues: issues.list };
 	};
 
 	it('reads characters the carrier may also be mad as, whatever their type (M61c)', () => {
@@ -19,6 +20,6 @@ describe('readMadAs', () => {
 
 	it('rejects characters on a madness about its own player', () => {
 		const { issues } = read({ token: 'Mad', mad: 'self', characters: ['goblin'] });
-		expect(issues.join(' ')).toMatch(/madAs.characters: only with mad "carrier"/);
+		expect(issues).toEqual(['x.madAs.characters: only with mad "carrier"']);
 	});
 });

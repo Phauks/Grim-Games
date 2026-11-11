@@ -8,7 +8,7 @@
  *   their token, so the board still shows who they are (Trevor, 2026-11-03, option A). The wiki's
  *   own way, a swapped token with its "Is The" reminder, still counts too (`gainedBy`).
  */
-import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
+import type { GainedFrom } from '#lib/core/data/parts/gained-from.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';

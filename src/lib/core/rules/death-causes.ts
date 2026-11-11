@@ -3,7 +3,7 @@
  * whose ability can kill, cause their own death or cause an execution, plus any such
  * character in play off the script (Travellers, Fabled and Loric can join any game).
  *
- * The data is each character's `deathCause` rule (`data/death-cause-rules.ts`). Returns data only; the UI words it. The picker's
+ * The data is each character's `deathCause` rule (`data/parts/death-cause.ts`). Returns data only; the UI words it. The picker's
  * general causes (executed, the Demon, something else) are `GENERAL_DEATH_CAUSES`.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
@@ -37,7 +37,7 @@ import {
 	type DeathKind,
 	type RegistersAs,
 	type VictimRule
-} from '#lib/core/data/death-cause-rules.ts';
+} from '#lib/core/data/parts/death-cause.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 

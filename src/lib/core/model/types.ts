@@ -15,8 +15,8 @@ import type {
 	Script,
 	PlayerName
 } from '#lib/core/data/index.ts';
-import type { CounterTime } from '#lib/core/data/counter-rules.ts';
-import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { CounterTime } from '#lib/core/data/parts/counter.ts';
+import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
 import type { ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.

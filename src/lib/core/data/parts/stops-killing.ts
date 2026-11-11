@@ -1,9 +1,9 @@
-import { readStopsWaking } from '../stops-waking-rules.ts';
-import { objectPart } from './part.ts';
+import { specPart } from './part.ts';
+import { TOKEN_ON_TYPE } from './stops-waking.ts';
 
-/** Its token on a player stops them killing tonight (`stops-waking-rules.ts`'s shape). */
-export const stopsKilling = objectPart(
+/** Its token on a player stops them killing tonight (the same shape as `stopsWaking`). */
+export const stopsKilling = specPart(
 	'Stops killing',
 	'Its token on a player stops them killing tonight.',
-	readStopsWaking
+	TOKEN_ON_TYPE
 );

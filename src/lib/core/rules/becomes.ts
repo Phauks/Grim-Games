@@ -1,7 +1,7 @@
 /**
  * Reminders that say a player changed character or alignment (Trevor, 2026-10-19: "populate
  * a choice to change them into the demon"): the character's `becomes` rule
- * (`data/becomes-rules.ts`). Placing or taking off such a reminder offers the change; the
+ * (`data/parts/becomes.ts`). Placing or taking off such a reminder offers the change; the
  * Storyteller confirms it or leaves the player as they are.
  */
 import { rulesFor } from './rules-for.ts';

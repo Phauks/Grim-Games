@@ -4,7 +4,7 @@
  */
 import { startDay } from '#lib/core/engine/day-start.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
-import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
 import type { DayTallyLog, Game } from '#lib/core/model/index.ts';
 import { omit, replaceAt, removeAt, type Reducers } from '#lib/core/engine/reduce/shared.ts';
 

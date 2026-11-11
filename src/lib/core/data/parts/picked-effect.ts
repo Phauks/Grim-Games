@@ -1,7 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readStringArray } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { anyOf, obj, TOKEN } from '../field-spec.ts';
+import { specPart, type PartValue } from './part.ts';
 
 /**
  * What a reminder whose effect the Storyteller picks can do, each one the rules know (the Angel's
@@ -28,31 +26,14 @@ export const REMINDER_EFFECTS = [
 ] as const;
 export type ReminderEffectKind = (typeof REMINDER_EFFECTS)[number];
 
-/** Its reminder `token`, whose effect the Storyteller picks from `effects` or writes. */
-export interface PickedEffect {
-	token: ReminderLabel;
-	effects: readonly ReminderEffectKind[];
-}
-
-/** A reminder that carries an effect the Storyteller picks (Trevor, 2026-11-02: M17f). */
-export const pickedEffect = objectPart(
+/**
+ * A reminder that carries an effect the Storyteller picks (Trevor, 2026-11-02: M17f): its
+ * reminder `token`, whose effect the Storyteller picks from `effects` or writes.
+ */
+export const pickedEffect = specPart(
 	'Picked effect',
 	'Its reminder carries an effect the Storyteller picks, or their own words.',
-	(raw, path, issues, reminders): PickedEffect | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(raw, ['token', 'effects'], path, issues);
-		if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
-		const token = readToken(raw, 'token', path, issues, reminders);
-		const listed = readStringArray(raw, 'effects', path, issues) ?? [];
-		const effects = listed.filter((e): e is ReminderEffectKind =>
-			(REMINDER_EFFECTS as readonly string[]).includes(e)
-		);
-		if (effects.length !== listed.length)
-			issues.add(`${path}.effects`, `expected some of ${REMINDER_EFFECTS.join(', ')}`);
-		if (token === undefined) return undefined;
-		return { token, effects };
-	}
+	obj({ token: TOKEN, effects: anyOf(REMINDER_EFFECTS) })
 );
+
+export type PickedEffect = PartValue<typeof pickedEffect>;

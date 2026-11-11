@@ -34,8 +34,7 @@ describe('the executionOutcome part', () => {
 		parseCharacterRules({ executionOutcome: {} }, 'c', issues);
 		expect(issues.list).toEqual([
 			'a.executionOutcome.failsIf: unknown value "nobody-voted"',
-			'a.executionOutcome: expected failsIf, force or executeNow',
-			expect.stringContaining('b.executionOutcome'),
+			'b.executionOutcome.once: unknown field',
 			'c.executionOutcome: expected failsIf, force or executeNow'
 		]);
 	});
