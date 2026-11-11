@@ -165,7 +165,7 @@ describe('Mathematician', () => {
 			});
 			const options = answerOptions(s.game, count, s.characters);
 			expect(options).toContainEqual({ reason: 'invalid', value: { kind: 'number', value: 6 } });
-			expect(options).toContainEqual({ reason: 'vortox', value: { kind: 'number', value: 4 } });
+			expect(options).toContainEqual({ reason: 'false-info', value: { kind: 'number', value: 4 } });
 		});
 	});
 

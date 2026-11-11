@@ -89,7 +89,7 @@ describe('yesNoAnswers', () => {
 			'seamstress'
 		);
 		expect(yesNoAnswers(game, picker, [seats[1], seats[3]])).toEqual([
-			{ yes: false, reason: 'vortox' }
+			{ yes: false, reason: 'false-info' }
 		]);
 	});
 

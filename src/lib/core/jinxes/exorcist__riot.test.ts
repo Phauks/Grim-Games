@@ -68,7 +68,15 @@ describe('Exorcist + Riot jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'riot', 'exorcist', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'nominated-marked-executed', winner: 'good', token: 'Chosen' }
+				endsGame: {
+					kind: 'condition',
+					preset: 'nominated-marked-executed',
+					event: 'executed',
+					subject: 'marked',
+					nominatedBySelf: true,
+					winner: 'good',
+					token: 'Chosen'
+				}
 			});
 		});
 

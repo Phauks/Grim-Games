@@ -61,16 +61,66 @@ describe('readJinxRules (M44)', () => {
 
 	it('reads an executed end, and a day left out only on the final day', () => {
 		expect(read({ endsGame: { kind: 'executed', winner: 'good', player: 'partner' } })).toEqual({
-			rules: { endsGame: { kind: 'executed', winner: 'good', player: 'partner' } },
+			rules: {
+				endsGame: {
+					kind: 'condition',
+					preset: 'executed',
+					event: 'executed',
+					subject: 'partner',
+					winner: 'good'
+				}
+			},
 			issues: []
 		});
 		expect(read({ endsGame: { kind: 'executed', winner: 'good', token: 'Lit' } }).rules).toBe(
 			undefined
 		);
 		const final = { kind: 'day-without-execution', winner: 'good', when: ['final-day'] };
-		expect(read({ endsGame: final }).rules).toEqual({ endsGame: final });
+		expect(read({ endsGame: final }).rules).toEqual({
+			endsGame: {
+				...final,
+				kind: 'condition',
+				preset: 'day-without-execution',
+				event: 'day-ends',
+				noExecution: true,
+				bothAlive: true
+			}
+		});
 		const noDay = { kind: 'day-without-execution', winner: 'good' };
 		expect(read({ endsGame: noDay }).issues).toContain('jinxes.chef.endsGame.day: missing');
+	});
+});
+
+describe('jinx condition ends (M78)', () => {
+	it('reads an event about whose players, and refuses fields its event does not take', () => {
+		const end = {
+			kind: 'condition',
+			event: 'executed',
+			subject: 'marked',
+			token: 'Lit',
+			nominatedBySelf: true,
+			winner: 'evil'
+		};
+		expect(read({ endsGame: end })).toEqual({ rules: { endsGame: end }, issues: [] });
+		expect(
+			read({ endsGame: { kind: 'condition', event: 'executed', winner: 'good' } }).issues
+		).toContain('jinxes.chef.endsGame.subject: missing');
+		expect(
+			read({
+				endsGame: { kind: 'condition', event: 'day-ends', winner: 'good', stops: true }
+			}).issues
+		).toContain('jinxes.chef.endsGame.stops: only with event `ability-used`');
+		expect(
+			read({
+				endsGame: {
+					kind: 'condition',
+					event: 'executed',
+					subject: 'self',
+					token: 'Lit',
+					winner: 'good'
+				}
+			}).issues
+		).toContain('jinxes.chef.endsGame.token: only with subject `marked`');
 	});
 });
 

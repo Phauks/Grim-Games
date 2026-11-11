@@ -481,7 +481,7 @@ function statementTrue(
 	);
 	// The statement is not information, so the Vortox does not make it false.
 	delete out.mustBeFalse;
-	delete out.vortox;
+	delete out.falseSeat;
 	return out;
 }
 
@@ -667,7 +667,11 @@ export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalC
 	if (a.mayBeFalse) return [mayBeFalseCause(a.mayBeFalse)];
 	if (a.mustBeFalse && a.falseBy) {
 		return [
-			{ reason: 'vortox', characterId: a.falseBy, ...(a.vortox ? { seatId: a.vortox } : {}) }
+			{
+				reason: 'false-info',
+				characterId: a.falseBy,
+				...(a.falseSeat ? { seatId: a.falseSeat } : {})
+			}
 		];
 	}
 	return a.registrations.map((r) => ({
@@ -711,14 +715,14 @@ export function answerOptions(
 		: a.anyBy
 			? 'any'
 			: a.mustBeFalse
-				? 'vortox'
+				? 'false-info'
 				: undefined;
 	if (!loose) return [];
 	const truthful: AnswerValue[] = a.possible ?? [answerValue(a)];
 	const key = (v: AnswerValue) => JSON.stringify(v);
 	const taken = new Set(truthful.map(key));
 	const out: AnswerOption[] = truthful.map((value, i) => ({
-		reason: loose === 'vortox' ? 'invalid' : i === 0 ? 'true' : 'registers',
+		reason: loose === 'false-info' ? 'invalid' : i === 0 ? 'true' : 'registers',
 		value
 	}));
 	const add = (value: AnswerValue) => {

@@ -16,7 +16,18 @@
 import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId, Script, ScriptMeta } from '#lib/core/data/types.ts';
 
-export const BOOTLEGGER: CharacterId = 'bootlegger';
+/** Whether a character carries a script's own rules (its `carriesScriptRules`, the Bootlegger). */
+export const carriesScriptRules = (character: Character): boolean =>
+	rulesOfCharacter(character)?.carriesScriptRules === true;
+
+/** The character that carries a script's own rules, from the game's lookup or a list. */
+export function scriptRulesCarrier(
+	characters: Iterable<Character> | ReadonlyMap<CharacterId, Character>
+): Character | undefined {
+	const all = characters instanceof Map ? characters.values() : characters;
+	for (const c of all as Iterable<Character>) if (carriesScriptRules(c)) return c;
+	return undefined;
+}
 
 /** The script's Bootlegger lines, trimmed, without empty ones. */
 export function scriptRules(meta: ScriptMeta | undefined): string[] {
@@ -56,8 +67,8 @@ export function withScriptRules(
 ): Character[] {
 	const rules = scriptRules(meta);
 	if (!rules.length) return [...characters];
-	const listed = characters.some((c) => c.id === BOOTLEGGER);
-	const shown = characters.map((c) => (c.id === BOOTLEGGER ? bootleggerWithRules(c, meta) : c));
+	const listed = characters.some(carriesScriptRules);
+	const shown = characters.map((c) => (carriesScriptRules(c) ? bootleggerWithRules(c, meta) : c));
 	return listed || !bootlegger ? shown : [...shown, bootleggerWithRules(bootlegger, meta)];
 }
 
@@ -73,15 +84,14 @@ export function startingRuleCharacters(
 	const ids: CharacterId[] = [];
 	let homebrew = false;
 	for (const entry of script.entries) {
-		if (entry.kind === 'custom' && entry.character.id !== BOOTLEGGER) homebrew = true;
+		if (entry.kind === 'custom' && !carriesScriptRules(entry.character)) homebrew = true;
 		const character = entry.kind === 'official' ? characters.get(entry.id) : entry.character;
 		if (!character || ids.includes(character.id)) continue;
 		if (rulesOf(character.id, characters)?.jinxesOnly) continue;
 		if (character.type === 'fabled' || character.type === 'loric') ids.push(character.id);
 	}
 	const bootlegged = homebrew || scriptRules(script.meta).length > 0;
-	if (bootlegged && !ids.includes(BOOTLEGGER) && characters.has(BOOTLEGGER)) {
-		ids.push(BOOTLEGGER);
-	}
+	const carrier = scriptRulesCarrier(characters);
+	if (bootlegged && carrier && !ids.includes(carrier.id)) ids.push(carrier.id);
 	return ids;
 }

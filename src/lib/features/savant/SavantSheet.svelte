@@ -318,7 +318,7 @@
 					}
 				: situation?.falseBy !== undefined
 					? {
-							text: t('savant.vortox', { character: slot('character') }),
+							text: t('savant.falseInfo', { character: slot('character') }),
 							characterId: situation.falseBy
 						}
 					: undefined

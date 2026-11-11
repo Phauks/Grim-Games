@@ -13,7 +13,11 @@ import {
 	GIVEN_WHERE,
 	NOT_SHOWN,
 	IMPAIR_KINDS,
+	JINX_END_EVENTS,
 	JINX_END_KINDS,
+	JINX_END_SUBJECTS,
+	presetJinxEnd,
+	type JinxEnd,
 	JINX_WHO,
 	LEARNS,
 	NIGHT_CHOICE_CHOOSES,
@@ -133,6 +137,7 @@ function readEnumList<T extends string>(
 function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 	const kind = readEnum(raw, 'kind', JINX_END_KINDS, path, issues, true);
 	if (!kind) return undefined;
+	if (kind === 'condition') return readEndCondition(raw, path, issues);
 	const extra: readonly string[] = {
 		'nominated-marked-executed': ['token'],
 		'marked-executed': ['token'],
@@ -175,7 +180,64 @@ function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 		if (n === undefined) return undefined;
 		out[key] = n;
 	}
-	return out;
+	return presetJinxEnd(out as unknown as JinxEnd) as unknown as Json;
+}
+
+/** A jinx `condition` end: an event about whose players, what must hold, and who wins. */
+function readEndCondition(raw: Json, path: string, issues: Issues): Json | undefined {
+	checkKeys(
+		raw,
+		[
+			'kind',
+			'event',
+			'subject',
+			'token',
+			'nominatedBySelf',
+			'died',
+			'noExecution',
+			'bothAlive',
+			'stops',
+			'day',
+			'alive',
+			'winner',
+			'who',
+			'when'
+		],
+		path,
+		issues
+	);
+	const event = readEnum(raw, 'event', JINX_END_EVENTS, path, issues, true);
+	const subject = readEnum(raw, 'subject', JINX_END_SUBJECTS, path, issues, false);
+	const winner = readEnum(raw, 'winner', ALIGNMENTS, path, issues, true);
+	const token = readString(raw, 'token', path, issues, subject === 'marked');
+	if (!event || !winner) return undefined;
+	const out: Json = { kind: 'condition', event, winner };
+	const before = issues.list.length;
+	if (subject) out.subject = subject;
+	if (token !== undefined) out.token = token;
+	for (const flag of ['nominatedBySelf', 'died', 'noExecution', 'bothAlive', 'stops'] as const)
+		if (readBoolean(raw, flag, path, issues)) out[flag] = true;
+	for (const key of ['day', 'alive'] as const) {
+		if (raw[key] === undefined) continue;
+		const n = readPositive(raw, key, path, issues);
+		if (n !== undefined) out[key] = n;
+	}
+	const only = (key: string, events: readonly string[]) => {
+		if (out[key] !== undefined && !events.includes(event))
+			issues.add(`${path}.${key}`, `only with event ${events.map((e) => `\`${e}\``).join(' or ')}`);
+	};
+	only('nominatedBySelf', ['executed']);
+	only('died', ['executed']);
+	only('noExecution', ['day-ends']);
+	only('bothAlive', ['day-ends']);
+	only('day', ['day-ends']);
+	only('stops', ['ability-used']);
+	only('alive', ['ability-used']);
+	if (event !== 'day-ends' && !subject) issues.add(`${path}.subject`, 'missing');
+	if (subject === 'marked' && token === undefined) return undefined;
+	if (token !== undefined && subject !== 'marked')
+		issues.add(`${path}.token`, 'only with subject `marked`');
+	return issues.list.length > before ? undefined : out;
 }
 
 const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {

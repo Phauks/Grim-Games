@@ -307,7 +307,7 @@ export function infoPicker(
 	const r = onlyRelevant(all, relevant);
 	if (spec.judgement) {
 		delete r.mustBeFalse;
-		delete r.vortox;
+		delete r.falseSeat;
 		delete r.falseBy;
 	}
 	// A number is one value; other pickers have many options, so no single alternative.
@@ -432,9 +432,9 @@ export function abnormalCauses(picker: InfoPicker, choice: InfoChoice): Abnormal
 	if (picker.mustBeFalse && picker.falseBy) {
 		return [
 			{
-				reason: 'vortox',
+				reason: 'false-info',
 				characterId: picker.falseBy,
-				...(picker.vortox ? { seatId: picker.vortox } : {})
+				...(picker.falseSeat ? { seatId: picker.falseSeat } : {})
 			}
 		];
 	}

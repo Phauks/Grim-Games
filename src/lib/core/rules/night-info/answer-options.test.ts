@@ -98,7 +98,7 @@ describe('answer options', () => {
 		}));
 		expect(got.map((o) => [o.reason, o.value])).toEqual([
 			['invalid', { kind: 'yes-no', value: false }],
-			['vortox', { kind: 'yes-no', value: true }]
+			['false-info', { kind: 'yes-no', value: true }]
 		]);
 	});
 

@@ -95,7 +95,7 @@ export interface SavantSituation {
 	/** The Savant's ability does not work: any mode is allowed. */
 	impaired?: 'drunk' | 'poisoned' | 'no-ability';
 	/** A working Vortox is in play and the Savant is sober: both must be false. */
-	vortox?: SeatId;
+	falseSeat?: SeatId;
 	/**
 	 * That character (the Vortox, or any whose `falseInfo` covers Townsfolk, or the rule
 	 * character of two Storytellers when the Savant went to the lying one).
@@ -118,8 +118,12 @@ export function savantSituation(
 ): SavantSituation {
 	const r = reliability(game, seatId, game.seats[seatId]?.characterId ?? '', characters);
 	if (r.unreliable) return { impaired: r.unreliable, mode: 'one-each' };
-	if (r.mustBeFalse && r.vortox !== undefined)
-		return { vortox: r.vortox, ...(r.falseBy ? { falseBy: r.falseBy } : {}), mode: 'both-false' };
+	if (r.mustBeFalse && r.falseSeat !== undefined)
+		return {
+			falseSeat: r.falseSeat,
+			...(r.falseBy ? { falseBy: r.falseBy } : {}),
+			mode: 'both-false'
+		};
 	const st = r.storyteller;
 	if (st?.lies !== undefined) {
 		const storyteller = { by: st.by, lies: st.lies };

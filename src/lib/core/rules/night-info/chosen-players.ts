@@ -55,7 +55,7 @@ export function chosenPlayers(game: Game, picker: InfoPicker): ChosenPlayers | u
 	const anyOther: ValidReason | undefined = anyInfo(picker)
 		? 'unreliable'
 		: picker.mustBeFalse
-			? 'vortox'
+			? 'false-info'
 			: undefined;
 	// Under the Vortox the truthful options are exactly the ones not allowed.
 	const truthful = picker.mustBeFalse && !anyInfo(picker) ? [] : picker.options;
@@ -98,7 +98,7 @@ export function chosenPlayers(game: Game, picker: InfoPicker): ChosenPlayers | u
 		: picker.mustBeFalse
 			? isTruthful(picker, choice)
 				? 'invalid'
-				: 'vortox'
+				: 'false-info'
 			: o
 				? o.registered
 					? 'registers'

@@ -12,6 +12,7 @@ export { believesOtherCharacter } from './believes-other-character.ts';
 export { believesType } from './believes-type.ts';
 export { breaksRules } from './breaks-rules.ts';
 export { carrierIsDemon } from './carrier-is-demon.ts';
+export { carriesScriptRules } from './carries-script-rules.ts';
 export { changesCharacter } from './changes-character.ts';
 export { choosesLikeDemon } from './chooses-like-demon.ts';
 export { choosesUnmarked } from './chooses-unmarked.ts';

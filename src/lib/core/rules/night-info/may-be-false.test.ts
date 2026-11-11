@@ -40,7 +40,7 @@ describe('falseInfo may (Fibbin)', () => {
 		expect(allows(1)).toBe(true);
 		expect(allows(0)).toBe(true);
 		expect(abnormalCauses(picker, { seats: [], number: 0 })).toEqual([
-			{ reason: 'vortox', characterId: 'fibbin' }
+			{ reason: 'false-info', characterId: 'fibbin' }
 		]);
 	});
 

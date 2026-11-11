@@ -65,7 +65,15 @@ describe('Mayor + Riot jinx', () => {
 			expect(
 				ownJinxRules({ script: scriptOf(ids) }, 'riot', 'mayor', committedCharacters())
 			).toEqual({
-				endsGame: { kind: 'ability-stopped', winner: 'good', alive: 1 }
+				endsGame: {
+					kind: 'condition',
+					preset: 'ability-stopped',
+					event: 'ability-used',
+					subject: 'partner',
+					stops: true,
+					winner: 'good',
+					alive: 1
+				}
 			});
 		});
 

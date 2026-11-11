@@ -21,7 +21,7 @@ export type ValidReason =
 	/** Any information is allowed: the Storyteller may break the rules (the Atheist). */
 	| 'any'
 	/** The Vortox: only false information is allowed. */
-	| 'vortox'
+	| 'false-info'
 	/**
 	 * Fits the Storyteller's pretend evil team (`InfoPicker.pretend`, M26): true as if those
 	 * players were their pretend characters. Listed first.
@@ -50,7 +50,7 @@ export interface ValidInfo {
 	 * players the information is about (Fortune Teller's pair, Steward's or Noble's choice).
 	 */
 	seats: SeatId[];
-	/** Any other choice is valid too, for `unreliable`, `any` or `vortox` (too many to list). */
+	/** Any other choice is valid too, for `unreliable`, `any` or `false-info` (too many to list). */
 	anyOther?: boolean;
 }
 
@@ -60,7 +60,7 @@ export interface ValidInfo {
  * false may not.
  */
 function highestNumber(game: Game, picker: InfoPicker, loose: ValidReason): number {
-	if (loose !== 'vortox' && picker.mostTrue !== undefined) return picker.mostTrue;
+	if (loose !== 'false-info' && picker.mostTrue !== undefined) return picker.mostTrue;
 	const n = game.seating.length;
 	return picker.highest ?? n;
 }
@@ -86,7 +86,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 		: picker.anyBy
 			? 'any'
 			: picker.mustBeFalse
-				? 'vortox'
+				? 'false-info'
 				: undefined;
 	if (loose) {
 		if (picker.kind === 'number') {
@@ -94,7 +94,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 			const notTrue = new Set(picker.options.map((o) => o.number));
 			for (let n = picker.lowest ?? 0; n <= highestNumber(game, picker, loose); n++) {
 				if (taken.has(n)) continue;
-				if (loose === 'vortox' && notTrue.has(n)) continue;
+				if (loose === 'false-info' && notTrue.has(n)) continue;
 				extra.push({ reason: loose, number: n, seats: [] });
 			}
 		} else {

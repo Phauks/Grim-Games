@@ -41,12 +41,12 @@ export interface Reliability {
 	 */
 	mustBeFalse?: boolean;
 	/** That character's seat, when `mustBeFalse`. */
-	vortox?: SeatId;
+	falseSeat?: SeatId;
 	/** That character, when `mustBeFalse`. */
 	falseBy?: CharacterId;
 	/**
 	 * Which of two Storytellers the player went to today (`storytellers.ts`, the Knaves): the
-	 * lying one makes `mustBeFalse`, with that rule character in `falseBy` and no `vortox`.
+	 * lying one makes `mustBeFalse`, with that rule character in `falseBy` and no `falseSeat`.
 	 */
 	storyteller?: StorytellerVisit;
 	/**
@@ -185,7 +185,7 @@ export const anyInfo = (r: Pick<Reliability, 'unreliable' | 'mayBeFalse'>): bool
 
 /** The abnormal cause a `mayBeFalse` character gives false information by (the Fibbin). */
 export const mayBeFalseCause = (characterId: CharacterId): AbnormalCause => ({
-	reason: 'vortox',
+	reason: 'false-info',
 	characterId
 });
 
@@ -294,7 +294,7 @@ export function reliability(
 			: falseInfoSource(game, characters, type, characterId);
 	if (falseBy) {
 		out.mustBeFalse = true;
-		out.vortox = falseBy.seatId;
+		out.falseSeat = falseBy.seatId;
 		out.falseBy = falseBy.characterId;
 	}
 	const visit = storytellerVisit(game, seatId, characters);

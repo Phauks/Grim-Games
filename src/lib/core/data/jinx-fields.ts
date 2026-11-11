@@ -33,7 +33,9 @@ import {
 	GIVEN_WHERE,
 	GRIMOIRE_HIDDEN,
 	IMPAIR_KINDS,
+	JINX_END_EVENTS,
 	JINX_END_KINDS,
+	JINX_END_SUBJECTS,
 	JINX_WHO,
 	LEARNS,
 	NIGHT_CHOICE_CHOOSES,
@@ -161,7 +163,14 @@ const JINX: FieldSpec = someOf({
 		token: opt(STR),
 		day: opt(COUNT),
 		alive: opt(COUNT),
-		player: opt(WHO)
+		player: opt(WHO),
+		event: opt(oneOf(JINX_END_EVENTS)),
+		subject: opt(oneOf(JINX_END_SUBJECTS)),
+		nominatedBySelf: opt(T),
+		died: opt(T),
+		noExecution: opt(T),
+		bothAlive: opt(T),
+		stops: opt(T)
 	}),
 	deadAtLeast: verb({ dead: COUNT }, { key: 'dead', spec: COUNT, is: 'number' }),
 	nightChoice: verb({

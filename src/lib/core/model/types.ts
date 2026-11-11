@@ -563,13 +563,13 @@ export interface NominationVotes {
  * `seatId` name the other character responsible, when known.
  */
 export type AbnormalReason =
-	'drunk' | 'poisoned' | 'no-ability' | 'vortox' | 'registration' | 'protected' | 'other';
+	'drunk' | 'poisoned' | 'no-ability' | 'false-info' | 'registration' | 'protected' | 'other';
 
 export const ABNORMAL_REASONS = [
 	'drunk',
 	'poisoned',
 	'no-ability',
-	'vortox',
+	'false-info',
 	'registration',
 	'protected',
 	'other'

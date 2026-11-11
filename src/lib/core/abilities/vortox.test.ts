@@ -84,7 +84,7 @@ describe('Vortox', () => {
 				expect(a).toMatchObject({ kind: 'yes-no', value: false, mustBeFalse: true });
 				expect(answerOptions(s.game, a, s.characters)).toEqual([
 					{ reason: 'invalid', value: { kind: 'yes-no', value: false } },
-					{ reason: 'vortox', value: { kind: 'yes-no', value: true } }
+					{ reason: 'false-info', value: { kind: 'yes-no', value: true } }
 				]);
 			}
 		});
@@ -96,7 +96,7 @@ describe('Vortox', () => {
 			const s = scenario(['savant', 'dreamer', 'chef', 'vortox', 'witch']);
 			expect(savantSituation(s.game, s.seat('savant'), s.characters)).toMatchObject({
 				mode: 'both-false',
-				vortox: s.seat('vortox')
+				falseSeat: s.seat('vortox')
 			});
 			// The Dreamer's information is false too: the Savant's own character may not be shown,
 			// and the Philosopher and No Dashii, both wrong, may.
@@ -139,7 +139,7 @@ describe('Vortox', () => {
 			const { game: g, seats } = castGame(['chef', 'recluse', 'vortox', 'poisoner', 'monk']);
 			expect(reliability(g, seats[0], 'chef', testCharacters)).toMatchObject({
 				mustBeFalse: true,
-				vortox: seats[2],
+				falseSeat: seats[2],
 				falseBy: 'vortox'
 			});
 			expect(reliability(g, seats[1], 'recluse', testCharacters).mustBeFalse).toBeUndefined();
