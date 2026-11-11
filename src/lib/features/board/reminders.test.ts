@@ -24,7 +24,7 @@ import {
 	looksLike,
 	tokenLabel
 } from './reminders.ts';
-import { placingAlignment } from './board.ts';
+import { placingAlignment } from '#lib/features/grimoire/board.ts';
 import { GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 
 const data = committedGameData();

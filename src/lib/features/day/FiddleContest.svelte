@@ -13,7 +13,7 @@
 	import { slot } from '#lib/features/characters/slots.ts';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { requestEndGame } from '#lib/features/grimoire/end-game-request.svelte.ts';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

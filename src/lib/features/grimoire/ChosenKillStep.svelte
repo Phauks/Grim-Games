@@ -12,7 +12,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';

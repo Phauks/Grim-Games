@@ -8,11 +8,11 @@
 	import CharacterToken from './CharacterToken.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { sheetNumbersFor } from './sheet-night-numbers.ts';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import type { ReminderLabel } from '#lib/core/data/index.ts';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 	import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
+	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	/**

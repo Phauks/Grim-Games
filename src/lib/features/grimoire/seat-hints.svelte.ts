@@ -6,7 +6,7 @@
 import type { CharacterLookup, Game, Reminder, SeatId } from '#lib/core/model/index.ts';
 import { handMarks, handRole, type HandRole } from './hand-marks.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import { extraReminders } from './reminders.ts';
+import { extraReminders } from '#lib/features/board/reminders.ts';
 
 /** No seat marked: never changed, so a plain Set. */
 const NONE: ReadonlySet<SeatId> = new Set();

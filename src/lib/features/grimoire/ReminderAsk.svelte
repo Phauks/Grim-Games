@@ -17,7 +17,7 @@
 		type PromptAsk,
 		type ReminderLook
 	} from './reminder-ask.ts';
-	import { tokenLabel } from './reminders.ts';
+	import { tokenLabel } from '#lib/features/board/reminders.ts';
 
 	/**
 	 * Reminders that ask (Trevor, 2026-10-19). A reminder placed by any route (bank, sheet,

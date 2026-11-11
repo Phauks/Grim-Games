@@ -2,20 +2,20 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { numberSymbol, symbolNumber, type GenericLook } from '#lib/core/model/index.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
-	import BankToken from '#lib/features/grimoire/BankToken.svelte';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BankToken from '#lib/features/board/BankToken.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import {
 		playerBankItems,
 		type BankGroup,
 		type BankItem
-	} from '#lib/features/grimoire/bank-items.ts';
+	} from '#lib/features/board/bank-items.ts';
 	import DeleteTokenConfirm from '#lib/features/grimoire/DeleteTokenConfirm.svelte';
 	import GenericLookDialog from '#lib/features/grimoire/GenericLookDialog.svelte';
 	import HeldTokenPick from '#lib/features/grimoire/HeldTokenPick.svelte';
 	import ReminderAbout from '#lib/features/grimoire/ReminderAbout.svelte';
-	import ReminderInHand from '#lib/features/grimoire/ReminderInHand.svelte';
+	import ReminderInHand from '#lib/features/board/ReminderInHand.svelte';
 	import ReminderTray from '#lib/features/grimoire/ReminderTray.svelte';
-	import { trayFace, type TrayGestures } from '#lib/features/grimoire/tray-gestures.svelte.ts';
+	import { trayFace, type TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import { dropOnTap } from '#lib/features/grimoire/reminder-in-hand.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';

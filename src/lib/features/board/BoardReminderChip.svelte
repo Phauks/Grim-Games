@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 
 	interface Props {
 		/** How it looks: `placedLook` on the board, `playerLook` on a player's grim. */

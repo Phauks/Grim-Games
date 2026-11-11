@@ -13,15 +13,15 @@
 		type Reminder,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { bankView } from './bank-items.ts';
-	import BoardReminder from './BoardReminder.svelte';
+	import { bankView } from '#lib/features/board/bank-items.ts';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { TrayGestures } from './tray-gestures.svelte.ts';
-	import ReminderInHand from './ReminderInHand.svelte';
+	import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
+	import ReminderInHand from '#lib/features/board/ReminderInHand.svelte';
 	import HeldTokenPick from './HeldTokenPick.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
-	import { onBoard, placedLook } from './reminders.ts';
+	import { onBoard, placedLook } from '#lib/features/board/reminders.ts';
 
 	import type { ReminderLabel } from '#lib/core/data/index.ts';
 

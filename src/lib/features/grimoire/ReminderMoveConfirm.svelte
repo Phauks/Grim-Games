@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		reminderHolder,
@@ -15,10 +15,10 @@
 	} from '#lib/core/rules/reminders/reminder-movement.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { onBoard, placedLook } from './reminders.ts';
+	import { onBoard, placedLook } from '#lib/features/board/reminders.ts';
 
 	/**
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned

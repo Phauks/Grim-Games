@@ -123,7 +123,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Counter.** Its run of day or night tokens gains the next one each dawn or dusk.
 
 - Part: `src/lib/core/data/parts/counter.ts`
-- Read by: `core/rules/reminders/counters.ts`, `features/grimoire/bank-items.ts`
+- Read by: `core/rules/reminders/counters.ts`, `features/board/bank-items.ts`
 
 ### createsDemon
 

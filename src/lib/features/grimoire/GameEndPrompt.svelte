@@ -16,9 +16,9 @@
 	import { type EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 	import { impairmentOfLabel } from '#lib/core/rules/abilities/ability.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
-	import ReminderTokenRow from './ReminderTokenRow.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
@@ -28,7 +28,7 @@
 	import { dismissedGameEnds } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import { tonight } from '#lib/core/rules/night/board-steps.ts';
-	import { isGeneric, reminderWords } from './reminders.ts';
+	import { isGeneric, reminderWords } from '#lib/features/board/reminders.ts';
 
 	/**
 	 * When a game end condition is met (Trevor, 2026-10-18), list every one met, with what may

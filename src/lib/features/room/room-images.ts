@@ -4,7 +4,7 @@ import {
 	MAX_ROOM_IMAGE_BYTES,
 	roomImagePath
 } from '#lib/core/sync/room-images.ts';
-import { shrinkImage } from '#lib/features/grimoire/backgrounds.ts';
+import { shrinkImage } from '#lib/features/board/backgrounds.ts';
 import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 /**

@@ -9,7 +9,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
 	import SeatChooser from './SeatChooser.svelte';

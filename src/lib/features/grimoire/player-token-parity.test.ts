@@ -5,7 +5,7 @@ import { createGame, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, type GenericLook } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { parsePlayerReminders, parsePlayerTokens } from '#lib/features/player/player-reminders.ts';
-import { bankItems, playerBankItems } from './bank-items.ts';
+import { bankItems, playerBankItems } from '#lib/features/board/bank-items.ts';
 
 // A player's reminder tray (player/PlayerReminderBin) and the Storyteller's bank
 // (grimoire/ReminderBank) are built from the same pieces (Trevor, 2026-11-06: "Player view
@@ -15,7 +15,7 @@ import { bankItems, playerBankItems } from './bank-items.ts';
 // feature reaches one side only: each is shared, or Storyteller-only for a stated reason.
 
 const source = (path: string) => readFileSync(`src/lib/${path}`, 'utf8');
-const bankItemsSource = source('features/grimoire/bank-items.ts');
+const bankItemsSource = source('features/board/bank-items.ts');
 const bank = source('features/grimoire/ReminderBank.svelte');
 const pill = source('features/grimoire/ReminderHandPill.svelte');
 const tray = source('features/player/PlayerReminderBin.svelte');
@@ -104,7 +104,7 @@ describe("a player's reminder tray and the Storyteller's bank", () => {
 	// code. What a finger does lives in tray-gestures.svelte.ts; each side only keeps its tokens.
 	it('handles every tap, drag and drop with the same gestures', () => {
 		const seats = source('features/player/PlayerSeatReminders.svelte');
-		const drag = source('features/grimoire/reminder-drag.svelte.ts');
+		const drag = source('features/board/reminder-drag.svelte.ts');
 		for (const side of [bank, tray]) {
 			for (const call of ['gestures.tap(', 'gestures.dragTray(', 'gestures.menuFor('])
 				expect(side).toContain(call);

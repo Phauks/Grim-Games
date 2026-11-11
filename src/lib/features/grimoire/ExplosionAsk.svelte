@@ -6,7 +6,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 

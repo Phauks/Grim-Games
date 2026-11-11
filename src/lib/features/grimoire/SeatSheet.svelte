@@ -33,7 +33,7 @@
 	import SeatStatus from './SeatStatus.svelte';
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatCharacterFlow from './SeatCharacterFlow.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import TableCheck from './TableCheck.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import SeatNameField from './SeatNameField.svelte';
@@ -42,10 +42,10 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatChanges } from './history.ts';
 	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
-	import { boardLooks } from './board-looks.svelte.ts';
-	import { placedLook, tokenLabel } from './reminders.ts';
-	import BoardReminder from './BoardReminder.svelte';
-	import ReminderTokenRow from './ReminderTokenRow.svelte';
+	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
+	import { placedLook, tokenLabel } from '#lib/features/board/reminders.ts';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';

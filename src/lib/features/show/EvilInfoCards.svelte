@@ -34,7 +34,7 @@
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
 	import type { NightTextSteps } from '#lib/core/rules/night/night-text.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import StepLines from '#lib/features/reference/StepLines.svelte';
 	import ShowToPlayerButton from './ShowToPlayerButton.svelte';

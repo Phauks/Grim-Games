@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import BoardReminderChip from '#lib/features/grimoire/BoardReminderChip.svelte';
-	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
-	import { avoidBoxes, toPercent, toPx } from '#lib/features/grimoire/board-geometry.ts';
-	import type { Box } from '#lib/features/grimoire/name-placement.ts';
-	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
-	import ReminderTethers from '#lib/features/grimoire/ReminderTethers.svelte';
-	import type { TrayGestures } from '#lib/features/grimoire/tray-gestures.svelte.ts';
+	import BoardReminderChip from '#lib/features/board/BoardReminderChip.svelte';
+	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
+	import { avoidBoxes, toPercent, toPx } from '#lib/features/board/board-geometry.ts';
+	import type { Box } from '#lib/features/board/name-placement.ts';
+	import { fitReminders } from '#lib/features/board/reminder-fan.ts';
+	import ReminderTethers from '#lib/features/board/ReminderTethers.svelte';
+	import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import { placedId } from './player-tray-places.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';

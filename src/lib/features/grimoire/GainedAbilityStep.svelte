@@ -11,7 +11,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 
 	/**
 	 * The ability the step's player chooses to gain (`gainedFrom.choose`: the Philosopher's good

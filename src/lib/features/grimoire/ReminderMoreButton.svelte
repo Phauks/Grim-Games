@@ -3,7 +3,7 @@
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import { duplicateReminder } from './duplicate-reminder.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { onBoard } from './reminders.ts';
+	import { onBoard } from '#lib/features/board/reminders.ts';
 
 	/**
 	 * A placed reminder's ⋯ (Trevor, 2026-10-18), beside its delete in its sheet: a menu whose

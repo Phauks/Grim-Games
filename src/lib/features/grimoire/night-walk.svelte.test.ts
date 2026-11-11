@@ -4,7 +4,7 @@ import { createGame, type EngineContext } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
-import { ReminderHand } from './reminder-hand.svelte.ts';
+import { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';
 
 /** Runs in the browser project, which can't read the data files: no night order loaded. */
 const ctx: EngineContext = {

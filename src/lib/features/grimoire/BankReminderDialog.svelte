@@ -20,17 +20,17 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import ReminderAbout from './ReminderAbout.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { ReminderHand } from './reminder-hand.svelte.ts';
+	import type { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import NotedReminderFields from './NotedReminderFields.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import ReminderEffectFields from './ReminderEffectFields.svelte';
-	import { bankView } from './bank-items.ts';
-	import { isGeneric, placedLook } from './reminders.ts';
+	import { bankView } from '#lib/features/board/bank-items.ts';
+	import { isGeneric, placedLook } from '#lib/features/board/reminders.ts';
 
 	interface Props {
 		grimoire: Grimoire;

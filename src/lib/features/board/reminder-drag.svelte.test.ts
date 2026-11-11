@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import type { Character } from '#lib/core/data/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
-import type { Grimoire } from './grimoire.svelte.ts';
+import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import { onBoard } from './reminders.ts';
 import { ReminderDragging } from './reminder-drag.svelte.ts';
-import { boardTrayPlaces } from './board-tray-places.ts';
+import { boardTrayPlaces } from '#lib/features/grimoire/board-tray-places.ts';
 import { TrayGestures } from './tray-gestures.svelte.ts';
 
 /** Runs in the browser project, which can't read the data files: one hand-made character. */

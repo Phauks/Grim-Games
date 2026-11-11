@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.ts';
-import { DEFAULT_STEP_FOCUS } from '#lib/features/grimoire/step-focus.svelte.ts';
+import { DEFAULT_BOARD_LOOKS } from '#lib/features/board/board-looks.svelte.ts';
+import { DEFAULT_STEP_FOCUS } from '#lib/features/board/step-focus.svelte.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/ui/preferences.ts';
 import {
 	mergeSynced,

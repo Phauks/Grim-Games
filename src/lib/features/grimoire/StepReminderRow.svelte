@@ -4,9 +4,9 @@
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 
 	/**
 	 * One copy of a night step's reminder token (`GuidedStep`): the token, where it is, Place or

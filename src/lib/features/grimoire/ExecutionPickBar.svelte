@@ -14,7 +14,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import { NO_EXECUTION, type PhaseFlow } from './phase-flow.svelte.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 
 	interface Props {
 		flow: PhaseFlow;

@@ -131,7 +131,7 @@ const NO_HAND_BUILT_SEAT_NAME = {
 };
 
 const LOCAL_STORAGE_TODO = [
-	'src/lib/features/grimoire/board-looks.svelte.ts',
+	'src/lib/features/board/board-looks.svelte.ts',
 	'src/lib/features/grimoire/device-notes.ts',
 	'src/lib/features/info-tokens/custom-tokens.svelte.ts',
 	'src/lib/features/library/library-labels.svelte.ts',
@@ -270,6 +270,35 @@ export default defineConfig(
 								'**/core/engine/**'
 							],
 							message: 'Player mode must not import Storyteller game state.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		// The board's shared pieces serve the Storyteller, player and room boards alike, so they
+		// never reach back into the Storyteller's grimoire. Repeats the features rule. Tests may
+		// drive a piece through the grimoire that uses it.
+		files: ['src/lib/features/board/**'],
+		ignores: ['**/*.test.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@ark-ui/*'],
+							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
+						},
+						OLD_CHARACTER_PIECES,
+						{
+							group: ['#lib/features/grimoire/*', '**/features/grimoire/**'],
+							message: 'The board is shared: pass grimoire state in rather than importing it.'
 						}
 					]
 				}
@@ -526,7 +555,7 @@ export default defineConfig(
 			'src/lib/features/characters/CharacterToken.svelte',
 			'src/lib/features/characters/ReminderToken.svelte',
 			'src/lib/ui/seating/CharacterEmblem.svelte',
-			'src/lib/features/grimoire/BoardReminder.svelte',
+			'src/lib/features/board/BoardReminder.svelte',
 			'src/lib/features/grimoire/HeldAbilityPill.svelte',
 			'src/lib/features/account/ProfileIcon.svelte',
 			// The character's own page: CharacterSummary is its top.

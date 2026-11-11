@@ -4,15 +4,15 @@
 -->
 <script lang="ts">
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import BoardReminder from './BoardReminder.svelte';
-	import ReminderTokenRow from './ReminderTokenRow.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { placingAlignment } from './board.ts';
 
 	interface Props {

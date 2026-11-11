@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		anyInfoSource,

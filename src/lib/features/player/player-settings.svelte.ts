@@ -6,7 +6,7 @@ import {
 	DEFAULT_REMINDER_LINES,
 	parseReminderLines,
 	type ReminderLines
-} from '#lib/features/grimoire/reminder-lines.ts';
+} from '#lib/features/board/reminder-lines.ts';
 
 /**
  * Player view settings, kept in this browser only. Separate from the app's shared

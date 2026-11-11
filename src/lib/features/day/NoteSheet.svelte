@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {

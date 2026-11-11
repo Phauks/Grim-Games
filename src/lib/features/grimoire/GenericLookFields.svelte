@@ -20,7 +20,7 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { foldForSearch, matchesSearch } from '#lib/features/characters/character-search.ts';
-	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
+	import { SYMBOL_COLOUR_LOOKS } from '#lib/features/board/symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';

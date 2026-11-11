@@ -28,10 +28,10 @@ import {
 	nameBoxes,
 	toPercent,
 	toPx
-} from './board-geometry.ts';
-import type { Box } from './name-placement.ts';
-import { boardLooks } from './board-looks.svelte.ts';
-import { fitReminders } from './reminder-fan.ts';
+} from '#lib/features/board/board-geometry.ts';
+import type { Box } from '#lib/features/board/name-placement.ts';
+import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
+import { fitReminders } from '#lib/features/board/reminder-fan.ts';
 import { remindersBeside } from './true-character-marks.ts';
 
 /**

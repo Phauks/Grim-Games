@@ -6,7 +6,7 @@
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import GenericLookFields from './GenericLookFields.svelte';
 
 	/**

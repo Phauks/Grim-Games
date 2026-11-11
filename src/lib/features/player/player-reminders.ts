@@ -17,7 +17,7 @@ import {
 import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { looksLike } from '#lib/features/grimoire/reminders.ts';
+import { looksLike } from '#lib/features/board/reminders.ts';
 
 /**
  * A script character's token, or a generic one (Trevor, 2026-10-26: "the generic token

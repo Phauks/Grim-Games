@@ -1,7 +1,7 @@
 import type { Reminder } from '#lib/core/model/index.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import { isGeneric } from './reminders.ts';
+import { isGeneric } from '#lib/features/board/reminders.ts';
 
 /**
  * Duplicate reminder (Trevor, 2026-10-18): another copy of the token in the reminder bank,

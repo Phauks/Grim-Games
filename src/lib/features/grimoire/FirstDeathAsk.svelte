@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { alignmentOf } from '#lib/core/model/index.ts';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
-	import SeatBadge from './SeatBadge.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';

@@ -4,8 +4,8 @@
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import CharacterPiece from './CharacterPiece.svelte';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
+	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import CharacterGroupDialog from './CharacterGroupDialog.svelte';
 	import { groupSourceOf } from '#lib/core/data/index.ts';
 
