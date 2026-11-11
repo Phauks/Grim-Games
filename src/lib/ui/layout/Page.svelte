@@ -96,45 +96,51 @@
 {/snippet}
 <main class="page" class:wide class:fill>
 	<PageMenuButton />
-	<header class="head" class:visually-hidden={hideTitle}>
-		{#if titleBelow}
-			<!-- The title on the buttons' row when it fits there at full size, else under them
+	<div class="head-band" class:visually-hidden={hideTitle}>
+		<header class="head">
+			{#if titleBelow}
+				<!-- The title on the buttons' row when it fits there at full size, else under them
 			     (Trevor, 2026-11-01); the byline under both, across the page. -->
-			<div
-				class="title-row"
-				data-title-below=""
-				bind:this={row}
-				{@attach oneRow(
-					{
-						title: () => row?.querySelector('h1'),
-						actions: () => row?.querySelector('.actions'),
-						others: () => [row?.querySelector('.menu-room')],
-						slots: actionSlots
-					},
-					title,
-					showMenu
-				)}
-			>
-				{#if showMenu && !hideTitle}<span class="menu-room" aria-hidden="true"></span>{/if}
-				{@render heading()}
-				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
-				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
-			</div>
-		{:else}
-			<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
-				{#if showMenu && !hideTitle}
-					<div class="start">
-						<span class="menu-room" aria-hidden="true"></span>
-						{@render heading()}
-					</div>
-				{:else}
+				<div
+					class="title-row"
+					data-title-below=""
+					bind:this={row}
+					{@attach oneRow(
+						{
+							title: () => row?.querySelector('h1'),
+							actions: () => row?.querySelector('.actions'),
+							others: () => [row?.querySelector('.menu-room')],
+							slots: actionSlots
+						},
+						title,
+						showMenu
+					)}
+				>
+					{#if showMenu && !hideTitle}<span class="menu-room" aria-hidden="true"></span>{/if}
 					{@render heading()}
-				{/if}
-				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
-			</div>
-			{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
-		{/if}
-	</header>
+					{#if actions}<div class="actions" data-testid="page-actions">
+							{@render actions()}
+						</div>{/if}
+					{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+				</div>
+			{:else}
+				<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
+					{#if showMenu && !hideTitle}
+						<div class="start">
+							<span class="menu-room" aria-hidden="true"></span>
+							{@render heading()}
+						</div>
+					{:else}
+						{@render heading()}
+					{/if}
+					{#if actions}<div class="actions" data-testid="page-actions">
+							{@render actions()}
+						</div>{/if}
+				</div>
+				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+			{/if}
+		</header>
+	</div>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
 	{#if side}
 		<div class="split" data-side-flow={sideFlow ? '' : undefined}>
@@ -181,6 +187,21 @@
 		display: grid;
 		gap: var(--space-1);
 		container: page-head / inline-size;
+	}
+	/*
+	 * The page's head (its buttons, title and byline) on a raised band with a line along its
+	 * foot, set apart from the content as the bottom tab bar is (Trevor, 2026-11-10: C2). The
+	 * band reaches out over the page's top padding, its gutters and half the gap under the
+	 * head, with padding to match, so nothing moves; it scrolls away with the page. Its own
+	 * background, not a layer: no stacking context, so a full-screen stage or a menu inside
+	 * the page still rises over the status bar's strip, and the hamburger sits over the band.
+	 */
+	.head-band:not(.visually-hidden) {
+		--band-foot: calc(0.5 * var(--space-4));
+		margin: calc(-1 * var(--menu-inset)) calc(-1 * var(--page-gutter)) calc(-1 * var(--band-foot)); /* overlap-ok: the band takes the page's padding and half the gap, and gives it back as padding */
+		padding: var(--menu-inset) var(--page-gutter) calc(var(--band-foot) - 1px); /* px-ok: the hairline below */
+		border-bottom: 1px solid var(--border); /* px-ok: a hairline, as the tab bar's */
+		background: var(--surface-raised);
 	}
 	/*
 	 * A narrow page (phones): the actions get their own row under the title, so a wide button
