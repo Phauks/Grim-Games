@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
-import { ruleEntries } from '#lib/core/data/info-token-rules.ts';
+import { ruleEntries } from '#lib/core/data/parts/info-token-characters.ts';
 import { infoTokensNamedIn } from '#lib/core/data/info-tokens.ts';
 import { stepInfoCards, type FillContext } from './info-token-characters.ts';
 import { nightTextFor } from './night-text.ts';

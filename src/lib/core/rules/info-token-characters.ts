@@ -22,7 +22,7 @@ import {
 	ruleEntries,
 	type InfoTokenCharacterRules,
 	type InfoTokenCharacters
-} from '#lib/core/data/info-token-rules.ts';
+} from '#lib/core/data/parts/info-token-characters.ts';
 import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';

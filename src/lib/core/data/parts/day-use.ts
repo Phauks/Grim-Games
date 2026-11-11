@@ -1,15 +1,5 @@
-import type { ReminderLabel } from '../types.ts';
-import { ownReminder } from '../reminder-fields.ts';
-import {
-	checkKeys,
-	describe,
-	isObject,
-	readBoolean,
-	readEnum,
-	readNumber,
-	readString
-} from '../validate.ts';
-import { objectPart } from './part.ts';
+import { COUNT, oneOf, optObj, T, TOKEN, type SpecValue } from '../field-spec.ts';
+import { specPart, type PartValue } from './part.ts';
 
 /**
  * The player a day ability's use is about, asked when it is marked used: the player its
@@ -19,7 +9,7 @@ import { objectPart } from './part.ts';
  * player its player `guessed` (the Puzzlemaster), or an `ally`: a living player of its player's
  * alignment, whom the Storyteller picks (the Doomsayer).
  */
-const DAY_USE_WHO = [
+const DAY_USE_WHO = oneOf([
 	'chosen',
 	'nominator',
 	'nominee',
@@ -27,8 +17,8 @@ const DAY_USE_WHO = [
 	'guesser',
 	'guessed',
 	'ally'
-] as const;
-export type DayUseWho = (typeof DAY_USE_WHO)[number];
+]);
+export type DayUseWho = SpecValue<typeof DAY_USE_WHO>;
 
 /**
  * What a day ability's player learns about the player it was used on:
@@ -36,8 +26,8 @@ export type DayUseWho = (typeof DAY_USE_WHO)[number];
  *   impairing reminders (`impairs.tokens`), otherwise any player who isn't the Demon (the
  *   Puzzlemaster's guess, https://wiki.bloodontheclocktower.com/Puzzlemaster).
  */
-const DAY_USE_ANSWERS = ['demon-if-marked'] as const;
-export type DayUseAnswer = (typeof DAY_USE_ANSWERS)[number];
+const DAY_USE_ANSWERS = oneOf(['demon-if-marked']);
+export type DayUseAnswer = SpecValue<typeof DAY_USE_ANSWERS>;
 
 /**
  * A vote its player calls by day, recorded when its use is marked:
@@ -45,8 +35,8 @@ export type DayUseAnswer = (typeof DAY_USE_ANSWERS)[number];
  *   wins (the Cult Leader's cult vote, https://wiki.bloodontheclocktower.com/Cult_Leader,
  *   checked by the `cult-joined` game end).
  */
-const DAY_USE_VOTES = ['all-good-join'] as const;
-export type DayUseVote = (typeof DAY_USE_VOTES)[number];
+const DAY_USE_VOTES = oneOf(['all-good-join']);
+export type DayUseVote = SpecValue<typeof DAY_USE_VOTES>;
 
 /**
  * A day ability's use (`dayUse`): who it was about (`who`), or the vote it calls (`vote`,
@@ -57,62 +47,27 @@ export type DayUseVote = (typeof DAY_USE_VOTES)[number];
  * learns about that player (`DAY_USE_ANSWERS`); `anyone`, for a character no player holds (a
  * Fabled): every living player may use it once per game (the Doomsayer); `minAlive`, only while
  * at least that many players live; `beforeNominations`, only before the day's first nomination
- * (the Psychopath, https://wiki.bloodontheclocktower.com/Psychopath).
+ * (the Psychopath, https://wiki.bloodontheclocktower.com/Psychopath). Who marking it used asks
+ * for: Trevor, 2026-10-30.
  */
-export interface DayUse {
-	who?: DayUseWho;
-	vote?: DayUseVote;
-	kills?: true;
-	spentToken?: ReminderLabel;
-	answer?: DayUseAnswer;
-	anyone?: true;
-	minAlive?: number;
-	beforeNominations?: true;
-}
-
-/** Who marking its day ability used asks for (Trevor, 2026-10-30). */
-export const dayUse = objectPart(
+export const dayUse = specPart(
 	'Day ability use',
 	'Who marking its day ability used asks for, and what follows.',
-	(raw, path, issues, reminders): DayUse | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
-			return undefined;
-		}
-		checkKeys(
-			raw,
-			['who', 'vote', 'kills', 'spentToken', 'answer', 'anyone', 'minAlive', 'beforeNominations'],
-			path,
-			issues
-		);
-		const vote = readEnum(raw, 'vote', DAY_USE_VOTES, path, issues, false);
-		const who = readEnum(raw, 'who', DAY_USE_WHO, path, issues, vote === undefined);
-		if (who && vote) issues.add(path, 'expected who or vote, not both');
-		const kills = readBoolean(raw, 'kills', path, issues);
-		if (kills === false) issues.add(`${path}.kills`, 'expected true');
-		const token = readString(raw, 'spentToken', path, issues, false);
-		const tokenOk = token === undefined || ownReminder(token, reminders);
-		if (!tokenOk) issues.add(`${path}.spentToken`, 'not one of this character’s reminders');
-		const answer = readEnum(raw, 'answer', DAY_USE_ANSWERS, path, issues, false);
-		const anyone = readBoolean(raw, 'anyone', path, issues);
-		if (anyone === false) issues.add(`${path}.anyone`, 'expected true');
-		const minAlive = readNumber(raw, 'minAlive', path, issues);
-		if (minAlive !== undefined && (!Number.isInteger(minAlive) || minAlive < 1))
-			issues.add(`${path}.minAlive`, 'expected a whole number of at least 1');
-		const before = readBoolean(raw, 'beforeNominations', path, issues);
-		if (before === false) issues.add(`${path}.beforeNominations`, 'expected true');
-		if ((!who && !vote) || !tokenOk) return undefined;
-		return {
-			...(who ? { who } : {}),
-			...(vote && !who ? { vote } : {}),
-			...(kills ? { kills: true as const } : {}),
-			...(token !== undefined ? { spentToken: token } : {}),
-			...(answer ? { answer } : {}),
-			...(anyone ? { anyone: true as const } : {}),
-			...(minAlive !== undefined && Number.isInteger(minAlive) && minAlive >= 1
-				? { minAlive }
-				: {}),
-			...(before ? { beforeNominations: true as const } : {})
-		};
+	optObj({
+		who: DAY_USE_WHO,
+		vote: DAY_USE_VOTES,
+		kills: T,
+		spentToken: TOKEN,
+		answer: DAY_USE_ANSWERS,
+		anyone: T,
+		minAlive: COUNT,
+		beforeNominations: T
+	}),
+	(value, path, issues) => {
+		if ((value.who === undefined) !== (value.vote === undefined)) return value;
+		issues.add(path, value.who ? 'expected who or vote, not both' : 'expected who or vote');
+		return undefined;
 	}
 );
+
+export type DayUse = PartValue<typeof dayUse>;

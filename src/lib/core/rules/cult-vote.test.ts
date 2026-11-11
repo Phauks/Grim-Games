@@ -26,10 +26,9 @@ describe('the dayUse vote', () => {
 		parseCharacterRules({ dayUse: { who: 'chosen', vote: 'all-good-join' } }, 'b', issues);
 		parseCharacterRules({ dayUse: { vote: 'majority' } }, 'c', issues);
 		expect(issues.list).toEqual([
-			'a.dayUse.who: missing',
+			'a.dayUse: expected who or vote',
 			'b.dayUse: expected who or vote, not both',
-			'c.dayUse.vote: unknown value "majority"',
-			'c.dayUse.who: missing'
+			'c.dayUse.vote: unknown value "majority"'
 		]);
 	});
 

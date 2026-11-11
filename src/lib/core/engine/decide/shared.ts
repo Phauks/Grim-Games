@@ -51,7 +51,7 @@ import {
 } from '#lib/core/rules/index.ts';
 import { pretendTeamSource } from '#lib/core/rules/pretend.ts';
 import { borrowedAbilities } from '#lib/core/rules/borrowed-abilities.ts';
-import { readInfoTokenCharacters } from '#lib/core/data/info-token-rules.ts';
+import { readInfoTokenCharacters } from '#lib/core/data/parts/info-token-characters.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';
 import type { EngineContext } from '../context.ts';

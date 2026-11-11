@@ -10,7 +10,7 @@ import { infoTokensNamedIn } from '#lib/core/data/info-tokens.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { ruleEntries } from '#lib/core/data/info-token-rules.ts';
+import { ruleEntries } from '#lib/core/data/parts/info-token-characters.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import {

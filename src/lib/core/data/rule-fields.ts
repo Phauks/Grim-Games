@@ -9,7 +9,6 @@
 import {
 	anyOf,
 	B,
-	byKey,
 	byToken,
 	COUNT,
 	list,
@@ -26,13 +25,12 @@ import {
 	variants,
 	type FieldSpec
 } from './field-spec.ts';
-import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
+import { ALIGNMENTS, CHARACTER_TYPES } from './types.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
-const SOME_SEATED = anyOf(SEATED_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
 const DAY_GROUPS = oneOf([
 	'madness',
@@ -82,18 +80,6 @@ const ASKED = {
 	onlyYes: opt(T),
 	choices: opt(anyOf(['good', 'evil', 'neither']))
 };
-const INFO_TOKEN = obj({
-	characters: STRS,
-	upTo: opt(NUM),
-	others: opt(oneOf(['opposite-alignment'])),
-	shuffle: opt(T),
-	order: opt(oneOf(['good-first'])),
-	offer: opt(T),
-	omit: opt(T),
-	value: opt(STR),
-	token: opt(STR),
-	after: opt(STR)
-});
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 	answers: obj({
@@ -147,16 +133,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			list(obj({ other: STR, group: DAY_GROUPS, text: STR, otherNoReminder: opt(TOKEN) }))
 		),
 		none: opt(STR)
-	}),
-	dayUse: optObj({
-		who: oneOf(['chosen', 'nominator', 'nominee', 'nominated', 'guesser', 'guessed', 'ally']),
-		vote: oneOf(['all-good-join']),
-		kills: T,
-		spentToken: TOKEN,
-		answer: oneOf(['demon-if-marked']),
-		anyone: T,
-		minAlive: NUM,
-		beforeNominations: T
 	}),
 	gameEnd: obj({
 		ends: opt(
@@ -239,12 +215,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		alwaysWinsWith: opt(ALIGNMENT),
 		contest: opt(obj({ chooser: TYPES, tie: ALIGNMENT }))
 	}),
-	infoTokenCharacters: byKey(
-		variants(
-			{ label: 'One step', is: 'object', spec: INFO_TOKEN },
-			{ label: 'Several steps', is: 'array', spec: list(INFO_TOKEN) }
-		)
-	),
 	jinxes: JINX_FIELDS,
 	learns: obj({
 		measure: oneOf([

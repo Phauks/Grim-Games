@@ -29,7 +29,7 @@ import {
 	type NightSheet
 } from '#lib/core/data/types.ts';
 import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
-import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/parts/info-token-characters.ts';
 import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 import {
 	BANDS,
