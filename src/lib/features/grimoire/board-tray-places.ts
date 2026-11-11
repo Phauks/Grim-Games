@@ -71,17 +71,17 @@ export function boardTrayPlaces(context: () => BoardTrayContext): TrayPlaces {
 		addToken(look) {
 			const { grimoire } = context();
 			if (!grimoire.run({ type: 'AddGenericToken', look })) return undefined;
-			return grimoire.game.genericTokens?.at(-1)?.tokenId;
+			return grimoire.game.genericTokens.at(-1)?.tokenId;
 		},
 		removeToken: (tokenId) => context().grimoire.run({ type: 'RemoveGenericToken', tokenId }),
 		copiesOf(tokenId) {
-			const token = game().genericTokens?.find((t) => t.tokenId === tokenId);
+			const token = game().genericTokens.find((t) => t.tokenId === tokenId);
 			if (!token) return [];
 			return onBoard(game())
 				.filter((r) => isGeneric(r) && looksLike(r, token))
 				.map((r) => r.reminderId);
 		},
-		tokens: () => game().genericTokens ?? [],
+		tokens: () => game().genericTokens,
 		hint: (_face, item, target) => context().hint(item, target)
 	};
 }

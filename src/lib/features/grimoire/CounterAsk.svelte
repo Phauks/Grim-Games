@@ -34,7 +34,7 @@
 	function placed(reminderId: string): ReminderInstance | undefined {
 		return [
 			...game.seating.flatMap((id) => game.seats[id].reminders),
-			...Object.values(game.ruleReminders ?? {}).flat(),
+			...Object.values(game.ruleReminders).flat(),
 			...looseReminders(game)
 		].find((r) => r.reminderId === reminderId);
 	}

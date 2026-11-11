@@ -113,7 +113,7 @@
 	const sets = $derived(
 		Array.from({ length: Math.max(fixedSets, game.bluffs.length) }, (_, i) => i)
 	);
-	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames?.[set]);
+	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames[set]);
 	const defaultLabel = (set: number) => bluffSetLabel(set, lunatic);
 
 	/**
@@ -125,7 +125,7 @@
 			set:
 				set === DEMON_SET
 					? t('bluffs.title')
-					: bluffSetLabel(set, lunatic, pickedName || game.bluffNames?.[set]),
+					: bluffSetLabel(set, lunatic, pickedName || game.bluffNames[set]),
 			count: picked.length,
 			max: BLUFFS_PER_SET
 		});
@@ -168,7 +168,7 @@
 	function edit(index: number) {
 		editing = index;
 		picked = [...(game.bluffs[index] ?? [])];
-		pickedName = game.bluffNames?.[index] ?? '';
+		pickedName = game.bluffNames[index] ?? '';
 	}
 
 	/** Saving the Demon's bluffs with a character in play asks first; it never refuses. */
@@ -182,7 +182,7 @@
 		const index = editing;
 		if (!set(index, picked)) return;
 		// The set exists now, so a new set's name can be given to it.
-		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames?.[index] ?? ''))
+		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames[index] ?? ''))
 			run({ type: 'RenameBluffSet', set: index, name: pickedName });
 		done();
 	}

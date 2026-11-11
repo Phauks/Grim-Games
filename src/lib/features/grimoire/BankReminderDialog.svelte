@@ -57,7 +57,7 @@
 			'seatId' in holder
 				? game.seats[holder.seatId].reminders
 				: 'characterId' in holder
-					? (game.ruleReminders?.[holder.characterId] ?? [])
+					? (game.ruleReminders[holder.characterId] ?? [])
 					: looseReminders(game);
 		return list.find((r) => r.reminderId === reminderId);
 	});

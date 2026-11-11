@@ -137,7 +137,7 @@ describe('ReminderDragging', () => {
 	it('puts a loose reminder from an older build on the seat it is dropped on', () => {
 		// Loose reminders are no longer made (Trevor, 2026-10-31), but a saved game may hold one.
 		const { g, dragging, calls } = setup(game(true));
-		const loose = g.looseReminders![0];
+		const loose = g.looseReminders[0];
 		dragging.move(loose.reminderId, undefined, 250, 250, false);
 		expect(dragging.drag?.target).toBe(g.seating[2]);
 		dragging.move(loose.reminderId, undefined, 250, 250, true);

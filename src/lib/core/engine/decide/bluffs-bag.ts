@@ -89,7 +89,7 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 			refuse('invalid-bluff-set', `no bluff set ${set} to rename`);
 		}
 		const name = command.name.trim().slice(0, MAX_BLUFF_SET_NAME);
-		if (name === (game.bluffNames?.[set] ?? '')) {
+		if (name === (game.bluffNames[set] ?? '')) {
 			warn('no-change', 'the set already has that name');
 			return [];
 		}
@@ -114,7 +114,7 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 		const chose = seats(command.info.decoyChose ?? []);
 		if (info.decoy && chose.length) info.decoyChose = chose;
 		const empty = !info.minions.length && !info.decoy;
-		const before = game.fakeEvilInfo?.[seatId];
+		const before = game.fakeEvilInfo[seatId];
 		if (empty ? !before : JSON.stringify(info) === JSON.stringify(before)) {
 			warn('no-change', 'nothing changed');
 			return [];

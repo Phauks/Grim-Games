@@ -96,7 +96,7 @@ export class ReminderDragging {
 	held = $derived.by(() => {
 		const id = this.drag?.reminderId;
 		if (!id) return undefined;
-		return Object.values(this.#context().game.ruleReminders ?? {})
+		return Object.values(this.#context().game.ruleReminders)
 			.flat()
 			.find((r) => r.reminderId === id);
 	});

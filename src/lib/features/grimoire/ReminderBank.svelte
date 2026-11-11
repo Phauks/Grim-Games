@@ -157,7 +157,7 @@
 	});
 
 	// ── Deleting one of its ∞ tokens: how many copies are on the board ──
-	const deletingToken = $derived(game.genericTokens?.find((t) => t.tokenId === gestures.deleting));
+	const deletingToken = $derived(game.genericTokens.find((t) => t.tokenId === gestures.deleting));
 	const deletingCopies = $derived(
 		deletingToken ? onBoard(game).filter((r) => isGeneric(r) && looksLike(r, deletingToken)) : []
 	);

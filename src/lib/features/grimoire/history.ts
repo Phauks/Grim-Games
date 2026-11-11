@@ -74,7 +74,7 @@ function looseReminderOn(
 	game: Game | undefined,
 	reminderId: string
 ): { label: ReminderLabel; characterId: CharacterId } | undefined {
-	const r = game?.looseReminders?.find((x) => x.reminderId === reminderId);
+	const r = game?.looseReminders.find((x) => x.reminderId === reminderId);
 	return r && { label: r.label, characterId: r.characterId };
 }
 

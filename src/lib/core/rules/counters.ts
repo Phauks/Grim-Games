@@ -84,7 +84,7 @@ export function counterMoves(
 	// Number tokens anywhere on the board: on a seat, a Fabled or Loric, or loose.
 	const placed = [
 		...game.seating.flatMap((seatId) => game.seats[seatId].reminders),
-		...Object.values(game.ruleReminders ?? {}).flat(),
+		...Object.values(game.ruleReminders).flat(),
 		...looseReminders(game)
 	];
 	for (const r of placed) {

@@ -255,7 +255,7 @@ export function startLook(
 /** The look a copy of a bank ∞ token starts with (plan B9); none without a token. */
 export function tokenLook(game: Game, tokenId: string | undefined): GenericLook {
 	if (tokenId === undefined) return {};
-	const token = game.genericTokens?.find((t) => t.tokenId === tokenId);
+	const token = game.genericTokens.find((t) => t.tokenId === tokenId);
 	if (!token) refuse('unknown-token', `no ∞ token ${tokenId}`);
 	const look: GenericLook = {};
 	if (token.note !== undefined) look.note = token.note;
@@ -538,9 +538,7 @@ export const NO_ABILITY_LABEL = 'No Ability';
 export function hasPlacedReminder(game: Game, reminderId: string): boolean {
 	return (
 		game.seating.some((id) => game.seats[id].reminders.some((r) => r.reminderId === reminderId)) ||
-		Object.values(game.ruleReminders ?? {}).some((list) =>
-			list.some((r) => r.reminderId === reminderId)
-		)
+		Object.values(game.ruleReminders).some((list) => list.some((r) => r.reminderId === reminderId))
 	);
 }
 

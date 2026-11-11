@@ -150,7 +150,7 @@ function demonLearnsGood(
 
 /** This player's fake world, leaving out seats no longer in the game. */
 export function fakeEvilInfoOf(game: Game, seatId: SeatId): FakeEvilInfo {
-	const info = game.fakeEvilInfo?.[seatId];
+	const info = game.fakeEvilInfo[seatId];
 	const seated = (ids: readonly SeatId[] | undefined) =>
 		(ids ?? []).filter((id) => game.seating.includes(id));
 	const decoy = info?.decoy && game.seating.includes(info.decoy) ? info.decoy : undefined;

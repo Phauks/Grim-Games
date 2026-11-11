@@ -41,33 +41,33 @@ function ruleHoldingReminder(
 	game: Game,
 	reminderId: string
 ): { characterId: CharacterId; reminders: ReminderInstance[] } | undefined {
-	for (const [characterId, reminders] of Object.entries(game.ruleReminders ?? {})) {
+	for (const [characterId, reminders] of Object.entries(game.ruleReminders)) {
 		if (reminders.some((r) => r.reminderId === reminderId)) return { characterId, reminders };
 	}
 	return undefined;
 }
 
 function withRuleReminder(game: Game, characterId: CharacterId, reminder: ReminderInstance): Game {
-	const held = game.ruleReminders?.[characterId] ?? [];
+	const held = game.ruleReminders[characterId] ?? [];
 	return { ...game, ruleReminders: { ...game.ruleReminders, [characterId]: [...held, reminder] } };
 }
 
 function withoutRuleReminder(game: Game, reminderId: string): Game {
 	const ruleReminders: Record<CharacterId, ReminderInstance[]> = {};
-	for (const [characterId, held] of Object.entries(game.ruleReminders ?? {})) {
+	for (const [characterId, held] of Object.entries(game.ruleReminders)) {
 		ruleReminders[characterId] = held.filter((r) => r.reminderId !== reminderId);
 	}
 	return { ...game, ruleReminders };
 }
 
 function looseReminder(game: Game, reminderId: string): ReminderInstance | undefined {
-	return game.looseReminders?.find((r) => r.reminderId === reminderId);
+	return game.looseReminders.find((r) => r.reminderId === reminderId);
 }
 
 function withoutLooseReminder(game: Game, reminderId: string): Game {
 	return {
 		...game,
-		looseReminders: (game.looseReminders ?? []).filter((r) => r.reminderId !== reminderId)
+		looseReminders: game.looseReminders.filter((r) => r.reminderId !== reminderId)
 	};
 }
 
@@ -88,7 +88,7 @@ function withReminder(
 			ruleReminders: { ...game.ruleReminders, [held.characterId]: each(held.reminders) }
 		};
 	if (looseReminder(game, reminderId))
-		return { ...game, looseReminders: each(game.looseReminders ?? []) };
+		return { ...game, looseReminders: each(game.looseReminders) };
 	return game;
 }
 
@@ -179,6 +179,11 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			seating: [...event.seatIds],
 			ruleCharacters: [],
 			bluffs: [],
+			bluffNames: [],
+			fakeEvilInfo: {},
+			ruleReminders: {},
+			looseReminders: [],
+			genericTokens: [],
 			nightOrderOverrides: [],
 			dayReminderOverrides: [],
 			today: { entries: [] },
@@ -532,28 +537,28 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'LooseReminderPlaced':
 			return {
 				...game,
-				looseReminders: [...(game.looseReminders ?? []), { ...event.reminder }]
+				looseReminders: [...game.looseReminders, { ...event.reminder }]
 			};
 		case 'ReminderLoosened': {
 			const lifted = liftHeldReminder(game, event.reminderId);
 			if (!lifted) return game;
 			return {
 				...lifted.game,
-				looseReminders: [...(lifted.game.looseReminders ?? []), lifted.reminder]
+				looseReminders: [...lifted.game.looseReminders, lifted.reminder]
 			};
 		}
 		case 'GenericTokenAdded':
-			return { ...game, genericTokens: [...(game.genericTokens ?? []), { ...event.token }] };
+			return { ...game, genericTokens: [...game.genericTokens, { ...event.token }] };
 		case 'GenericTokenSet':
 			return {
 				...game,
-				genericTokens: (game.genericTokens ?? []).map((t) =>
+				genericTokens: game.genericTokens.map((t) =>
 					t.tokenId === event.token.tokenId ? { ...event.token } : t
 				)
 			};
 		case 'GenericTokenRemoved': {
-			const genericTokens = (game.genericTokens ?? []).filter((t) => t.tokenId !== event.tokenId);
-			return genericTokens.length > 0 ? { ...game, genericTokens } : omit(game, 'genericTokens');
+			const genericTokens = game.genericTokens.filter((t) => t.tokenId !== event.tokenId);
+			return { ...game, genericTokens };
 		}
 		case 'StorytellerNameSet':
 			return event.name === undefined
@@ -596,7 +601,6 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'BluffSetRemoved': {
 			const bluffs = game.bluffs.filter((_, i) => i !== event.set);
 			// Names stay with their sets as the later ones move up.
-			if (!game.bluffNames) return { ...game, bluffs };
 			return { ...game, bluffs, bluffNames: game.bluffNames.filter((_, i) => i !== event.set) };
 		}
 		case 'FakeEvilInfoSet': {
@@ -608,8 +612,8 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'BluffSetRenamed': {
 			if (event.set < 0 || event.set >= game.bluffs.length) return game;
 			const bluffNames = Array.from(
-				{ length: Math.max(game.bluffNames?.length ?? 0, event.set + 1) },
-				(_, i) => game.bluffNames?.[i] ?? ''
+				{ length: Math.max(game.bluffNames.length ?? 0, event.set + 1) },
+				(_, i) => game.bluffNames[i] ?? ''
 			);
 			bluffNames[event.set] = event.name;
 			return { ...game, bluffNames };

@@ -66,7 +66,7 @@ describe('freshAsks', () => {
 			{ type: 'AddGenericToken', look: { note: 'dead' } },
 			{ type: 'AddGenericToken', look: { note: 'Safe', like } }
 		]);
-		const [copy, words, renamed] = game.genericTokens!;
+		const [copy, words, renamed] = game.genericTokens;
 		const placed = more(
 			{ type: 'AddReminder', seatId: seats[0], reminder: generic, tokenId: copy.tokenId },
 			{ type: 'AddReminder', seatId: seats[1], reminder: generic, tokenId: words.tokenId },

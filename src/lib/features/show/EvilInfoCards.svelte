@@ -185,7 +185,7 @@
 			{
 				key: 'bluffs',
 				title: text('not-in-play'),
-				set: bluffSetLabel(LUNATIC_SET, true, game.bluffNames?.[LUNATIC_SET]),
+				set: bluffSetLabel(LUNATIC_SET, true, game.bluffNames[LUNATIC_SET]),
 				characterIds: bluffs,
 				showCharacters: bluffs,
 				edit: { label: t('show.evil.edit'), icon: 'edit', action: onChooseBluffs }

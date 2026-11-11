@@ -222,8 +222,8 @@ function tokenPlaced(game: Game, characterId: CharacterId, label: string): boole
 		r.characterId === characterId && r.label === label;
 	return (
 		game.seating.some((s) => game.seats[s].reminders.some(is)) ||
-		Object.values(game.ruleReminders ?? {}).some((list) => list.some(is)) ||
-		(game.looseReminders ?? []).some(is)
+		Object.values(game.ruleReminders).some((list) => list.some(is)) ||
+		game.looseReminders.some(is)
 	);
 }
 

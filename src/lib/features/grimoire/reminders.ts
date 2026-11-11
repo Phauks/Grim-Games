@@ -268,8 +268,8 @@ function counted(game: Game, copies: ReadonlySet<ReminderId>): ReminderInstance[
 export function onBoard(game: Game): ReminderInstance[] {
 	return [
 		...game.seating.flatMap((seatId) => game.seats[seatId].reminders),
-		...Object.values(game.ruleReminders ?? {}).flat(),
-		...(game.looseReminders ?? [])
+		...Object.values(game.ruleReminders).flat(),
+		...game.looseReminders
 	];
 }
 

@@ -38,7 +38,7 @@
 			return character ? [character] : [];
 		})
 	);
-	const token = $derived(grimoire.game.genericTokens?.find((t) => t.tokenId === tokenId));
+	const token = $derived(grimoire.game.genericTokens.find((t) => t.tokenId === tokenId));
 
 	function set(change: GenericLook) {
 		if (!token) return;

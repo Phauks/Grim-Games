@@ -34,12 +34,12 @@ export function registersAsDeadToken(
 
 /** The reminders a Fabled or Loric in play holds, in the order they were placed. */
 export function ruleReminders(game: Game, characterId: CharacterId): ReminderInstance[] {
-	return game.ruleReminders?.[characterId] ?? [];
+	return game.ruleReminders[characterId] ?? [];
 }
 
 /** Reminders on the board that belong to no seat, in the order they were placed. */
 export function looseReminders(game: Game): ReminderInstance[] {
-	return game.looseReminders ?? [];
+	return game.looseReminders;
 }
 
 /** Where a reminder is: on a seat, on a Fabled or Loric, loose on the board, or nowhere. */
@@ -50,10 +50,10 @@ export function reminderHolder(
 	for (const seatId of game.seating) {
 		if (game.seats[seatId].reminders.some((r) => r.reminderId === reminderId)) return { seatId };
 	}
-	for (const [characterId, held] of Object.entries(game.ruleReminders ?? {})) {
+	for (const [characterId, held] of Object.entries(game.ruleReminders)) {
 		if (held.some((r) => r.reminderId === reminderId)) return { characterId };
 	}
-	if (game.looseReminders?.some((r) => r.reminderId === reminderId)) return { loose: true };
+	if (game.looseReminders.some((r) => r.reminderId === reminderId)) return { loose: true };
 	return undefined;
 }
 
