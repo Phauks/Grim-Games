@@ -18,71 +18,16 @@ import {
 	optObj,
 	T,
 	TOKEN,
-	TOKENS,
-	variants,
 	type FieldSpec
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES } from './types.ts';
-import { JINX_FIELDS } from './jinx-fields.ts';
 import type * as PARTS from './parts/index.ts';
 
 const TYPES = oneOf(CHARACTER_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
-const ANSWER_NAMES = [
-	'count',
-	'any',
-	'character',
-	'characters',
-	'statement',
-	'storyteller',
-	'outsider-died',
-	'correct-guesses',
-	'statement-true',
-	'winning-alignment',
-	'evil-dead',
-	'evil-marked',
-	'abnormal-abilities',
-	'minion-nominated',
-	'demon-voted',
-	'executed-character',
-	'outsiders-in-play'
-];
-const ASKED = {
-	question: oneOf(ANSWER_NAMES),
-	among: opt(
-		oneOf([
-			'dead',
-			'marked',
-			'abnormal',
-			'guessed',
-			'nominators',
-			'voters',
-			'executed',
-			'died',
-			'everyone'
-		])
-	),
-	alignment: opt(ALIGNMENT),
-	types: opt(SOME_TYPES),
-	mark: opt(oneOf(['minion-nominated', 'demon-voted'])),
-	onlyYes: opt(T),
-	choices: opt(anyOf(['good', 'evil', 'neither']))
-};
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
-	answers: obj({
-		...ASKED,
-		token: opt(TOKEN),
-		firstNight: opt(
-			variants(
-				{ label: 'A question', is: 'string', spec: oneOf(ANSWER_NAMES) },
-				{ label: 'A count', is: 'object', spec: obj(ASKED) }
-			)
-		),
-		wakes: opt(oneOf(['marked'])),
-		falseToken: opt(TOKEN)
-	}),
 	gameEnd: obj({
 		ends: opt(
 			list(
@@ -164,54 +109,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		alwaysWinsWith: opt(ALIGNMENT),
 		contest: opt(obj({ chooser: TYPES, tie: ALIGNMENT }))
 	}),
-	jinxes: JINX_FIELDS,
-	learns: obj({
-		measure: oneOf([
-			'count',
-			'players',
-			'any-of',
-			'character',
-			'same',
-			'alignment',
-			'direction',
-			'distance',
-			'storyteller',
-			'pair-of-type',
-			'evil-pairs',
-			'evil-alive-neighbours',
-			'demon-minion-steps',
-			'demon-or-token',
-			'good-player',
-			'one-evil-of-three',
-			'same-alignment',
-			'demon-in-pair',
-			'character-of',
-			'not-demon-pair',
-			'evil-player',
-			'demon-player',
-			'closest-evil-direction',
-			'chosen-alignment',
-			'type-differs-from-token',
-			'woke-tonight',
-			'storyteller-pick'
-		]),
-		type: opt(TYPES),
-		token: opt(TOKEN),
-		noneWhenAbsent: opt(B),
-		self: opt(T),
-		alive: opt(T),
-		types: opt(SOME_TYPES),
-		alignment: opt(ALIGNMENT),
-		reminders: opt(optObj({ target: TOKEN, other: TOKEN, each: TOKEN })),
-		scope: opt(oneOf(['alive-neighbours', 'neighbour-pairs', 'everyone'])),
-		choose: opt(COUNT),
-		matching: opt(COUNT),
-		woke: opt(T),
-		to: opt(SOME_TYPES),
-		atLeast: opt(T),
-		killer: opt(T),
-		differsFromToken: opt(TOKEN)
-	}),
-	marksChoice: TOKENS,
 	nominationsAfterExecution: COUNT
 };

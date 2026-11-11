@@ -1,5 +1,5 @@
 /**
- * The `learns` building blocks (M60, M78, `data/night-info-rules.ts`): a count, players shown,
+ * The `learns` building blocks (M60, M78, `data/parts/learns.ts`): a count, players shown,
  * a yes/no, a character, a direction or a distance over a group of players. Every official
  * character that learns something is a preset of one, but the Sage and Balloonist. Part of
  * `picker.ts`.

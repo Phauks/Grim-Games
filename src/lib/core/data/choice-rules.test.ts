@@ -37,7 +37,7 @@ describe('choice and evil info rules', () => {
 
 	it('rejects reminders the character lacks and unknown fields', () => {
 		expect(parse({ marksChoice: ['Safe'] }, ['Chosen']).issues).toEqual([
-			'rules.marksChoice[0].label: not one of this character’s reminders'
+			'rules.marksChoice: not this character’s reminders: Safe'
 		]);
 		expect(parse({ curses: 'Safe' }, ['Chosen']).issues).toHaveLength(1);
 		expect(parse({ infoKind: { twice: true } }).issues).toEqual([
