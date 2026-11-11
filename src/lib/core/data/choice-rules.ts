@@ -5,17 +5,7 @@
  * info notes (`rules/night-order.ts`) and the Savant's statements (`rules/savant-*.ts`) read
  * them, so neither names a character.
  */
-import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
-import { readToken } from './reminder-fields.ts';
-import {
-	checkKeys,
-	describe,
-	isObject,
-	readBoolean,
-	readString,
-	readStringArray,
-	type Issues
-} from './validate.ts';
+import { checkKeys, describe, isObject, readBoolean, readString, type Issues } from './validate.ts';
 
 /** The evil info steps a note can go on. */
 const EVIL_INFO_STEPS = ['minioninfo', 'demoninfo'] as const;
@@ -53,61 +43,8 @@ export interface EvilInfo {
 	none?: true;
 }
 
-/** What its night information is like: a number (the Chef), only once per game (the Artist). */
-export interface InfoKind {
-	number?: true;
-	oncePerGame?: true;
-}
-
-export interface SwapsForAbility {
-	token: ReminderLabel;
-	good: readonly SeatedType[];
-	evil: readonly SeatedType[];
-}
-
 export const INFO_CARDS = ['secret-word', 'secret-phrase', 'goal'] as const;
 export type InfoCard = (typeof INFO_CARDS)[number];
-
-export function readSwaps(
-	raw: unknown,
-	path: string,
-	issues: Issues,
-	reminders: readonly ReminderLabel[] | undefined
-): SwapsForAbility | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['token', 'good', 'evil'], path, issues);
-	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
-	const token = readToken(raw, 'token', path, issues, reminders);
-	const types = (key: 'good' | 'evil') => {
-		const list = readStringArray(raw, key, path, issues) ?? [];
-		const bad = list.filter((t) => !(SEATED_TYPES as readonly string[]).includes(t));
-		if (bad.length > 0) issues.add(`${path}.${key}`, `expected types, got ${bad.join(', ')}`);
-		return list.filter((t): t is SeatedType => !bad.includes(t));
-	};
-	const good = types('good');
-	const evil = types('evil');
-	return token ? { token, good, evil } : undefined;
-}
-
-/** An object of `true` flags. */
-export function readFlags<K extends string>(
-	raw: unknown,
-	path: string,
-	issues: Issues,
-	keys: readonly K[]
-): Partial<Record<K, true>> | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, keys, path, issues);
-	const out: Partial<Record<K, true>> = {};
-	for (const key of keys) if (readBoolean(raw, key, path, issues)) out[key] = true;
-	return out;
-}
 
 export function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | undefined {
 	if (!isObject(raw)) {

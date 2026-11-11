@@ -110,7 +110,6 @@ const PLACEHOLDER_STEP = obj({
 
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
-	afterDeath: obj({ cause: STRS, nominations: opt(NUM), votes: opt(NUM) }),
 	afterExecution: obj({
 		of: opt(TYPES),
 		alignment: opt(ALIGNMENT),
@@ -249,15 +248,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		force: oneOf(['pass-or-fail']),
 		executeNow: oneOf(['good-voted'])
 	}),
-	falseInfo: optObj({ types: SOME_TYPES, may: T, alignment: ALIGNMENT, spentToken: TOKEN }),
-	gainedFrom: obj({
-		token: TOKEN,
-		pending: opt(TOKEN),
-		swapped: opt(T),
-		wakes: opt(T),
-		ifEvil: opt(TOKEN),
-		choose: opt(SOME_SEATED)
-	}),
 	gameEnd: obj({
 		ends: opt(
 			list(
@@ -364,7 +354,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		truthful: TOKENS
 	}),
 	infoCard: oneOf(INFO_CARDS),
-	infoKind: optObj({ number: T, oncePerGame: T }),
 	infoTokenCharacters: byKey(
 		variants(
 			{ label: 'One step', is: 'object', spec: INFO_TOKEN },
@@ -427,18 +416,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		atLeast: opt(T),
 		killer: opt(T),
 		differsFromToken: opt(TOKEN)
-	}),
-	madAs: obj({
-		token: TOKEN,
-		mad: oneOf(['self', 'carrier']),
-		choose: opt(SOME_SEATED),
-		characters: opt(STRS)
-	}),
-	madness: obj({
-		token: opt(TOKEN),
-		breaking: oneOf(['execution', 'death']),
-		alsoDies: opt(TOKEN),
-		chosenBy: opt(oneOf(['nominee']))
 	}),
 	marksChoice: TOKENS,
 	nightWakes: list(
@@ -508,7 +485,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			{ label: 'At a nomination', has: 'nominated', spec: obj({ nominated: ALIGNMENT }) }
 		)
 	),
-	reminderMovement: optObj({ fixed: TOKENS, why: STR, relocates: STR, followsNeighbours: TOKENS }),
 	reminderPlaceholders: optObj({
 		first: list(PLACEHOLDER_STEP),
 		other: list(PLACEHOLDER_STEP),
@@ -612,7 +588,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		none: STR
 	}),
 	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
-	swapsForAbility: obj({ token: TOKEN, good: SOME_SEATED, evil: SOME_SEATED }),
 	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) }),
 	voteWeight: variants(
 		{ label: 'Its reminder', has: 'reminder', spec: obj({ reminder: TOKEN, weight: INT }) },

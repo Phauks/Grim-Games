@@ -1,5 +1,5 @@
 /**
- * The character a player is mad as, by a character's `madAs` rule (`data/mad-as-rules.ts`,
+ * The character a player is mad as, by a character's `madAs` rule (`data/parts/mad-as.ts`,
  * https://wiki.bloodontheclocktower.com/Madness), for the board's ! mark beside the mad
  * player's seat (Trevor, 2026-11-03, M36):
  * - `mad: "carrier"`: the player carrying the token is mad as the character recorded on it
@@ -8,7 +8,7 @@
  *   (the Pixie, shown an in-play Townsfolk).
  * The Storyteller judges whether madness was kept, so nothing here acts on its own.
  */
-import type { MadAs } from '#lib/core/data/mad-as-rules.ts';
+import type { MadAs } from '#lib/core/data/parts/mad-as.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';

@@ -1,6 +1,6 @@
 /**
  * Abilities a player has from another player's character, by the `gainedFrom` rule of their
- * own character (`data/gained-from-rules.ts`). The Pixie
+ * own character (`data/parts/gained-from.ts`). The Pixie
  * (https://wiki.bloodontheclocktower.com/Pixie), for one:
  * - the Pixie starts knowing an in-play Townsfolk, marked "Mad";
  * - when that player dies, and the Storyteller judges the Pixie was mad about being that
@@ -18,7 +18,7 @@
  * Hermit has every other Outsider on the script, waking as each would and keeping after death
  * only those that work even if dead (https://wiki.bloodontheclocktower.com/Hermit).
  */
-import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
+import type { GainedFrom } from '#lib/core/data/parts/gained-from.ts';
 import type { LearnsGained } from '#lib/core/data/jinx-rules.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';

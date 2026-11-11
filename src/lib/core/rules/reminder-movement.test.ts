@@ -152,9 +152,13 @@ describe('isFixedReminder', () => {
 		);
 		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
 			'rules.reminderMovement.moves',
-			'rules.reminderMovement.fixed[1]',
-			'rules.reminderMovement.why'
+			'rules.reminderMovement.fixed'
 		]);
+		const missing = new Issues();
+		parseCharacterRules({ reminderMovement: { fixed: ['Red Herring'] } }, 'rules', missing, [
+			'Red Herring'
+		]);
+		expect(missing.list).toEqual(['rules.reminderMovement.why: missing']);
 	});
 });
 
