@@ -30,7 +30,6 @@ import {
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
 import { DEATH_KINDS } from './death-cause-rules.ts';
-import { INFO_CARDS } from './choice-rules.ts';
 import { TURNS_PLAYERS } from './turns-players-rules.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
@@ -207,7 +206,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		minAlive: NUM,
 		beforeNominations: T
 	}),
-	deadKeepAbilities: obj({ deadLose: SOME_SEATED, livingLose: SOME_SEATED }),
 	deathCause: variants(
 		{ label: 'None', has: 'none', spec: obj({ none: STR }) },
 		{
@@ -230,18 +228,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 	deathCheck: obj({
 		kind: oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked-killed-by-demon']),
 		token: opt(TOKEN)
-	}),
-	demonAttack: optObj({ maySkip: T, mustSkipOnce: TOKEN, target: oneOf(['script-order']) }),
-	evilInfo: obj({
-		notes: opt(optObj({ minioninfo: STR, demoninfo: STR })),
-		lateNote: opt(STR),
-		wakeToken: opt(STR),
-		hidesDemon: opt(T),
-		anyPlayerCount: opt(T),
-		hidesMinions: opt(T),
-		shownAsOtherEvil: opt(T),
-		whileWorking: opt(T),
-		none: opt(T)
 	}),
 	executionOutcome: optObj({
 		failsIf: oneOf(['only-evil-voted']),
@@ -329,16 +315,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		alwaysWinsWith: opt(ALIGNMENT),
 		contest: opt(obj({ chooser: TYPES, tie: ALIGNMENT }))
 	}),
-	givesAbility: obj({
-		to: oneOf(['demon', 'storyteller', 'self']),
-		types: SOME_SEATED,
-		notInPlay: opt(T),
-		onScript: opt(T),
-		token: opt(TOKEN),
-		whileWorks: opt(T),
-		setup: opt(T),
-		standIns: opt(TOKENS)
-	}),
 	impairs: optObj({
 		self: obj({ reason: IMPAIRMENTS, aliveAtMost: opt(NUM) }),
 		tokens: byToken(
@@ -353,7 +329,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		clears: TOKENS,
 		truthful: TOKENS
 	}),
-	infoCard: oneOf(INFO_CARDS),
 	infoTokenCharacters: byKey(
 		variants(
 			{ label: 'One step', is: 'object', spec: INFO_TOKEN },
@@ -466,18 +441,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		storytellerDecides: opt(T),
 		whileNeighboursGood: opt(T),
 		whileCarrierAlive: opt(TOKEN)
-	}),
-	registersAs: optObj({
-		self: optObj({ alignments: anyOf(ALIGNMENTS), types: SOME_TYPES }),
-		tokens: byToken(
-			optObj({
-				alignments: anyOf(ALIGNMENTS),
-				types: SOME_TYPES,
-				carrierAlignment: ALIGNMENT,
-				asAnything: T,
-				whileToken: TOKEN
-			})
-		)
 	}),
 	reminderEnds: byToken(
 		variants(
@@ -600,17 +563,5 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		noMajority: T,
 		secret: T,
 		deadRegainToken: oneOf(['final-day'])
-	}),
-	wakesWhen: optObj({
-		deadAtLeastLiving: T,
-		deadAtLeast: COUNT,
-		diedTonight: obj({ characters: STRS, by: opt(oneOf(['demon'])) }),
-		diedToday: obj({ types: SOME_TYPES, token: opt(TOKEN) }),
-		nobodyDiedToday: T,
-		untilToken: TOKEN,
-		noneMarked: TOKEN,
-		markedDied: TOKEN,
-		nightAfterDay: COUNT,
-		becameToday: T
 	})
 };

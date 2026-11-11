@@ -192,7 +192,7 @@ describe('parseCharacterRules', () => {
 			['rules.impairs.tokens.Dead.on: unknown value "all"']
 		);
 		expect(parse({ registersAs: { self: { types: ['wizard'] } } }).issues).toEqual([
-			'rules.registersAs.self.types: unknown value "wizard"'
+			'rules.registersAs.self.types[0]: unknown value "wizard"'
 		]);
 		expect(parse({ registersAs: { tokens: { Paw: { alignments: ['evil'] } } } }).issues).toEqual([
 			'rules.registersAs.tokens.Paw: not one of this character’s reminders'

@@ -1,4 +1,4 @@
-import type { InfoCard } from '#lib/core/data/choice-rules.ts';
+import type { InfoCard } from '#lib/core/data/parts/info-card.ts';
 import type { Character, CharacterId } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/index.ts';
