@@ -4,7 +4,6 @@
  */
 import type { AnswerGroup, Answers } from '#lib/core/data/character-rules.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
 import {
@@ -36,6 +35,7 @@ import {
 	byWorld,
 	fact
 } from './reliability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 function entriesOf<K extends DayEntry['kind']>(game: Game, kind: K) {
 	return game.today.entries.filter((e): e is Extract<DayEntry, { kind: K }> => e.kind === kind);
@@ -650,7 +650,7 @@ export function nightAnswer(
 	night?: Night,
 	basis?: SeatId
 ): NightAnswer | undefined {
-	const rule = rulesOf(characterId, characters)?.answers;
+	const rule = rulesFor(game, characterId, characters)?.answers;
 	if (!rule) return undefined;
 	const asked: Answers =
 		night === 'first' && rule.firstNight ? { ...rule, ...rule.firstNight } : rule;
@@ -786,9 +786,9 @@ function answerValue(a: NightAnswer): AnswerValue {
  * Juggler's five, https://wiki.bloodontheclocktower.com/Juggler), else every player.
  */
 function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
-	const rule = rulesOf(characterId, characters)?.answers;
+	const rule = rulesFor(game, characterId, characters)?.answers;
 	if (rule?.question !== 'count' || rule.among === 'abnormal') return game.seating.length;
 	if (rule.among === 'guessed')
-		return rulesOf(characterId, characters)?.guessLimit ?? game.seating.length;
+		return rulesFor(game, characterId, characters)?.guessLimit ?? game.seating.length;
 	return (groupOf(game, characterId, characters, rule) ?? game.seating).length;
 }

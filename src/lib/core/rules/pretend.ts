@@ -6,11 +6,11 @@
  * Demon, so information and night steps can fit them. It is private to the Storyteller and never
  * decides the game.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The character types a seat may pretend to be. */
 export const PRETEND_TYPES = ['minion', 'demon'] as const;
@@ -22,7 +22,7 @@ export function pretendTeamSource(
 ): { seatId: SeatId; characterId: CharacterId } | undefined {
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		if (characterId && rulesOf(characterId, characters)?.pretendTeam) {
+		if (characterId && rulesFor(game, characterId, characters)?.pretendTeam) {
 			return { seatId, characterId };
 		}
 	}

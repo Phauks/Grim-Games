@@ -6,12 +6,12 @@
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { MadnessBreaking } from '#lib/core/data/madness-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { hasAbilityOf } from './gained-abilities.ts';
 import { todaysNominations } from './nominations.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface MadnessOffer {
 	/** The character whose madness it is; the cause of the execution or death. */
@@ -36,7 +36,7 @@ export function madnessOffer(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): MadnessOffer | undefined {
-	const rule = rulesOf(characterId, characters)?.madness;
+	const rule = rulesFor(game, characterId, characters)?.madness;
 	const seat = getSeat(game, seatId);
 	if (!rule || !seat) return undefined;
 	const carrying = (label: string) =>

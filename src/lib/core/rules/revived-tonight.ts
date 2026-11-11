@@ -4,9 +4,9 @@
  * Shabaloth's regurgitated Exorcist, https://wiki.bloodontheclocktower.com/Shabaloth). The
  * reviving ability is the one whose reminder on them revives (`reminderPrompts`: `revive`).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * Whether `seatId`, revived tonight (`revivedTonight`, from `revivedSinceNewDay`), was revived
@@ -27,7 +27,7 @@ export function revivedAfterStep(
 	if (at < 0) return false;
 	return seat.reminders.some(
 		(r) =>
-			rulesOf(r.characterId, characters)?.reminderPrompts?.[r.label] === 'revive' &&
+			rulesFor(game, r.characterId, characters)?.reminderPrompts?.[r.label] === 'revive' &&
 			order.indexOf(r.characterId) > at
 	);
 }

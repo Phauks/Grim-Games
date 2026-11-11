@@ -3,13 +3,13 @@
  * `game-end.ts`: also for a player who has its ability from their token by a jinx with its
  * own winner (the Alchemist-Summoner, `gainedEndWinner`).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import type { GameEnd } from './game-end.ts';
 import { aliveForEnd, demonSeats, endName, eventsOf, wikiOf } from './game-end-helpers.ts';
 import { gainedEnd } from './jinx-effects.ts';
 import { dayNumber } from './night-order.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * There is no Demon and its players are dead (the Summoner, who can no longer summon one:
@@ -24,7 +24,7 @@ export function deadWithoutDemon(game: Game, characters: CharacterLookup): GameE
 	// their death counts.
 	const gained = game.seating.flatMap((seatId) => {
 		const jinx = gainedEnd(game, seatId, characters);
-		const ends = jinx ? rulesOf(jinx.partner, characters)?.gameEnd?.ends : undefined;
+		const ends = jinx ? rulesFor(game, jinx.partner, characters)?.gameEnd?.ends : undefined;
 		const end = ends?.find((e) => e.kind === 'condition' && e.event === 'no-demon');
 		return jinx && end
 			? [

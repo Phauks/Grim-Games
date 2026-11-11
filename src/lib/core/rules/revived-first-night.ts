@@ -4,10 +4,10 @@
  * ability (the Professor, https://wiki.bloodontheclocktower.com/Professor). The reviving
  * ability is the one whose reminder on them revives (`reminderPrompts`: `revive`).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTonight, type Night, type NightStep } from './night-order.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export function withRevivedFirstNightSteps<T extends NightStep>(
 	steps: readonly T[],
@@ -25,7 +25,7 @@ export function withRevivedFirstNightSteps<T extends NightStep>(
 		if (!character || !actsTonight(character, 'first') || actsTonight(character, 'other')) continue;
 		if (out.some((s) => s.id === character.id)) continue;
 		const by = seat.reminders.find(
-			(r) => rulesOf(r.characterId, characters)?.reminderPrompts?.[r.label] === 'revive'
+			(r) => rulesFor(game, r.characterId, characters)?.reminderPrompts?.[r.label] === 'revive'
 		);
 		if (!by) continue;
 		const reviver = characters.get(by.characterId)?.name ?? by.characterId;

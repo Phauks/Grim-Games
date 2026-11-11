@@ -39,6 +39,7 @@ import {
 	type VictimRule
 } from '#lib/core/data/death-cause-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type { DeathCauseRule, DeathKind, VictimRule };
 
@@ -189,7 +190,7 @@ function gainedFrom(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	const rule = rulesOf(characterId, characters)?.gainedFrom;
+	const rule = rulesFor(game, characterId, characters)?.gainedFrom;
 	const gained = rule && gainedBy(game, holder, characterId, rule, characters);
 	return gained?.status === 'has-ability' ? gained.characterId : undefined;
 }
@@ -240,7 +241,7 @@ export function validDeathCauses(
 			return entry?.kind === 'own-death' ? { who: 'self' } : entry?.victim;
 		};
 		// A gained ability: the rules of the character it came from.
-		const from = rulesOf(characterId, characters)?.gainedFrom !== undefined;
+		const from = rulesFor(game, characterId, characters)?.gainedFrom !== undefined;
 		const gainedFor = new Map<SeatId, CharacterId>();
 		for (const h of from ? holders : []) {
 			const id = gainedFrom(game, h, characterId, characters);
@@ -387,7 +388,7 @@ export function carriesDemonToken(
 	characters: CharacterLookup
 ): boolean {
 	return (getSeat(game, seatId)?.reminders ?? []).some((r) => {
-		const rules = rulesOf(r.characterId, characters);
+		const rules = rulesFor(game, r.characterId, characters);
 		return (
 			rules?.carrierIsDemon === r.label ||
 			(rules?.becomes?.into === 'demon' && rules.becomes.token === r.label)

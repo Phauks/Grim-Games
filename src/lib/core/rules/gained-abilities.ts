@@ -20,7 +20,6 @@
  */
 import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
 import type { LearnsGained } from '#lib/core/data/jinx-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
@@ -31,6 +30,7 @@ import { actsWhenDead } from './dead-characters.ts';
 import { givenInstead, jinxEffect } from './jinxes.ts';
 import { thinksPartnerSetup } from './jinx-effects.ts';
 import type { Night, NightStep } from './night-order.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface GainedAbility {
 	/** The player who gains the ability (the Pixie). */
@@ -142,7 +142,7 @@ export function holdsAbility(
 	characters: CharacterLookup
 ): boolean {
 	if (held.via === undefined) return true;
-	const rules = rulesOf(held.via, characters);
+	const rules = rulesFor(game, held.via, characters);
 	const rule = rules?.givesAbility;
 	if (rule?.to === 'self') {
 		// Their own ability gives it: while it works, and after death only an ability that
@@ -182,9 +182,9 @@ function gainingCharacter(
 ): CharacterId | undefined {
 	const token = game.seats[seatId]?.characterId;
 	if (token === undefined) return undefined;
-	if (rulesOf(token, characters)?.gainedFrom) return token;
+	if (rulesFor(game, token, characters)?.gainedFrom) return token;
 	const own = trueCharacter(game, seatId, characters);
-	return own !== undefined && own !== token && rulesOf(own, characters)?.gainedFrom?.swapped
+	return own !== undefined && own !== token && rulesFor(game, own, characters)?.gainedFrom?.swapped
 		? own
 		: undefined;
 }
@@ -211,7 +211,7 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 	for (const seatId of game.seating) {
 		const dead = game.seats[seatId].dead;
 		const via = gainingCharacter(game, seatId, characters);
-		const rule = via === undefined ? undefined : rulesOf(via, characters)?.gainedFrom;
+		const rule = via === undefined ? undefined : rulesFor(game, via, characters)?.gainedFrom;
 		if (via === undefined || !rule?.wakes) continue;
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (!gained) continue;
@@ -295,7 +295,7 @@ export function withGainedSteps<T extends NightStep>(
 		const reason =
 			impairedBy === undefined
 				? undefined
-				: (rulesOf(via.id, characters)?.impairs?.tokens?.[impairedBy]?.reason ??
+				: (rulesFor(game, via.id, characters)?.impairs?.tokens?.[impairedBy]?.reason ??
 					impairedBy.toLowerCase());
 		const evilNote =
 			reason === undefined
@@ -342,7 +342,7 @@ export function abilityGivers(
 	const givers = new Set<CharacterId>();
 	for (const s of game.seating) {
 		const id = trueCharacter(game, s, characters);
-		const rule = id === undefined ? undefined : rulesOf(id, characters)?.givesAbility;
+		const rule = id === undefined ? undefined : rulesFor(game, id, characters)?.givesAbility;
 		if (!id || !rule) continue;
 		if (rule.to === 'demon' && typeOf(game, seatId, characters) === 'demon') givers.add(id);
 		if (rule.to === 'self' && !rule.onScript && s === seatId) givers.add(id);
@@ -356,7 +356,7 @@ export function abilityGivers(
  */
 function ownHeld(game: Game, seatId: SeatId, characters: CharacterLookup): HeldAbility[] {
 	const via = game.seats[seatId]?.characterId;
-	const rule = via === undefined ? undefined : rulesOf(via, characters)?.givesAbility;
+	const rule = via === undefined ? undefined : rulesFor(game, via, characters)?.givesAbility;
 	if (via === undefined || rule?.to !== 'self' || !rule.onScript) return [];
 	const types: readonly string[] = rule.types;
 	return scriptCharacterIds(game.script)
@@ -455,7 +455,7 @@ export function abilitiesOfSeat(
 	const token = seat.characterId;
 	if (own !== undefined && token !== undefined && token !== own) {
 		const type = characters.get(token)?.type;
-		const gains = rulesOf(own, characters)?.gainsAbilityOf;
+		const gains = rulesFor(game, own, characters)?.gainsAbilityOf;
 		if (
 			(gains !== undefined && gains === type) ||
 			swappedIn(game, seatId, own, characters) === token
@@ -463,7 +463,7 @@ export function abilitiesOfSeat(
 			add({ characterId: token, how: 'token', via: own });
 	}
 	const via = gainingCharacter(game, seatId, characters);
-	const rule = via === undefined ? undefined : rulesOf(via, characters)?.gainedFrom;
+	const rule = via === undefined ? undefined : rulesFor(game, via, characters)?.gainedFrom;
 	if (via !== undefined && via === own && rule) {
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (gained?.status === 'has-ability')
@@ -541,7 +541,7 @@ function swappedIn(
 	own: CharacterId | undefined,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	const rule = own === undefined ? undefined : rulesOf(own, characters)?.swapsForAbility;
+	const rule = own === undefined ? undefined : rulesFor(game, own, characters)?.swapsForAbility;
 	const seat = game.seats[seatId];
 	const token = seat?.characterId;
 	if (!rule || token === undefined || token === own) return undefined;
@@ -574,14 +574,14 @@ export function gainedSetupAbilities(
 	return seatIds.flatMap((seatId) => {
 		const shown = characters.get(game.seats[seatId]?.characterId ?? '');
 		const own = trueCharacter(game, seatId, characters);
-		const type = own === undefined ? undefined : rulesOf(own, characters)?.gainsAbilityOf;
+		const type = own === undefined ? undefined : rulesFor(game, own, characters)?.gainsAbilityOf;
 		// Or the character they think they are, by a jinx (`thinksPartnerSetup`: the Marionette
 		// who thinks they are the Balloonist, https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
 		const thinks = thinksPartnerSetup(game, seatId, characters) !== undefined;
 		const gained = shown && own !== shown.id && (type === shown.type || thinks) ? [shown] : [];
 		const held = (game.seats[seatId]?.abilities ?? []).flatMap((h) => {
 			const character = characters.get(h.characterId);
-			const setup = h.via !== undefined && rulesOf(h.via, characters)?.givesAbility?.setup;
+			const setup = h.via !== undefined && rulesFor(game, h.via, characters)?.givesAbility?.setup;
 			return character && setup ? [character] : [];
 		});
 		return [...gained, ...held];

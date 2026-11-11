@@ -37,7 +37,7 @@ export function scriptRules(meta: ScriptMeta | undefined): string[] {
 /**
  * The Bootlegger as this script has it: its ability is the script's rules, if any, and the
  * script's `bootleggerRules` block (M61f) is laid over its own rules, a part there in place of
- * the Bootlegger's part of that name (as a jinx patch is, `rules-in-play.ts`). So a script can
+ * the Bootlegger's part of that name (as a jinx patch is, `rules-for.ts`). So a script can
  * say what its lines do and the engine reads it like any rule source's block: a
  * `setupModifier` there replaces reading the lines' [brackets]. A script with no lines has none.
  */

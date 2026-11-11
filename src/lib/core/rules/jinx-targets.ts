@@ -10,13 +10,13 @@
  * add a night alert at the subject's step; the third is a `no-kill` alert and takes the kill
  * off the step (`night-kill.ts`). Warns, never locks: the Storyteller can place anything.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import type { AbilitySource } from './ability.ts';
 import { jinxEffect, ownJinxEffects } from './jinxes.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Why a jinx says `reminder`, the mark of its character's choice, doesn't go on `seatId`. */
 export type ChoiceJinx = 'jinx-choice' | 'jinx-redirect';
@@ -37,7 +37,7 @@ export function choiceJinx(
 	const chooser = reminder.characterId;
 	const target = trueCharacter(game, seatId, characters);
 	if (target === undefined || target === chooser) return undefined;
-	const rules = rulesOf(chooser, characters);
+	const rules = rulesFor(game, chooser, characters);
 	if (rules?.reminderTargets?.[reminder.label]?.global) return undefined;
 	if (rules?.marksChoice && !rules.marksChoice.includes(reminder.label)) return undefined;
 	if (jinxEffect(game, chooser, target, 'cannotChoose', characters)) return 'jinx-choice';

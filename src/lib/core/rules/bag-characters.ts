@@ -3,12 +3,12 @@
  * characters are covered too. Imports neither the setup check nor the bag plan, so both can
  * use it (https://wiki.bloodontheclocktower.com/Setup).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder } from '#lib/core/model/types.ts';
 import { setupModifierFor } from './setup-modifiers.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 function hasSpecial(character: Character, type: string, name: string): boolean {
 	return character.special.some((s) => s.type === type && s.name === name);
@@ -62,7 +62,7 @@ export function notDealtInPlay(game: Game, characters: CharacterLookup): Charact
 	return scriptCharacterIds(game.script).filter((id) => {
 		const character = characters.get(id);
 		if (!character || !isNotDealt(character) || seated.some((c) => c.id === id)) return false;
-		const carrier = rulesOf(id, characters)?.carrierIsDemon;
+		const carrier = rulesFor(game, id, characters)?.carrierIsDemon;
 		const carried =
 			carrier !== undefined &&
 			game.seating.some((s) =>

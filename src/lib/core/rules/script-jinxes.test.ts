@@ -30,7 +30,7 @@ import { answerCauses, nightAnswer, reliability } from './night-info.ts';
 import { nominationsPerDay } from './nominations.ts';
 import { jinxSafeFrom, protection } from './protection.ts';
 import { uncountedVote, voteWorth } from './vote-weights.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import { madAsChoice } from './mad-as.ts';
 import { nightStepAlerts, type NightAlert } from './night-alerts.ts';
 import { nightKill } from './night-kill.ts';
@@ -1628,7 +1628,7 @@ describe('a script jinx that patches its character’s rules', () => {
 		expect(warnings).toEqual([]);
 		const cast = castWith({ script, characters });
 		const { game, seats } = cast(['lamplighter', 'imp', 'chef', 'empath', 'poisoner']);
-		expect(rulesInPlay(game, 'lamplighter', characters)?.voteWeight).toEqual({
+		expect(rulesFor(game, 'lamplighter', characters)?.voteWeight).toEqual({
 			self: true,
 			weight: 2
 		});

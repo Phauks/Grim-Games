@@ -294,7 +294,7 @@
  *   part reader, so a jinx can do whatever a character can: "while the Imp lives, the
  *   Lamplighter's vote counts twice" is `{"patch": {"parts": {"voteWeight": {"self": true,
  *   "weight": 2}}, "when": ["partner-alive"]}}`. Where the rules are read in the game
- *   (`rulesInPlay`).
+ *   (`rulesFor`).
  *
  * The prerequisites are `JINX_NEEDS`: this character's side is checked as the block is read
  * (`readJinxRules`, `jinx-read.ts`), the partner's once both are known (`jinxPartnerIssues`).
@@ -642,7 +642,7 @@ export interface JinxRules {
 
 /**
  * Parts of the subject's own rules block, in place of its own while the jinx is in effect and
- * its `when` holds (M61, `rules/rules-in-play.ts`). Each is read by its part's own reader.
+ * its `when` holds (M61, `rules/rules-for.ts`). Each is read by its part's own reader.
  */
 export interface JinxPatch extends JinxEffect {
 	parts: CharacterRules;

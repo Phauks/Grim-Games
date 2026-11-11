@@ -30,6 +30,7 @@ import { heldAbilitiesOf } from './gained-abilities.ts';
 import { carrierJinx } from './jinxes.ts';
 import { secondDemonPartner } from './jinx-effects.ts';
 import { choiceJinx } from './jinx-targets.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -108,7 +109,7 @@ export function reminderOffered(
 	reminder: Reminder,
 	characters: CharacterLookup
 ): boolean {
-	const gives = rulesOf(reminder.characterId, characters)?.givesAbility;
+	const gives = rulesFor(game, reminder.characterId, characters)?.givesAbility;
 	if (gives?.standIns?.includes(reminder.label)) return false;
 	const min = targetRule(reminder, characters)?.minOwners;
 	return min === undefined || ownerSeats(game, reminder.characterId, characters).length >= min;
@@ -367,12 +368,12 @@ export function reminderTargetMisses(
 		if (repeat) misses.push('last-night');
 	}
 	if (
-		rulesOf(reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
+		rulesFor(game, reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
 		carrierJinx(game, reminder.characterId, seatId, characters)
 	)
 		misses.push('jinx');
 	else if (
-		rulesOf(reminder.characterId, characters)?.becomes?.token === reminder.label &&
+		rulesFor(game, reminder.characterId, characters)?.becomes?.token === reminder.label &&
 		secondDemonPartner(game, reminder.characterId, seatId, characters)
 	)
 		misses.push('jinx');

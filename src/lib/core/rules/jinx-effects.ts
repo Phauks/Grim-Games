@@ -17,6 +17,7 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { ownJinxEffects, ownJinxes, ownJinxRules } from './jinxes.ts';
 import { aboutHolder, jinxApplies } from './jinx-when.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -44,7 +45,7 @@ export function gainedPartnerJinx(
 	const shown = game.seats[seatId]?.characterId;
 	const owner = trueCharacter(game, seatId, characters);
 	if (owner === undefined || shown === undefined || owner === shown) return undefined;
-	const rules = rulesOf(owner, characters);
+	const rules = rulesFor(game, owner, characters);
 	const type = characters.get(shown)?.type;
 	const gains =
 		(rules?.gainsAbilityOf !== undefined && rules.gainsAbilityOf === type) ||
@@ -225,7 +226,8 @@ export function secondDemonReverts(
 ): { seatId: SeatId; owner: CharacterId; partner: CharacterId }[] {
 	return game.seating.flatMap((seatId) => {
 		const owner = trueCharacter(game, seatId, characters);
-		const token = owner === undefined ? undefined : rulesOf(owner, characters)?.becomes?.token;
+		const token =
+			owner === undefined ? undefined : rulesFor(game, owner, characters)?.becomes?.token;
 		if (owner === undefined || token === undefined || game.seats[seatId].dead) return [];
 		if (!game.seats[seatId].reminders.some((r) => r.characterId === owner && r.label === token))
 			return [];
@@ -270,7 +272,7 @@ export function survivesCarrierBy(
 	const token =
 		owner === undefined
 			? undefined
-			: rulesOf(owner, characters)?.gameEnd?.aliveWhileDead?.whileCarrierAlive;
+			: rulesFor(game, owner, characters)?.gameEnd?.aliveWhileDead?.whileCarrierAlive;
 	if (owner === undefined || token === undefined) return undefined;
 	const carriers = game.seating.filter(
 		(s) =>

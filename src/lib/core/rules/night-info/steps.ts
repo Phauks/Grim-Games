@@ -19,6 +19,7 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { type NightAnswer } from './reliability.ts';
 import { type NightToday, markedSeats, nightAnswer } from './answers.ts';
 import { type InfoPicker, infoPicker } from './picker.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Data a night step carries: worked-out answers, pickers or death checks, one per waking player. */
 export type NightStepInfo =
@@ -45,7 +46,7 @@ export function nightStepInfo(
 	basis?: SeatId
 ): NightStepInfo | undefined {
 	if (seats.length === 0) return undefined;
-	if (rulesOf(character.id, characters)?.answers) {
+	if (rulesFor(game, character.id, characters)?.answers) {
 		const answers = seats.flatMap(
 			(s) => nightAnswer(game, s, character.id, characters, today, night, basis) ?? []
 		);
@@ -72,7 +73,7 @@ export function characterStepSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	if (rulesOf(characterId, characters)?.answers?.wakes === 'marked')
+	if (rulesFor(game, characterId, characters)?.answers?.wakes === 'marked')
 		return markedSeats(game, characterId);
 	return game.seating.filter((s) => game.seats[s].characterId === characterId);
 }
@@ -181,7 +182,7 @@ function asleepWithEvil(game: Game, characters: CharacterLookup): string[] {
 	const ids = new Set(
 		game.seating.flatMap((s) => {
 			const id = trueCharacter(game, s, characters);
-			return id !== undefined && rulesOf(id, characters)?.wakesWithEvil ? [id] : [];
+			return id !== undefined && rulesFor(game, id, characters)?.wakesWithEvil ? [id] : [];
 		})
 	);
 	return [...ids].flatMap((id) => {
@@ -203,7 +204,7 @@ function nightKillNotes(
 	seats: readonly SeatId[],
 	characters: CharacterLookup
 ): string[] {
-	const usual = rulesOf(characterId, characters)?.kills?.count ?? 1;
+	const usual = rulesFor(game, characterId, characters)?.kills?.count ?? 1;
 	const kills = seats.flatMap((s) => nightKill(game, s, characterId, characters) ?? []);
 	const most = Math.max(0, ...kills.map((k) => k.max));
 	const notes: string[] = [];

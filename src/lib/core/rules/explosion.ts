@@ -6,11 +6,11 @@
  * then who was pointed at most; the Storyteller decides, so nothing here happens on its own.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface Explosion {
 	/** The character that explodes; the cause of the deaths. */
@@ -29,7 +29,7 @@ export function explosionOf(
 	characters: CharacterLookup
 ): Explosion | undefined {
 	const characterId = trueCharacter(game, seatId, characters);
-	const survivors = characterId && rulesOf(characterId, characters)?.execution?.explodes;
+	const survivors = characterId && rulesFor(game, characterId, characters)?.execution?.explodes;
 	if (!characterId || !survivors || !abilityState(game, seatId, characters).works) return undefined;
 	return { characterId, survivors };
 }

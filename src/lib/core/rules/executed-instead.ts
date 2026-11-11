@@ -5,11 +5,11 @@
  * Storyteller decides, so nothing here happens on its own.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** A living player who may be executed instead of another, by their character's ability. */
 export interface InsteadOffer {
@@ -22,7 +22,9 @@ export function insteadCandidates(game: Game, characters: CharacterLookup): Inst
 	return game.seating.flatMap((seatId) => {
 		const characterId = trueCharacter(game, seatId, characters);
 		if (characterId === undefined || game.seats[seatId].dead) return [];
-		return rulesOf(characterId, characters)?.execution?.insteadOf ? [{ seatId, characterId }] : [];
+		return rulesFor(game, characterId, characters)?.execution?.insteadOf
+			? [{ seatId, characterId }]
+			: [];
 	});
 }
 

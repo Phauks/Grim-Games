@@ -28,7 +28,7 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
-import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 import {
@@ -610,9 +610,8 @@ function applyNightOverrides(
  */
 function markerNotes(marker: NightMarker, inPlay: readonly Character[]): string[] {
 	if (marker !== 'minioninfo' && marker !== 'demoninfo') return [];
-	const characters = new Map(inPlay.map((c) => [c.id, c]));
-	return [...characters.values()].flatMap((c) => {
-		const note = rulesOf(c.id, characters)?.evilInfo?.notes?.[marker];
+	return uniqueById(inPlay).flatMap((c) => {
+		const note = rulesOfCharacter(c)?.evilInfo?.notes?.[marker];
 		return note ? [`${c.name}: ${note}`] : [];
 	});
 }
@@ -624,10 +623,14 @@ function markerNotes(marker: NightMarker, inPlay: readonly Character[]): string[
  */
 function wakesWithNotes(character: Character | undefined, inPlay: readonly Character[]): string[] {
 	if (character && character.type !== 'minion' && character.type !== 'demon') return [];
-	const characters = new Map(inPlay.map((c) => [c.id, c]));
-	return [...characters.values()].flatMap((c) =>
-		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil ? [wakesTooNote(c.name)] : []
+	return uniqueById(inPlay).flatMap((c) =>
+		c.id !== character?.id && rulesOfCharacter(c)?.wakesWithEvil ? [wakesTooNote(c.name)] : []
 	);
+}
+
+/** Each character once, in order. */
+function uniqueById(characters: readonly Character[]): Character[] {
+	return [...new Map(characters.map((c) => [c.id, c])).values()];
 }
 
 /** The note on an evil player's step that a character waking with evil wakes too. */

@@ -42,6 +42,49 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
  * their abilities always show the way the Script tab does).
  */
 const CHARACTER_DISPLAY_TODO = [];
+/**
+ * Game rules and engine files that still read a character's rules with a static reader
+ * (`rulesOf`, `rulesIn`, `rulesOfCharacter`) instead of `rulesFor` (grim/rules-for). Only
+ * shrinks: most read through a small helper that takes no game yet.
+ */
+const RULES_OF_TODO = [
+	'src/lib/core/engine/decide/bluffs-bag.ts',
+	'src/lib/core/engine/decide/characters.ts',
+	'src/lib/core/engine/decide/day.ts',
+	'src/lib/core/engine/decide/reminders.ts',
+	'src/lib/core/engine/decide/seats.ts',
+	'src/lib/core/rules/ability.ts',
+	'src/lib/core/rules/character-changes.ts',
+	'src/lib/core/rules/chosen-ability.ts',
+	'src/lib/core/rules/chosen-kills.ts',
+	'src/lib/core/rules/contest.ts',
+	'src/lib/core/rules/day-claims.ts',
+	'src/lib/core/rules/day-marks.ts',
+	'src/lib/core/rules/day-reminders.ts',
+	'src/lib/core/rules/day-tally.ts',
+	'src/lib/core/rules/dead-characters.ts',
+	'src/lib/core/rules/death-causes.ts',
+	'src/lib/core/rules/end-reason.ts',
+	'src/lib/core/rules/game-end-helpers.ts',
+	'src/lib/core/rules/info-token-characters.ts',
+	'src/lib/core/rules/jinx-effects.ts',
+	'src/lib/core/rules/mad-as.ts',
+	'src/lib/core/rules/night-alerts.ts',
+	'src/lib/core/rules/night-info/picker.ts',
+	'src/lib/core/rules/night-info/steps.ts',
+	'src/lib/core/rules/nominations.ts',
+	'src/lib/core/rules/reminder-effects.ts',
+	'src/lib/core/rules/reminder-ends.ts',
+	'src/lib/core/rules/reminder-movement.ts',
+	'src/lib/core/rules/reminder-prompts.ts',
+	'src/lib/core/rules/reminder-targets.ts',
+	'src/lib/core/rules/savant-facts.ts',
+	'src/lib/core/rules/savant-log-templates.ts',
+	'src/lib/core/rules/savant-templates.ts',
+	'src/lib/core/rules/shown-to.ts',
+	'src/lib/core/rules/voting-table.ts',
+	'src/lib/core/rules/wishes.ts'
+];
 
 /**
  * A character is drawn with CharacterPiece and a template (Trevor, 2026-11-02: one component,
@@ -298,6 +341,28 @@ export default defineConfig(
 		files: ['src/**/*.svelte'],
 		plugins: { grim },
 		rules: { 'grim/confirm-dialog': 'error' }
+	},
+	{
+		// Game rules and the engine read a character's rules through rulesFor, so jinx patches
+		// and optional rules apply everywhere (refactor review D1). RULES_OF_TODO only shrinks.
+		files: ['src/lib/core/rules/**/*.ts', 'src/lib/core/engine/**/*.ts'],
+		ignores: [
+			'src/**/*.test.ts',
+			// rulesFor itself and the jinx readers it is built on.
+			'src/lib/core/rules/rules-for.ts',
+			'src/lib/core/rules/jinxes.ts',
+			'src/lib/core/rules/jinx-pairs.ts',
+			// Setup and the night sheet read characters before a game, or with no game.
+			'src/lib/core/rules/bag-plan.ts',
+			'src/lib/core/rules/setup-modifiers.ts',
+			'src/lib/core/rules/setup-reminders.ts',
+			'src/lib/core/rules/teensyville.ts',
+			'src/lib/core/rules/night-order.ts',
+			'src/lib/core/rules/night-text.ts',
+			...RULES_OF_TODO
+		],
+		plugins: { grim },
+		rules: { 'grim/rules-for': 'error' }
 	},
 	{
 		// Every single-line text field has an X that clears it (Trevor, 2026-10-16).

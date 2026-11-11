@@ -11,7 +11,6 @@
  * only, no wording: `NightAlerts.svelte` says them.
  */
 import type { JinxEffect, LearnsWhat } from '#lib/core/data/jinx-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
@@ -30,6 +29,7 @@ import {
 } from './jinx-effects.ts';
 import { unchoosablePartners } from './jinx-targets.ts';
 import type { NightAlert } from './night-alerts.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The Related Jinxes section of a character's wiki page; none for a homebrew character. */
 function jinxesSection(character: Character | undefined): { wiki?: string } {
@@ -215,7 +215,7 @@ export function carrierChoiceAlerts(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): NightAlert[] {
-	const carrier = rulesOf(characterId, characters)?.carrierIsDemon !== undefined;
+	const carrier = rulesFor(game, characterId, characters)?.carrierIsDemon !== undefined;
 	const found = [
 		...(carrier
 			? ownJinxEffects(
@@ -263,7 +263,7 @@ function wouldImpair(
 	partner: CharacterId,
 	characters: CharacterLookup
 ): boolean {
-	const tokens = rulesOf(owner, characters)?.impairs?.tokens ?? {};
+	const tokens = rulesFor(game, owner, characters)?.impairs?.tokens ?? {};
 	const partners = game.seating.filter((s) => trueCharacter(game, s, characters) === partner);
 	return game.seating.some((on) =>
 		game.seats[on].reminders.some((r) => {
@@ -376,8 +376,8 @@ export function jinxStepAlerts(
 		const gained = gainedPartnerJinx(game, seatId, characters);
 		if (gained?.partner !== characterId) continue;
 		if (!gainedApplies(game, seatId, gained, gained.rule.partnerSetup, characters)) continue;
-		if (rulesOf(gained.owner, characters)?.gainedFrom === undefined) continue;
-		if (rulesOf(characterId, characters)?.setupModifier === undefined) continue;
+		if (rulesFor(game, gained.owner, characters)?.gainedFrom === undefined) continue;
+		if (rulesFor(game, characterId, characters)?.setupModifier === undefined) continue;
 		out.push(alert('partner-setup', seatId, gained.owner, characterId));
 	}
 	return out;

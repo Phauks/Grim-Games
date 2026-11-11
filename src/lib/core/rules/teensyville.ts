@@ -8,7 +8,7 @@
  * "Demon Info"), unless a character such as the Toymaker restores them
  * (https://wiki.bloodontheclocktower.com/Toymaker).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import type { TypeCounts } from './distribution.ts';
 import { SEATED_TYPES } from './distribution.ts';
@@ -62,8 +62,7 @@ export function teensyvilleWarnings(characters: readonly Character[], players: n
  * info steps at any player count (Tor, https://wiki.bloodontheclocktower.com/Tor).
  */
 export function evilTeamInfoRemovedBy(inPlay: readonly Character[]): Character | undefined {
-	const characters = new Map(inPlay.map((c) => [c.id, c]));
-	return inPlay.find((c) => rulesOf(c.id, characters)?.evilInfo?.none === true);
+	return inPlay.find((c) => rulesOfCharacter(c)?.evilInfo?.none === true);
 }
 
 /**
@@ -73,6 +72,5 @@ export function evilTeamInfoRemovedBy(inPlay: readonly Character[]): Character |
  */
 export function hasEvilTeamInfo(players: number, inPlay: readonly Character[]): boolean {
 	if (players >= EVIL_INFO_MIN_PLAYERS) return true;
-	const characters = new Map(inPlay.map((c) => [c.id, c]));
-	return inPlay.some((c) => rulesOf(c.id, characters)?.evilInfo?.anyPlayerCount === true);
+	return inPlay.some((c) => rulesOfCharacter(c)?.evilInfo?.anyPlayerCount === true);
 }

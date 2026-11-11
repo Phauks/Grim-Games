@@ -6,6 +6,7 @@ import { alignmentOf, trueCharacter, typeOf } from '../model/selectors.ts';
 import { abilityState } from './ability.ts';
 import { validDeathCauses } from './death-causes.ts';
 import { survivesFirstDeath } from './first-death.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -44,8 +45,8 @@ export function dayUseOf(characterId: CharacterId, characters: RulesLookup): Day
  * The characters no player holds whose day ability any living player may use, once each per
  * game (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer).
  */
-export function anyoneDayUses(game: Game, characters: RulesLookup): CharacterId[] {
-	return game.ruleCharacters.filter((id) => rulesOf(id, characters)?.dayUse?.anyone);
+export function anyoneDayUses(game: Game, characters: CharacterLookup): CharacterId[] {
+	return game.ruleCharacters.filter((id) => rulesFor(game, id, characters)?.dayUse?.anyone);
 }
 
 /** The players who have used `characterId`'s day ability this game, today included. */
@@ -62,8 +63,12 @@ export function dayUseUsers(game: Game, characterId: CharacterId): SeatId[] {
  * Whether enough players live for `characterId`'s day ability (`dayUse.minAlive`: the
  * Doomsayer needs 4, https://wiki.bloodontheclocktower.com/Doomsayer). True without a limit.
  */
-export function dayUseOpen(game: Game, characterId: CharacterId, characters: RulesLookup): boolean {
-	const min = rulesOf(characterId, characters)?.dayUse?.minAlive;
+export function dayUseOpen(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	const min = rulesFor(game, characterId, characters)?.dayUse?.minAlive;
 	return min === undefined || game.seating.filter((s) => !game.seats[s].dead).length >= min;
 }
 
@@ -74,9 +79,9 @@ export function dayUseOpen(game: Game, characterId: CharacterId, characters: Rul
 export function dayUseCandidates(
 	game: Game,
 	characterId: CharacterId,
-	characters: RulesLookup
+	characters: CharacterLookup
 ): SeatId[] {
-	if (!rulesOf(characterId, characters)?.dayUse?.anyone) return [];
+	if (!rulesFor(game, characterId, characters)?.dayUse?.anyone) return [];
 	if (!dayUseOpen(game, characterId, characters)) return [];
 	const used = dayUseUsers(game, characterId);
 	return game.seating.filter((s) => !game.seats[s].dead && !used.includes(s));
@@ -168,7 +173,7 @@ export function dayUseAnswer(
 	target: SeatId,
 	characters: CharacterLookup
 ): DayUseAnswerOptions | undefined {
-	const rules = rulesOf(characterId, characters);
+	const rules = rulesFor(game, characterId, characters);
 	if (rules?.dayUse?.answer !== 'demon-if-marked') return undefined;
 	if (game.seats[seatId]?.dead) return { kind: 'dead' };
 	if (abilityState(game, seatId, characters).impairments.length > 0) return { kind: 'any' };

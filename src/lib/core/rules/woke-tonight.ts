@@ -2,7 +2,6 @@
  * Who woke tonight by their own ability, for the Chambermaid
  * (https://wiki.bloodontheclocktower.com/Chambermaid).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -11,6 +10,7 @@ import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { livesWhileDead } from './game-end.ts';
 import { actsTonight, type Night } from './night-order.ts';
 import { wakeConditionMet } from './wakes-when.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /**
  * Whether `seatId` woke tonight by their own ability, for the Chambermaid: their character
@@ -36,7 +36,7 @@ export function wokeTonight(
 		!livesWhileDead(game, seatId, characters)
 	)
 		return false;
-	const asleep = rulesOf(id, characters)?.staysAsleep;
+	const asleep = rulesFor(game, id, characters)?.staysAsleep;
 	if (asleep === night || asleep === 'both') return false;
 	if (stoppedWaking(game, seatId, characters)) return false;
 	return wakeConditionMet(game, id, seatId, characters, new Set());
@@ -49,7 +49,7 @@ export function wokeTonight(
  */
 export function stoppedWaking(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	return game.seats[seatId].reminders.some((r) => {
-		const stops = rulesOf(r.characterId, characters)?.stopsWaking;
+		const stops = rulesFor(game, r.characterId, characters)?.stopsWaking;
 		if (stops?.token !== r.label) return false;
 		if (stops.type && typeOf(game, seatId, characters) !== stops.type) return false;
 		const sources = game.seating.filter(

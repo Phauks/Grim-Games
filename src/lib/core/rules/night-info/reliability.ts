@@ -4,7 +4,6 @@
  * Part of `night-info.ts`, which documents the whole and re-exports this file.
  */
 import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -27,6 +26,7 @@ import {
 } from '../ability.ts';
 import { jinxEffect } from '../jinxes.ts';
 import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -169,7 +169,7 @@ export function falseInfoSource(
 ): { seatId: SeatId; characterId: CharacterId } | undefined {
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		const rule = characterId ? rulesOf(characterId, characters)?.falseInfo : undefined;
+		const rule = characterId ? rulesFor(game, characterId, characters)?.falseInfo : undefined;
 		const types = rule && !rule.may ? rule.types : undefined;
 		if (!characterId || !types || (type !== undefined && !types.includes(type))) continue;
 		if (about !== undefined && jinxEffect(game, characterId, about, 'trueInfo', characters))
@@ -206,7 +206,7 @@ export function mayBeFalseSource(
 		return id && abilityState(game, s, characters).works ? [id] : [];
 	});
 	for (const characterId of [...game.ruleCharacters, ...held]) {
-		const rule = rulesOf(characterId, characters)?.falseInfo;
+		const rule = rulesFor(game, characterId, characters)?.falseInfo;
 		if (!rule?.may) continue;
 		if (rule.alignment && alignmentOf(game, seatId) !== rule.alignment) continue;
 		if (rule.types && (type === undefined || !rule.types.includes(type))) continue;
@@ -238,7 +238,7 @@ export function anyInfoSource(
 ): { seatId: SeatId; characterId: CharacterId } | undefined {
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		if (characterId && rulesOf(characterId, characters)?.breaksRules) {
+		if (characterId && rulesFor(game, characterId, characters)?.breaksRules) {
 			return { seatId, characterId };
 		}
 	}
@@ -257,7 +257,7 @@ function believedAbility(
 	characters: CharacterLookup
 ): Impairment | undefined {
 	const own = trueCharacter(game, seatId, characters);
-	if (!own || own === characterId || !rulesOf(own, characters)?.believesOtherCharacter) {
+	if (!own || own === characterId || !rulesFor(game, own, characters)?.believesOtherCharacter) {
 		return undefined;
 	}
 	return {

@@ -8,7 +8,6 @@
  */
 import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { looseReminders } from '#lib/core/model/selectors.ts';
 import {
@@ -19,6 +18,7 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type CounterMove =
 	/** The run's next token goes on `seatId`. */
@@ -55,7 +55,7 @@ export function counterMoves(
 		game.seating.map((id) => game.seats[id].characterId).filter((c) => c !== undefined)
 	);
 	for (const characterId of inPlay) {
-		const counter = rulesOf(characterId, characters)?.counter;
+		const counter = rulesFor(game, characterId, characters)?.counter;
 		if (!counter || counter.at !== at) continue;
 		const label = counter.tokens[n - 1];
 		if (!label) continue;

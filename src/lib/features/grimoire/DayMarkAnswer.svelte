@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { rulesInPlay } from '#lib/core/rules/rules-in-play.ts';
+	import { rulesFor } from '#lib/core/rules/rules-for.ts';
 	import type { NightStep } from '#lib/core/rules/index.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -19,7 +19,7 @@
 
 	const mark = $derived(
 		step.character
-			? rulesInPlay(grimoire.game, step.character.id, grimoire.open.characters)?.dayMark?.mark
+			? rulesFor(grimoire.game, step.character.id, grimoire.open.characters)?.dayMark?.mark
 			: undefined
 	);
 </script>

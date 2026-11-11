@@ -14,7 +14,6 @@
  * answer out, and gives undefined while there is no record.
  */
 import type { ExecutionOutcomeRule } from '#lib/core/data/parts/execution-outcome.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
@@ -22,6 +21,7 @@ import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { ownJinxEffects } from './jinxes.ts';
 import { todaysNominations } from './nominations.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** TPI's reminder for a spent once-per-game ability (game data). */
 const NO_ABILITY = 'No Ability';
@@ -78,7 +78,9 @@ export function outcomeHolders(game: Game, characters: CharacterLookup): Outcome
 	const out: OutcomeHolder[] = [];
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		const rule = characterId ? rulesOf(characterId, characters)?.executionOutcome : undefined;
+		const rule = characterId
+			? rulesFor(game, characterId, characters)?.executionOutcome
+			: undefined;
 		if (!characterId || !rule) continue;
 		const works = abilityState(game, seatId, characters).works;
 		for (const kind of KINDS(rule)) {
@@ -92,7 +94,7 @@ export function outcomeHolders(game: Game, characters: CharacterLookup): Outcome
 
 /** Whether a once-per-game ability's spent token is on its player. */
 function spent(game: Game, holder: OutcomeHolder, characters: CharacterLookup): boolean {
-	const label = rulesOf(holder.characterId, characters)?.dayUse?.spentToken ?? NO_ABILITY;
+	const label = rulesFor(game, holder.characterId, characters)?.dayUse?.spentToken ?? NO_ABILITY;
 	return game.seats[holder.seatId].reminders.some(
 		(r) => r.characterId === holder.characterId && r.label === label
 	);

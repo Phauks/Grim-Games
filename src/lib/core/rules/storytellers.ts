@@ -14,16 +14,16 @@
  * A suggestion: the Storyteller can show anything, with a warning.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId, StorytellerPair } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The rule character in play that makes two Storytellers, if any. */
 export function twoStorytellersBy(
 	game: Game,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	return game.ruleCharacters.find((id) => rulesOf(id, characters)?.twoStorytellers === true);
+	return game.ruleCharacters.find((id) => rulesFor(game, id, characters)?.twoStorytellers === true);
 }
 
 /** Which Storyteller a player went to today, and whether that one lies now. */

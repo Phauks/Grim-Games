@@ -43,6 +43,7 @@ import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
 import { carriesDemonToken } from './death-causes.ts';
 import { jinxImpairs } from './jinxes.ts';
 import type { ImpairKind } from '#lib/core/data/jinx-rules.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type {
 	SeatFilter,
@@ -391,7 +392,7 @@ function unseatedReminders(
 		const copy = (seen.get(key) ?? 0) + 1;
 		seen.set(key, copy);
 		if (copy <= placed(r)) continue;
-		const target = rulesOf(r.characterId, lookup)?.reminderTargets?.[r.label];
+		const target = rulesFor(game, r.characterId, lookup)?.reminderTargets?.[r.label];
 		const byDemon = target?.neighbour?.ofType === 'demon';
 		// No Demon yet (the Summoner's game, or Lil' Monsta before a babysitter): the Marionette
 		// enters play once there is one, as their neighbour (each Marionette jinx,

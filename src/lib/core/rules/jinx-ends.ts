@@ -2,7 +2,6 @@
  * Game ends a jinx adds (`jinxes.endsGame`, `data/jinx-rules.ts`), for `rules/game-end.ts`,
  * which hands over its own reading of the board (`EndHelpers`).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { JinxEnd } from '#lib/core/data/jinx-rules.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -13,6 +12,7 @@ import type { GameEnd, GameHold } from './game-end.ts';
 import { ownJinxEffects, ownJinxes } from './jinxes.ts';
 import { aboutHolder, jinxApplies, type JinxEvent } from './jinx-when.ts';
 import { nomineesNominateNow } from './nominations.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** How `rules/game-end.ts` reads the board, so a jinx end counts as its own ends do. */
 export interface EndHelpers {
@@ -221,7 +221,7 @@ export function jinxStoppers(
 	characters: CharacterLookup
 ): JinxStopper[] {
 	const on =
-		rulesOf(owner, characters)?.nomineesNominate !== undefined
+		rulesFor(game, owner, characters)?.nomineesNominate !== undefined
 			? nomineesNominateNow(game, characters).includes(owner)
 			: playing(game, owner, characters).some((s) => !game.seats[s].dead);
 	const stops = ownJinxEffects(

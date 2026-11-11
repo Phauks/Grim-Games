@@ -12,7 +12,7 @@ import type {
 	OnNominated
 } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { rulesInPlay } from './rules-in-play.ts';
+import { rulesFor } from './rules-for.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
@@ -117,7 +117,7 @@ export function afterDeath(
 	const held = heldAbilitiesOf(game, seatId, characters).map((h) => h.characterId);
 	const cause = game.seats[seatId]?.deathCause;
 	for (const characterId of [...(own === undefined ? [] : [own]), ...held]) {
-		const rule = rulesOf(characterId, characters)?.afterDeath;
+		const rule = rulesFor(game, characterId, characters)?.afterDeath;
 		if (!rule) continue;
 		if (cause === undefined || rule.cause.includes(cause)) return rule;
 		if (rule.cause.includes('demon') && characters.get(cause)?.type === 'demon') return rule;
@@ -154,8 +154,7 @@ export function nomineesNominateNow(game: Game, characters: CharacterLookup): Ch
 	const out = new Set<CharacterId>();
 	for (const s of game.seating) {
 		const id = trueCharacter(game, s, characters);
-		const token =
-			id === undefined ? undefined : rulesInPlay(game, id, characters)?.nomineesNominate;
+		const token = id === undefined ? undefined : rulesFor(game, id, characters)?.nomineesNominate;
 		if (id === undefined || token === undefined || out.has(id)) continue;
 		if (marked(id, token) && !stopped(id) && abilityState(game, s, characters).works) out.add(id);
 	}
@@ -228,7 +227,7 @@ export function extraNominationOpen(
 	const extra =
 		characterId === undefined
 			? undefined
-			: rulesOf(characterId, characters)?.nominationsAfterExecution;
+			: rulesFor(game, characterId, characters)?.nominationsAfterExecution;
 	if (!extra || !abilityState(game, nominator, characters).works) return false;
 	const entries = game.today.entries.filter((e) => e.entryId !== ignore);
 	const first = entries.findIndex((e) => e.kind === 'execution');
@@ -267,7 +266,7 @@ export function extraNominators(game: Game, characters: CharacterLookup): SeatId
 		const characterId = trueCharacter(game, seatId, characters);
 		return (
 			characterId !== undefined &&
-			!!rulesOf(characterId, characters)?.nominationsAfterExecution &&
+			!!rulesFor(game, characterId, characters)?.nominationsAfterExecution &&
 			abilityState(game, seatId, characters).works
 		);
 	});
@@ -352,7 +351,8 @@ export function characterNominationPrompts(
  * character while their ability works.
  */
 export function nomineeChooses(game: Game, characters: CharacterLookup): CharacterId[] {
-	const chooses = (id: CharacterId) => rulesOf(id, characters)?.madness?.chosenBy === 'nominee';
+	const chooses = (id: CharacterId) =>
+		rulesFor(game, id, characters)?.madness?.chosenBy === 'nominee';
 	const seated = game.seating.flatMap((seatId) => {
 		const id = trueCharacter(game, seatId, characters);
 		return id !== undefined && chooses(id) && abilityState(game, seatId, characters).works
@@ -408,7 +408,7 @@ function nomineeAbilityPrompts(
 	return game.seating.flatMap((seatId) =>
 		workingAbilities(game, seatId, characters).flatMap(
 			(characterId): CharacterNominationPrompt[] => {
-				const rule = rulesInPlay(game, characterId, characters)?.onNominated;
+				const rule = rulesFor(game, characterId, characters)?.onNominated;
 				if (!rule) return [];
 				const setOff = rule.carrier
 					? carries(carried, characterId, rule.carrier, seatId)
@@ -471,7 +471,7 @@ function nominatorAbilityPrompts(
 	return game.seating.flatMap((seatId) =>
 		workingAbilities(game, seatId, characters).flatMap(
 			(characterId): CharacterNominationPrompt[] => {
-				const rule = rulesInPlay(game, characterId, characters)?.onNominating;
+				const rule = rulesFor(game, characterId, characters)?.onNominating;
 				if (!rule) return [];
 				const setOff = rule.carrier
 					? carries(carried, characterId, rule.carrier, seatId)
@@ -490,7 +490,7 @@ function nominatorAbilityPrompts(
  */
 export function storytellerNominates(game: Game, characters: CharacterLookup): CharacterId[] {
 	const only = (id: CharacterId) => {
-		const rule = rulesInPlay(game, id, characters)?.nominating;
+		const rule = rulesFor(game, id, characters)?.nominating;
 		return !!rule && 'by' in rule && rule.by === 'storyteller';
 	};
 	const seated = game.seating.flatMap((seatId) => {
@@ -515,7 +515,7 @@ export function nominationsLeftThisGame(
 	ignore?: string
 ): { characterId: CharacterId; left: number } | undefined {
 	const characterId = trueCharacter(game, seatId, characters);
-	const rules = characterId === undefined ? undefined : rulesInPlay(game, characterId, characters);
+	const rules = characterId === undefined ? undefined : rulesFor(game, characterId, characters);
 	const rule = rules?.nominating;
 	if (characterId === undefined || !rule || !('perGame' in rule)) return undefined;
 	if (!abilityState(game, seatId, characters).works) return undefined;
