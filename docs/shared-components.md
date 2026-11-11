@@ -319,11 +319,11 @@ answers question, a game end or hold, a jinx end) is a preset in a `presetTable`
 - Character info cards (`features/info-tokens/character-cards.ts`, was a list naming the Mezepheles and Yaggababble): `infoCard` (`secret-word`, `secret-phrase`, `goal`), moved. A reminder that carries the Storyteller's words for its player (`noteOn`, `rules/night/shown-to.ts` `takesNote`: the Zenomancer's Goal) is typed and shown on that card from its reminder dialog by `features/grimoire/NotedReminderFields.svelte`
 - Who is the Demon by a token (`death-causes.ts` `carriesDemonToken`, `game-end.ts`; was a check for Lil' Monsta's id) `carrierIsDemon`; an ability gained by a swap in the seat's ⋯ menu (`SeatCharacterFlow.svelte`, `SeatSheet.svelte`; was a check for the Apprentice's id; the Alchemist's Minion too) `swapsForAbility`; moved (`parts/`)
 - Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`parts/`)
-Every part, with its label, description, file and the files that read it, is listed in
-[rules-parts.md](rules-parts.md), generated from the parts by `npm run parts:catalogue`
-(`scripts/scripts.test.ts` fails when it is stale). Jinx verbs are described where they are
-built: `data/jinx-rules.ts` (each verb and its effect) and `data/jinx-read.ts` (its settings).
-How each table moved into data is in the git history of this file and the Changelog.
+  Every part, with its label, description, file and the files that read it, is listed in
+  [rules-parts.md](rules-parts.md), generated from the parts by `npm run parts:catalogue`
+  (`scripts/scripts.test.ts` fails when it is stale). Jinx verbs are described where they are
+  built: `data/jinx-rules.ts` (each verb and its effect) and `data/jinx-read.ts` (its settings).
+  How each table moved into data is in the git history of this file and the Changelog.
 
 ## Lists that only shrink
 
