@@ -11,7 +11,7 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
 import { afterExecutionTokens } from '#lib/core/rules/after-execution.ts';
-import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
+import { startingRuleCharacters } from '#lib/core/data/script-rules.ts';
 import type { Command, CommandOf, CommandType } from './commands.ts';
 import type { EngineContext } from './context.ts';
 import type { GameEvent } from './events.ts';

@@ -14,7 +14,7 @@ import {
 	withRules,
 	type SpecialRule
 } from '#lib/core/modes/index.ts';
-import { scriptRules, scriptRulesCarrier } from '#lib/core/rules/script-rules.ts';
+import { scriptRules, scriptRulesCarrier } from '#lib/core/data/script-rules.ts';
 import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
 import { setupSelection } from '#lib/features/setup/selection.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';

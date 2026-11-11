@@ -14,6 +14,7 @@
 import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, Reminder, ReminderEffect, SeatId } from '#lib/core/model/types.ts';
+import type { DayReminderOverride } from '#lib/core/model/overrides.ts';
 import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } from './ability.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import {
@@ -36,7 +37,7 @@ export { DAY_GROUPS };
 export type { DayCondition, DayGroup, DayInteraction, DayReminderSpec, DeathCauseMatch };
 
 /** Defined with the model's `Seat`; re-exported here for existing imports. */
-export type { DeathCause };
+export type { DeathCause, DayReminderOverride };
 
 /** The parts of a seat the reminders read (the model's `Seat` fits, plus `deathCause`). */
 export interface DaySeat {
@@ -54,25 +55,6 @@ export interface DaySeat {
 	/** With the effect the Storyteller picked for it, if any (`reminder-effects.ts`). */
 	reminders: readonly (Reminder & { effect?: ReminderEffect })[];
 }
-
-/**
- * A Storyteller override, stored with the game:
- * - `hide`: drop a generated reminder (by its `key`);
- * - `edit`: keep the reminder's character badge but replace the rest with `text`;
- * - `add`: a reminder of the Storyteller's own, optionally about a character or seat.
- */
-export type DayReminderOverride =
-	| { kind: 'hide'; key: string }
-	| { kind: 'edit'; key: string; text: string }
-	| {
-			kind: 'add';
-			/** The Storyteller's own key, unique among overrides ("custom-1"). */
-			key: string;
-			group: DayGroup;
-			text: string;
-			characterId?: CharacterId;
-			seatId?: SeatId;
-	  };
 
 export interface DayState {
 	/** Seats in seating order. */

@@ -18,7 +18,7 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';
-import { startingRuleCharacters, withScriptRules } from '#lib/core/rules/script-rules.ts';
+import { startingRuleCharacters, withScriptRules } from '#lib/core/data/script-rules.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';

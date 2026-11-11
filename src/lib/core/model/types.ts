@@ -20,8 +20,7 @@ import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.
-import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
-import type { NightStepOverride } from '#lib/core/rules/night-order.ts';
+import type { DayReminderOverride, NightStepOverride } from '#lib/core/model/overrides.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 
