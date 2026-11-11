@@ -2206,10 +2206,13 @@ test('New game previews the script as it will play, beside the settings', async 
 test('the script preview’s background is a choice of neutral colours, also in Settings > Player', async ({
 	page
 }) => {
-	// A device that had the light switch on (2026-10-23) opens on parchment.
+	// A device that picked parchment opens on it.
 	await page.addInitScript(() => {
 		if (!sessionStorage.getItem('seeded')) {
-			localStorage.setItem('grim-games:player-settings:v1', JSON.stringify({ lightSheet: true }));
+			localStorage.setItem(
+				'grim-games:player-settings:v1',
+				JSON.stringify({ sheetBackground: 'parchment' })
+			);
 			sessionStorage.setItem('seeded', '1');
 		}
 	});

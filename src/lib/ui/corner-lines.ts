@@ -28,28 +28,13 @@ export const DEFAULT_CORNER_LINES: CornerLines = Object.fromEntries(
 
 const flag = (value: unknown) => (typeof value === 'boolean' ? value : undefined);
 
-/**
- * Saved eyes, with any missing taking their default. Preferences saved before the eyes carry
- * their join code switch to the join code, and their Game time and day-or-night switches to
- * those lines. Eyes saved while Game time also showed the day or night give the day or night
- * Game time's eye.
- */
-export function parseCornerLines(raw: unknown, oldAssistance?: unknown): CornerLines {
+/** Saved eyes, with any missing taking their default. */
+export function parseCornerLines(raw: unknown): CornerLines {
 	const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const out: CornerLines = { ...DEFAULT_CORNER_LINES };
-	if (!raw && oldAssistance && typeof oldAssistance === 'object') {
-		const old = oldAssistance as Record<string, unknown>;
-		out['join-code'] = flag(old.roomCode) ?? out['join-code'];
-		const clock = flag(old.gameClock);
-		const phase = flag(old.boardPhase);
-		out['game-time'] = clock ?? out['game-time'];
-		out.phase = phase ?? out.phase;
-	}
 	for (const line of CORNER_LINES) {
 		const value = flag(input[line]);
 		if (value !== undefined) out[line] = value;
 	}
-	if (flag(input.phase) === undefined && flag(input['game-time']) !== undefined)
-		out.phase = !!input['game-time'];
 	return out;
 }

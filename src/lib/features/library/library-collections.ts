@@ -1,7 +1,7 @@
 /**
  * Character collections (Trevor, 2026-10-18): a named set of characters kept in the Library,
- * official ones by their id and Character builder ones as `saved:<savedId>`. Versioned, because
- * a newer build can open what an older one stored (CLAUDE.md).
+ * official ones by their id and Character builder ones as `saved:<savedId>`. Versioned; another
+ * version is not read (no migrations, CLAUDE.md).
  */
 import { timestampName } from '#lib/core/timestamp-name.ts';
 import { cleanName } from './library-labels.ts';

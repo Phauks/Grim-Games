@@ -15,11 +15,6 @@ import {
 const KEY = 'grim-games:player-settings:v1';
 
 export interface PlayerSettings {
-	/**
-	 * The old "Hide note contents" switch, read only so notebooks saved before each note had
-	 * its own switch keep their notes hidden (notebook v6). No longer shown in Settings.
-	 */
-	hideNoteContents: boolean;
 	/** How our own printed sheet is laid out (Trevor, 2026-10-19: a print settings screen). */
 	print: PrintSettings;
 	/**
@@ -232,7 +227,6 @@ export const SHEET_DENSITIES = ['normal', 'compact', 'super'] as const;
 export type SheetDensity = (typeof SHEET_DENSITIES)[number];
 
 const DEFAULTS: PlayerSettings = {
-	hideNoteContents: false,
 	print: PRINT_DEFAULTS,
 	avatar: 'initials',
 	hideGuesses: false,
@@ -246,19 +240,16 @@ function read(): PlayerSettings {
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
 		return {
-			hideNoteContents: raw.hideNoteContents === true,
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
 			flavour: parseTagline(raw.flavour),
 			details: parseDetails(raw.details),
-			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
 			hideGuesses: raw.hideGuesses === true,
 			matchShape: raw.matchShape === true,
 			townMatchShape: raw.townMatchShape !== false,
 			sheetBackground:
-				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
-				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground),
+				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ?? DEFAULTS.sheetBackground,
 			reminderLines: parseReminderLines(raw.reminderLines)
 		};
 	} catch {

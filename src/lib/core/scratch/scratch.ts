@@ -7,10 +7,7 @@
  * through the theme, so ink stays readable in light and dark themes.
  */
 
-/**
- * v2 (2026-10-16): each stroke carries its own size. v3 (2026-10-17): a player keeps several
- * pads, each with a title, a paper colour, a lock and a hide switch.
- */
+/** Saved pads of any other version are not read (`readPad`). */
 const SCRATCH_SCHEMA_VERSION = 3;
 
 /** How far a point can sit from the pad's corner, in pad units (a guard on saved data). */
@@ -53,9 +50,6 @@ export function parseSizes(raw: unknown): Record<ScratchTool, number> {
 	}
 	return sizes;
 }
-
-/** v1 strokes had one fixed width per tool. */
-const V1_WIDTH: Record<ScratchTool, number> = { pen: 0.008, eraser: 0.05 };
 
 /** Points closer than this to the last one (a fraction of the width) are dropped. */
 const MIN_POINT_DISTANCE = 0.0015;
@@ -230,37 +224,24 @@ function isStroke(value: unknown): value is ScratchStroke {
 }
 
 /**
- * Reads a saved pad from any build. A newer build can open a pad saved by an older one, so
- * each schema version upgrades here; unreadable strokes are dropped rather than failing.
+ * Reads a saved pad of the current version; any other version is undefined (no migrations,
+ * Trevor 2026-11-10). Unreadable strokes are dropped rather than failing.
  */
-export function migratePad(raw: unknown): ScratchPad | undefined {
+export function readPad(raw: unknown): ScratchPad | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const record = raw as Record<string, unknown>;
-	if (!Array.isArray(record.strokes)) return undefined;
-	let strokes: unknown[] = record.strokes;
-	switch (record.schemaVersion) {
-		case 1:
-			// v1 -> v2: strokes gain the fixed width v1 drew them at.
-			strokes = strokes.map((s) =>
-				s && typeof s === 'object' && 'tool' in s
-					? { ...s, size: V1_WIDTH[(s as { tool: ScratchTool }).tool] ?? V1_WIDTH.pen }
-					: s
-			);
-			break;
-		// v2 -> v3 changes no strokes; the pad's new fields take their defaults below.
-		case 2:
-		case SCRATCH_SCHEMA_VERSION:
-			break;
-		default:
-			return undefined;
+	if (!Array.isArray(record.strokes) || record.schemaVersion !== SCRATCH_SCHEMA_VERSION) {
+		return undefined;
 	}
+	const strokes: unknown[] = record.strokes;
 	const fallback = emptyPad();
 	const paper = (SCRATCH_PAPERS as readonly unknown[]).includes(record.paper)
 		? (record.paper as ScratchPaper)
 		: fallback.paper;
-	const createdAt = [record.createdAt, record.updatedAt].find(
-		(n): n is number => typeof n === 'number' && Number.isFinite(n)
-	);
+	const createdAt =
+		typeof record.createdAt === 'number' && Number.isFinite(record.createdAt)
+			? record.createdAt
+			: undefined;
 	return {
 		schemaVersion: SCRATCH_SCHEMA_VERSION,
 		strokes: strokes.filter(isStroke).map((s) => ({ ...s, points: [...s.points] })),

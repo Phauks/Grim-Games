@@ -37,18 +37,13 @@ describe("a player's notes on the seats of their grim", () => {
 		expect(notes).not.toHaveProperty('s0');
 	});
 
-	it("reads a version 1 seat's one note as its untitled first note", () => {
-		expect(parseSeatNotes({ schemaVersion: 1, notes: { s1: 'a', s2: 3, s3: ' ' } })).toEqual({
-			s1: [{ noteId: 'n1', title: '', text: 'a', hidden: false }]
-		});
-	});
-
 	it('reads only notes saved with a known version', () => {
 		const saved = { noteId: 'n1', title: 'T', text: 'a', hidden: true };
 		expect(
 			parseSeatNotes({ schemaVersion: SEAT_NOTES_VERSION, notes: { s1: [saved, 'x'], s2: 3 } })
 		).toEqual({ s1: [saved] });
 		expect(parseSeatNotes({ schemaVersion: 99, notes: { s1: [saved] } })).toEqual({});
+		expect(parseSeatNotes({ schemaVersion: 1, notes: { s1: 'a' } })).toEqual({});
 		expect(parseSeatNotes({ s1: 'a' })).toEqual({});
 		expect(parseSeatNotes('x')).toEqual({});
 	});

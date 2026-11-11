@@ -5,7 +5,6 @@ import {
 	type InfoTokenAsks,
 	type InfoTokenValue
 } from '#lib/core/data/info-tokens.ts';
-import { boldToRed } from '#lib/core/text/rich.ts';
 
 /**
  * A Storyteller's own card. Beyond the text:
@@ -20,15 +19,10 @@ export interface CustomInfoToken extends InfoToken {
 }
 
 /**
- * The Storyteller's own info tokens, kept on this device. Versioned, because a newer
- * build can open what an older one saved (CLAUDE.md); bump `version` with a migration.
+ * The Storyteller's own info tokens, kept on this device. Versioned, and only the current
+ * version is read (no migrations, Trevor 2026-11-10): any other starts empty.
  */
 export interface StoredInfoTokens {
-	/**
-	 * 2: `**bold**` means heavier type and colour has its own `[red]` tags (2026-10-16).
-	 * 3: `asks` replaces `shows: 'characters'` (3 characters) and `blank` (text) (2026-10-18);
-	 *    `asks.exactly`, `asks.notInPlay` and `answerOnly` were added later as optional fields.
-	 */
 	version: 3;
 	custom: CustomInfoToken[];
 }
@@ -101,36 +95,21 @@ export function parseAsks(raw: unknown): InfoTokenAsks | undefined {
 export function parseStoredInfoTokens(raw: unknown): StoredInfoTokens {
 	if (typeof raw !== 'object' || raw === null) return emptyStore();
 	const value = raw as { version?: unknown; custom?: unknown };
-	const version = value.version;
-	if ((version !== 1 && version !== 2 && version !== 3) || !Array.isArray(value.custom))
-		return emptyStore();
-	// Version 1 drew bold as red: keep the red, as a colour (Trevor, 2026-10-16).
-	const migrate = version === 1 ? boldToRed : (text: string) => text;
+	if (value.version !== 3 || !Array.isArray(value.custom)) return emptyStore();
 	const custom: CustomInfoToken[] = [];
 	for (const item of value.custom) {
 		if (typeof item !== 'object' || item === null) continue;
-		const { id, text, shows, characterIds, blank, asks, answerOnly } = item as Record<
-			string,
-			unknown
-		>;
+		const { id, text, characterIds, asks, answerOnly } = item as Record<string, unknown>;
 		if (typeof id !== 'string' || typeof text !== 'string' || !text.trim()) continue;
 		if (custom.some((t) => t.id === id)) continue;
-		// Before version 3 a card asked for up to 3 characters and a word in the blank.
-		const parsed =
-			version === 3
-				? parseAsks(asks)
-				: parseAsks({
-						characters: shows === 'characters' ? 3 : undefined,
-						value: blank === true ? { kind: 'text' } : undefined
-					});
+		const parsed = parseAsks(asks);
 		custom.push({
 			id,
-			text: migrate(text).slice(0, MAX_CUSTOM_TEXT),
+			text: text.slice(0, MAX_CUSTOM_TEXT),
 			source: 'custom',
 			...(parsed ? { asks: parsed } : {}),
-			// Added later in version 3 as an optional field; only with something to fill in.
+			// Only with something to fill in.
 			...(parsed?.value && answerOnly === true ? { answerOnly: true as const } : {}),
-			// Added later in version 1 as an optional field, so older saves read as before.
 			...(Array.isArray(characterIds) && characterIds.some((c) => typeof c === 'string')
 				? { characterIds: [...new Set(characterIds.filter((c) => typeof c === 'string'))] }
 				: {})

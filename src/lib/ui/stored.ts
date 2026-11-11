@@ -1,9 +1,9 @@
 /**
  * localStorage that never throws (private windows, blocked storage, a full quota), for every
  * part of the app (component review §4.6, 2026-10-17: about thirty files wrote their own
- * try/catch around it). A stored value that a newer or older build wrote goes through the
- * caller's `parse`, which brings it up to the current version or returns its default; the
- * app is an offline-first PWA, so a newer build can read what an older one saved (CLAUDE.md).
+ * try/catch around it). A stored value goes through the caller's `parse`, which reads only
+ * the current shape and otherwise returns its default: stored data is never migrated
+ * (Trevor, 2026-11-10).
  */
 
 /**

@@ -5655,8 +5655,12 @@ test("a game mode is named where the script's name is, apart from it", async ({ 
 	await page.evaluate(
 		(id) =>
 			localStorage.setItem(
-				`grim-games:game-mode:v1:${id}`,
-				JSON.stringify({ modeId: 'sushi-buffet', restrictions: { banned: [], allowed: [] } })
+				`grim-games:game-mode:v2:${id}`,
+				JSON.stringify({
+					modeId: 'sushi-buffet',
+					rules: [],
+					restrictions: { banned: [], allowed: [] }
+				})
 			),
 		gameId
 	);
@@ -5706,8 +5710,12 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.evaluate(
 			(id) =>
 				localStorage.setItem(
-					`grim-games:game-mode:v1:${id}`,
-					JSON.stringify({ modeId: 'trouble', restrictions: { banned: [], allowed: [] } })
+					`grim-games:game-mode:v2:${id}`,
+					JSON.stringify({
+						modeId: 'trouble',
+						rules: [],
+						restrictions: { banned: [], allowed: [] }
+					})
 				),
 			gameId
 		);
@@ -5929,8 +5937,12 @@ test('Join game names a game’s alternative mode beside its script', async ({ p
 	await page.evaluate(
 		(id) =>
 			localStorage.setItem(
-				`grim-games:game-mode:v1:${id}`,
-				JSON.stringify({ modeId: 'sushi-buffet', restrictions: { banned: [], allowed: [] } })
+				`grim-games:game-mode:v2:${id}`,
+				JSON.stringify({
+					modeId: 'sushi-buffet',
+					rules: [],
+					restrictions: { banned: [], allowed: [] }
+				})
 			),
 		gameId
 	);

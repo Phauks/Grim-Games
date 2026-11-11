@@ -4,17 +4,14 @@
  * the game's event log and its saved format don't change. The key carries a version; anything
  * unreadable reads as a standard game.
  *
- * v2 (2026-10-18) adds the special rules, each kept whole so a custom rule deleted later still
- * plays in the game that used it. A v1 game saved in a mode that became a rule (Specters, A
- * Script of Infinite Possibilities) reads as Standard with that rule.
+ * Special rules are kept whole, so a custom rule deleted later still plays in the game that
+ * used it.
  */
 import type { GameId } from '#lib/core/model/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	parseSpecialRule,
 	JINXED_PAIRS,
-	specialRuleById,
-	upgradeModeChoice,
 	type JinxedPairs,
 	type SpecialRule,
 	type StorytellerRestrictions
@@ -41,7 +38,6 @@ export interface GameModeRecord {
 }
 
 const KEY = (gameId: GameId) => `grim-games:game-mode:v2:${gameId}`;
-const V1_KEY = (gameId: GameId) => `grim-games:game-mode:v1:${gameId}`;
 
 const ids = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
@@ -87,22 +83,7 @@ export function readGameMode(gameId: GameId): GameModeRecord | undefined {
 			...recycling(r)
 		};
 	}
-	return readV1(gameId);
-}
-
-/** A game saved before special rules: a mode that became a rule is Standard with it. */
-function readV1(gameId: GameId): GameModeRecord | undefined {
-	const raw = readStored(V1_KEY(gameId));
-	if (!raw || typeof raw !== 'object') return undefined;
-	const r = raw as Record<string, unknown>;
-	if (typeof r.modeId !== 'string') return undefined;
-	const choice = upgradeModeChoice(r.modeId);
-	return {
-		modeId: choice.modeId,
-		rules: choice.ruleIds.flatMap((id) => specialRuleById(id) ?? []),
-		restrictions: restrictionsOf(r.restrictions),
-		...recycling(r)
-	};
+	return undefined;
 }
 
 export function writeGameMode(gameId: GameId, record: GameModeRecord): void {

@@ -37,18 +37,6 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 	deaths: ['private']
 };
 
-/**
- * Parts that moved into the file's rules block (M61e), with where each went, so a file written
- * before says how to fix it.
- */
-const MOVED: Readonly<Record<string, string>> = {
-	countChanges: 'rules.setupModifier',
-	demonAttacks: 'rules.demonAttack',
-	abilities: 'rules.deadKeepAbilities',
-	nightSteps: 'rules.nightWakes',
-	nominations: 'rules.onNominated'
-};
-
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
@@ -235,8 +223,7 @@ function checkFile(
 		for (const [key, part] of Object.entries(parts)) {
 			const path = `parts.${key}`;
 			if (!allowed.includes(key)) {
-				if (key in MOVED) add(path, `moved to ${MOVED[key]}`);
-				else if (!(key in MODE_ONLY)) add(path, 'unknown part');
+				if (!(key in MODE_ONLY)) add(path, 'unknown part');
 				continue;
 			}
 			const kinds = KINDS[key as keyof typeof KINDS];

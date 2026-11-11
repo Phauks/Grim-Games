@@ -76,18 +76,8 @@ export interface RoomMember {
 	game?: string;
 }
 
-/** A name (and seat) waiting for the Storyteller, from before players joined without approval. */
-export interface RoomRequest {
-	requestId: string;
-	memberId: string;
-	name: string;
-	seatId?: SeatId;
-	/** Milliseconds since the epoch. */
-	at: number;
-}
-
 export interface RoomState {
-	/** The stored shape's version (room-state.ts); missing on rooms from before it. */
+	/** The stored shape's version (room-state.ts). */
 	schemaVersion?: number;
 	/** SHA-256 (hex) of the Storyteller's host key. */
 	hostKeyHash: string;
@@ -95,8 +85,6 @@ export interface RoomState {
 	gameId?: string;
 	public?: PublicGameState;
 	members: RoomMember[];
-	/** Rooms saved before players joined without approval (2026-10-26); `withoutRequests` empties it. */
-	requests: RoomRequest[];
 	/** A spectators' vote the Storyteller has open (Specters), if any. */
 	vote?: SpectatorVote;
 	/**
@@ -225,7 +213,7 @@ export function isScript(value: unknown): value is Script {
 }
 
 export function newRoom(hostKeyHash: string): RoomState {
-	return { hostKeyHash, members: [], requests: [] };
+	return { hostKeyHash, members: [] };
 }
 
 /**
@@ -234,7 +222,7 @@ export function newRoom(hostKeyHash: string): RoomState {
  */
 export function hostView(room: RoomState, present?: ReadonlySet<string>): HostView {
 	const members = withNumberedNames(room, present);
-	const view: HostView = { type: 'host-view', members, requests: room.requests };
+	const view: HostView = { type: 'host-view', members };
 	const here = (m: RoomMember, voted: boolean) => !present || present.has(m.memberId) || voted;
 	if (room.vote) {
 		const votes = room.vote.votes;
@@ -407,16 +395,14 @@ function seatExists(room: RoomState, seatId: SeatId): boolean {
 
 /**
  * A player's name, set straight away: players no longer wait for approval (Trevor, 2026-10-26:
- * "we don't approve anymore"); the Storyteller seats them. Any request of theirs, and any seat
- * an older app asks for, is dropped. Invalid names change nothing.
+ * "we don't approve anymore"); the Storyteller seats them. Invalid names change nothing.
  */
 export function setName(room: RoomState, memberId: string, raw: { name: unknown }): RoomState {
 	const name = cleanName(raw.name);
 	const member = room.members.find((m) => m.memberId === memberId);
 	if (!name || !member) return room;
-	const asked = room.requests.some((r) => r.memberId === memberId);
-	if (member.name === name && !asked) return room;
-	return setMember(cancelRequest(room, memberId), memberId, { name });
+	if (member.name === name) return room;
+	return setMember(room, memberId, { name });
 }
 
 /** The Storyteller seats a named member, moving anyone else out of that seat. */
@@ -427,17 +413,6 @@ export function seat(room: RoomState, memberId: string, seatId: unknown): RoomSt
 	}
 	if (member.seatId === seatId) return room;
 	return setMember(seatTaken(room, seatId as SeatId), memberId, { seatId: seatId as SeatId });
-}
-
-/** Rooms saved while players still asked: each request's name becomes the member's name. */
-export function withoutRequests(room: RoomState): RoomState {
-	if (room.requests.length === 0) return room;
-	const named = room.requests.reduce((r, req) => setName(r, req.memberId, req), room);
-	return { ...named, requests: [] };
-}
-
-function cancelRequest(room: RoomState, memberId: string): RoomState {
-	return { ...room, requests: room.requests.filter((r) => r.memberId !== memberId) };
 }
 
 function setMember(room: RoomState, memberId: string, change: Partial<RoomMember>): RoomState {

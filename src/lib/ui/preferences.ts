@@ -244,10 +244,7 @@ export const AMBIENCE_LEVEL: ScaleRange = { min: 0.05, max: 1, step: 0.05 };
 export type TextScale = number;
 export type IconScale = number;
 
-/**
- * A stored size snapped to its slider: the nearest step, inside the range. Sizes saved by
- * older builds (0.875, 1.125 from the S/M/L choices) become the nearest 5%.
- */
+/** A stored size snapped to its slider: the nearest step, inside the range. */
 export function parseScale(input: unknown, range: ScaleRange, fallback = 1): number {
 	if (typeof input !== 'number' || !Number.isFinite(input)) return fallback;
 	const clamped = Math.min(range.max, Math.max(range.min, input));
@@ -313,10 +310,7 @@ function oneOf<T extends string>(values: readonly T[], input: unknown, fallback:
 	return (values as readonly unknown[]).includes(input) ? (input as T) : fallback;
 }
 
-/** Icon slots saved under an older name: new name -> old name. */
-const RENAMED_SLOTS: Partial<Record<IconSlot, string>> = { edit: 'rename' };
-
-/** Builds valid preferences from anything (old versions, hand edits, garbage). */
+/** Builds valid preferences from anything (hand edits, garbage). */
 export function parsePreferences(raw: unknown): Preferences {
 	const input = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const overrides = (
@@ -324,7 +318,7 @@ export function parsePreferences(raw: unknown): Preferences {
 	) as Record<string, unknown>;
 	const iconOverrides: Preferences['iconOverrides'] = {};
 	for (const slot of iconSlots) {
-		const id = overrides[slot] ?? overrides[RENAMED_SLOTS[slot] ?? ''];
+		const id = overrides[slot];
 		if (isIconChoice(slot, id)) iconOverrides[slot] = id;
 	}
 	const iconScale = parseScale(input.iconScale, ICON_SCALE, DEFAULT_PREFERENCES.iconScale);
@@ -334,8 +328,11 @@ export function parsePreferences(raw: unknown): Preferences {
 		fonts: parseFonts(input),
 		textScale: parseScale(input.textScale, TEXT_SCALE, DEFAULT_PREFERENCES.textScale),
 		iconScale,
-		// Saved before the split, the one icon size applied to both.
-		characterIconScale: parseScale(input.characterIconScale, ICON_SCALE, iconScale),
+		characterIconScale: parseScale(
+			input.characterIconScale,
+			ICON_SCALE,
+			DEFAULT_PREFERENCES.characterIconScale
+		),
 		textAlign: (TEXT_ALIGNS as readonly unknown[]).includes(input.textAlign)
 			? (input.textAlign as TextAlign)
 			: DEFAULT_PREFERENCES.textAlign,
@@ -345,7 +342,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		iconOverrides,
 		tokenAppearance: parseTokenAppearance(input.tokenAppearance),
 		assistance: parseAssistance(input.assistance),
-		cornerLines: parseCornerLines(input.cornerLines, input.assistance),
+		cornerLines: parseCornerLines(input.cornerLines),
 		tileFace: (TILE_FACES as readonly unknown[]).includes(input.tileFace)
 			? (input.tileFace as TileFace)
 			: DEFAULT_PREFERENCES.tileFace,
@@ -427,28 +424,16 @@ export function parsePreferences(raw: unknown): Preferences {
 	};
 }
 
-/** Roles the two fonts of older builds (`displayFont`, `textFont`) covered. */
-const LEGACY_DISPLAY_ROLES: readonly FontRole[] = ['heading', 'character'];
-
-/**
- * Per-role fonts. Older builds saved one `displayFont` (titles and character names) and one
- * `textFont` (everything else); those carry over to the matching roles when `fonts` is absent.
- */
+/** Per-role fonts the user picked. */
 function parseFonts(input: Record<string, unknown>): Preferences['fonts'] {
 	const fonts: Preferences['fonts'] = {};
-	if (input.fonts && typeof input.fonts === 'object') {
-		const saved = input.fonts as Record<string, unknown>;
-		for (const role of FONT_ROLES) {
-			const font = saved[role];
-			if (isFontFor(role, font)) fonts[role] = font;
-		}
-		return fonts;
-	}
+	const saved = (input.fonts && typeof input.fonts === 'object' ? input.fonts : {}) as Record<
+		string,
+		unknown
+	>;
 	for (const role of FONT_ROLES) {
-		// The account role came later and stays plain unless picked for itself.
-		if (role === 'account') continue;
-		const legacy = LEGACY_DISPLAY_ROLES.includes(role) ? input.displayFont : input.textFont;
-		if (isFontFor(role, legacy)) fonts[role] = legacy;
+		const font = saved[role];
+		if (isFontFor(role, font)) fonts[role] = font;
 	}
 	return fonts;
 }

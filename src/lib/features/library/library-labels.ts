@@ -6,8 +6,8 @@
  *
  * Labels are kept apart from the scripts themselves and keyed by what the script is
  * (`libraryKey`), so the same script keeps its labels whether it is listed from this device or
- * from the account, and saved records never change shape. Versioned, because a newer build can
- * open what an older one stored (CLAUDE.md).
+ * from the account, and saved records never change shape. Versioned; another version is not
+ * read (no migrations, CLAUDE.md).
  */
 
 /** 2: folders can sit inside other folders (`parent`). Version 1 data reads as top-level folders. */

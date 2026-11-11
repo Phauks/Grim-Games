@@ -5,7 +5,7 @@
  */
 import { parseFeedback, type GameFeedback } from './feedback.ts';
 
-/** Bump with a migration in `parseSavedFeedback` when the saved shape changes. */
+/** Bump when the saved shape changes; `parseSavedFeedback` reads only this version. */
 export const SAVED_FEEDBACK_VERSION = 1;
 
 /** One player's feedback as saved: `id` is the room's, name and seat only when given. */
@@ -48,7 +48,7 @@ function parseEntries(raw: unknown): SavedFeedbackEntry[] {
 
 /**
  * Saved feedback from storage, which an older or newer build may have written. Anything
- * unreadable gives none; there is no older version to migrate yet.
+ * unreadable gives none; another version is never migrated.
  */
 export function parseSavedFeedback(raw: unknown): SavedFeedbackEntry[] {
 	if (typeof raw !== 'object' || raw === null) return [];

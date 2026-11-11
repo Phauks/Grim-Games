@@ -4,7 +4,7 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	almanacPage,
 	describeSource,
-	migrateSavedScript,
+	readSavedScript,
 	reloadSavedScript,
 	SAVED_SCRIPT_VERSION,
 	sameScript,
@@ -29,10 +29,10 @@ function record(overrides: Partial<SavedScript> = {}): SavedScript {
 
 describe('saved scripts', () => {
 	it('reads current records and leaves unreadable or newer ones alone', () => {
-		expect(migrateSavedScript(record())).toEqual(record());
-		expect(migrateSavedScript({ ...record(), schemaVersion: 2 })).toBeUndefined();
-		expect(migrateSavedScript({ scriptId: 'x' })).toBeUndefined();
-		expect(migrateSavedScript(null)).toBeUndefined();
+		expect(readSavedScript(record())).toEqual(record());
+		expect(readSavedScript({ ...record(), schemaVersion: 2 })).toBeUndefined();
+		expect(readSavedScript({ scriptId: 'x' })).toBeUndefined();
+		expect(readSavedScript(null)).toBeUndefined();
 	});
 
 	it('matches the same script whatever its source', () => {

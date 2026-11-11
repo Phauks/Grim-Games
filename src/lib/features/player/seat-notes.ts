@@ -4,11 +4,11 @@
  * player). Kept on this phone only, per room, like guesses (grim-guesses.ts); seat ids are new
  * in every game, so a new game starts with none.
  *
- * v2 (2026-10-26) keeps several titled notes per seat, as the game's notes (Trevor: "to allow
- * for multiple notes per player"); a v1 seat's one note becomes its untitled first note.
+ * Each seat keeps several titled notes, as the game's notes (Trevor, 2026-10-26: "to allow
+ * for multiple notes per player").
  *
- * Saved with `schemaVersion`: a newer build can open notes an older one wrote, so
- * `parseSeatNotes` reads every version ever saved.
+ * Saved with `schemaVersion`, and only the current version is read (no migrations, Trevor
+ * 2026-11-10): notes in any other format start empty.
  */
 import type { TitledNote } from '#lib/ui/notes/note.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
@@ -21,7 +21,7 @@ export type SeatNotes = Record<string, TitledNote[]>;
 /** A note as written: no `noteId` adds it. */
 export type WrittenNote = Omit<TitledNote, 'noteId'> & { noteId?: string };
 
-/** A room holds at most this many players, so older seats' notes beyond it are dropped. */
+/** A room holds at most this many players, so notes on seats beyond it are dropped. */
 const MAX_SEATS = 40;
 /** Plenty for one player; older notes beyond it are dropped. */
 const MAX_NOTES = 20;
@@ -34,7 +34,7 @@ const key = (room: string) => `grim-games:play:seat-notes:${room}`;
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** A v2 seat's notes; ones that are not notes, or have nothing in them, are dropped. */
+/** A seat's notes; ones that are not notes, or have nothing in them, are dropped. */
 function readNotes(raw: unknown): TitledNote[] {
 	if (!Array.isArray(raw)) return [];
 	const seen = new Set<string>();
@@ -52,15 +52,8 @@ function readNotes(raw: unknown): TitledNote[] {
 export function parseSeatNotes(raw: unknown): SeatNotes {
 	if (!isRecord(raw)) return {};
 	const { schemaVersion, notes } = raw;
-	if (!isRecord(notes)) return {};
+	if (schemaVersion !== SEAT_NOTES_VERSION || !isRecord(notes)) return {};
 	const entries = Object.entries(notes).flatMap(([seatId, value]): [string, TitledNote[]][] => {
-		if (schemaVersion === 1) {
-			// One note per seat: it becomes the seat's untitled first note.
-			return typeof value === 'string' && value.trim()
-				? [[seatId, [{ noteId: 'n1', title: '', text: value.slice(0, MAX_NOTE), hidden: false }]]]
-				: [];
-		}
-		if (schemaVersion !== SEAT_NOTES_VERSION) return [];
 		const list = readNotes(value);
 		return list.length ? [[seatId, list]] : [];
 	});

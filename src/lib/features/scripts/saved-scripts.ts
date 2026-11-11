@@ -3,8 +3,8 @@
  * recently used one). Design: 08-script-loading.md §5.4.
  *
  * Records hold the TPI JSON, not the parsed script, so a newer build reparses them with
- * its own loader. They carry `schemaVersion` because a newer build can open records an
- * older build wrote (CLAUDE.md); `scriptId` and `revision` are there for 0.99 cloud sync.
+ * its own loader. They carry `schemaVersion`, and another version is not read (no
+ * migrations, Trevor 2026-11-10); `scriptId` and `revision` are there for 0.99 cloud sync.
  */
 import { BLOODSTAR_ORIGIN } from './bloodstar-api.ts';
 import { HOMEBREW_ORIGIN } from './homebrew-scripts-api.ts';
@@ -34,13 +34,13 @@ export type ScriptSource =
 	/**
 	 * Made on the Script builder page. `variationOf`: the script it was edited from, when that
 	 * wasn't made from scratch here (Trevor, 2026-10-17: edits are marked as variations, and
-	 * what changed can be seen). Added later, so older records lack it.
+	 * what changed can be seen).
 	 */
 	| { kind: 'built'; variationOf?: VariationOf }
 	| { kind: 'file'; fileName: string }
 	/**
 	 * `page`: the script's source page when the link is a file behind one (a Carousel script's
-	 * Drive file lives in the collection doc). Added later, so older records lack it.
+	 * Drive file lives in the collection doc).
 	 */
 	| { kind: 'link'; url: string; page?: string }
 	| { kind: 'botcscripts'; scriptId: number; version: string }
@@ -78,10 +78,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Brings a stored record up to the current version. Undefined when it can't be read, or
- * was written by a newer build (it is then left alone, not deleted).
+ * Reads a stored record of the current version. Undefined when it can't be read or has
+ * another version (it is then left alone, not deleted).
  */
-export function migrateSavedScript(raw: unknown): SavedScript | undefined {
+export function readSavedScript(raw: unknown): SavedScript | undefined {
 	if (!isObject(raw) || typeof raw.scriptId !== 'string') return undefined;
 	if (raw.schemaVersion !== SAVED_SCRIPT_VERSION) return undefined;
 	if (typeof raw.name !== 'string' || !Array.isArray(raw.json) || !isObject(raw.source)) {

@@ -140,9 +140,6 @@ export class RoomHost {
 			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
 			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
 			this.#connect(stored);
-			// Grim view from before passwords were all there was: the link is gone, so a password.
-			if (stored.viewerKey && !stored.viewerPassword)
-				void this.setViewerPassword(newGrimViewPassword());
 		}
 	}
 

@@ -36,12 +36,6 @@ describe('parsePreferences', () => {
 		).toEqual(DEFAULT_PREFERENCES);
 	});
 
-	it('reads an icon picked under a slot’s old name', () => {
-		expect(parsePreferences({ iconOverrides: { rename: 'ph:user-switch' } }).iconOverrides).toEqual(
-			{ edit: 'ph:user-switch' }
-		);
-	});
-
 	it('keeps valid choices', () => {
 		const valid = {
 			themeId: 'grimoire',
@@ -196,11 +190,6 @@ describe('parsePreferences', () => {
 		// A night recording is not offered in the day.
 		expect(chosen.dayAmbience).toBe('day-forest');
 	});
-
-	it('gives character icons the one icon size saved before the split', () => {
-		expect(parsePreferences({ iconScale: 1.25 }).characterIconScale).toBe(1.25);
-		expect(parsePreferences({ iconScale: 1.25, characterIconScale: 1 }).characterIconScale).toBe(1);
-	});
 });
 
 describe('size sliders', () => {
@@ -217,36 +206,7 @@ describe('size sliders', () => {
 });
 
 describe('font roles in saved preferences', () => {
-	it('carries an old displayFont to Headings and Character names, and textFont to the rest', () => {
-		const old = parsePreferences({ displayFont: 'im-fell-english-sc', textFont: 'lexend' });
-		expect(old.fonts).toEqual({
-			heading: 'im-fell-english-sc',
-			character: 'im-fell-english-sc',
-			reminder: 'lexend',
-			ability: 'lexend',
-			player: 'lexend',
-			control: 'lexend',
-			body: 'lexend'
-		});
-		expect(old).not.toHaveProperty('displayFont');
-		expect(old).not.toHaveProperty('textFont');
-	});
-
-	it('carries over only one of the old keys when the other is missing or invalid', () => {
-		expect(parsePreferences({ displayFont: 'cinzel', textFont: 'comic-sans' }).fonts).toEqual({
-			heading: 'cinzel',
-			character: 'cinzel'
-		});
-		expect(parsePreferences({ textFont: 'inter' }).fonts).toEqual({
-			reminder: 'inter',
-			ability: 'inter',
-			player: 'inter',
-			control: 'inter',
-			body: 'inter'
-		});
-	});
-
-	it('prefers the new per-role fonts over the old keys', () => {
+	it('reads only the per-role fonts', () => {
 		expect(
 			parsePreferences({ fonts: { body: 'inter' }, displayFont: 'cinzel', textFont: 'lexend' })
 				.fonts
@@ -262,7 +222,7 @@ describe('font roles in saved preferences', () => {
 	});
 
 	it('survives a save and reload', () => {
-		const saved = parsePreferences({ textFont: 'lexend' });
+		const saved = parsePreferences({ fonts: { body: 'lexend' } });
 		expect(parsePreferences(JSON.parse(JSON.stringify(saved)))).toEqual(saved);
 	});
 });
