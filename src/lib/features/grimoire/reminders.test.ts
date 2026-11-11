@@ -222,7 +222,9 @@ describe('bankReminders', () => {
 		// Script order otherwise: the Monk (a Townsfolk) before the Poisoner.
 		expect(bankReminders(g, characters)[0].characterId).toBe('monk');
 		expect(bankReminders(g, characters)[0].now).toBe(false);
-		expect(bankReminders(g, characters, stepReminders('monk', 'other'))[0]).toMatchObject({
+		expect(
+			bankReminders(g, characters, stepReminders('monk', 'other', characters.get('monk')))[0]
+		).toMatchObject({
 			characterId: 'monk',
 			label: 'Safe',
 			now: true
@@ -232,7 +234,7 @@ describe('bankReminders', () => {
 		let g = game();
 		g = run(g, { type: 'AssignCharacter', seatId: g.seating[1], characterId: 'monk' });
 		g = run(g, { type: 'AssignCharacter', seatId: g.seating[2], characterId: 'poisoner' });
-		const focus = stepReminders('poisoner', 'other');
+		const focus = stepReminders('poisoner', 'other', characters.get('poisoner'));
 		expect(bankReminders(g, characters, focus)[0].characterId).toBe('poisoner');
 		const kept = bankReminders(g, characters, focus, false);
 		expect(kept[0]).toMatchObject({ characterId: 'monk', now: false });
@@ -245,6 +247,7 @@ describe('bankReminders', () => {
 			...characters.get('poisoner')!,
 			id: 'merchant',
 			edition: undefined,
+			rules: undefined,
 			reminders: ['Chosen', 'Paid'],
 			remindersGlobal: []
 		};
@@ -253,8 +256,10 @@ describe('bankReminders', () => {
 		expect(stepReminders('monk', 'first', characters.get('monk')).labels).toEqual([]);
 	});
 	it('marks only the reminders the step can use that night', () => {
-		expect(stepReminders('grandmother', 'first').labels).toEqual([]);
-		expect(stepReminders('grandmother', 'other').labels).toEqual(['Dead']);
+		expect(stepReminders('grandmother', 'first', characters.get('grandmother')).labels).toEqual([]);
+		expect(stepReminders('grandmother', 'other', characters.get('grandmother')).labels).toEqual([
+			'Dead'
+		]);
 	});
 });
 

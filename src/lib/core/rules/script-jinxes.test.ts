@@ -16,7 +16,7 @@ import { castWith, run, type CastGame } from '#lib/core/model/fixtures.test-supp
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { abilityState, registrations } from './ability.ts';
 import { earlyOnly } from './becomes.ts';
@@ -139,8 +139,8 @@ describe('a script jinx between two official characters', () => {
 
 	it('is text only with no rules, and reads the same from either side', () => {
 		const { script } = load(entries());
-		expect(rulesForJinx(script, 'chef', 'monk')).toBeUndefined();
-		expect(rulesForJinx(script, 'monk', 'chef')).toBeUndefined();
+		expect(rulesForJinx(script, 'chef', 'monk', committedCharacters())).toBeUndefined();
+		expect(rulesForJinx(script, 'monk', 'chef', committedCharacters())).toBeUndefined();
 		const cast = castWith({ script });
 		const { game, ctx, seats } = cast(['chef', 'monk', 'imp', 'empath', 'poisoner']);
 		expect(abilityState(game, seats[0], ctx.characters).works).toBe(true);
@@ -181,7 +181,12 @@ describe('a script that rewords an official jinx', () => {
 			'saint'
 		];
 		const free = load(entries('The Heretic and the Pit-Hag ignore each other here.'));
-		const [jinx] = scriptJinxes(data.jinxes, scriptCharacterIds(free.script), free.script.jinxes);
+		const [jinx] = scriptJinxes(
+			data.jinxes,
+			scriptCharacterIds(free.script),
+			free.script.jinxes,
+			committedCharacters()
+		);
 		expect([jinx.source, jinx.exclusive]).toEqual(['script', false]);
 		const cast = castWith({ script: free.script });
 		const { game, ctx, seats } = cast(['pithag', 'imp', 'chef', 'empath', 'heretic']);
@@ -210,7 +215,7 @@ describe('a script that rewords an official jinx', () => {
 			'empath'
 		]);
 		expect(script.jinxes).toBeUndefined();
-		expect(rulesForJinx(script, 'damsel', 'spy')).toEqual({
+		expect(rulesForJinx(script, 'damsel', 'spy', committedCharacters())).toEqual({
 			impairs: { kind: 'poisoned', when: ['partner-in-play'] }
 		});
 	});
@@ -375,7 +380,9 @@ describe('homebrew sentences', () => {
 			'godfather',
 			'imp'
 		]);
-		expect(rulesForJinx(script, 'godfather', 'lamplighter')).toEqual({ exclusive: true });
+		expect(rulesForJinx(script, 'godfather', 'lamplighter', committedCharacters())).toEqual({
+			exclusive: true
+		});
 	});
 
 	it('H3: the Spy registers as good to the Lamplighter, only with always', () => {

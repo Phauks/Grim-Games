@@ -71,7 +71,7 @@ export function ownJinxRules(
 	game: Pick<Game, 'script'>,
 	owner: CharacterId,
 	partner: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): JinxRules | undefined {
 	if (owner === partner) return undefined;
 	const rule = rulesForJinx(game.script, owner, partner, characters);
@@ -88,7 +88,7 @@ export function jinxedWith(
 	game: Pick<Game, 'script'>,
 	partner: CharacterId,
 	test: (rule: JinxRules) => boolean,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): { characterId: CharacterId; rule: JinxRules }[] {
 	return scriptCharacterIds(game.script).flatMap((characterId) => {
 		const rule = ownJinxRules(game, characterId, partner, characters);
@@ -105,7 +105,7 @@ export function ownJinxes(
 	game: Pick<Game, 'script'>,
 	owner: CharacterId,
 	test: (rule: JinxRules) => boolean,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): { partner: CharacterId; rule: JinxRules }[] {
 	const named = (id: CharacterId) => rulesOf(id, characters)?.jinxes?.[owner] !== undefined;
 	const partners = new Set([
@@ -129,12 +129,12 @@ export function jinxEffect<K extends Exclude<JinxRuleKey, 'exclusive'>>(
 	owner: CharacterId,
 	partner: CharacterId,
 	key: K,
-	characters?: RulesLookup,
+	characters: RulesLookup,
 	at?: { seatId?: SeatId }
 ): NonNullable<JinxRules[K]> | undefined {
 	const effect = ownJinxRules(game, owner, partner, characters)?.[key] as JinxEffect | undefined;
 	if (!effect || aboutHolder(effect)) return undefined;
-	const lookup = characters as CharacterLookup | undefined;
+	const lookup = characters as CharacterLookup;
 	return jinxApplies(game, owner, partner, effect, lookup, at)
 		? (effect as NonNullable<JinxRules[K]>)
 		: undefined;
@@ -149,10 +149,10 @@ export function ownJinxEffects<K extends Exclude<JinxRuleKey, 'exclusive'>>(
 	game: Pick<Game, 'script'> & Partial<Game>,
 	owner: CharacterId,
 	key: K,
-	characters?: RulesLookup,
+	characters: RulesLookup,
 	test: (effect: NonNullable<JinxRules[K]>) => boolean = () => true
 ): { partner: CharacterId; effect: NonNullable<JinxRules[K]> }[] {
-	const lookup = characters as CharacterLookup | undefined;
+	const lookup = characters as CharacterLookup;
 	return ownJinxes(game, owner, (r) => r[key] !== undefined, characters).flatMap(
 		({ partner, rule }) => {
 			const effect = rule[key] as NonNullable<JinxRules[K]>;
@@ -221,7 +221,7 @@ export function registeredTo(
 export function notDeclared(
 	game: Pick<Game, 'script'>,
 	characterId: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): boolean {
 	return ownJinxEffects(game, characterId, 'notDeclared', characters).length > 0;
 }
@@ -235,7 +235,7 @@ export function notDeclared(
 export function createdTooLate(
 	game: Pick<Game, 'script' | 'pastDays'>,
 	changer: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	return ownJinxEffects(
 		game,
@@ -256,11 +256,13 @@ export function alsoBecomes(
 	game: Pick<Game, 'script'>,
 	changer: CharacterId,
 	characterId: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterType | undefined {
 	const effect = ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
 	if (effect?.players === 'neighbours') return undefined;
-	return jinxApplies(game, changer, characterId, effect) ? effect?.type : undefined;
+	return jinxApplies(game, changer, characterId, effect, characters as CharacterLookup)
+		? effect?.type
+		: undefined;
 }
 
 /**
@@ -273,9 +275,9 @@ export function diesWhenExecutedBy(
 	game: Game,
 	seatId: SeatId,
 	owner: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId | undefined {
-	const lookup = characters as CharacterLookup | undefined;
+	const lookup = characters as CharacterLookup;
 	return ownJinxes(game, owner, (r) => r.diesWhenExecuted !== undefined, characters).find(
 		({ partner, rule }) =>
 			jinxApplies(game, owner, partner, rule.diesWhenExecuted, lookup, { seatId })
@@ -322,7 +324,7 @@ export interface ScriptJinx extends Jinx {
  */
 export function jinxIsExclusive(
 	jinx: Jinx,
-	characters?: RulesLookup,
+	characters: RulesLookup,
 	scope?: { jinxes?: readonly Jinx[] }
 ): boolean {
 	const [a, b] = jinx.characters;
@@ -339,11 +341,14 @@ export function jinxIsExclusive(
 export function barredAbilities(
 	giver: CharacterId,
 	script: JinxScript,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	return idsOf(script).filter((id) => {
 		const effect = rulesForJinx(scopeOf(script), giver, id, characters)?.cannotCreate;
-		return effect?.via === 'givesAbility' && jinxApplies(undefined, giver, id, effect);
+		return (
+			effect?.via === 'givesAbility' &&
+			jinxApplies(undefined, giver, id, effect, characters as CharacterLookup)
+		);
 	});
 }
 
@@ -358,12 +363,13 @@ export function givenInstead(
 	giver: CharacterId,
 	ability: CharacterId,
 	script: JinxScript,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): GivenInstead | undefined {
 	const ids = idsOf(script);
 	if (giver === ability || !ids.includes(giver) || !ids.includes(ability)) return undefined;
 	const effect = rulesForJinx(scopeOf(script), giver, ability, characters)?.givenInstead;
-	if (!effect || !jinxApplies(undefined, giver, ability, effect)) return undefined;
+	if (!effect || !jinxApplies(undefined, giver, ability, effect, characters as CharacterLookup))
+		return undefined;
 	const { instead, type, upTo, where } = effect;
 	return {
 		instead,
@@ -384,7 +390,7 @@ export function jinxedPartners(
 	id: CharacterId,
 	question: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
 	script: JinxScript,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	const ids = idsOf(script);
 	if (!ids.includes(id)) return [];
@@ -397,7 +403,10 @@ export function jinxedPartners(
 					? rules.storytellerChooses
 					: undefined
 				: rules?.[question];
-		return effect !== undefined && jinxApplies(undefined, id, other, effect);
+		return (
+			effect !== undefined &&
+			jinxApplies(undefined, id, other, effect, characters as CharacterLookup)
+		);
 	});
 }
 
@@ -410,7 +419,7 @@ export function scriptJinxes(
 	index: JinxIndex,
 	scriptIds: Iterable<CharacterId>,
 	homebrewJinxes: readonly Jinx[] = [],
-	characters?: RulesLookup
+	characters: RulesLookup
 ): ScriptJinx[] {
 	const ids = new Set(scriptIds);
 	const own = new Map<string, Jinx>();
@@ -563,7 +572,7 @@ export function storytellerGains(
 export function arbitraryDeathPartners(
 	game: Pick<Game, 'script'>,
 	changer: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): CharacterId[] {
 	return ownJinxEffects(game, changer, 'arbitraryDeaths', characters).map((j) => j.partner);
 }
@@ -650,7 +659,7 @@ export function storytellerPicksNow(
 export function earlierTokens(
 	game: Pick<Game, 'script'>,
 	changer: CharacterId,
-	characters?: RulesLookup
+	characters: RulesLookup
 ): { partner: CharacterId; token: ReminderLabel }[] {
 	return ownJinxEffects(game, changer, 'changesCharacter', characters).map(
 		({ partner, effect }) => ({

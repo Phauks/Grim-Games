@@ -1,6 +1,7 @@
 {
 	"reminderPrompts": {
-		"Alive": "revive"
+		"Alive": "revive",
+		"Dead": "markDead"
 	},
 	"kills": {
 		"by": "demon",

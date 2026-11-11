@@ -13,7 +13,6 @@
  */
 import type { Character, CharacterId, Jinx } from '#lib/core/data/types.ts';
 import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
-import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { rulesForJinx, scriptJinxPartners } from './jinx-pairs.ts';
 import { aboutHolder } from './jinx-when.ts';
 
@@ -44,8 +43,7 @@ export function abilityJinxSetup(
 	lookup: (id: CharacterId) => Character | undefined,
 	homebrewJinxes: readonly Jinx[] = []
 ): AbilityJinxSetup {
-	const jinxesOf = (c: Character | undefined, id: CharacterId) =>
-		(c ? rulesOfCharacter(c) : rulesOf(id))?.jinxes;
+	const jinxesOf = (c: Character | undefined) => c?.rules?.jinxes;
 	const scope = { jinxes: homebrewJinxes };
 	const custom = new Map(
 		[...new Set([...chosen, ...scriptIds])].flatMap((id) => {
@@ -57,8 +55,8 @@ export function abilityJinxSetup(
 	for (const id of new Set(chosen)) {
 		const owner = lookup(id);
 		if (!owner) continue;
-		const own = Object.keys(jinxesOf(owner, id) ?? {});
-		const named = scriptIds.filter((p) => jinxesOf(lookup(p), p)?.[id] !== undefined);
+		const own = Object.keys(jinxesOf(owner) ?? {});
+		const named = scriptIds.filter((p) => jinxesOf(lookup(p))?.[id] !== undefined);
 		for (const partnerId of new Set([...own, ...named, ...scriptJinxPartners(scope, id)])) {
 			if (!scriptIds.includes(partnerId)) continue;
 			const partner = partnerId === id ? undefined : lookup(partnerId);

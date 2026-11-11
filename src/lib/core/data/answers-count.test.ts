@@ -2,6 +2,7 @@
  * The `count` answer (M77): how many players of a group match, with the official one-off
  * questions kept as presets that expand to it.
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -47,7 +48,7 @@ describe('count answers', () => {
 	});
 
 	it("writes the Mathematician's answer as a count of the abnormal", () => {
-		expect(rulesOf('mathematician')?.answers).toEqual({
+		expect(rulesOf('mathematician', committedCharacters())?.answers).toEqual({
 			question: 'count',
 			among: 'abnormal',
 			token: 'Abnormal'

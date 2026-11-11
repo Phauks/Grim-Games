@@ -305,6 +305,7 @@ describe('night text of ours', () => {
 		});
 		const homebrew: Character = { ...gm };
 		delete homebrew.edition;
+		delete homebrew.rules;
 		expect(nightTextFor(homebrew, 'other')?.text).toBe(gm.otherNightReminder);
 	});
 

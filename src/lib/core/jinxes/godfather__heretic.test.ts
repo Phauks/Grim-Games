@@ -42,7 +42,12 @@ describe('Godfather + Heretic jinx', () => {
 	});
 
 	it('warns at setup when both are chosen, and not when one is', () => {
-		const jinxes = scriptJinxes(data.jinxes, ['heretic', 'godfather', 'chef']);
+		const jinxes = scriptJinxes(
+			data.jinxes,
+			['heretic', 'godfather', 'chef'],
+			undefined,
+			committedCharacters()
+		);
 		expect(jinxes.map((j) => j.exclusive)).toEqual([true]);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'godfather'])).toHaveLength(1);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'chef'])).toEqual([]);

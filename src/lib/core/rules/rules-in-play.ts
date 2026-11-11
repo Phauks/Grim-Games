@@ -23,7 +23,7 @@ import { ownJinxes } from './jinxes.ts';
 export function rulesInPlay(
 	game: Game,
 	characterId: CharacterId,
-	characters?: CharacterLookup,
+	characters: CharacterLookup,
 	at: { seatId?: SeatId } = {}
 ): CharacterRules | undefined {
 	const own = rulesIn(game, characterId, characters);

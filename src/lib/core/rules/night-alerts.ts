@@ -85,7 +85,13 @@
  * Day-only effects (the Pacifist, the Devil's Advocate) are not night alerts.
  */
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
+import type {
+	Alignment,
+	Character,
+	CharacterId,
+	CharacterType,
+	ReminderLabel
+} from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -153,8 +159,8 @@ export function nightKiller(
 
 /** The official characters whose night step can kill. */
 export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.fromEntries(
-	[...OFFICIAL_RULES.keys()].flatMap((id) => {
-		const killer = nightKiller(id, new Map());
+	[...OFFICIAL_RULES].flatMap(([id, rules]) => {
+		const killer = nightKiller(id, new Map([[id, { rules } as Character]]));
 		return killer ? [[id, killer]] : [];
 	})
 );

@@ -14,7 +14,6 @@ import {
 	type NightStep
 } from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
-import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { placeholderRulesOf } from '#lib/core/rules/night-text.ts';
 import {
 	GENERIC_REMINDER_ID,
@@ -320,11 +319,9 @@ export interface StepReminders {
 export function stepReminders(
 	characterId: CharacterId,
 	night: Night,
-	character?: Character
+	character: Character | undefined
 ): StepReminders {
-	const rules = character
-		? placeholderRulesOf(character)
-		: OFFICIAL_RULES.get(characterId)?.reminderPlaceholders;
+	const rules = character && placeholderRulesOf(character);
 	const known = rules?.first !== undefined || rules?.other !== undefined;
 	if (!known && character)
 		return {

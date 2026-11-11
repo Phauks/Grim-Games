@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { dispatch } from '#lib/core/engine/index.ts';
 import { activeJinxes, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
 import { startingRuleCharacters } from '#lib/core/data/script-rules.ts';
@@ -60,7 +64,12 @@ describe('Djinn', () => {
 			// Storyteller reads out the Djinn's special rule: “A Pit-Hag cannot create a Heretic.”
 			// Later in the game, the Pit-Hag tries to create a Heretic. The Storyteller shakes
 			// their head, and the Pit-Hag must choose another character to create."
-			const jinxes = scriptJinxes(data.jinxes, ['pithag', 'heretic', 'chef', 'imp']);
+			const jinxes = scriptJinxes(
+				data.jinxes,
+				['pithag', 'heretic', 'chef', 'imp'],
+				undefined,
+				committedCharacters()
+			);
 			expect(jinxes.map((j) => pair(j.characters))).toEqual(['heretic+pithag']);
 			expect(jinxSetupWarnings(jinxes, ['pithag', 'heretic'])).toHaveLength(1);
 			const s = scenario(['pithag', 'chef', 'empath', 'monk', 'imp']);
@@ -80,7 +89,7 @@ describe('Djinn', () => {
 			// The jinx is on the script whether or not either character is in play; the Djinn
 			// itself is never put in play by the app, since jinxes show on their own.
 			const ids = ['spy', 'magician', 'chef', 'empath', 'poisoner', 'imp'];
-			const jinxes = scriptJinxes(data.jinxes, ids);
+			const jinxes = scriptJinxes(data.jinxes, ids, undefined, committedCharacters());
 			expect(jinxes.map((j) => pair(j.characters))).toEqual(['magician+spy']);
 			expect(activeJinxes(jinxes, ['chef', 'empath', 'poisoner', 'imp'])).toEqual([]);
 			const script = {
@@ -98,8 +107,22 @@ describe('Djinn', () => {
 			// Wiki: "At the start of the game, if there are jinxed characters on the character sheet,
 			// declare that the Djinn is in play and inform the group of all Djinn special rules for
 			// this game."
-			expect(scriptJinxes(data.jinxes, ['chef', 'empath', 'monk', 'poisoner', 'imp'])).toEqual([]);
-			expect(scriptJinxes(data.jinxes, ['spy', 'magician', 'chef', 'imp'])).toHaveLength(1);
+			expect(
+				scriptJinxes(
+					data.jinxes,
+					['chef', 'empath', 'monk', 'poisoner', 'imp'],
+					undefined,
+					committedCharacters()
+				)
+			).toEqual([]);
+			expect(
+				scriptJinxes(
+					data.jinxes,
+					['spy', 'magician', 'chef', 'imp'],
+					undefined,
+					committedCharacters()
+				)
+			).toHaveLength(1);
 		});
 
 		it('shows the Djinn as in play on the day panel once declared', () => {
@@ -117,7 +140,12 @@ describe('Djinn', () => {
 
 		it('applies a jinx whose two characters are both in play', () => {
 			// Wiki: "Follow the Djinn instructions as listed on the Script Tool printout."
-			const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'chef', 'imp']);
+			const jinxes = scriptJinxes(
+				data.jinxes,
+				['spy', 'magician', 'chef', 'imp'],
+				undefined,
+				committedCharacters()
+			);
 			expect(activeJinxes(jinxes, ['spy', 'magician', 'chef', 'imp'])).toEqual(jinxes);
 			expect(activeJinxes(jinxes, ['spy', 'chef', 'imp'])).toEqual([]);
 		});

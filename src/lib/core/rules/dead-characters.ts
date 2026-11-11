@@ -13,7 +13,7 @@ type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
  * rules block: our `data/rules/<id>.json`, or a custom character's own `rules`). Their
  * reminders stay with the living ones in the bank. The tests cite each wiki page.
  */
-export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup): boolean {
+export function actsWhenDead(characterId: CharacterId, characters: RulesLookup): boolean {
 	return rulesOf(characterId, characters)?.actsWhenDead === true;
 }
 

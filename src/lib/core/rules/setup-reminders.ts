@@ -85,7 +85,7 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  */
 export function setupPrepOf(
 	characterId: CharacterId,
-	lookup?: CharacterLookup
+	lookup: CharacterLookup
 ): SetupPrepRules | undefined {
 	return rulesOf(characterId, lookup)?.setupPrep;
 }
@@ -94,7 +94,7 @@ export function setupPrepOf(
 export function prepValueLabel(
 	characterId: CharacterId,
 	key: string,
-	lookup?: CharacterLookup
+	lookup: CharacterLookup
 ): string | undefined {
 	return setupPrepOf(characterId, lookup)?.notes?.find((n) => n.value?.key === key)?.value?.label;
 }
@@ -106,7 +106,7 @@ export function prepValueLabel(
 export function prepValueCharacter(
 	characterId: CharacterId,
 	key: string,
-	lookup?: CharacterLookup
+	lookup: CharacterLookup
 ): 'good' | undefined {
 	return setupPrepOf(characterId, lookup)?.notes?.find((n) => n.value?.key === key)?.value
 		?.character;
@@ -504,7 +504,7 @@ export interface SetupPrepStep {
 export function setupPrep(
 	characterId: CharacterId,
 	name: string,
-	lookup?: CharacterLookup
+	lookup: CharacterLookup
 ): SetupPrepStep[] {
 	const prep = setupPrepOf(characterId, lookup);
 	const steps: SetupPrepStep[] = [];
@@ -532,7 +532,7 @@ export function setupPrep(
  * first night can show them as already done. Tokens placed at the start of the first
  * day are not included.
  */
-export function prepTokens(characterId: CharacterId, lookup?: CharacterLookup): string[] {
+export function prepTokens(characterId: CharacterId, lookup: CharacterLookup): string[] {
 	const prep = setupPrepOf(characterId, lookup);
 	const out = new Set<string>();
 	for (const spec of prep?.reminders ?? []) {

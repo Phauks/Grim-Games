@@ -2,7 +2,7 @@
  * Jinxes on a script. https://wiki.bloodontheclocktower.com/Djinn
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import {
@@ -34,13 +34,18 @@ describe('scriptJinxes', () => {
 	it('finds no jinxes on the base editions', () => {
 		for (const edition of ['tb', 'bmr', 'snv']) {
 			const ids = editionScript(edition, data)!.characters.map((c) => c.id);
-			expect(scriptJinxes(data.jinxes, ids), edition).toEqual([]);
+			expect(scriptJinxes(data.jinxes, ids, undefined, committedCharacters()), edition).toEqual([]);
 		}
 	});
 
 	// https://wiki.bloodontheclocktower.com/Spy#Related_Jinxes
 	it('lists every jinx between characters on the script, in either order', () => {
-		const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'chef', 'heretic', 'baron']);
+		const jinxes = scriptJinxes(
+			data.jinxes,
+			['spy', 'magician', 'chef', 'heretic', 'baron'],
+			undefined,
+			committedCharacters()
+		);
 		expect(jinxes.map((j) => [...j.characters].sort().join('+'))).toEqual(
 			expect.arrayContaining(['magician+spy', 'heretic+spy', 'baron+heretic'])
 		);
@@ -55,7 +60,8 @@ describe('scriptJinxes', () => {
 				{ characters: ['magician', 'spy'], reason: 'House rule.' },
 				{ characters: ['custom', 'spy'], reason: 'Homebrew.' },
 				{ characters: ['custom', 'imp'], reason: 'Imp is not on the script.' }
-			]
+			],
+			committedCharacters()
 		);
 		expect(jinxes.map((j) => [j.source, j.reason])).toEqual([
 			['script', 'House rule.'],
@@ -79,7 +85,12 @@ describe('exclusive jinxes', () => {
 	});
 
 	it('warns only when both are in play', () => {
-		const jinxes = scriptJinxes(data.jinxes, ['heretic', 'baron', 'spy', 'magician']);
+		const jinxes = scriptJinxes(
+			data.jinxes,
+			['heretic', 'baron', 'spy', 'magician'],
+			undefined,
+			committedCharacters()
+		);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'chef'], name)).toEqual([]);
 		const warnings = jinxSetupWarnings(jinxes, ['heretic', 'baron', 'magician', 'spy'], name);
 		expect(warnings.map((w) => w.message).sort()).toEqual([
@@ -97,7 +108,9 @@ describe('jinx rules data', () => {
 
 	it('names only pairs TPI jinxes', () => {
 		for (const character of data.characters) {
-			for (const partner of Object.keys(rulesOf(character.id)?.jinxes ?? {})) {
+			for (const partner of Object.keys(
+				rulesOf(character.id, committedCharacters())?.jinxes ?? {}
+			)) {
 				const pair = [character.id, partner].sort().join('+');
 				expect(official.has(pair), `${character.id}.jinxes.${partner}`).toBe(true);
 			}
@@ -107,21 +120,25 @@ describe('jinx rules data', () => {
 	// https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes
 	it('marks exactly the jinxes whose wording says only one can be in play', () => {
 		for (const jinx of data.jinxes.all) {
-			expect(jinxIsExclusive(jinx), jinx.characters.join('+')).toBe(isExclusiveJinx(jinx.reason));
+			expect(jinxIsExclusive(jinx, committedCharacters()), jinx.characters.join('+')).toBe(
+				isExclusiveJinx(jinx.reason)
+			);
 		}
 	});
 
 	it('reads either side of the pair, and nothing for a jinx that is text only', () => {
-		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ cannotCreate: { via: 'givesAbility' } });
+		expect(jinxRulesBetween('boffin', 'drunk', committedCharacters())).toEqual({
+			cannotCreate: { via: 'givesAbility' }
+		});
 		// The Boffin's rule is about the Boffin only, so the Drunk's side has none.
-		expect(jinxRulesBetween('drunk', 'boffin')).toBeUndefined();
+		expect(jinxRulesBetween('drunk', 'boffin', committedCharacters())).toBeUndefined();
 		// The Spy's file says what happens to the Damsel (`who: "partner"`), read from her side,
 		// with the condition turned round to hers.
-		expect(jinxRulesBetween('damsel', 'spy')).toEqual({
+		expect(jinxRulesBetween('damsel', 'spy', committedCharacters())).toEqual({
 			impairs: { kind: 'poisoned', when: ['partner-in-play'] }
 		});
-		expect(jinxRulesBetween('spy', 'damsel')).toBeUndefined();
-		expect(jinxRulesBetween('chambermaid', 'mathematician')).toBeUndefined();
+		expect(jinxRulesBetween('spy', 'damsel', committedCharacters())).toBeUndefined();
+		expect(jinxRulesBetween('chambermaid', 'mathematician', committedCharacters())).toBeUndefined();
 	});
 
 	it('reads a bare main value, true, or an object with who and when', () => {
@@ -487,7 +504,9 @@ describe('jinx rules data', () => {
 
 	it('names only tokens the partner has, in each endsGame jinx', () => {
 		for (const character of data.characters) {
-			for (const [partner, rule] of Object.entries(rulesOf(character.id)?.jinxes ?? {})) {
+			for (const [partner, rule] of Object.entries(
+				rulesOf(character.id, committedCharacters())?.jinxes ?? {}
+			)) {
 				const token = rule.endsGame?.token;
 				if (token === undefined) continue;
 				const reminders = data.byId.get(partner)?.reminders ?? [];
@@ -503,17 +522,19 @@ describe('jinx rules data', () => {
 		});
 		const script = of(['spy', 'chef', 'imp']);
 		const both = { script: of(['spy', 'chef', 'imp', 'ogre']) };
-		expect(ownJinxRules(both, 'spy', 'ogre')?.registersTo).toEqual({
+		expect(ownJinxRules(both, 'spy', 'ogre', committedCharacters())?.registersTo).toEqual({
 			alignments: ['evil'],
 			always: true
 		});
-		expect(ownJinxRules(both, 'ogre', 'spy')).toBeUndefined();
+		expect(ownJinxRules(both, 'ogre', 'spy', committedCharacters())).toBeUndefined();
 		// Not in effect unless the script holds both.
-		expect(ownJinxRules({ script }, 'spy', 'ogre')).toBeUndefined();
-		expect(ownJinxes(both, 'spy', (r) => r.registersTo !== undefined)).toEqual([
-			{ partner: 'ogre', rule: { registersTo: { alignments: ['evil'], always: true } } }
-		]);
-		expect(jinxedWith(both, 'ogre', (r) => r.registersTo !== undefined)).toEqual([
+		expect(ownJinxRules({ script }, 'spy', 'ogre', committedCharacters())).toBeUndefined();
+		expect(
+			ownJinxes(both, 'spy', (r) => r.registersTo !== undefined, committedCharacters())
+		).toEqual([{ partner: 'ogre', rule: { registersTo: { alignments: ['evil'], always: true } } }]);
+		expect(
+			jinxedWith(both, 'ogre', (r) => r.registersTo !== undefined, committedCharacters())
+		).toEqual([
 			{ characterId: 'spy', rule: { registersTo: { alignments: ['evil'], always: true } } }
 		]);
 	});
@@ -583,7 +604,12 @@ describe('jinx rules data', () => {
 });
 
 describe('jinxesOnStep', () => {
-	const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'poppygrower', 'chef']);
+	const jinxes = scriptJinxes(
+		data.jinxes,
+		['spy', 'magician', 'poppygrower', 'chef'],
+		undefined,
+		committedCharacters()
+	);
 	const pairs = (list: readonly { characters: readonly string[] }[]) =>
 		list.map((j) => [...j.characters].sort().join('+'));
 
@@ -612,7 +638,8 @@ describe('jinxesOnStep', () => {
 		const own = scriptJinxes(
 			data.jinxes,
 			['spy', 'custom'],
-			[{ characters: ['custom', 'spy'], reason: 'Homebrew wording.' }]
+			[{ characters: ['custom', 'spy'], reason: 'Homebrew wording.' }],
+			committedCharacters()
 		);
 		expect(jinxesOnStep(own, 'custom', ['spy', 'custom']).map((j) => j.reason)).toEqual([
 			'Homebrew wording.'

@@ -3,7 +3,7 @@
  * https://wiki.bloodontheclocktower.com/Bootlegger, https://wiki.bloodontheclocktower.com/Fabled
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Script } from '#lib/core/data/types.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
 import { createGame } from '#lib/core/engine/log.ts';
@@ -157,7 +157,9 @@ describe("the script's rules block (bootleggerRules)", () => {
 	it("lays the block over the Bootlegger's own rules", () => {
 		const rules = rulesOf('bootlegger', characterLookup(data, s));
 		expect(rules?.demonAttack).toEqual({ target: 'script-order' });
-		expect(rules?.reminderTargets).toEqual(rulesOf('bootlegger')?.reminderTargets);
+		expect(rules?.reminderTargets).toEqual(
+			rulesOf('bootlegger', committedCharacters())?.reminderTargets
+		);
 	});
 
 	it('the engine acts on it while the Bootlegger is in play', () => {

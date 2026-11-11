@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { parseCharacterRules } from '../character-rules.ts';
 import { parseCharacter } from '../parse.ts';
 import { Issues } from '../validate.ts';
@@ -274,7 +274,7 @@ describe('custom characters', () => {
 		const characters = new Map([[character!.id, character!]]);
 		expect(rulesOf('hollowking', characters)).toBe(character!.rules);
 		expect(reminderPrompt('Hollowed', 'hollowking', characters)).toBe('markDead');
-		expect(reminderPrompt('Hollowed')).toBeUndefined();
+		expect(reminderPrompt('Hollowed', undefined, committedCharacters())).toBeUndefined();
 	});
 
 	it('report a bad rules block like any other bad field', () => {
@@ -289,15 +289,13 @@ describe('custom characters', () => {
 	});
 
 	// One policy (M58): a custom character's text is its own, so it has only its own rules; an
-	// official character keeps our file.
+	// official character carries our file from the moment game data loads.
 	it('have only their own block when they reuse an official id', () => {
 		expect(rulesOf('imp', new Map([['imp', {}]]))).toBeUndefined();
 		expect(rulesOf('imp', new Map([['imp', { rules: { kills: { by: 'other' } } }]]))).toEqual({
 			kills: { by: 'other' }
 		});
-		expect(rulesOf('imp', new Map([['imp', { edition: 'tb' }]]))).toMatchObject({
-			kills: { by: 'demon' }
-		});
+		expect(rulesOf('imp', committedCharacters())).toMatchObject({ kills: { by: 'demon' } });
 	});
 
 	// A homebrew Outsider that acts on its death, as the Klutz does
@@ -320,7 +318,7 @@ describe('custom characters', () => {
 		expect(issues.list).toEqual([]);
 		const characters = new Map([[lantern!.id, lantern!]]);
 		expect(actsWhenDead('lanternbearer', characters)).toBe(true);
-		expect(actsWhenDead('lanternbearer')).toBe(false);
+		expect(actsWhenDead('lanternbearer', committedCharacters())).toBe(false);
 	});
 
 	// A homebrew Townsfolk woken by a Demon kill, as the Sage is

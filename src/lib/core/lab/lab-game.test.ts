@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/distribution.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
@@ -257,7 +257,8 @@ describe('labGame follows the setup rules', () => {
 		for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
 			const g = game({ playerCount: 12, locked: ['chef'] }, seed);
 			expect(countTypes(g.seats)).toEqual(BASE_DISTRIBUTION[12]);
-			for (const id of g.seats.slice(1)) expect(rulesOf(id)?.setupModifier?.ops ?? []).toEqual([]);
+			for (const id of g.seats.slice(1))
+				expect(rulesOf(id, committedCharacters())?.setupModifier?.ops ?? []).toEqual([]);
 		}
 	});
 

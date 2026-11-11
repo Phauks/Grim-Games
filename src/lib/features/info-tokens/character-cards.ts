@@ -38,7 +38,7 @@ const CARDS: Readonly<Record<InfoCard, Pick<CharacterCard, 'titleKey' | 'fillKey
 };
 
 /** A character's card, from its `infoCard` rule. */
-function cardOf(id: CharacterId, characters?: CharacterLookup): CharacterCard | undefined {
+function cardOf(id: CharacterId, characters: CharacterLookup): CharacterCard | undefined {
 	const card = rulesOf(id, characters)?.infoCard;
 	return card && { id: `character:${id}:${card}`, characterId: id, ...CARDS[card], source: 'own' };
 }
@@ -49,7 +49,7 @@ function cardOf(id: CharacterId, characters?: CharacterLookup): CharacterCard | 
  */
 export function characterCardsFor(
 	characterIds: readonly CharacterId[],
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): CharacterCard[] {
 	return characterIds.flatMap((id) => cardOf(id, characters) ?? []);
 }

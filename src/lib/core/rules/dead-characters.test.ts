@@ -7,7 +7,7 @@ import {
 	testCharacters as characters,
 	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from './ability.ts';
 import {
 	actsWhenDead,
@@ -33,14 +33,14 @@ describe('actsWhenDead', () => {
 		// chooses once they learn they died (https://wiki.bloodontheclocktower.com/Moonchild);
 		// the Zombuul only seems dead (https://wiki.bloodontheclocktower.com/Zombuul).
 		for (const id of ['sweetheart', 'barber', 'moonchild', 'zombuul', 'plaguedoctor'])
-			expect(actsWhenDead(id)).toBe(true);
+			expect(actsWhenDead(id, committedCharacters())).toBe(true);
 	});
 
 	it('is false for abilities that end when their player dies', () => {
 		// A dead Poisoner poisons no one (https://wiki.bloodontheclocktower.com/Poisoner); a
 		// dead Monk protects no one (https://wiki.bloodontheclocktower.com/Monk).
 		for (const id of ['poisoner', 'monk', 'washerwoman', 'imp'])
-			expect(actsWhenDead(id)).toBe(false);
+			expect(actsWhenDead(id, committedCharacters())).toBe(false);
 	});
 
 	it('only lists characters whose ability speaks of their death', () => {
@@ -67,7 +67,7 @@ describe('actsWhenDead', () => {
 			'sweetheart',
 			'zombuul'
 		]) {
-			expect(actsWhenDead(id)).toBe(true);
+			expect(actsWhenDead(id, committedCharacters())).toBe(true);
 			expect(abilities.get(id)).toMatch(/die|dead|kills you/i);
 		}
 	});

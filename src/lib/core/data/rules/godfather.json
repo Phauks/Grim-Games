@@ -1,6 +1,7 @@
 {
 	"reminderPrompts": {
-		"Died Today": "markDead"
+		"Died Today": "markDead",
+		"Dead": "markDead"
 	},
 	"kills": {
 		"by": "other"

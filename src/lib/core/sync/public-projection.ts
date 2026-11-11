@@ -278,7 +278,10 @@ function boardLayout(layout: PublicSeatLayout): PublicSeatLayout | undefined {
 }
 
 function appearsDead(seat: Seat, characters: CharacterLookup | undefined): boolean {
-	return seat.dead || seat.reminders.some((r) => registersAsDeadToken(r, characters));
+	if (seat.dead) return true;
+	return (
+		characters !== undefined && seat.reminders.some((r) => registersAsDeadToken(r, characters))
+	);
 }
 
 /**

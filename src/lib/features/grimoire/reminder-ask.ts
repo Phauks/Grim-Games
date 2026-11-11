@@ -16,6 +16,7 @@ import type {
 	ReminderInstance,
 	SeatId
 } from '#lib/core/model/index.ts';
+import { GENERIC_REMINDER_ID } from '#lib/core/model/types.ts';
 import { reminderDeathCause } from '#lib/core/rules/death-causes.ts';
 import {
 	promptApplies,
@@ -80,7 +81,12 @@ export function freshAsks(
 			const earlier = replacedByFlow(game, seatId, reminder, characters);
 			if (earlier.length > 0) flow.push({ seatId, reminder, earlier });
 			const characterId = reminder.like?.characterId ?? reminder.characterId;
-			const prompt = reminderPrompt(reminderWords(reminder), characterId, characters);
+			// An ∞ token with only words asks as an official reminder with those words would.
+			const prompt = reminderPrompt(
+				reminderWords(reminder),
+				characterId === GENERIC_REMINDER_ID ? undefined : characterId,
+				characters
+			);
 			// The Fang Gu's "Dead" names the Fang Gu as the cause (Trevor, 2026-10-23).
 			if (prompt && promptApplies(prompt, !!seat.dead))
 				asks.push({

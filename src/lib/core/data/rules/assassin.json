@@ -1,4 +1,7 @@
 {
+	"reminderPrompts": {
+		"Dead": "markDead"
+	},
 	"kills": {
 		"by": "other",
 		"ignoresProtection": true

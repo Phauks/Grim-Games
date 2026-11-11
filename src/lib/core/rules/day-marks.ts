@@ -14,7 +14,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 
 export { DAY_MARKS, type DayMark, type DayMarkRule };
 
-/** A character's `dayMark` rule: its own (a custom character's) or our overlay file's. */
+/** A character's `dayMark` rule, from the rules block it carries. */
 export function dayMarkOf(
 	characterId: CharacterId | undefined,
 	characters: CharacterLookup

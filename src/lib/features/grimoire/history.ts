@@ -375,11 +375,16 @@ function describeEvent(
 				return slot(`s${seats.length - 1}`);
 			};
 			const ids: CharacterId[] = [];
-			const line = describeDayEntry(event.entry, name, (id) => {
-				if (!id) return 'None';
-				ids.push(id);
-				return slot(`c${ids.length - 1}`);
-			});
+			const line = describeDayEntry(
+				event.entry,
+				name,
+				(id) => {
+					if (!id) return 'None';
+					ids.push(id);
+					return slot(`c${ids.length - 1}`);
+				},
+				characters
+			);
 			const parts = splitSlots(line).flatMap((part, i): HistoryPart[] => {
 				if (i % 2 === 0) return part ? [text(part)] : [];
 				const index = Number(part.slice(1));

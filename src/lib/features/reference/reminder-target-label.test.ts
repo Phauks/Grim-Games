@@ -1,3 +1,4 @@
+import { committedCharacter } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { TargetRule } from '#lib/core/rules/reminder-targets.ts';
 import { describeTarget as describe_, reminderTargetLabel } from './reminder-target-label.ts';
@@ -11,17 +12,25 @@ const nameOf = (id: string) => ({ imp: 'Imp', recluse: 'Recluse' })[id] ?? id;
 describe('reminder target labels', () => {
 	// https://wiki.bloodontheclocktower.com/Fortune_Teller: the red herring is a good player.
 	it('reads the board rules for a real reminder', () => {
-		expect(reminderTargetLabel('fortuneteller', 'Red Herring', nameOf)).toBe('Good players');
+		expect(reminderTargetLabel(committedCharacter('fortuneteller'), 'Red Herring', nameOf)).toBe(
+			'Good players'
+		);
 		// https://wiki.bloodontheclocktower.com/Washerwoman: shown a Townsfolk, who may be
 		// themself (Trevor, 2026-10-23).
-		expect(reminderTargetLabel('washerwoman', 'Townsfolk', nameOf)).toBe('Townsfolk');
+		expect(reminderTargetLabel(committedCharacter('washerwoman'), 'Townsfolk', nameOf)).toBe(
+			'Townsfolk'
+		);
 		// https://wiki.bloodontheclocktower.com/Professor: never brings themself back.
-		expect(reminderTargetLabel('professor', 'Alive', nameOf)).toBe('Dead Townsfolk, not self');
+		expect(reminderTargetLabel(committedCharacter('professor'), 'Alive', nameOf)).toBe(
+			'Dead Townsfolk, not self'
+		);
 	});
 
 	it('has no words for a reminder without a rule', () => {
-		expect(reminderTargetLabel('washerwoman', 'Made up', nameOf)).toBeUndefined();
-		expect(reminderTargetLabel('not-a-character', 'Anything', nameOf)).toBeUndefined();
+		expect(
+			reminderTargetLabel(committedCharacter('washerwoman'), 'Made up', nameOf)
+		).toBeUndefined();
+		expect(reminderTargetLabel({}, 'Anything', nameOf)).toBeUndefined();
 	});
 
 	it('describes each part of a rule', () => {
@@ -38,7 +47,7 @@ describe('reminder target labels', () => {
 			describeTarget({ neighbour: { of: 'self', alive: true }, withLabel: 'Safe' }, nameOf)
 		).toBe('Players, neighbours, skipping the dead, with Safe');
 		// https://wiki.bloodontheclocktower.com/No_Dashii: its nearest Townsfolk each way round.
-		expect(reminderTargetLabel('nodashii', 'Poisoned', nameOf)).toBe(
+		expect(reminderTargetLabel(committedCharacter('nodashii'), 'Poisoned', nameOf)).toBe(
 			'Townsfolk, nearest each side'
 		);
 		expect(describeTarget({ neighbour: { of: 'self', type: 'outsider' } }, nameOf)).toBe(

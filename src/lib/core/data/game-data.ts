@@ -16,6 +16,7 @@ import {
 	type NightSheet
 } from './types.ts';
 import { Issues, isObject } from './validate.ts';
+import { OFFICIAL_RULES } from './rules/index.ts';
 
 export interface GameData {
 	/** Every official character, in TPI's order. */
@@ -33,7 +34,12 @@ export interface RawGameData {
 }
 
 export function loadGameData(raw: RawGameData): GameData {
-	const characters = parseRoles(raw.roles);
+	// Each official character carries its rules block, as a custom character carries its
+	// script entry's `rules`, so the engine reads every character's rules the same way.
+	const characters = parseRoles(raw.roles).map((c) => {
+		const rules = OFFICIAL_RULES.get(c.id);
+		return rules ? { ...c, rules } : c;
+	});
 	const jinxes = parseJinxes(raw.jinxes);
 	const nightSheet = parseNightSheet(raw.nightsheet);
 	const byId = new Map(characters.map((c) => [c.id, c]));

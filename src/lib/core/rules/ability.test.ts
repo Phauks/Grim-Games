@@ -7,6 +7,7 @@
  * - https://wiki.bloodontheclocktower.com/Recluse, /Spy, /Lycanthrope
  * - https://wiki.bloodontheclocktower.com/Sailor, /Tea_Lady, /Monk, /Soldier
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
@@ -544,7 +545,11 @@ describe('impairing tokens end with their character unless they last', () => {
 		return (
 			[...new Set(character.reminders)]
 				.filter((label) => impairmentOfLabel(label))
-				.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
+				.map((label) => ({
+					id,
+					label,
+					rule: rulesOf(id, committedCharacters())?.impairs?.tokens?.[label]
+				}))
 				// A token that also needs a kept ability (`whileKept`, the Vigormortis's Poisoned)
 				// has its own tests in kept-ability.test.ts.
 				.filter(({ rule }) => (rule === undefined || rule.on === 'carrier') && !rule?.whileKept)
