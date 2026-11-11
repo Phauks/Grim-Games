@@ -103,7 +103,7 @@ export type TargetRule = SpecValue<typeof TARGET>;
  * as (the Recluse as an evil Minion or Demon, the Spy as a good Townsfolk or Outsider): the
  * Preacher may choose a Recluse (Trevor, 2026-10-27).
  *
- * The checks only suggest and warn (`rules/reminder-targets.ts`); the Storyteller can put
+ * The checks only suggest and warn (`rules/reminders/reminder-targets.ts`); the Storyteller can put
  * any token anywhere.
  */
 export const reminderTargets = specPart(

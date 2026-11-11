@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayClaim } from '#lib/core/rules/index.ts';
+	import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';

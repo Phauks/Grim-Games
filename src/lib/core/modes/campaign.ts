@@ -9,7 +9,7 @@
  * Storyteller, who decides which executed characters are eliminated.
  */
 import type { Alignment, Character, CharacterId } from '#lib/core/data/types.ts';
-import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 import type { GameRecord } from '#lib/core/stats/record.ts';
 import { bannedIn, type StorytellerRestrictions } from './pool.ts';
 import type { BetweenGamesRule, GameMode } from './types.ts';

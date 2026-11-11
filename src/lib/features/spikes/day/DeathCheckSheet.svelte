@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { deathVerdict, type DeathCheck, type DeathVerdict } from '#lib/core/rules/index.ts';
+	import {
+		deathVerdict,
+		type DeathCheck,
+		type DeathVerdict
+	} from '#lib/core/rules/night/night-deaths.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { DayGame } from './day-game.svelte.ts';

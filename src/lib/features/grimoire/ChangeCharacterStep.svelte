@@ -9,28 +9,30 @@
 		typeOf,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
+	import { isReplacedAfterDraw } from '#lib/core/rules/setup/bag-characters.ts';
 	import {
 		alsoBecomes,
 		allEvilBecoming,
 		arbitraryDeathPartners,
 		arbitraryDeathsTonight,
-		changeableSeats,
-		characterChanger,
 		createdTooLate,
-		earlyOnly,
 		jinxedPartners,
-		neighbourAlignments,
 		neighbourBecoming,
 		jinxEffect,
-		picksCharacterOnlyBy,
 		storytellerGains,
-		storytellerPicksNow,
+		storytellerPicksNow
+	} from '#lib/core/rules/jinxes/jinxes.ts';
+	import {
+		changeableSeats,
+		characterChanger,
+		earlyOnly,
+		neighbourAlignments,
 		swapChoice,
 		swapPartner,
-		swappableSeats,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+		swappableSeats
+	} from '#lib/core/rules/abilities/becomes.ts';
+	import { picksCharacterOnlyBy } from '#lib/core/rules/jinxes/holder-jinxes.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';

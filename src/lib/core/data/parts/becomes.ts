@@ -3,7 +3,7 @@ import { specPart } from './part.ts';
 
 /**
  * The `becomes` part of a character's rules block: its reminder token says a player changed
- * character or alignment, so the board offers to make that change (`rules/becomes.ts`). It
+ * character or alignment, so the board offers to make that change (`rules/abilities/becomes.ts`). It
  * names a behaviour, never a character:
  * - `demon`: the carrier becomes the Demon in play, the dead one first, and is evil (the
  *   Scarlet Woman's Is The Demon, https://wiki.bloodontheclocktower.com/Scarlet_Woman);

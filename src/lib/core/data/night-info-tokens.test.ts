@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { nightTextFor } from '#lib/core/rules/night-text.ts';
+import { nightTextFor } from '#lib/core/rules/night/night-text.ts';
 import { loadGameData } from './game-data.ts';
 import { infoTokensNamedIn } from './info-tokens.ts';
 

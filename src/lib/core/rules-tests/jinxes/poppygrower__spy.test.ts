@@ -15,8 +15,8 @@ import { committedGameData, committedCharacters } from '#lib/core/testing/commit
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },

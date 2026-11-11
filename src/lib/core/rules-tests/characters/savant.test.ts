@@ -27,9 +27,9 @@ import {
 	savantSituation,
 	savantStatements,
 	typedStatement
-} from '#lib/core/rules/savant.ts';
-import { dayClaim } from '#lib/core/rules/day-claims.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+} from '#lib/core/rules/savant/savant.ts';
+import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** A script with the characters these examples seat. */

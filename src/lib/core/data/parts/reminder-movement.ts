@@ -4,7 +4,7 @@ import { specPart, type PartValue } from './part.ts';
 /**
  * Which of a character's reminder tokens should stay on the seat they were first placed on
  * (Trevor, 2026-10-16: "token integrity"): the `reminderMovement` part of its rules block,
- * read here and used by `rules/reminder-movement.ts`.
+ * read here and used by `rules/reminders/reminder-movement.ts`.
  *
  * A token is FIXED when it records something decided once: setup or first-night information
  * ("start knowing"), a once-per-game effect, or the character's own spent ability. Moving a

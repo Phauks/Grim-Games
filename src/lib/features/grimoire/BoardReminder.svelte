@@ -3,7 +3,7 @@
 	import { contextCharacters } from '#lib/features/characters/character-context.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { symbolColourCss } from './symbol-colour.ts';
-	import { isFixedLabel } from '#lib/core/rules/reminder-movement.ts';
+	import { isFixedLabel } from '#lib/core/rules/reminders/reminder-movement.ts';
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';

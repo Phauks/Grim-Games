@@ -14,9 +14,9 @@
 		STANDARD,
 		type Replacement
 	} from '#lib/core/modes/index.ts';
-	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
-	import { dayNumber } from '#lib/core/rules/night-order.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
+	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+	import { dayNumber } from '#lib/core/rules/night/night-order.ts';
 	import { deriveGameRecord } from '#lib/core/stats/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { EndReason } from '#lib/core/rules/index.ts';
+	import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 	import { tick } from 'svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';

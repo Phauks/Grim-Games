@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { baseCounts } from '#lib/core/rules/distribution.ts';
+import { baseCounts } from '#lib/core/rules/setup/distribution.ts';
 import {
 	canRedraft,
 	conversions,

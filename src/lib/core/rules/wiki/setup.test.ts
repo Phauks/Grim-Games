@@ -10,8 +10,8 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import { BASE_DISTRIBUTION, splitPlayers } from '../distribution.ts';
-import { analyseSetup, type SetupInput } from '../setup.ts';
+import { BASE_DISTRIBUTION, splitPlayers } from '#lib/core/rules/setup/distribution.ts';
+import { analyseSetup, type SetupInput } from '#lib/core/rules/setup/setup.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);

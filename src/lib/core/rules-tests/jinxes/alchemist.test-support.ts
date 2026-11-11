@@ -4,7 +4,7 @@
  * token was swapped for the Minion whose ability they have, on a script with both.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { analyseSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
+import { analyseSelection, type BagSelection } from '#lib/core/rules/setup/bag-plan.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scriptOf } from './summoner.test-support.ts';

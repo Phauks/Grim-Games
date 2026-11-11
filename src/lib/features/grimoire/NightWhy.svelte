@@ -2,7 +2,7 @@
 	import SeatBadge from './SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
-	import type { AnswerValue, Why } from '#lib/core/rules/index.ts';
+	import type { AnswerValue, Why } from '#lib/core/rules/night/info/reliability.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { answerValueText } from './night-steps.ts';

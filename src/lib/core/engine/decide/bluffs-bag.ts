@@ -7,7 +7,7 @@ import {
 	type SeatId,
 	type Tile
 } from '#lib/core/model/index.ts';
-import { duplicatedByInPlay } from '#lib/core/rules/bag-characters.ts';
+import { duplicatedByInPlay } from '#lib/core/rules/setup/bag-characters.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	BLUFFS_PER_SET,

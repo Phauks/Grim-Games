@@ -17,7 +17,7 @@ import {
 	type Game,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { detectedEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
+import { detectedEndReason, type EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 import {
 	GAME_RECORD_VERSION,
 	type GameRecord,

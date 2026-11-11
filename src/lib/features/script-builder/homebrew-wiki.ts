@@ -4,7 +4,7 @@
  */
 import { loadScript, type Character, type GameData } from '#lib/core/data/index.ts';
 import { fetchJson } from '#lib/ui/fetch.ts';
-import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import type { DraftCredit } from './draft.ts';
 import {
 	creditKey,

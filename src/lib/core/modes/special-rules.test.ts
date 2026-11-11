@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { analyseSetup, canDuplicate, type AnyDuplicates } from '#lib/core/rules/index.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { canDuplicate, type AnyDuplicates } from '#lib/core/rules/setup/bag-characters.ts';
 import { combineRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
 import { SPECIAL_RULES } from './rules/index.ts';

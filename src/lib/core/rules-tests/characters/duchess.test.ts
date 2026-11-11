@@ -15,12 +15,16 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { answerOptions } from '#lib/core/rules/night-info/answers.ts';
-import { nightStepInfo } from '#lib/core/rules/night-info/steps.ts';
+import { answerOptions } from '#lib/core/rules/night/info/answers.ts';
+import { nightStepInfo } from '#lib/core/rules/night/info/steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Duchess', () => {
 	const character = committedCharacter('duchess');

@@ -15,13 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { deathVerdict } from '#lib/core/rules/night/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 describe('Lycanthrope', () => {
 	const character = committedCharacter('lycanthrope');

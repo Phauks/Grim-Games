@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { analyseSelection, planBag, scriptFacts } from '#lib/core/rules/index.ts';
+import { analyseSelection, planBag } from '#lib/core/rules/setup/bag-plan.ts';
+import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
 
 const data = committedGameData();

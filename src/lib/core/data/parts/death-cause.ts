@@ -24,7 +24,7 @@ export type RegistersAs = Extract<VictimRule, { who: 'registers' }>['as'];
 
 /**
  * Whether a character's ability can cause a player to die, and how: the `deathCause` part of
- * its rules block, read here and used by `rules/death-causes.ts` so the death picker offers
+ * its rules block, read here and used by `rules/abilities/death-causes.ts` so the death picker offers
  * only characters that could have caused the death.
  *
  * Kinds (`DEATH_KINDS`):
@@ -37,7 +37,7 @@ export type RegistersAs = Extract<VictimRule, { who: 'registers' }>['as'];
  *   gives (Philosopher, Pixie, Hermit, Plague Doctor), or the ability the Storyteller chose
  *   for it (Amnesiac). The death is recorded as this character's; once the ability it holds
  *   is known (`gainedFrom`, or `givesAbility` to `self`), that ability's rule says who it can
- *   kill (`rules/death-causes.ts`).
+ *   kill (`rules/abilities/death-causes.ts`).
  *
  * `onlyWith`: the rule applies only when one of these characters is also on the script or in
  * play (a jinx gives the ability its death).

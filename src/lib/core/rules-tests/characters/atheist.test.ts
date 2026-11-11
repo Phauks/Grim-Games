@@ -15,16 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import {
-	anyInfoSource,
-	infoPicker,
-	isAllowed,
-	reliability,
-	validInformation
-} from '#lib/core/rules/night-info.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { anyInfoSource, reliability } from '#lib/core/rules/night/info/reliability.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { validInformation } from '#lib/core/rules/night/info/valid-info.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

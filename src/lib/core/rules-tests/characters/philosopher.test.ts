@@ -16,13 +16,15 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { abilityChoice, chosenAbility } from '#lib/core/rules/chosen-ability.ts';
-import { gainedBy } from '#lib/core/rules/gained-abilities.ts';
-import { infoPicker, withNightInfo } from '#lib/core/rules/night-info.ts';
-import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { abilityChoice, chosenAbility } from '#lib/core/rules/abilities/chosen-ability.ts';
+import { gainedBy } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import {
 	committedCharacter,
 	committedGameData,

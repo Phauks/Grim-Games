@@ -9,8 +9,8 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
-import { analyseSetup } from '../setup.ts';
-import { nightOrder } from '../night-order.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import {
 	EVIL_INFO_MIN_PLAYERS,
 	hasEvilTeamInfo,
@@ -19,7 +19,7 @@ import {
 	sheetCounts,
 	TEENSYVILLE_SHEET,
 	teensyvilleWarnings
-} from '../teensyville.ts';
+} from '#lib/core/rules/setup/teensyville.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);

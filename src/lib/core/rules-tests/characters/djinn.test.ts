@@ -20,10 +20,14 @@ import {
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { dispatch } from '#lib/core/engine/index.ts';
-import { activeJinxes, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
+import { activeJinxes, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes/jinxes.ts';
 import { startingRuleCharacters } from '#lib/core/data/script-rules.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
 describe('Djinn', () => {

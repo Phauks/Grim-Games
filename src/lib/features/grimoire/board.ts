@@ -12,15 +12,15 @@ import {
 } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
 import { slot } from '#lib/features/characters/slots.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { borrowedCopyHolder } from '#lib/core/rules/abilities/borrowed-abilities.ts';
+import { gainedSetupAbilities } from '#lib/core/rules/abilities/gained-abilities.ts';
 import {
-	analyseSetup,
-	borrowedCopyHolder,
-	gainedSetupAbilities,
 	reminderTargetMisses,
 	targetRule,
-	type DeathCauseFlag,
 	type TargetMiss
-} from '#lib/core/rules/index.ts';
+} from '#lib/core/rules/reminders/reminder-targets.ts';
+import { type DeathCauseFlag } from '#lib/core/rules/abilities/death-causes.ts';
 import type { RegistersAs } from '#lib/core/data/parts/death-cause.ts';
 import {
 	GENERAL_DEATH_CAUSES,

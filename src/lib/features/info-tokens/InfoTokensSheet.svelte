@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
-	import { shownOrder, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import { shownOrder, type FilledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';

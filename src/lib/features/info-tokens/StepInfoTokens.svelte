@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
-	import type { FilledInfoToken, StepCard } from '#lib/core/rules/info-token-characters.ts';
+	import type { FilledInfoToken, StepCard } from '#lib/core/rules/night/info-token-characters.ts';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 
 	interface Props {

@@ -18,11 +18,15 @@ import {
 	type Jinx,
 	type SeatedType
 } from '#lib/core/data/types.ts';
-import { canDuplicate, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinx-pairs.ts';
+import {
+	canDuplicate,
+	isNotDealt,
+	isReplacedAfterDraw
+} from '#lib/core/rules/setup/bag-characters.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { reservedHidden } from '#lib/core/modes/draft-seats.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 
 /**
  * The lab's characters: the official data, plus any custom characters made on this device

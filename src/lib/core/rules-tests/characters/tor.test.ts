@@ -19,10 +19,10 @@ import {
 	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
-import { evilTeamInfoRemovedBy } from '#lib/core/rules/teensyville.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { evilTeamInfoRemovedBy } from '#lib/core/rules/setup/teensyville.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
 import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

@@ -4,7 +4,8 @@
 	import { resolve } from '$app/paths';
 	import { fromScript, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
-	import { dayTimers, parsePlayersPhase } from '#lib/core/rules/index.ts';
+	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
+	import { parsePlayersPhase } from '#lib/core/rules/game-phase.ts';
 	import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';

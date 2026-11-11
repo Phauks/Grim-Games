@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
+	import { exileSavers, protection } from '#lib/core/rules/abilities/protection.ts';
 	import {
-		exileSavers,
 		isExecution,
-		protection,
 		validDeathCauses,
 		type ValidDeathCause
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/abilities/death-causes.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';

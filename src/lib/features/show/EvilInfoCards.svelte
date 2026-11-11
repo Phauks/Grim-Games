@@ -12,10 +12,10 @@
 		believedDemon,
 		chosenLikeDemon,
 		demonInfo,
-		fakeEvilInfoOf,
-		shownAtMinionInfo,
-		type Night
-	} from '#lib/core/rules/index.ts';
+		fakeEvilInfoOf
+	} from '#lib/core/rules/night/evil-info.ts';
+	import { shownAtMinionInfo } from '#lib/core/rules/night/shown-to.ts';
+	import { type Night } from '#lib/core/model/overrides.ts';
 	import {
 		bluffSetLabel,
 		charactersReallyInPlay,
@@ -32,7 +32,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import StepLine from '#lib/features/reference/StepLine.svelte';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
-	import type { NightTextSteps } from '#lib/core/rules/night-text.ts';
+	import type { NightTextSteps } from '#lib/core/rules/night/night-text.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

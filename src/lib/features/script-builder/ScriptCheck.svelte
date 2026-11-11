@@ -5,7 +5,7 @@
 -->
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import type { ScriptFacts } from '#lib/core/rules/index.ts';
+	import type { ScriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';

@@ -3,13 +3,10 @@
 	import type { GivenInstead } from '#lib/core/data/jinx-rules.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
-	import {
-		abilityState,
-		demonGoodNeighbours,
-		givenInstead,
-		replacingReminder,
-		type NightStep
-	} from '#lib/core/rules/index.ts';
+	import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+	import { demonGoodNeighbours, replacingReminder } from '#lib/core/rules/abilities/becomes.ts';
+	import { givenInstead } from '#lib/core/rules/jinxes/jinxes.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';

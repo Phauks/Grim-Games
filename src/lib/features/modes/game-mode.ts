@@ -4,7 +4,7 @@
  * one set of parts.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
-import type { AnyDuplicates } from '#lib/core/rules/index.ts';
+import type { AnyDuplicates } from '#lib/core/rules/setup/bag-characters.ts';
 import {
 	allowedOffScript,
 	modeRule,

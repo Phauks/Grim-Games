@@ -2,7 +2,8 @@
 	import type { Character, CharacterId, GameData } from '#lib/core/data/index.ts';
 	import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 	import type { Band } from '#lib/core/night-placement/index.ts';
-	import { nightStages, suggestedNightPlace, type Night } from '#lib/core/rules/index.ts';
+	import { nightStages, suggestedNightPlace } from '#lib/core/rules/night/night-order.ts';
+	import { type Night } from '#lib/core/model/overrides.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';

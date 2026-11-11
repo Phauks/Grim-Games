@@ -8,11 +8,17 @@
 import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
-import { abilityState, executionSavers, protection } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { jinxRulesBetween, notDeclared } from '#lib/core/rules/jinxes.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 export const scriptOf = (ids: string[]): Script => ({

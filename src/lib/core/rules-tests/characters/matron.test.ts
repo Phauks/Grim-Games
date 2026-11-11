@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { aliveNeighbours } from '#lib/core/model/selectors.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';

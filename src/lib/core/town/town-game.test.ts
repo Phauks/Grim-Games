@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { testCharacters, testScript } from '#lib/core/model/fixtures.test-support.ts';
 import { townGame } from './town-game.ts';
 

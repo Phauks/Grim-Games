@@ -18,8 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
-import type { Night } from '#lib/core/rules/night-order.ts';
-import { infoPicker, isAllowed } from '#lib/core/rules/night-info/picker.ts';
+import type { Night } from '#lib/core/model/overrides.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Chambermaid', () => {

@@ -15,12 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { mayNominate, storytellerNominates } from '#lib/core/rules/nominations.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { mayNominate, storytellerNominates } from '#lib/core/rules/day/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Bishop', () => {
 	const character = committedCharacter('bishop');

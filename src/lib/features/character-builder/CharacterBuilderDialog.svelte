@@ -7,7 +7,7 @@
 		characterEntry,
 		characterProblems,
 		fieldsFromEntry
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/character-builder.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';

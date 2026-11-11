@@ -11,7 +11,7 @@ export type CounterTime = (typeof COUNTER_TIMES)[number];
  * game goes on. `tokens` lists them in order; `at` says when the next one goes on: `dawn` for a
  * day counter (the Leviathan's and the Riot's Day tokens), `dusk` for a night counter (the
  * Summoner's and the Xaan's Night tokens). `replaces` takes the one before off, for a character
- * that carries only one at a time (the Leviathan). Moved by `rules/counters.ts`, as the
+ * that carries only one at a time (the Leviathan). Moved by `rules/reminders/counters.ts`, as the
  * Storyteller's setting says.
  */
 export const counter = specPart(

@@ -6,7 +6,7 @@ import { readStored, writeStored } from '#lib/ui/stored.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { DraftState } from '#lib/core/modes/index.ts';
-import type { SeatedType } from '#lib/core/rules/distribution.ts';
+import type { SeatedType } from '#lib/core/data/types.ts';
 
 /**
  * `drawn` is the bag tiles taken, in seat order (1-based places on the shared bag);

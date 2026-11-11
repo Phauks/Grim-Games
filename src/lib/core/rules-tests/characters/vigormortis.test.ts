@@ -15,17 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { characterNominationPrompts } from '#lib/core/rules/day/nominations.ts';
 import {
 	neighbourSeats,
 	reminderTargetMisses,
 	reminderTargets
-} from '#lib/core/rules/reminder-targets.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+} from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players a character's day reminders name, such as the Witch's cursed player. */

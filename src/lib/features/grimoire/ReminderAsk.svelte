@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { ReminderPrompt } from '#lib/core/rules/index.ts';
+	import type { ReminderPrompt } from '#lib/core/data/parts/reminder-prompts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';

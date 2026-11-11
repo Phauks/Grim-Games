@@ -13,7 +13,7 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { deathReminder } from '#lib/core/rules/first-death.ts';
+import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
@@ -22,10 +22,11 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { withNightInfo } from '#lib/core/rules/night-info.ts';
-import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Poppy Grower', () => {

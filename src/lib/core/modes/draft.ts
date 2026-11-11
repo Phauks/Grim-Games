@@ -63,8 +63,10 @@
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import { SEATED_TYPES, type SeatedType, type TypeCounts } from '#lib/core/rules/distribution.ts';
-import { setupModifierFor, type CountOp } from '#lib/core/rules/setup-modifiers.ts';
+import { type TypeCounts } from '#lib/core/rules/setup/distribution.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { type CountOp } from '#lib/core/data/parts/setup-modifier.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/parts/turns-players-into.ts';
 import { isSeated, keptForNeighbours, rulesFor, type ReservedHidden } from './draft-seats.ts';
 

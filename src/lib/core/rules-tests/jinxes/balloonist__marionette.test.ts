@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { gainedSetupAbilities } from '#lib/core/rules/gained-abilities.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { thinksPartnerSetup } from '#lib/core/rules/jinx-effects.ts';
+import { gainedSetupAbilities } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { thinksPartnerSetup } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { marionetteAs, tableSetup } from './marionette.test-support.ts';
 
 describe('Balloonist + Marionette jinx', () => {

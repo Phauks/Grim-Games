@@ -15,8 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { madnessOffer } from '#lib/core/rules/madness.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { madnessOffer } from '#lib/core/rules/day/madness.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

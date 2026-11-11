@@ -19,15 +19,19 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { decide } from '#lib/core/engine/index.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 
 describe('Huntsman', () => {
 	const character = committedCharacter('huntsman');

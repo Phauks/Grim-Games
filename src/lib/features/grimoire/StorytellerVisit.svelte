@@ -1,7 +1,11 @@
 <script lang="ts">
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-	import { storytellerName, storytellerVisit, twoStorytellersBy } from '#lib/core/rules/index.ts';
+	import {
+		storytellerName,
+		storytellerVisit,
+		twoStorytellersBy
+	} from '#lib/core/rules/abilities/storytellers.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

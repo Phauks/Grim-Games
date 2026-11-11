@@ -7,7 +7,7 @@
  * (`setupModifierFor`), not from the rule's own block, so a game never counts it twice.
  */
 import type { CharacterId, ScriptMeta } from '#lib/core/data/types.ts';
-import { modifierFromText } from '#lib/core/rules/setup-modifiers.ts';
+import { modifierFromText } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { scriptRules } from '#lib/core/data/script-rules.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 

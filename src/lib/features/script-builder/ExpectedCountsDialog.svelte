@@ -3,7 +3,10 @@
 	Trevor 2026-10-26): a guide for the counts, never a limit.
 -->
 <script lang="ts">
-	import { MAX_EXPECTED_COUNT, expectedScriptCounts } from '#lib/core/rules/index.ts';
+	import {
+		MAX_EXPECTED_COUNT,
+		expectedScriptCounts
+	} from '#lib/core/rules/setup/script-builder.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';

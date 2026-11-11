@@ -6,7 +6,7 @@
 		previewCharacter,
 		type CharacterFields,
 		type CharacterProblem
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/character-builder.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -33,17 +33,17 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
+	import { dayNumber } from '#lib/core/rules/night/night-order.ts';
+	import { livingByTeam } from '#lib/core/rules/day/voting.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
+	import { stepNightNumbers } from '#lib/core/rules/night/night-numbers.ts';
 	import {
-		dayNumber,
-		livingByTeam,
-		setupComplete,
-		stepNightNumbers,
 		storytellerNominators,
 		todaysNominations,
 		mayNominate,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/day/nominations.ts';
 	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import {

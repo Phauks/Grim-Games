@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterType } from '#lib/core/data/index.ts';
-	import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
+	import { SEATED_TYPES } from '#lib/core/data/types.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';

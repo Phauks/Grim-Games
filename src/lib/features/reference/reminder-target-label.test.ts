@@ -1,6 +1,6 @@
 import { committedCharacter } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
-import type { TargetRule } from '#lib/core/rules/reminder-targets.ts';
+import type { TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
 import { describeTarget as describe_, reminderTargetLabel } from './reminder-target-label.ts';
 
 /** A rule's words; the note is only for the board's sheet. */

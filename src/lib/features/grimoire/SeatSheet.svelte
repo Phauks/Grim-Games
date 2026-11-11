@@ -13,16 +13,13 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { characterJinxes } from '#lib/features/game/game-jinxes.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import {
-		abilityGivers,
-		abilityState,
-		borrowedAbilitiesOf,
-		madAsOf,
-		mayNominate,
-		seatNominations,
-		votesWithoutToken,
-		type ImpairmentReason
-	} from '#lib/core/rules/index.ts';
+	import { abilityGivers } from '#lib/core/rules/abilities/gained-abilities.ts';
+	import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+	import { borrowedAbilitiesOf } from '#lib/core/rules/abilities/borrowed-abilities.ts';
+	import { madAsOf } from '#lib/core/rules/abilities/mad-as.ts';
+	import { mayNominate, seatNominations } from '#lib/core/rules/day/nominations.ts';
+	import { votesWithoutToken } from '#lib/core/rules/day/voting.ts';
+	import { type ImpairmentReason } from '#lib/core/data/parts/impairs.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import MarkedCharacterRows, {
 		type Relation
@@ -52,12 +49,9 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
-	import {
-		dayClaim,
-		pretendChoices,
-		pretendTeamSource,
-		takesVoteTokens
-	} from '#lib/core/rules/index.ts';
+	import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
+	import { pretendChoices, pretendTeamSource } from '#lib/core/rules/abilities/pretend.ts';
+	import { takesVoteTokens } from '#lib/core/rules/day/vote-weights.ts';
 	import VoteTokens from './VoteTokens.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';

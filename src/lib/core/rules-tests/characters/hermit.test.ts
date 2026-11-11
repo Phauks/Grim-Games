@@ -21,21 +21,27 @@ import {
 	gainedAbilities,
 	heldAbilitiesOf,
 	withGainedSteps
-} from '#lib/core/rules/gained-abilities.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+} from '#lib/core/rules/abilities/gained-abilities.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { borrowedCopyHolder, reminderHolders } from '#lib/core/rules/borrowed-abilities.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { madnessOffer } from '#lib/core/rules/madness.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import {
+	borrowedCopyHolder,
+	reminderHolders
+} from '#lib/core/rules/abilities/borrowed-abilities.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { madnessOffer } from '#lib/core/rules/day/madness.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { reminderOffered, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import {
+	reminderOffered,
+	reminderTargetMisses
+} from '#lib/core/rules/reminders/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 
 // A script whose Outsiders are the Hermit, Klutz, Butler and Recluse (the wiki's first example).
 const IDS: CharacterId[] = [

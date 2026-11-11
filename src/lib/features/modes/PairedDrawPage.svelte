@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import type { Alignment } from '#lib/core/data/index.ts';
-	import type { BagSlot } from '#lib/core/rules/bag-plan.ts';
+	import type { BagSlot } from '#lib/core/rules/setup/bag-plan.ts';
 	import { seatNumber } from '#lib/core/model/index.ts';
 	import { nextPairSeat, pairTiles, STANDARD, type TilePair } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';

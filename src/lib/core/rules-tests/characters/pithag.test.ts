@@ -15,12 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { characterChanger, changeableSeats } from '#lib/core/rules/becomes.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { madnessOffer } from '#lib/core/rules/madness.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { characterChanger, changeableSeats } from '#lib/core/rules/abilities/becomes.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { madnessOffer } from '#lib/core/rules/day/madness.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

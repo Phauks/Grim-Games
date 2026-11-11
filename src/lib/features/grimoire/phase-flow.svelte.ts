@@ -7,13 +7,13 @@ import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+import { executionAsks } from '#lib/core/rules/day/execution-asks.ts';
 import {
-	executionAsks,
 	pendingSetupAlignments,
-	storytellerNominee,
-	type ExecutionOutcome,
 	type SetupAlignmentTask
-} from '#lib/core/rules/index.ts';
+} from '#lib/core/rules/setup/setup-alignment.ts';
+import { storytellerNominee } from '#lib/core/rules/day/nominations.ts';
+import { type ExecutionOutcome } from '#lib/core/rules/day/execution-outcome.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { currentSetupStep } from '#lib/features/setup/setup-steps.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';

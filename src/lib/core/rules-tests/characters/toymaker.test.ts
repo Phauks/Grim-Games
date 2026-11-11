@@ -14,17 +14,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { noAttackState } from '#lib/core/rules/demon-attack.ts';
+import { noAttackState } from '#lib/core/rules/night/demon-attack.ts';
 
 describe('Toymaker', () => {
 	const character = committedCharacter('toymaker');
@@ -126,7 +126,7 @@ describe('Toymaker', () => {
 	});
 
 	/**
-	 * M15a: the Demon's step with the Toymaker in play (`demonAttack`, `rules/demon-attack.ts`).
+	 * M15a: the Demon's step with the Toymaker in play (`demonAttack`, `rules/night/demon-attack.ts`).
 	 * Seat 0 is the Imp; the Final Night: No Attack token on it means it hasn't yet chosen not
 	 * to attack.
 	 */

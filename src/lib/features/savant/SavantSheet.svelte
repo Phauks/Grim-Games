@@ -16,7 +16,7 @@
 		type SavantMode,
 		type SavantPart,
 		type SavantStatement
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/savant/savant.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -37,7 +37,7 @@
 
 	/**
 	 * Savant information (L2, Trevor 2026-10-22): one true and one false statement worked out
-	 * from the grimoire (`core/rules/savant.ts`), each cycled on its own; a suggestion, never
+	 * from the grimoire (`core/rules/savant/savant.ts`), each cycled on its own; a suggestion, never
 	 * the final word. Each says whether it is true and why (L49), the Storyteller can write
 	 * their own instead (L47), about the players in the room too (M17g: what they wear, where
 	 * they sit), linked to a seat or a character type and marked True or False, and the eye shows them to the player like info tokens, without

@@ -15,17 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';
 import {
 	characterNominationPrompts,
 	mayNominate,
 	todaysNominations
-} from '#lib/core/rules/nominations.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+} from '#lib/core/rules/day/nominations.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players the Witch's day reminders name: the cursed player while the curse holds. */

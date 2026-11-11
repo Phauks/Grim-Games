@@ -14,15 +14,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 
 describe('Godfather', () => {
 	const character = committedCharacter('godfather');

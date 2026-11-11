@@ -23,7 +23,7 @@ import {
 	DAY_SECONDS_PER_ALIVE,
 	DAY_SECONDS_PER_ALIVE_MAX,
 	DAY_SECONDS_PER_ALIVE_MIN
-} from '#lib/core/rules/day-timer.ts';
+} from '#lib/core/rules/day/day-timer.ts';
 import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 import {

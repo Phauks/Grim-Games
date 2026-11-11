@@ -6,7 +6,7 @@
 		contestOpponents,
 		contestRule,
 		contestWinner
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/game-end/contest.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';

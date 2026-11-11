@@ -19,10 +19,13 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { reminderOffered, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import {
+	reminderOffered,
+	reminderTargetMisses
+} from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Village Idiot', () => {

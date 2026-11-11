@@ -14,12 +14,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { gameEnds, promptable, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { gameEnds, promptable, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

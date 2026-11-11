@@ -10,7 +10,7 @@ export type MadnessChosenBy = (typeof MADNESS_CHOSEN_BY)[number];
  * The `madness` part of a character's rules block: a player its ability makes "mad" may be
  * executed or die if the Storyteller judges they broke their madness
  * (https://wiki.bloodontheclocktower.com/Madness), so the day view offers that when they do
- * (`rules/madness.ts`). It names a behaviour, never a character:
+ * (`rules/day/madness.ts`). It names a behaviour, never a character:
  * - `token`: the reminder that marks the mad player; without it, this character's own player
  *   is mad (the Mutant, https://wiki.bloodontheclocktower.com/Mutant);
  * - `breaking`: `execution`, the mad player might be executed (the Cerenovus,

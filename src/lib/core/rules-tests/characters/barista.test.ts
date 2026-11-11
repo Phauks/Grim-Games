@@ -20,14 +20,19 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { withActsTwiceSteps } from '#lib/core/rules/acts-twice.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { infoPicker, reliability, withNightInfo } from '#lib/core/rules/night-info.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { withActsTwiceSteps } from '#lib/core/rules/abilities/acts-twice.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { reminderTargetMisses, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import {
+	reminderTargetMisses,
+	reminderTargets
+} from '#lib/core/rules/reminders/reminder-targets.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 
 const data = committedGameData();
 const warnings = (s: Scenario): string[] =>

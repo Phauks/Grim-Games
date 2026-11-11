@@ -3,13 +3,10 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
-	import {
-		afterDawn,
-		dayNumber,
-		notDeclared,
-		preventedDeaths,
-		type Night
-	} from '#lib/core/rules/index.ts';
+	import { afterDawn, dayNumber } from '#lib/core/rules/night/night-order.ts';
+	import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
+	import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+	import { type Night } from '#lib/core/model/overrides.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';

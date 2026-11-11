@@ -9,7 +9,7 @@ export type NightTextOverride = SpecValue<typeof OVERRIDE>;
 
 /**
  * Our own Storyteller night text in place of the character's: the `nightText` part of its
- * rules block, read here and used by `rules/night-text.ts`. Per night (`first`, `other`):
+ * rules block, read here and used by `rules/night/night-text.ts`. Per night (`first`, `other`):
  * - `reviewed`: Trevor's reviewed edit, always used;
  * - `full`: fuller text where TPI's does not say which reminder tokens to place or remove and
  *   when (Trevor asked for it, then parked it: shown only while `FULL_NIGHT_INSTRUCTIONS` is on).

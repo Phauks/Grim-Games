@@ -13,7 +13,8 @@ import { describe, expect, it } from 'vitest';
 import type { Script } from '#lib/core/data/index.ts';
 import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { givenInstead } from '#lib/core/rules/jinxes/jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 

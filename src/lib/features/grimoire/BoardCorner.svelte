@@ -2,7 +2,7 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
-	import { gameClock } from '#lib/core/rules/index.ts';
+	import * as gameClock from '#lib/core/rules/game-clock.ts';
 	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';

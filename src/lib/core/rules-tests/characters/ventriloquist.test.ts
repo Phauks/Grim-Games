@@ -15,9 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { executionSavers } from '#lib/core/rules/ability.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { executionSavers } from '#lib/core/rules/abilities/protection.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Ventriloquist', () => {

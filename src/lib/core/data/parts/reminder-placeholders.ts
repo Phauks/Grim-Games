@@ -14,7 +14,7 @@ export type PlaceholderAction = PlaceholderToken['action'];
 /**
  * What each `:reminder:` in a character's night text means (Trevor, 2026-10-15: ":reminder:
  * ... defers to the first reminder token, which is not always proper. see pukka"): the
- * `reminderPlaceholders` part of its rules block, read here and used by `rules/night-text.ts`
+ * `reminderPlaceholders` part of its rules block, read here and used by `rules/night/night-text.ts`
  * and the night walk-through.
  *
  * TPI's text marks where a reminder token is handled with a bare `:reminder:`; it never says

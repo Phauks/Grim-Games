@@ -3,7 +3,7 @@ import { specPart, type PartValue } from './part.ts';
 
 /**
  * Its `token` on a player makes that player's ability work twice until dusk (M15c,
- * `rules/acts-twice.ts`): each of their night steps wakes them a second time, and a day ability
+ * `rules/abilities/acts-twice.ts`): each of their night steps wakes them a second time, and a day ability
  * may be used once more, even a once-per-game one already spent
  * (https://wiki.bloodontheclocktower.com/Barista).
  */

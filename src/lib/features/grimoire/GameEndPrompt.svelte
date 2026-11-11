@@ -10,11 +10,11 @@
 		gameEnds,
 		promptable,
 		suggestedWinner,
-		type EndReason,
 		type GameEnd,
 		type GameHold
-	} from '#lib/core/rules/index.ts';
-	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/game-end/game-end.ts';
+	import { type EndReason } from '#lib/core/rules/game-end/end-reason.ts';
+	import { impairmentOfLabel } from '#lib/core/rules/abilities/ability.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
@@ -36,7 +36,7 @@
 	 * (or closing it) dismisses those conditions until they change, and the winner is only
 	 * preselected when every condition agrees. A condition something may hold off (a living
 	 * Mastermind, both twins alive) doesn't open it (Trevor, 2026-10-18). Rules:
-	 * `#lib/core/rules/game-end.ts`.
+	 * `#lib/core/rules/game-end/game-end.ts`.
 	 */
 	interface Props {
 		grimoire: Grimoire;

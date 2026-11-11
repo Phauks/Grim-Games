@@ -17,8 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { decide, type Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { demonHeirs, rebirthOf, reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';
+import { demonHeirs, rebirthOf, reincarnatedBy } from '#lib/core/rules/abilities/reincarnation.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

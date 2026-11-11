@@ -15,12 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { registrations } from '#lib/core/rules/ability.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
-import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
-import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
+import { registrations } from '#lib/core/rules/abilities/ability.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { seesGrimoire } from '#lib/core/rules/night/sees-grimoire.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { characterNominationPrompts } from '#lib/core/rules/day/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Spy', () => {

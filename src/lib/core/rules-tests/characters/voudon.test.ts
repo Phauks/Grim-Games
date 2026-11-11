@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { blockThreshold } from '#lib/core/rules/voting.ts';
+import { blockThreshold } from '#lib/core/rules/day/voting.ts';
 import { total, voteWarnings, votes } from '#lib/core/testing/votes.ts';
-import { exileThreshold } from '#lib/core/rules/voting.ts';
+import { exileThreshold } from '#lib/core/rules/day/voting.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Voudon', () => {

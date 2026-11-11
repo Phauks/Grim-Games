@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayNumber, type GamePhase } from '#lib/core/rules/index.ts';
+	import { dayNumber } from '#lib/core/rules/night/night-order.ts';
+	import { type GamePhase } from '#lib/core/rules/game-phase.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';

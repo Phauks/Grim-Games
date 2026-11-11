@@ -2,7 +2,9 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import type { BagPlan, ScriptJinx, SetupAnalysis } from '#lib/core/rules/index.ts';
+	import type { BagPlan } from '#lib/core/rules/setup/bag-plan.ts';
+	import type { ScriptJinx } from '#lib/core/rules/jinxes/jinxes.ts';
+	import type { SetupAnalysis } from '#lib/core/rules/setup/setup.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';

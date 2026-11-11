@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { nightKiller, noAttackState, type NightStep } from '#lib/core/rules/index.ts';
+	import { nightKiller } from '#lib/core/rules/night/night-alerts.ts';
+	import { noAttackState } from '#lib/core/rules/night/demon-attack.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import SeatBadge from './SeatBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BoardReminder from './BoardReminder.svelte';

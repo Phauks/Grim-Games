@@ -34,7 +34,7 @@ export type ReminderEndRule = SpecValue<typeof END>;
  * the Philosopher's Drunk until the Philosopher dies,
  * https://wiki.bloodontheclocktower.com/Philosopher), or until a player of an alignment is
  * nominated (`{ "nominated": "evil" }`). The app takes each off then
- * (`rules/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
+ * (`rules/reminders/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
  */
 export const reminderEnds = specPart(
 	'Reminders that come off',

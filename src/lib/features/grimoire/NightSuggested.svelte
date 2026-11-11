@@ -2,27 +2,25 @@
 	import SeatBadge from './SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import type { AnswerOption } from '#lib/core/rules/night/info/answers.ts';
 	import type {
-		AnswerOption,
 		AnswerValue,
-		ChosenPlayers,
-		ChosenPlayersRow,
-		InfoChoice,
-		InfoPicker,
-		LearnedRole,
-		LearnedRoles,
 		NightAnswer,
-		NightStep,
 		Reliability,
-		ValidInfo,
 		Why
-	} from '#lib/core/rules/index.ts';
-	import {
-		answerOptions,
-		chosenPlayers,
-		learnedRoles,
-		validInformation
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/night/info/reliability.ts';
+	import type {
+		ChosenPlayers,
+		ChosenPlayersRow
+	} from '#lib/core/rules/night/info/chosen-players.ts';
+	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
+	import type { LearnedRole, LearnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import type { ValidInfo } from '#lib/core/rules/night/info/valid-info.ts';
+	import { answerOptions } from '#lib/core/rules/night/info/answers.ts';
+	import { chosenPlayers } from '#lib/core/rules/night/info/chosen-players.ts';
+	import { learnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+	import { validInformation } from '#lib/core/rules/night/info/valid-info.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';

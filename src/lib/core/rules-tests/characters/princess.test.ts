@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { reliability } from '#lib/core/rules/night-info.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { stoppedWaking } from '#lib/core/rules/woke-tonight.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { stoppedWaking } from '#lib/core/rules/night/woke-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Princess', () => {

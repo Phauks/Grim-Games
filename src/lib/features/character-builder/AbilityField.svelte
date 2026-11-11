@@ -12,7 +12,7 @@
 		withResult,
 		withSetup,
 		type SetupPart
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/abilities/ability-parts.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

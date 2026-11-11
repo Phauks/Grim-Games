@@ -6,7 +6,7 @@
 	 */
 	import type { Snippet } from 'svelte';
 	import type { Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
-	import type { SetupAnalysis } from '#lib/core/rules/index.ts';
+	import type { SetupAnalysis } from '#lib/core/rules/setup/setup.ts';
 	import CharacterPicker, {
 		type PickerItemState
 	} from '#lib/features/characters/CharacterPicker.svelte';

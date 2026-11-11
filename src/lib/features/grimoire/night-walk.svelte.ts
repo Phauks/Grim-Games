@@ -20,7 +20,9 @@ import {
 	ruleSources,
 	scriptOrderSource
 } from '#lib/core/rules/rule-sources.ts';
-import { abilityState, type Night, type NightStep } from '#lib/core/rules/index.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
+import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type { ReminderHand } from './reminder-hand.svelte.ts';

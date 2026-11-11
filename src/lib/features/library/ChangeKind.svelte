@@ -6,7 +6,7 @@
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
+	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/character-builder.ts';
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';

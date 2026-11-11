@@ -19,13 +19,17 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { carriesDemonToken } from '#lib/core/rules/death-causes.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { carriesDemonToken } from '#lib/core/rules/abilities/death-causes.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 
 describe("Lil' Monsta", () => {
 	const character = committedCharacter('lilmonsta');

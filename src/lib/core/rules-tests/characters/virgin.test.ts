@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { characterNominationPrompts, mayNominate } from '#lib/core/rules/nominations.ts';
+import { characterNominationPrompts, mayNominate } from '#lib/core/rules/day/nominations.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { dayUseSuggestion } from '#lib/core/rules/day-claims.ts';
-import { isOnceOnlyDayAbility } from '#lib/core/rules/day-reminders.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { dayUseSuggestion } from '#lib/core/rules/day/day-claims.ts';
+import { isOnceOnlyDayAbility } from '#lib/core/rules/day/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Virgin', () => {

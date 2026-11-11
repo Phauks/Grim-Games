@@ -15,12 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { becomesOffer, swapChoice } from '#lib/core/rules/becomes.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { becomesOffer, swapChoice } from '#lib/core/rules/abilities/becomes.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 const charmed = { characterId: 'snakecharmer', label: 'Poisoned' } as const;

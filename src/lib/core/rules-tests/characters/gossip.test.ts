@@ -14,18 +14,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { dayClaim } from '#lib/core/rules/day-claims.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
+import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/night/woke-tonight.ts';
 
 describe('Gossip', () => {
 	const character = committedCharacter('gossip');

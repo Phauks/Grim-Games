@@ -4,7 +4,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
-	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
+	import type { ScriptJinx } from '#lib/core/rules/jinxes/jinxes.ts';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import JinxMark from '#lib/features/characters/JinxMark.svelte';
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
@@ -14,7 +14,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { Snippet } from 'svelte';
 	import PlayerCounts from './PlayerCounts.svelte';
-	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
+	import { scriptMaxPlayers } from '#lib/core/rules/setup/teensyville.ts';
 	import { groupByType } from './player-script.ts';
 	import type { SheetDensity } from './player-settings.svelte.ts';
 	import type { TravellerInPlay } from './travellers-in-play.ts';

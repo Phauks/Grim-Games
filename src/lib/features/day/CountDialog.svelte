@@ -5,12 +5,11 @@
 		counts,
 		exileThreshold,
 		seatsBehind,
-		votesSecret,
 		votesWithoutToken,
-		voteNotes,
-		type DayCount,
-		type VoteHint
-	} from '#lib/core/rules/index.ts';
+		type DayCount
+	} from '#lib/core/rules/day/voting.ts';
+	import { votesSecret } from '#lib/core/rules/day/voting-table.ts';
+	import { voteNotes, type VoteHint } from '#lib/core/rules/day/vote-weights.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';

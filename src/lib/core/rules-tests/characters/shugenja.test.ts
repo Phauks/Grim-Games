@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Shugenja', () => {

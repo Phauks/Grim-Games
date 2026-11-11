@@ -14,10 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/night/woke-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

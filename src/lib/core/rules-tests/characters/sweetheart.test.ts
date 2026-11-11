@@ -15,13 +15,17 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { deathReminder } from '#lib/core/rules/first-death.ts';
-import { madnessOffer } from '#lib/core/rules/madness.ts';
-import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { reliability } from '#lib/core/rules/night-info.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
+import { madnessOffer } from '#lib/core/rules/day/madness.ts';
+import {
+	nightStepAlerts,
+	onDeathApplies,
+	onDeathTrigger
+} from '#lib/core/rules/night/night-alerts.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Sweetheart', () => {

@@ -2,7 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayTimers, parsePlayersPhase, parseSetupLook } from '#lib/core/rules/index.ts';
+	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
+	import { parsePlayersPhase, parseSetupLook } from '#lib/core/rules/game-phase.ts';
 	import { seatCandles, seatConnections, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';

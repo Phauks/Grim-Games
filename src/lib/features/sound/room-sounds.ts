@@ -1,5 +1,5 @@
 import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
-import { dayTimers } from '#lib/core/rules/index.ts';
+import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 import { ambienceMix } from '#lib/core/sound/ambience.ts';
 import { hearsSound, type SoundListener } from '#lib/core/sound/soundboard.ts';
 import type { PublicGameState } from '#lib/core/sync/public-projection.ts';

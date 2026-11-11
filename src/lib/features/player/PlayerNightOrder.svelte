@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
+	import { MARKER_TEXT } from '#lib/core/rules/night/night-order.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import StepPiece from '#lib/features/grimoire/StepPiece.svelte';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';

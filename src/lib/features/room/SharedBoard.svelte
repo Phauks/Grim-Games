@@ -3,7 +3,7 @@
 	import { readSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
-	import { dayTimers } from '#lib/core/rules/index.ts';
+	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';

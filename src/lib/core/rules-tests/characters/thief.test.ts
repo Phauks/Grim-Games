@@ -16,11 +16,11 @@ import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { blockThreshold } from '#lib/core/rules/voting.ts';
+import { blockThreshold } from '#lib/core/rules/day/voting.ts';
 import { total, votes } from '#lib/core/testing/votes.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { voteHints } from '#lib/core/rules/vote-weights.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { voteHints } from '#lib/core/rules/day/vote-weights.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Thief', () => {

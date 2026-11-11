@@ -11,10 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { becomesOffer } from '#lib/core/rules/becomes.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { babysits, babysitter, withLilMonsta } from './lilmonsta.test-support.ts';
 
 describe("Lil' Monsta + Scarlet Woman jinx", () => {

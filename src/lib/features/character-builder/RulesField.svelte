@@ -1,13 +1,9 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
-	import {
-		ruleRows,
-		summaryOf,
-		withRule,
-		type CharacterFields,
-		type RuleRow
-	} from '#lib/core/rules/index.ts';
+	import { ruleRows, withRule, type RuleRow } from '#lib/core/rules/character-builder-rules.ts';
+	import { summaryOf } from '#lib/core/data/field-spec.ts';
+	import { type CharacterFields } from '#lib/core/rules/character-builder.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';

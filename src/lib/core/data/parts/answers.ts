@@ -7,7 +7,7 @@ import { specPart } from './part.ts';
 import type { ReminderLabel } from '../types.ts';
 
 /**
- * What an `answers` character learns, worked out in `rules/night-info/answers.ts`.
+ * What an `answers` character learns, worked out in `rules/night/info/answers.ts`.
  *
  * The building blocks (M77, M78) look at a group of players, the group `among`:
  * - `dead`: those who register as dead;

@@ -99,7 +99,7 @@ export type SetupNote = SpecValue<typeof NOTE>;
 
 /**
  * What the Storyteller prepares for a character between the draw and the first night: the
- * `setupPrep` part of its rules block, read here and suggested by `rules/setup-reminders.ts`.
+ * `setupPrep` part of its rules block, read here and suggested by `rules/setup/setup-reminders.ts`.
  *
  * - `reminders`: tokens the Storyteller places before the first night (or at the start of the
  *   first day). Only tokens the Storyteller decides are listed: a token marking what a player

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
-	import { bagRoleOf, scriptWithBagRole, type BagRole } from '#lib/core/rules/bag-characters.ts';
+	import {
+		bagRoleOf,
+		scriptWithBagRole,
+		type BagRole
+	} from '#lib/core/rules/setup/bag-characters.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';

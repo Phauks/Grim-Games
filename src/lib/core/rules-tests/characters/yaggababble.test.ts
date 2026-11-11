@@ -20,13 +20,17 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { dayTallyOf, tallyKills } from '#lib/core/rules/day-tally.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { dayTallyOf, tallyKills } from '#lib/core/rules/day/day-tally.ts';
 import { decide } from '#lib/core/engine/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Yaggababble's day reminders, as plain text. */

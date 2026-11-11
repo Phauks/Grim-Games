@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { MadnessOffer } from '#lib/core/rules/index.ts';
+	import type { MadnessOffer } from '#lib/core/rules/day/madness.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';

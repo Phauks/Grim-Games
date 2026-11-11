@@ -7,8 +7,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { answerCauses, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { answerCauses, nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

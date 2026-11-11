@@ -14,9 +14,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { analyseSetup } from '#lib/core/rules/setup.ts';
-import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 

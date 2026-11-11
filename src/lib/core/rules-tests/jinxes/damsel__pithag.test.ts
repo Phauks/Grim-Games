@@ -10,7 +10,8 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { jinxedPartners, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { jinxedPartners } from '#lib/core/rules/jinxes/jinxes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 

@@ -12,8 +12,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { analyseSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { analyseSelection, type BagSelection } from '#lib/core/rules/setup/bag-plan.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 
 const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));
 

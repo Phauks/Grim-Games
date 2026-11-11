@@ -5,7 +5,7 @@
 		reminderHolder,
 		type ReminderInstance
 	} from '#lib/core/model/index.ts';
-	import { counterMoves, type CounterMove } from '#lib/core/rules/index.ts';
+	import { counterMoves, type CounterMove } from '#lib/core/rules/reminders/counters.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';

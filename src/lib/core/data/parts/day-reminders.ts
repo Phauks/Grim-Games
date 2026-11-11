@@ -78,7 +78,7 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
 
 /**
  * What the Storyteller should watch for during the day because of a character, shown by
- * `rules/day-reminders.ts`.
+ * `rules/day/day-reminders.ts`.
  *
  * - `reminders`: short, state-based sentences built from segments:
  *   - `{ self: true }`: this character, shown as a badge ("[Witch · Sam]");
@@ -111,7 +111,7 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  * - `targetAlive`: with `reminder`, only while the player carrying the token is alive;
  * - `nomineeChose: true`: one reminder per nomination today whose nominee chose a player
  *   (the Big Wig's speaker, recorded on the nomination).
- * - `noWish: true`: only while no wish of its player's has been granted (`rules/wishes.ts`);
+ * - `noWish: true`: only while no wish of its player's has been granted (`rules/abilities/wishes.ts`);
  *   a declined wish leaves it.
  *
  * Text here is our own summary, never wiki prose.

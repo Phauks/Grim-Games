@@ -15,8 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { voteNotes } from '#lib/core/rules/vote-weights.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { voteNotes } from '#lib/core/rules/day/vote-weights.ts';
 import { total, voteWarnings, votes } from '#lib/core/testing/votes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

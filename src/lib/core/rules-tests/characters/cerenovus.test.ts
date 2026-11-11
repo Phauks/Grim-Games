@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
-import { madAsChoice, madAsOf } from '#lib/core/rules/mad-as.ts';
-import { madnessOffer } from '#lib/core/rules/madness.ts';
-import { placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
+import { madAsChoice, madAsOf } from '#lib/core/rules/abilities/mad-as.ts';
+import { madnessOffer } from '#lib/core/rules/day/madness.ts';
+import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

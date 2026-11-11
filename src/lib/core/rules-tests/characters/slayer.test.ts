@@ -15,10 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dayUseDeath, dayUseOf } from '#lib/core/rules/day-claims.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { dayUseDeath, dayUseOf } from '#lib/core/rules/day/day-claims.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Slayer', () => {

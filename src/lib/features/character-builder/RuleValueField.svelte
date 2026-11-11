@@ -9,7 +9,7 @@
 		startVariant,
 		variantOf,
 		type FieldSpec
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/data/field-spec.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';

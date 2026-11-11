@@ -15,9 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { killChoice, liveOrDieChosen, resolveLiveOrDie } from '#lib/core/rules/chosen-kills.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import {
+	killChoice,
+	liveOrDieChosen,
+	resolveLiveOrDie
+} from '#lib/core/rules/night/chosen-kills.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Al-Hadikhia', () => {

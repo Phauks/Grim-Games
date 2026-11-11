@@ -15,8 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { exileSavers } from '#lib/core/rules/protection.ts';
-import { exileThreshold } from '#lib/core/rules/voting.ts';
+import { exileSavers } from '#lib/core/rules/abilities/protection.ts';
+import { exileThreshold } from '#lib/core/rules/day/voting.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

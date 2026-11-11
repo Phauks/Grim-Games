@@ -5,7 +5,7 @@
 	import { fromScript } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { moreTravellers, recommendedTravellers } from '#lib/core/rules/index.ts';
+	import { moreTravellers, recommendedTravellers } from '#lib/core/rules/setup/bag-plan.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';

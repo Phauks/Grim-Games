@@ -11,7 +11,10 @@
  * which is how such a game always played.
  */
 import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
-import { DAY_SECONDS_PER_ALIVE_MAX, DAY_SECONDS_PER_ALIVE_MIN } from '#lib/core/rules/day-timer.ts';
+import {
+	DAY_SECONDS_PER_ALIVE_MAX,
+	DAY_SECONDS_PER_ALIVE_MIN
+} from '#lib/core/rules/day/day-timer.ts';
 import type { Preferences } from '#lib/ui/preferences.ts';
 
 export interface GameSettings {

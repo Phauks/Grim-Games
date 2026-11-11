@@ -7,14 +7,14 @@ import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index
 import {
 	borrowedAbilities,
 	borrowedCopyHolder,
-	gainedAbilities,
-	reminderHolders,
-	reminderOffered,
-	type Night,
-	type NightStep
-} from '#lib/core/rules/index.ts';
-import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
-import { placeholderRulesOf } from '#lib/core/rules/night-text.ts';
+	reminderHolders
+} from '#lib/core/rules/abilities/borrowed-abilities.ts';
+import { gainedAbilities } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { reminderOffered } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { type Night } from '#lib/core/model/overrides.ts';
+import { type NightStep } from '#lib/core/rules/night/night-order.ts';
+import { isBagDisabled, isNotDealt } from '#lib/core/rules/setup/bag-characters.ts';
+import { placeholderRulesOf } from '#lib/core/rules/night/night-text.ts';
 import {
 	GENERIC_REMINDER_ID,
 	charactersInPlay,

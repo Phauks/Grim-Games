@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
-import { executionSavers, protection } from '#lib/core/rules/ability.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { babysits, scriptOf, withLilMonsta } from './lilmonsta.test-support.ts';
 

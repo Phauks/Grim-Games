@@ -15,12 +15,16 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { nightKill } from '#lib/core/rules/night/night-kill.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
 
 describe('Po', () => {
 	const character = committedCharacter('po');

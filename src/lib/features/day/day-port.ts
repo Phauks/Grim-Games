@@ -1,6 +1,6 @@
 import type { CharacterId, CharacterName, PlayerName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
-import { dayUseWho } from '#lib/core/rules/index.ts';
+import { dayUseWho } from '#lib/core/rules/day/day-claims.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
 

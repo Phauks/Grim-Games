@@ -1,7 +1,7 @@
 /** How a game ended, in words: End game's choices and the recap. */
 /* eslint-disable grim/names-as-badges -- a Select option's accessible name and the saved recap's text; End game shows the badge */
 import type { CharacterLookup } from '#lib/core/model/index.ts';
-import { endReasonCharacter, type EndReason } from '#lib/core/rules/index.ts';
+import { endReasonCharacter, type EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 
 const LABELS = { 'demon-dead': 'Demon execution', 'two-alive': '2 alive', other: 'Other' } as const;
 

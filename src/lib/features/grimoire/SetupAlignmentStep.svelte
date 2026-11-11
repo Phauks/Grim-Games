@@ -1,6 +1,9 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { setupAlignmentTasks, type SetupAlignmentTask } from '#lib/core/rules/index.ts';
+	import {
+		setupAlignmentTasks,
+		type SetupAlignmentTask
+	} from '#lib/core/rules/setup/setup-alignment.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';

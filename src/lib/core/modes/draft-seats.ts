@@ -24,10 +24,10 @@
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
-import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
-import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/setup/bag-characters.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/parts/turns-players-into.ts';
-import { neighboursTurned } from '#lib/core/rules/turns-players.ts';
+import { neighboursTurned } from '#lib/core/rules/abilities/turns-players.ts';
 import type { DraftState, PendingChange } from './draft.ts';
 
 /** Its own rules (a custom character's) or our rules file's. */

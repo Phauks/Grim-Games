@@ -1,7 +1,7 @@
 /** Whale Buffet's choose-your-own: https://whalebuffet.com/ */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { baseCounts } from '#lib/core/rules/distribution.ts';
+import { baseCounts } from '#lib/core/rules/setup/distribution.ts';
 import { chooseOptions, dealTypes } from './choose.ts';
 import { gameModeById } from './registry.ts';
 import { modeCharacters } from './pool.ts';

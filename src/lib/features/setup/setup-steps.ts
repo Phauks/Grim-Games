@@ -1,7 +1,7 @@
 import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Game } from '#lib/core/model/index.ts';
-import { setupComplete } from '#lib/core/rules/index.ts';
+import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
 
 /**
  * The one setup flow (Trevor, 2026-10-16): Characters, then Draw, moved between by the bar

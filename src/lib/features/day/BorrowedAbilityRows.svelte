@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { borrowedAbilitiesOf } from '#lib/core/rules/index.ts';
+	import { borrowedAbilitiesOf } from '#lib/core/rules/abilities/borrowed-abilities.ts';
 	import MarkedCharacterRows from '#lib/features/characters/MarkedCharacterRows.svelte';
 	import type { DayPort } from './day-port.ts';
 

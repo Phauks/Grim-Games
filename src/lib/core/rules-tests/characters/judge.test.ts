@@ -14,11 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { dayUseSuggestion, dayUseWho } from '#lib/core/rules/day-claims.ts';
-import { isExecution } from '#lib/core/rules/death-causes.ts';
+import { dayUseSuggestion, dayUseWho } from '#lib/core/rules/day/day-claims.ts';
+import { isExecution } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { executionOutcomes } from '#lib/core/rules/execution-outcome.ts';
+import { executionOutcomes } from '#lib/core/rules/day/execution-outcome.ts';
 
 describe('Judge', () => {
 	const character = committedCharacter('judge');

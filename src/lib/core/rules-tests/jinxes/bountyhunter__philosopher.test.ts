@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { gainedPartnerJinx } from '#lib/core/rules/jinx-effects.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { gainedPartnerJinx } from '#lib/core/rules/jinxes/jinx-effects.ts';
+import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

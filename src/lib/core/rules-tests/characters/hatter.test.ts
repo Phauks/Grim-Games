@@ -13,19 +13,19 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { deathReminder } from '#lib/core/rules/first-death.ts';
+import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { decide, type Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
-import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminders/reminder-ends.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Hatter', () => {
 	const character = committedCharacter('hatter');

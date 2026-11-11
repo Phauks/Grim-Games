@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { dayTimers, quietLeft } from '#lib/core/rules/index.ts';
+	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
+	import { quietLeft } from '#lib/core/rules/day/quiet-start.ts';
 	import type { QuietStart } from '#lib/core/data/parts/quiet-start.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';

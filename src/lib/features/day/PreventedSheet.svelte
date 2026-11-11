@@ -2,7 +2,7 @@
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/index.ts';
+	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/day/prevented-deaths.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';

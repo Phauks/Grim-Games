@@ -9,8 +9,8 @@ import { rulesIn } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { aboutHolder, jinxApplies } from './jinx-when.ts';
-import { ownJinxes } from './jinxes.ts';
+import { aboutHolder, jinxApplies } from '#lib/core/rules/jinxes/jinx-when.ts';
+import { ownJinxes } from '#lib/core/rules/jinxes/jinxes.ts';
 
 /**
  * `characterId`'s rules in `game`, its jinx patches in effect included. `at` names the player

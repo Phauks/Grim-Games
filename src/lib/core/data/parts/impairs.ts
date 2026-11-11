@@ -37,7 +37,7 @@ const TOKEN_IMPAIRMENT = obj({
 export type TokenImpairment = SpecValue<typeof TOKEN_IMPAIRMENT>;
 
 /**
- * How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`).
+ * How the ability leaves players drunk, poisoned or with no ability (`rules/abilities/ability.ts`).
  * `self`: its own player always is (the Drunk), or once at most `aliveAtMost` players live (the
  * Witch). `tokens`: what each of its reminders does, by label; an entry without `whileWorks`
  * lasts even once this character's ability ends (the Sweetheart's "from now on"). A reminder

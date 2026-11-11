@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { NominationPrompt } from '#lib/core/rules/rule-sources.ts';
-	import type { CharacterNominationPrompt } from '#lib/core/rules/index.ts';
+	import type { CharacterNominationPrompt } from '#lib/core/rules/day/nominations.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import SeatBadge from './SeatBadge.svelte';
@@ -8,7 +8,7 @@
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import { seatNominations } from '#lib/core/rules/index.ts';
+	import { seatNominations } from '#lib/core/rules/day/nominations.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 

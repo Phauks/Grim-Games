@@ -6,11 +6,8 @@
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/parts/day-mark.ts';
 import type { CounterTime } from '#lib/core/data/parts/counter.ts';
-import type {
-	DayReminderOverride,
-	ExecutionOutcome,
-	NightStepOverride
-} from '#lib/core/rules/index.ts';
+import type { DayReminderOverride, NightStepOverride } from '#lib/core/model/overrides.ts';
+import type { ExecutionOutcome } from '#lib/core/rules/day/execution-outcome.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 import type {

@@ -10,7 +10,7 @@
  *   (https://wiki.bloodontheclocktower.com/Traveller).
  */
 import type { Alignment, CharacterId, CharacterName, CharacterType } from '#lib/core/data/index.ts';
-import { isAlternateEnd } from '#lib/core/rules/end-reason.ts';
+import { isAlternateEnd } from '#lib/core/rules/game-end/end-reason.ts';
 import type { GameRecord, RecordSeat } from './record.ts';
 
 export interface TeamCounts {

@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { setupAlignmentTasks } from '#lib/core/rules/setup-alignment.ts';
+import { setupAlignmentTasks } from '#lib/core/rules/setup/setup-alignment.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Bounty Hunter + Kazali jinx', () => {

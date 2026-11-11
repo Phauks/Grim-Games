@@ -1,6 +1,6 @@
 import type { CharacterId, SeatedType } from '#lib/core/data/types.ts';
 import { readParsed, writeStored } from '#lib/ui/stored.ts';
-import type { HomebrewEntry } from '#lib/core/rules/script-builder.ts';
+import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import type { VariationOf } from '#lib/features/scripts/saved-scripts.ts';
 import { emptyDraft, parseDraft, type DraftCredit, type ScriptDraft } from './draft.ts';
 

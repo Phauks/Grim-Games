@@ -9,7 +9,10 @@
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { fixedReminderMove, fixedReminderReason } from '#lib/core/rules/index.ts';
+	import {
+		fixedReminderMove,
+		fixedReminderReason
+	} from '#lib/core/rules/reminders/reminder-movement.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';

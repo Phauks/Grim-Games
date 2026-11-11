@@ -6,7 +6,7 @@ import {
 	type Jinx
 } from '#lib/core/data/index.ts';
 import { charactersInPlay, type Game } from '#lib/core/model/index.ts';
-import { activeJinxes, scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes.ts';
+import { activeJinxes, scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes/jinxes.ts';
 
 /**
  * A game's jinxes for where the Storyteller runs each character (L107): the script's jinxes

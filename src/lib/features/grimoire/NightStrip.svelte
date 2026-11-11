@@ -4,7 +4,9 @@
 	import NightAlerts from './NightAlerts.svelte';
 	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
-	import { stepNightNumbers, type Night, type NightStep } from '#lib/core/rules/index.ts';
+	import { stepNightNumbers } from '#lib/core/rules/night/night-numbers.ts';
+	import { type Night } from '#lib/core/model/overrides.ts';
+	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import { alignmentOf } from '#lib/core/model/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

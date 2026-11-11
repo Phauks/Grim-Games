@@ -13,13 +13,13 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { executedInstead } from '#lib/core/rules/executed-instead.ts';
-import { promptable, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { executedInstead } from '#lib/core/rules/day/executed-instead.ts';
+import { promptable, suggestedWinner } from '#lib/core/rules/game-end/game-end.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
 
 describe('Saint', () => {
 	const character = committedCharacter('saint');

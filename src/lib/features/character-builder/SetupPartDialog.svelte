@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 	import {
-		SEATED_TYPES,
 		setupPartText,
-		type SeatedType,
 		type SetupPart,
 		type SetupPartKind
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/abilities/ability-parts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';

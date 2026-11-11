@@ -12,11 +12,11 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { GENERIC_REMINDER_ID } from '#lib/core/model/types.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { executionOutcomes } from '#lib/core/rules/execution-outcome.ts';
-import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
+import { executionOutcomes } from '#lib/core/rules/day/execution-outcome.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './vizier.test-support.ts';
 

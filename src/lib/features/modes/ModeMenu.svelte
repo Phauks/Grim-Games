@@ -10,8 +10,9 @@
 		type GameMode,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
-	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { gameClock, optionalRuleChoices } from '#lib/core/rules/index.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
+	import * as gameClock from '#lib/core/rules/game-clock.ts';
+	import { optionalRuleChoices } from '#lib/core/rules/optional-rules.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';

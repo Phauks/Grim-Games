@@ -8,7 +8,7 @@
  */
 import type { CharacterLookup, Game, Reminder, SeatId } from '#lib/core/model/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import { setupReminders, type SetupReminder } from '#lib/core/rules/setup-reminders.ts';
+import { setupReminders, type SetupReminder } from '#lib/core/rules/setup/setup-reminders.ts';
 
 export interface LabPlacement {
 	seatId: SeatId;

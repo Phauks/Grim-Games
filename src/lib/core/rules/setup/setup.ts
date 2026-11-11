@@ -1,0 +1,395 @@
+/**
+ * Setup check: given the player count and the characters chosen, what counts the setup
+ * sheet and the [bracketed] setup modifiers expect, and what looks off. It only advises;
+ * nothing here blocks the Storyteller (04-architecture.md §4: assist, never rule).
+ *
+ * https://wiki.bloodontheclocktower.com/Setup
+ */
+import {
+	canDuplicate,
+	isNotDealt,
+	isReplacedAfterDraw,
+	type AnyDuplicates
+} from './bag-characters.ts';
+import type { Character, CharacterId, CharacterName } from '#lib/core/data/types.ts';
+import { splitPlayers, type TypeCounts } from './distribution.ts';
+import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
+import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
+import { type CountOp } from '#lib/core/data/parts/setup-modifier.ts';
+
+export interface SetupInput {
+	/** Everyone playing, Travellers included. */
+	players: number;
+	/** Players who are Travellers. Defaults to everyone beyond 15. */
+	travellers?: number;
+	/**
+	 * Characters chosen for this game: dealt characters, plus any Travellers, Fabled and
+	 * Loric in play (those take no part in the counts but can carry setup modifiers).
+	 * A character listed twice is two copies (Village Idiot, Legion).
+	 */
+	inPlay: readonly Character[];
+	/**
+	 * Characters not in play whose ability a player has (the Alchemist's Minion,
+	 * https://wiki.bloodontheclocktower.com/Alchemist): their setup change applies too, but they
+	 * are not counted.
+	 */
+	abilities?: readonly Character[];
+	/** Looks up a character by name, so homebrew "+the King" text can be resolved. */
+	findByName?: (name: string) => CharacterId | undefined;
+	/** Looks up a character by id, for requirements such as Huntsman → Damsel. */
+	findById?: (id: CharacterId) => Character | undefined;
+	/** A game rule lets characters have more than one copy (Duplicate Characters). */
+	duplicatesAllowed?: AnyDuplicates;
+	/**
+	 * Setup changes that may apply through a jinx without their character in play (the
+	 * Alchemist-Summoner's [No Demon], `rules/jinxes/jinx-setup.ts`): their counts are allowed as
+	 * well as the usual ones. `as` names who it applies through, "Alchemist with the Summoner
+	 * ability".
+	 */
+	mayApply?: readonly { character: Character; as: string }[];
+}
+
+export interface AppliedModifier extends SetupModifier {
+	name: CharacterName;
+	/** "Baron: +2 Outsiders". */
+	explanation: string;
+}
+
+export type SetupWarningCode =
+	| 'player-count'
+	| 'count-mismatch'
+	| 'total-mismatch'
+	| 'missing-required'
+	| 'duplicate'
+	| 'unread-setup-text';
+
+export interface SetupWarning {
+	code: SetupWarningCode;
+	message: string;
+	characters?: CharacterId[];
+}
+
+export interface SetupAnalysis {
+	players: number;
+	/** Players dealt a character from the bag. */
+	dealt: number;
+	travellers: number;
+	/**
+	 * Tokens in the bag plus the Drunks and Marionettes, who have none: what the chosen
+	 * characters should add up to.
+	 */
+	tokens: number;
+	/** The setup sheet's counts for `dealt` players. */
+	base: TypeCounts;
+	/** Every count the modifiers allow, per type, ascending. One value when fixed. */
+	expected: Record<SeatedType, number[]>;
+	/** Counts of the chosen dealt characters, by type. */
+	chosen: TypeCounts;
+	/**
+	 * Chosen characters no player is dealt (Lil' Monsta). Their setup change still applies,
+	 * but they are not counted in `chosen`.
+	 */
+	notDealt: CharacterId[];
+	modifiers: AppliedModifier[];
+	/**
+	 * Why each type's count differs from the setup sheet, "Baron: +2 Outsiders", for the
+	 * count's info popup (Trevor, 2026-10-20). Empty when the sheet's count stands.
+	 */
+	reasons: Record<SeatedType, string[]>;
+	warnings: SetupWarning[];
+	/** Setup notes from the modifiers (bag contents, seating), "Baron: …". */
+	notes: string[];
+}
+
+const TYPE_LABEL: Record<SeatedType, [string, string]> = {
+	townsfolk: ['Townsfolk', 'Townsfolk'],
+	outsider: ['Outsider', 'Outsiders'],
+	minion: ['Minion', 'Minions'],
+	demon: ['Demon', 'Demons']
+};
+
+function plural(type: SeatedType, n: number): string {
+	return `${n} ${TYPE_LABEL[type][n === 1 ? 0 : 1]}`;
+}
+
+function listValues(values: readonly number[]): string {
+	if (values.length === 0) return 'none possible';
+	if (values.length > 2 && values.every((v, i) => i === 0 || v === values[i - 1] + 1)) {
+		return `${values[0]}–${values[values.length - 1]}`;
+	}
+	return values.length === 1
+		? String(values[0])
+		: `${values.slice(0, -1).join(', ')} or ${values.at(-1)}`;
+}
+
+function isDealt(type: Character['type']): type is SeatedType {
+	return (SEATED_TYPES as readonly string[]).includes(type);
+}
+
+/** Minkowski sum of a set of counts and a set of deltas. */
+function addAll(a: ReadonlySet<number>, b: readonly number[]): Set<number> {
+	const out = new Set<number>();
+	for (const x of a) for (const y of b) out.add(x + y);
+	return out;
+}
+
+export function analyseSetup(input: SetupInput): SetupAnalysis {
+	const split = splitPlayers(input.players, input.travellers);
+	const { dealt } = split;
+	const warnings: SetupWarning[] = split.warnings.map((message) => ({
+		code: 'player-count',
+		message
+	}));
+	const notes: string[] = [];
+
+	// Modifiers: one per distinct character (a second Village Idiot does not add more).
+	const modifiers: AppliedModifier[] = [];
+	const seenIds = new Set<CharacterId>();
+	const inPlayIds = new Set(input.inPlay.map((c) => c.id));
+	for (const character of [...input.inPlay, ...(input.abilities ?? [])]) {
+		if (seenIds.has(character.id)) continue;
+		seenIds.add(character.id);
+		const modifier = setupModifierFor(character, input.findByName);
+		if (!modifier) continue;
+		const applied: AppliedModifier = {
+			...modifier,
+			name: character.name,
+			explanation: `${character.name}: ${modifier.summary}`
+		};
+		modifiers.push(applied);
+		for (const note of modifier.notes) notes.push(`${character.name}: ${note}`);
+		if (
+			modifier.source === 'ability-text' &&
+			modifier.ops.length === 0 &&
+			!modifier.requires &&
+			!modifier.alignments &&
+			!modifier.copies
+		) {
+			warnings.push({
+				code: 'unread-setup-text',
+				message: `${character.name} has setup text this app could not read: “${modifier.summary}”. Adjust the counts by hand.`,
+				characters: [character.id]
+			});
+		}
+	}
+
+	// Collect ops by type; deltas add up, sets replace, `any` frees the count.
+	const deltas: Record<SeatedType, number[][]> = {
+		townsfolk: [],
+		outsider: [],
+		minion: [],
+		demon: []
+	};
+	const sets: Partial<Record<SeatedType, Set<number>>> = {};
+	const free = new Set<SeatedType>();
+	const also: Partial<Record<SeatedType, number[]>> = {};
+	const applyOp = (op: CountOp) => {
+		if (op.kind === 'delta') {
+			if (op.minUsual !== undefined && split.counts[op.type] < op.minUsual) return;
+			deltas[op.type].push([...op.values]);
+			if (op.also) (also[op.type] ??= []).push(...op.also);
+		} else if (op.kind === 'any') free.add(op.type);
+		else {
+			const values =
+				op.values === 'most'
+					? Array.from(
+							{ length: Math.max(0, dealt - Math.floor(dealt / 2) - 1) },
+							(_, i) => Math.floor(dealt / 2) + 1 + i
+						)
+					: op.values;
+			const prev = sets[op.type];
+			sets[op.type] = new Set(prev ? values.filter((v) => prev.has(v)) : values);
+		}
+	};
+	for (const modifier of modifiers) {
+		modifier.ops.forEach(applyOp);
+		if (modifier.requires && !inPlayIds.has(modifier.requires)) {
+			const required = input.findById?.(modifier.requires);
+			const name = required?.name ?? modifier.requires;
+			warnings.push({
+				code: 'missing-required',
+				message: `${modifier.name} needs the ${name} in play: swap a Townsfolk for the ${name}.`,
+				characters: [modifier.id, modifier.requires]
+			});
+		}
+		if (modifier.requires) {
+			// The required character replaces a Townsfolk when it is not already in play.
+			const type = input.findById?.(modifier.requires)?.type;
+			if (type && type !== 'townsfolk' && isDealt(type))
+				applyOp({ kind: 'delta', type, values: [0, 1] });
+		}
+	}
+
+	// A jinx's setup change that may apply: its counts join the usual ones.
+	const maybeSets: Partial<Record<SeatedType, number[]>> = {};
+	for (const { character, as } of input.mayApply ?? []) {
+		const modifier = setupModifierFor(character, input.findByName);
+		if (!modifier) continue;
+		const ops = modifier.ops.map((op): CountOp => {
+			if (op.kind !== 'delta') return op;
+			return { ...op, values: [...new Set([0, ...op.values])] };
+		});
+		for (const op of ops) {
+			if (op.kind !== 'set') applyOp(op);
+			else if (op.values !== 'most') (maybeSets[op.type] ??= []).push(...op.values);
+		}
+		modifiers.push({
+			...modifier,
+			ops,
+			name: character.name,
+			explanation: `${as}: ${modifier.summary}`
+		});
+		for (const note of modifier.notes) notes.push(`${as}: ${note}`);
+	}
+
+	// A Drunk or Marionette has no token in the bag: one more good character goes in instead,
+	// and who is secretly the Drunk or Marionette is decided once the tokens come back
+	// (Trevor, 2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
+	// https://wiki.bloodontheclocktower.com/Marionette). The Drunk's extra is a Townsfolk; the
+	// Marionette's a Townsfolk or an Outsider.
+	// A stand-in whose type no one is dealt (a Marionette with the Kazali, who makes the
+	// Minions on the first night): it enters play after the Demon, as its neighbour, so it is
+	// neither counted nor given a token of its own (the Marionette's Kazali jinx,
+	// https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const entersLater = (character: Character) =>
+		isDealt(character.type) &&
+		isReplacedAfterDraw(character) &&
+		sets[character.type]?.size === 1 &&
+		sets[character.type]?.has(0) === true;
+	const extraFor: Character[] = [];
+	for (const character of input.inPlay) {
+		if (isDealt(character.type) && isReplacedAfterDraw(character) && !entersLater(character))
+			extraFor.push(character);
+	}
+	for (const character of extraFor) {
+		if (character.type !== 'outsider') {
+			applyOp({ kind: 'delta', type: 'outsider', values: [0, 1] });
+		}
+	}
+	const extraNames = [...new Set(extraFor.map((c) => c.name))];
+	const tokens = dealt + extraFor.length;
+
+	const expected = {} as Record<SeatedType, number[]>;
+	for (const type of ['outsider', 'minion', 'demon'] as const) {
+		let values: Set<number>;
+		if (free.has(type)) values = new Set(Array.from({ length: dealt + 1 }, (_, i) => i));
+		else {
+			values = new Set([...(sets[type] ?? [split.counts[type]]), ...(maybeSets[type] ?? [])]);
+			for (const d of deltas[type]) values = addAll(values, d);
+			for (const v of also[type] ?? []) values.add(v);
+		}
+		expected[type] = [...values]
+			.map((v) => Math.max(0, v))
+			.filter((v, i, a) => a.indexOf(v) === i && v <= tokens);
+		expected[type].sort((a, b) => a - b);
+		if (expected[type].length === 0) expected[type] = [0];
+	}
+	// Townsfolk fill the remaining seats.
+	const townsfolk = new Set<number>();
+	for (const o of expected.outsider)
+		for (const m of expected.minion)
+			for (const d of expected.demon) {
+				const t = tokens - o - m - d;
+				if (t >= 0) townsfolk.add(t);
+			}
+	expected.townsfolk = [...townsfolk].sort((a, b) => a - b);
+	if (expected.townsfolk.length === 0) expected.townsfolk = [0];
+
+	// What was chosen.
+	const chosen: TypeCounts = { townsfolk: 0, outsider: 0, minion: 0, demon: 0 };
+	const copies = new Map<CharacterId, number>();
+	const notDealt: CharacterId[] = [];
+	for (const character of input.inPlay) {
+		if (!isDealt(character.type)) continue;
+		// Chosen but never dealt to a player, with no stand-in token: nobody is the Lil' Monsta,
+		// a Minion babysits it (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+		if (isNotDealt(character) || entersLater(character)) {
+			if (!notDealt.includes(character.id)) notDealt.push(character.id);
+			continue;
+		}
+		chosen[character.type]++;
+		copies.set(character.id, (copies.get(character.id) ?? 0) + 1);
+	}
+	const total = SEATED_TYPES.reduce((sum, type) => sum + chosen[type], 0);
+	const anyChosen = total > 0;
+
+	const because = Object.fromEntries(
+		SEATED_TYPES.map((type) => [
+			type,
+			[
+				...modifiers.filter((m) => m.ops.some((op) => op.type === type)).map((m) => m.explanation),
+				...(type === 'townsfolk' || type === 'outsider'
+					? extraFor
+							.filter((c, i) => extraFor.findIndex((o) => o.id === c.id) === i)
+							.map(
+								(c) =>
+									`${c.name}: +1 ${c.type === 'outsider' ? 'Townsfolk' : 'good character'} in the bag`
+							)
+					: [])
+			]
+		])
+	) as Record<SeatedType, string[]>;
+	// A count the sheet no longer gives, with no modifier of its own, makes room for another
+	// type's change (the Baron's Outsiders take Townsfolk places): every modifier explains it.
+	const reasons = Object.fromEntries(
+		SEATED_TYPES.map((type) => {
+			const changed = expected[type].length !== 1 || expected[type][0] !== split.counts[type];
+			const own = because[type];
+			return [type, own.length > 0 || !changed ? own : modifiers.map((m) => m.explanation)];
+		})
+	) as Record<SeatedType, string[]>;
+
+	if (anyChosen) {
+		for (const type of SEATED_TYPES) {
+			if (expected[type].includes(chosen[type])) continue;
+			warnings.push({
+				code: 'count-mismatch',
+				message: `${plural(type, chosen[type])} chosen; expected ${listValues(expected[type])} for ${dealt} players${because[type].length ? ` (${because[type].join('; ')})` : ''}.`
+			});
+		}
+		if (total !== tokens) {
+			const extras = extraNames.map((name) => `+1 for the ${name}`);
+			warnings.push({
+				code: 'total-mismatch',
+				message: `${total} characters chosen for ${dealt} players${split.travellers ? ` (plus ${split.travellers} Traveller${split.travellers === 1 ? '' : 's'})` : ''}${extras.length ? `; expected ${tokens} (${extras.join(', ')})` : ''}.`
+			});
+		}
+	}
+
+	for (const [id, n] of copies) {
+		if (n < 2) continue;
+		const character = input.inPlay.find((c) => c.id === id)!;
+		if (!canDuplicate(character, input.inPlay, input.duplicatesAllowed)) {
+			warnings.push({
+				code: 'duplicate',
+				message: `${character.name} is chosen ${n} times.`,
+				characters: [id]
+			});
+			continue;
+		}
+		// A homebrew bracket allows only so many copies ("+0 to +2 Legionary": 3 at most).
+		const allowed = modifiers.find((m) => m.id === id)?.copies;
+		if (allowed && n > 1 + Math.max(...allowed)) {
+			warnings.push({
+				code: 'duplicate',
+				message: `${character.name} is chosen ${n} times; its setup allows at most ${1 + Math.max(...allowed)}.`,
+				characters: [id]
+			});
+		}
+	}
+
+	return {
+		players: split.dealt + split.travellers,
+		dealt,
+		tokens,
+		travellers: split.travellers,
+		base: split.counts,
+		expected,
+		chosen,
+		notDealt,
+		modifiers,
+		reasons,
+		warnings,
+		notes
+	};
+}

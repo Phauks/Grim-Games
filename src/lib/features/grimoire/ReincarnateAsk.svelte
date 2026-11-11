@@ -7,7 +7,7 @@
 		typeOf,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { demonHeirs } from '#lib/core/rules/index.ts';
+	import { demonHeirs } from '#lib/core/rules/abilities/reincarnation.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import NewDemonDialog from './NewDemonDialog.svelte';

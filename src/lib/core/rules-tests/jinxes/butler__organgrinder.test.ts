@@ -11,8 +11,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { uncountedVote, voteHints } from '#lib/core/rules/vote-weights.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { uncountedVote, voteHints } from '#lib/core/rules/day/vote-weights.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { voteWarnings } from '#lib/core/testing/votes.ts';
 import { scriptOf } from './summoner.test-support.ts';

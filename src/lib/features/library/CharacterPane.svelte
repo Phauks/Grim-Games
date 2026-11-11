@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
+	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/character-builder.ts';
 	import CharacterBuilderDialog from '#lib/features/character-builder/CharacterBuilderDialog.svelte';
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';

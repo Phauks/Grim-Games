@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
-	import { gameClock } from '#lib/core/rules/index.ts';
+	import * as gameClock from '#lib/core/rules/game-clock.ts';
 	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';

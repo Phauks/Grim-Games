@@ -14,18 +14,18 @@
 	import { BLUFFS_PER_SET, surplusSeats, type Command } from '#lib/core/engine/index.ts';
 	import {
 		analyseSelection,
-		canDuplicate,
-		jinxSetupWarnings,
 		planBag,
-		scriptFacts,
 		selectedIds,
 		travellerRange,
 		listMoreTravellers,
 		moreTravellers,
 		isRuleCharacter,
 		validRandomSelection
-	} from '#lib/core/rules/index.ts';
-	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/teensyville.ts';
+	} from '#lib/core/rules/setup/bag-plan.ts';
+	import { canDuplicate } from '#lib/core/rules/setup/bag-characters.ts';
+	import { jinxSetupWarnings } from '#lib/core/rules/jinxes/jinxes.ts';
+	import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
+	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/setup/teensyville.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';

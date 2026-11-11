@@ -9,7 +9,7 @@
 	import { COUNTING_REMINDERS, REMINDER_REMOVALS } from '#lib/ui/preferences.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
-	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
+	import { SETUP_LOOKS } from '#lib/core/rules/game-phase.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';

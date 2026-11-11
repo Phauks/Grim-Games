@@ -17,8 +17,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { blockThreshold } from '#lib/core/rules/voting.ts';
-import { ghostVotesRestored } from '#lib/core/rules/voting-table.ts';
+import { blockThreshold } from '#lib/core/rules/day/voting.ts';
+import { ghostVotesRestored } from '#lib/core/rules/day/voting-table.ts';
 
 describe('Ferryman', () => {
 	const character = committedCharacter('ferryman');

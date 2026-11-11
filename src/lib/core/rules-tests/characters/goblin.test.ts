@@ -14,11 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe('Goblin', () => {
 	const character = committedCharacter('goblin');

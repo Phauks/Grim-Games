@@ -15,8 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import { filledInfoToken, shownOrder, withChosen } from '#lib/core/rules/info-token-characters.ts';
-import { infoPicker, isAllowed, reliability } from '#lib/core/rules/night-info.ts';
+import {
+	filledInfoToken,
+	shownOrder,
+	withChosen
+} from '#lib/core/rules/night/info-token-characters.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 

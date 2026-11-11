@@ -1,6 +1,7 @@
 import type { CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-import { SEATED_TYPES, splitPlayers } from '#lib/core/rules/distribution.ts';
+import { splitPlayers } from '#lib/core/rules/setup/distribution.ts';
+import { SEATED_TYPES } from '#lib/core/data/types.ts';
 import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 
 /**

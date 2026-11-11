@@ -7,7 +7,7 @@ import { specPart, type PartValue } from './part.ts';
  * one takes the place of the one before on the same player, as each wiki How to Run says. The
  * Pixie's Mad gives way to Has Ability, the Shabaloth's Dead to Alive, the Pukka's Poisoned to
  * Dead. Placing a later one on a player who has an earlier one asks to take the earlier one
- * off (`rules/token-flow.ts`); the Storyteller may keep both (the Pukka's How to Run keeps
+ * off (`rules/abilities/token-flow.ts`); the Storyteller may keep both (the Pukka's How to Run keeps
  * Poisoned by Dead while a death ability resolves), so it never happens on its own.
  */
 export const tokenFlow = specPart(

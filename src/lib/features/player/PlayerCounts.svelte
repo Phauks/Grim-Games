@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { MAX_DEALT_PLAYERS, MIN_PLAYERS } from '#lib/core/rules/distribution.ts';
+	import { MAX_DEALT_PLAYERS, MIN_PLAYERS } from '#lib/core/rules/setup/distribution.ts';
 	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 	import type { Character } from '#lib/core/data/index.ts';
-	import { analyseSetup } from '#lib/core/rules/setup.ts';
+	import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 	import CountsBar from '#lib/features/setup/CountsBar.svelte';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 

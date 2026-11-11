@@ -130,7 +130,7 @@ export function readInfoTokenCharacters(
 /**
  * The characters a night step's info token is shown with, filled in for the Storyteller
  * (Trevor, 2026-10-24: the Harpy's and Cerenovus's "This character selected you" always shows
- * their own token), used by `rules/info-token-characters.ts` and the night walk-through.
+ * their own token), used by `rules/night/info-token-characters.ts` and the night walk-through.
  *
  * Keyed by the info token's id (`info-tokens.ts`), for a token the character's night text
  * names (or its step offers, `offer`). A list instead of one entry is one card each, in the

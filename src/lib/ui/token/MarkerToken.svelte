@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { NightMarker } from '#lib/core/data/index.ts';
-	import { MARKER_TEXT } from '#lib/core/rules/night-order.ts';
+	import { MARKER_TEXT } from '#lib/core/rules/night/night-order.ts';
 
 	interface Props {
 		/** Which night-order step: Dusk, Minion info, Demon info or Dawn. */

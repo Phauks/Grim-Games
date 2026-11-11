@@ -14,13 +14,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import {
-	answerCauses,
-	answerOptions,
-	nightAnswer,
-	reliability
-} from '#lib/core/rules/night-info.ts';
-import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { answerCauses, answerOptions, nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { reliability } from '#lib/core/rules/night/info/reliability.ts';
+import { reminderTargets } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

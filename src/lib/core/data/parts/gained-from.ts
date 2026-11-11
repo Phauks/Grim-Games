@@ -4,7 +4,7 @@ import { specPart, type PartValue } from './part.ts';
 
 /**
  * The `gainedFrom` part of a character's rules block: the ability it has is another
- * player's, found on the grimoire (`rules/gained-abilities.ts`).
+ * player's, found on the grimoire (`rules/abilities/gained-abilities.ts`).
  * - `token`: its reminder on a player; it has that player's (true) character's ability (the
  *   Cannibal's Lunch, https://wiki.bloodontheclocktower.com/Cannibal; the Pixie's Has Ability,
  *   https://wiki.bloodontheclocktower.com/Pixie; the Philosopher's Drunk,

@@ -18,11 +18,15 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';
+import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 

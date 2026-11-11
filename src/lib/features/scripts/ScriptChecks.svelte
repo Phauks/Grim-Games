@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { type GameData, type LoadedScript } from '#lib/core/data/index.ts';
-	import { scriptFacts } from '#lib/core/rules/index.ts';
+	import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import TypeCounts from '#lib/features/setup/TypeCounts.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';

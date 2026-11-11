@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
-import { promptApplies, reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { promptApplies, reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Undertaker', () => {

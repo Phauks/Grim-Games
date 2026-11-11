@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { ruleCharacterUse } from '#lib/core/rules/index.ts';
+	import { ruleCharacterUse } from '#lib/core/rules/game-end/contest.ts';
 	import AnyoneUseButton from './AnyoneUseButton.svelte';
 	import type { DayPort } from './day-port.ts';
 	import FiddleContest from './FiddleContest.svelte';

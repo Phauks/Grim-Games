@@ -9,7 +9,7 @@ export const TOKEN_ON_TYPE = obj({ token: TOKEN, type: opt(oneOf(CHARACTER_TYPES
  * The `stopsWaking` part of a character's rules block: its reminder token on a player stops
  * that player waking for their own ability tonight, only a `type` player when given (the
  * Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist). Shown at
- * the stopped step (`rules/night-alerts.ts`).
+ * the stopped step (`rules/night/night-alerts.ts`).
  */
 export const stopsWaking = specPart(
 	'Stops waking',

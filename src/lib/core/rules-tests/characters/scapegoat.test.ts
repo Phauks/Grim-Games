@@ -14,10 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { executedInstead } from '#lib/core/rules/executed-instead.ts';
+import { executedInstead } from '#lib/core/rules/day/executed-instead.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Scapegoat', () => {

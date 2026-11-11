@@ -8,7 +8,7 @@
 		storytellerNominators,
 		storytellerNominee,
 		todaysNominations
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/day/nominations.ts';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';

@@ -20,7 +20,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { correctGuesses, dayClaim, guessLimit } from '#lib/core/rules/index.ts';
+	import { correctGuesses, dayClaim, guessLimit } from '#lib/core/rules/day/day-claims.ts';
 	import { CLAIM_KEYS, type DayPort } from './day-port.ts';
 
 	export interface NoteTarget {

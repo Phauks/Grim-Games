@@ -14,7 +14,7 @@ import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { impairmentOfLabel } from './ability.ts';
+import { impairmentOfLabel } from '#lib/core/rules/abilities/ability.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 

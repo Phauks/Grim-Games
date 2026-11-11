@@ -11,7 +11,7 @@ import { presetTable } from '../presets.ts';
 import { specPart } from './part.ts';
 
 /**
- * Ways an ability ends the game, each worked out in `rules/game-end.ts`:
+ * Ways an ability ends the game, each worked out in `rules/game-end/game-end.ts`:
  * - `executed-loses`: its player dies by execution, so their team loses (the Saint);
  * - `marked-executed`: of its player and the player with its `token`, the one not on `winner`'s
  *   team is executed while the other lives, so `winner` wins (the Evil Twin's "Twin": the good
@@ -216,7 +216,7 @@ const HOLD_PRESETS = presetTable<Exclude<HoldKind, 'condition'>, HoldsGame, Hold
  * - `contest`: the game can end in a contest between a player of `chooser`'s type and a player
  *   of the other alignment they choose; the player with the most votes wins for their team, and
  *   `tie` wins a tie (the Fiddler's: the Demon chooses, evil wins a tie,
- *   https://wiki.bloodontheclocktower.com/Fiddler). Worked out in `rules/contest.ts`.
+ *   https://wiki.bloodontheclocktower.com/Fiddler). Worked out in `rules/game-end/contest.ts`.
  */
 export interface GameEndRules {
 	ends?: readonly EndsGame[];
@@ -461,7 +461,7 @@ const END_PRESETS = presetTable<Exclude<EndKind, 'condition'>, EndsGame, EndsGam
 
 /**
  * How a character's ability ends the game, keeps it going or changes who wins: the `gameEnd`
- * part of its rules block, read here and worked out in `rules/game-end.ts`. Each entry names
+ * part of its rules block, read here and worked out in `rules/game-end/game-end.ts`. Each entry names
  * a behaviour and its parameters, never a character.
  */
 export const gameEnd = specPart(

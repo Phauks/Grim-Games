@@ -8,7 +8,8 @@
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { charactersInPlay, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import { abilityGivers, barredAbilities, jinxedPartners } from '#lib/core/rules/index.ts';
+	import { abilityGivers } from '#lib/core/rules/abilities/gained-abilities.ts';
+	import { barredAbilities, jinxedPartners } from '#lib/core/rules/jinxes/jinxes.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';

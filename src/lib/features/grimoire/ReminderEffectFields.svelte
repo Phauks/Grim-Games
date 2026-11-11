@@ -4,9 +4,9 @@
 	import {
 		effectDeath,
 		effectNight,
-		pickedEffectOf,
-		type ReminderEffectKind
-	} from '#lib/core/rules/reminder-effects.ts';
+		pickedEffectOf
+	} from '#lib/core/rules/reminders/reminder-effects.ts';
+	import { type ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';

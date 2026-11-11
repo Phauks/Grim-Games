@@ -4,10 +4,10 @@
 	import {
 		anyInfoSource,
 		falseInfoSource,
-		type AnswerOption,
-		type LearnedRole,
 		type Reliability
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/night/info/reliability.ts';
+	import { type AnswerOption } from '#lib/core/rules/night/info/answers.ts';
+	import { type LearnedRole } from '#lib/core/rules/night/info/learned-roles.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';

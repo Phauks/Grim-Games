@@ -16,8 +16,8 @@
 		STANDARD,
 		type PlayerAcrossTowns
 	} from '#lib/core/modes/index.ts';
-	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { dayNumber } from '#lib/core/rules/night-order.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
+	import { dayNumber } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';

@@ -20,18 +20,15 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
-import { abilityState, protection } from '#lib/core/rules/ability.ts';
-import { planBag } from '#lib/core/rules/bag-plan.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
-import {
-	infoPicker,
-	isAllowed,
-	isTruthful,
-	nightAnswer,
-	withNightInfo
-} from '#lib/core/rules/night-info.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { planBag } from '#lib/core/rules/setup/bag-plan.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
+import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Drunk', () => {

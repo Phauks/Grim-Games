@@ -15,10 +15,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { pickedEffectOf } from '#lib/core/rules/reminder-effects.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import {
+	dayReminders,
+	dayStateFromGame,
+	renderReminder
+} from '#lib/core/rules/day/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { pickedEffectOf } from '#lib/core/rules/reminders/reminder-effects.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe("Hell's Librarian", () => {

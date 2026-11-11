@@ -19,12 +19,12 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { setupPrep, setupReminders } from '#lib/core/rules/setup-reminders.ts';
-import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
-import { nightTextFor } from '#lib/core/rules/night-text.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { setupPrep, setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminders/reminder-ends.ts';
+import { nightTextFor } from '#lib/core/rules/night/night-text.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** Whether a seat's ability works now. */

@@ -15,10 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { dayUseWho } from '#lib/core/rules/day-claims.ts';
-import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { dayUseWho } from '#lib/core/rules/day/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import {
 	committedCharacter,
 	nightSheetPresence,

@@ -1,20 +1,20 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/types.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+	import { executedInstead, insteadCandidates } from '#lib/core/rules/day/executed-instead.ts';
 	import {
-		executedInstead,
 		executionOutcomes,
-		executionSavers,
-		insteadCandidates,
-		extraNominators,
-		nominatorsAfterExecution,
 		outcomeHolders,
-		protection,
-		storytellerNominee,
 		type ExecutionOutcome,
 		type OutcomeHolder,
 		type OutcomeKind
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/day/execution-outcome.ts';
+	import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';
+	import {
+		extraNominators,
+		nominatorsAfterExecution,
+		storytellerNominee
+	} from '#lib/core/rules/day/nominations.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';

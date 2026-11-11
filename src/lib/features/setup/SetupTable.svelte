@@ -3,9 +3,9 @@
 	import {
 		BASE_DISTRIBUTION,
 		MAX_DEALT_PLAYERS,
-		SEATED_TYPES,
 		splitPlayers
-	} from '#lib/core/rules/index.ts';
+	} from '#lib/core/rules/setup/distribution.ts';
+	import { SEATED_TYPES } from '#lib/core/data/types.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 
 	interface Props {

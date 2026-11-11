@@ -14,7 +14,7 @@
 		ReferenceNight,
 		ReferenceToken
 	} from '#lib/core/rules/reference.ts';
-	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
+	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { sheetNumbersFor } from '#lib/features/characters/sheet-night-numbers.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';

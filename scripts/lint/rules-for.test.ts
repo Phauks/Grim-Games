@@ -14,7 +14,7 @@ async function problems(code: string, filePath: string) {
 describe('grim/rules-for', () => {
 	it('reports a static rules reader imported by game rules or the engine', async () => {
 		const code = `import { rulesOf, rulesIn } from '#lib/core/data/rules/index.ts';\nexport const r = [rulesOf, rulesIn];\n`;
-		expect(await problems(code, 'src/lib/core/rules/protection.ts')).toBe(2);
+		expect(await problems(code, 'src/lib/core/rules/abilities/protection.ts')).toBe(2);
 		expect(await problems(code, 'src/lib/core/engine/decide/votes.ts')).toBe(2);
 	}, 60_000);
 
@@ -22,11 +22,11 @@ describe('grim/rules-for', () => {
 		expect(
 			await problems(
 				`import { rulesFor } from '#lib/core/rules/rules-for.ts';\nexport const r = rulesFor;\n`,
-				'src/lib/core/rules/protection.ts'
+				'src/lib/core/rules/abilities/protection.ts'
 			)
 		).toBe(0);
 		const code = `import { rulesOf } from '#lib/core/data/rules/index.ts';\nexport const r = rulesOf;\n`;
-		expect(await problems(code, 'src/lib/core/rules/ability.test.ts')).toBe(0);
-		expect(await problems(code, 'src/lib/core/rules/night-order.ts')).toBe(0);
+		expect(await problems(code, 'src/lib/core/rules/abilities/ability.test.ts')).toBe(0);
+		expect(await problems(code, 'src/lib/core/rules/night/night-order.ts')).toBe(0);
 	}, 60_000);
 });

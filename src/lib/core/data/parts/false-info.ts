@@ -8,7 +8,7 @@ import { specPart, type PartValue } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Vortox); with `may`, it may be false instead, for
  * players of `alignment` (and `types`, when given), until its `spentToken` is placed (the
  * Fibbin: once per game, a good player, https://wiki.bloodontheclocktower.com/Fibbin).
- * Read by `rules/night-info/reliability.ts`.
+ * Read by `rules/night/info/reliability.ts`.
  */
 export const falseInfo = specPart(
 	'False information',

@@ -8,7 +8,7 @@
  *   npm run export:reminder-placeholders -- <output.json>
  */
 import { writeFileSync } from 'node:fs';
-import { placeholderProblems, placeholdersFor } from '../src/lib/core/rules/night-text.ts';
+import { placeholderProblems, placeholdersFor } from '../src/lib/core/rules/night/night-text.ts';
 import { readGameData } from './lib/game-data-files.ts';
 
 const out = process.argv[2];

@@ -12,12 +12,12 @@ import {
 	exileThreshold,
 	livingByTeam,
 	townCounts
-} from '#lib/core/rules/voting.ts';
+} from '#lib/core/rules/day/voting.ts';
 import {
 	TRAVELLER_JOINS_STEP,
 	travellersNotInPlay,
 	withTravellerJoinsStep
-} from '#lib/core/rules/traveller-alignment.ts';
+} from '#lib/core/rules/setup/traveller-alignment.ts';
 import { undo } from './log.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];

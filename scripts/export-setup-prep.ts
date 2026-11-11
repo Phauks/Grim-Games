@@ -6,7 +6,7 @@
  *   npm run export:setup-prep -- <output.json>
  */
 import { writeFileSync } from 'node:fs';
-import { setupPrep } from '../src/lib/core/rules/setup-reminders.ts';
+import { setupPrep } from '../src/lib/core/rules/setup/setup-reminders.ts';
 import { readGameData } from './lib/game-data-files.ts';
 
 const out = process.argv[2];

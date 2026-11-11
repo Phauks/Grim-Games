@@ -11,9 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
-import { killsMarkedBy } from '#lib/core/rules/jinx-effects.ts';
+import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes/jinxes.ts';
+import { killsMarkedBy } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { scriptOf } from './summoner.test-support.ts';
 

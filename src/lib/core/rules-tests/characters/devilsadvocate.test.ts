@@ -14,11 +14,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
+import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
+import { livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import {
+	nightTextPlain,
+	nightTextSegments,
+	placeholdersFor
+} from '#lib/core/rules/night/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe("Devil's Advocate", () => {
 	const character = committedCharacter('devilsadvocate');

@@ -5,8 +5,12 @@
  */
 import type { Character, CharacterId, Script } from '#lib/core/data/types.ts';
 import type { CombinedSetup, GameMode, ModeSection, RuleSection } from './types.ts';
-import { isBagDisabled, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
-import { standInKind } from '#lib/core/rules/bag-plan.ts';
+import {
+	isBagDisabled,
+	isNotDealt,
+	isReplacedAfterDraw
+} from '#lib/core/rules/setup/bag-characters.ts';
+import { standInKind } from '#lib/core/rules/setup/bag-plan.ts';
 
 /**
  * The Storyteller's changes to a mode's restrictions for one game (Trevor, 2026-10-17: every
@@ -200,7 +204,7 @@ export function runsSection(
 			return (
 				!p.winConditions ||
 				p.winConditions.kind === 'standard' ||
-				// The game end prompt checks for an executed Demon (core/rules/game-end.ts).
+				// The game end prompt checks for an executed Demon (core/rules/game-end/game-end.ts).
 				p.winConditions.kind === 'demon-executed'
 			);
 		default:

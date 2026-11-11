@@ -15,7 +15,7 @@
  *   is `impairs` with `who: "partner"` in the Vizier's file. `impairs` also takes `both`;
  * - `when`: conditions that must all hold for it to apply (`JINX_CONDITIONS` below). In a
  *   condition too, `self` is this file's character and `partner` the key's.
- * A jinx is read the same from either file (`rules/jinxes.ts`, `jinxRulesBetween`); both
+ * A jinx is read the same from either file (`rules/jinxes/jinxes.ts`, `jinxRulesBetween`); both
  * files setting the same effect for the same character is an error (`jinxPartnerIssues`).
  *
  * **Custom scripts** (M40, `script-jinx-rules.ts`): a script's jinx entry may carry `rules` in
@@ -144,7 +144,7 @@
  *   "partner"` only against the partner's kills (the Demon's kill when the partner is the
  *   Demon, or a death the partner's ability causes). A custom script's "The Gloom cannot kill
  *   the Lamplighter" is `{"who": "partner", "by": "partner"}` on the Gloom's entry. Read by
- *   `protectors` in `rules/protection.ts` with the part's own coverage, whatever any ability's
+ *   `protectors` in `rules/abilities/protection.ts` with the part's own coverage, whatever any ability's
  *   state (a jinx is a rule, not an ability), and with `by` even against a kill that ignores
  *   protection: a `protected` night alert, no death;
  * - `grimoire`: what the subject's player sees of the Grimoire: `hides: "all"`, none of it
@@ -152,7 +152,7 @@
  *   a list, those tokens come off it first: `partner`, the partner's, and every token of each
  *   character type listed (with `partner-in-play`, the Spy's and the Widow's Magician and
  *   Demon);
- * - `endsGame`: a game end with the partner, worked out in `rules/jinx-ends.ts` (the
+ * - `endsGame`: a game end with the partner, worked out in `rules/jinxes/jinx-ends.ts` (the
  *   Leviathan's and Riot's), its `when` checked at the moment of its event. A `condition`
  *   (M78) is built from parts: an `event` (`executed`, `day-ends`, `ability-used`), whose
  *   players it is about (`subject`: `self`, `partner`, or `marked`, the one carrying the
@@ -182,7 +182,7 @@
  * - `nightChoice`: each night but the first, the subject's player chooses an alive player
  *   not chosen before (`chooses: "good"`, a good one; `any`), and a chosen partner either uses
  *   its ability without dying (`partner: "acts"`) or dies and gains it (`dies`), worked out in
- *   `rules/jinx-choices.ts` (the Leviathan's and Riot's Banshee, Farmer, Ravenkeeper, Sage);
+ *   `rules/jinxes/jinx-choices.ts` (the Leviathan's and Riot's Banshee, Farmer, Ravenkeeper, Sage);
  * - `partnerSetup`: when the subject's player has the partner's ability, the partner's own
  *   setup change applies as if it were in play (the Alchemist-Summoner's [No Demon]; the
  *   Philosopher who gains the Bounty Hunter's, a `partner-setup` night alert at its step).
@@ -272,7 +272,7 @@
  *   `voting.secret` has votes cast with eyes closed: with `countsOnlyWith`, its player may
  *   raise their hand without their `onlyWith` player, but the vote counts only if that player
  *   voted too: no warning, the vote hint says so (the Butler with the Organ Grinder). Read by
- *   the part's own reader (`rules/vote-weights.ts`). Needs `voter`, and the partner's
+ *   the part's own reader (`rules/day/vote-weights.ts`). Needs `voter`, and the partner's
  *   `voting`;
  * - `abnormalCounts`: the subject's `count` `among: "abnormal"` also counts a partner's player
  *   whose ability worked abnormally in a way the count leaves out, `counts`: `self-caused`,

@@ -15,20 +15,21 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { learnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
 import {
 	committedCharacter,
 	committedGameData,
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { gainedAbilities, withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
-import { madAsOf } from '#lib/core/rules/mad-as.ts';
-import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
-import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
+import { protection } from '#lib/core/rules/abilities/protection.ts';
+import { gainedAbilities, withGainedSteps } from '#lib/core/rules/abilities/gained-abilities.ts';
+import { madAsOf } from '#lib/core/rules/abilities/mad-as.ts';
+import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
+import { deathVerdict } from '#lib/core/rules/night/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Pixie', () => {

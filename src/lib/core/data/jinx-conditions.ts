@@ -1,10 +1,10 @@
 /**
  * The `when` conditions of a jinx effect, and their reader. Split from the format
- * (`jinx-rules.ts`) so it stays one module per concern; `rules/jinx-when.ts` says whether each
+ * (`jinx-rules.ts`) so it stays one module per concern; `rules/jinxes/jinx-when.ts` says whether each
  * holds, and `jinx-needs.ts` (`flipCondition`) turns one round for the partner's file.
  *
  * Each condition is about the game now, or, for an effect read at an event (a game end at an
- * execution, `rules/jinx-ends.ts`), the game at that moment. `self` is the character of the
+ * execution, `rules/jinxes/jinx-ends.ts`), the game at that moment. `self` is the character of the
  * file or script entry the effect is in, `partner` the jinx's other character:
  * - `self-alive`, `partner-alive`: a player of that character is alive (with a player in
  *   question, that player);
@@ -38,7 +38,7 @@
  *
  * A worked example, as a script writes it on its custom Lamplighter's entry:
  * `{"id": "empath", "reason": "…", "rules": {"impairs": {"who": "partner", "kind": "poisoned",
- * "when": ["self-dead"]}}}`. Read for the Empath (`rules/jinx-pairs.ts`), the condition turns
+ * "when": ["self-dead"]}}}`. Read for the Empath (`rules/jinxes/jinx-pairs.ts`), the condition turns
  * round to `partner-dead`: the Empath is poisoned while the Lamplighter's player is dead.
  */
 import {

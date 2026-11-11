@@ -11,8 +11,8 @@
 		rollExtras,
 		STANDARD
 	} from '#lib/core/modes/index.ts';
-	import type { SeatedType } from '#lib/core/rules/distribution.ts';
-	import { setupComplete } from '#lib/core/rules/index.ts';
+	import type { SeatedType } from '#lib/core/data/types.ts';
+	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';

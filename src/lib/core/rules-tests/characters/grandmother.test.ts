@@ -15,14 +15,15 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
-import { nightStepInfo } from '#lib/core/rules/night-info/steps.ts';
-import { deathCheck } from '#lib/core/rules/night-deaths.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
+import { learnedRoles } from '#lib/core/rules/night/info/learned-roles.ts';
+import { nightStepInfo } from '#lib/core/rules/night/info/steps.ts';
+import { deathCheck } from '#lib/core/rules/night/night-deaths.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 
 describe('Grandmother', () => {
 	const character = committedCharacter('grandmother');
