@@ -7,7 +7,7 @@ import { explosionOf, type Explosion } from '#lib/core/rules/day/explosion.ts';
 import { remindersRunOutByDawn } from '#lib/core/rules/reminders/reminder-ends.ts';
 import { counterMoves } from '#lib/core/rules/reminders/counters.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
-import { doneKey } from './night-steps.ts';
+import { doneKey } from '#lib/features/grimoire/night/night-steps.ts';
 import {
 	alignmentOf,
 	reminderHolder,

@@ -6,7 +6,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import AlignmentPill from './AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 

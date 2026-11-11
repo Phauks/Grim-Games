@@ -90,11 +90,11 @@ const OLD_CHARACTER_PIECES = {
  * PlayerBadge there too (grim/names-as-badges).
  */
 const SEAT_NAME_TODO = [
-	'src/lib/features/grimoire/ReminderAsk.svelte',
+	'src/lib/features/grimoire/reminders/ReminderAsk.svelte',
 	'src/lib/features/grimoire/ReminderOrigin.svelte',
 	'src/lib/features/grimoire/ReminderPicker.svelte',
-	'src/lib/features/grimoire/SeatToken.svelte',
-	'src/lib/features/grimoire/StepAfflictions.svelte',
+	'src/lib/features/grimoire/seats/SeatToken.svelte',
+	'src/lib/features/grimoire/night/StepAfflictions.svelte',
 	'src/lib/features/grimoire/board.ts',
 	'src/lib/features/player/notebook.ts'
 ];

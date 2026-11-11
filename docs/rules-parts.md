@@ -46,7 +46,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Becomes.** Its token says a player changed character or alignment.
 
 - Part: `src/lib/core/data/parts/becomes.ts`
-- Read by: `core/rules/abilities/becomes.ts`, `core/rules/abilities/death-causes.ts`, `core/rules/jinxes/jinx-effects.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules-tests/jinxes/legion.test-support.ts`, `features/grimoire/ChangeCharacterStep.svelte`
+- Read by: `core/rules/abilities/becomes.ts`, `core/rules/abilities/death-causes.ts`, `core/rules/jinxes/jinx-effects.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules-tests/jinxes/legion.test-support.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
 
 ### believesOtherCharacter
 
@@ -88,7 +88,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Changes character.** Its night step makes a chosen player another character.
 
 - Part: `src/lib/core/data/parts/changes-character.ts`
-- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/ChangeCharacterStep.svelte`
+- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
 
 ### choosesLikeDemon
 
@@ -116,7 +116,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Countdown.** Its token counts down one step a night.
 
 - Part: `src/lib/core/data/parts/countdown.ts`
-- Read by: `core/rules/reminders/countdown.ts`, `features/grimoire/CountdownStep.svelte`
+- Read by: `core/rules/reminders/countdown.ts`, `features/grimoire/night/CountdownStep.svelte`
 
 ### counter
 
@@ -151,7 +151,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Day mark.** A fact about today the Storyteller marks for its night answer.
 
 - Part: `src/lib/core/data/parts/day-mark.ts`
-- Read by: `core/rules/day/day-marks.ts`, `features/grimoire/DayMarkAnswer.svelte`
+- Read by: `core/rules/day/day-marks.ts`, `features/grimoire/night/DayMarkAnswer.svelte`
 
 ### dayReminders
 
@@ -214,7 +214,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Evil learns.** Each evil player learns who carries its reminder.
 
 - Part: `src/lib/core/data/parts/evil-learns.ts`
-- Read by: `core/rules/night/shown-to.ts`, `features/grimoire/NightShownTo.svelte`
+- Read by: `core/rules/night/shown-to.ts`, `features/grimoire/night/NightShownTo.svelte`
 
 ### execution
 
@@ -263,7 +263,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Gives an ability.** It gives another player an ability held without its token.
 
 - Part: `src/lib/core/data/parts/gives-ability.ts`
-- Read by: `core/engine/decide/characters.ts`, `core/rules/abilities/ability.ts`, `core/rules/abilities/gained-abilities.ts`, `core/rules/night/board-steps.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/bag-plan.ts`, `features/grimoire/BoardRules.svelte`, `features/grimoire/RuleCharacters.svelte`, `features/grimoire/SeatCharacterFlow.svelte`, `features/grimoire/StorytellerAbilityStep.svelte`
+- Read by: `core/engine/decide/characters.ts`, `core/rules/abilities/ability.ts`, `core/rules/abilities/gained-abilities.ts`, `core/rules/night/board-steps.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/bag-plan.ts`, `features/grimoire/BoardRules.svelte`, `features/grimoire/RuleCharacters.svelte`, `features/grimoire/night/StorytellerAbilityStep.svelte`, `features/grimoire/seats/SeatCharacterFlow.svelte`
 
 ### guessLimit
 
@@ -333,7 +333,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Kills.** The ability kills at night.
 
 - Part: `src/lib/core/data/parts/kills.ts`
-- Read by: `core/rules/day/day-tally.ts`, `core/rules/night/chosen-kills.ts`, `core/rules/night/info/steps.ts`, `core/rules/night/night-kill.ts`, `core/rules/night/night-killers.ts`, `features/day/DayUseDialog.svelte`, `features/grimoire/TallyKillStep.svelte`
+- Read by: `core/rules/day/day-tally.ts`, `core/rules/night/chosen-kills.ts`, `core/rules/night/info/steps.ts`, `core/rules/night/night-kill.ts`, `core/rules/night/night-killers.ts`, `features/day/DayUseDialog.svelte`, `features/grimoire/night/TallyKillStep.svelte`
 
 ### learns
 
@@ -438,7 +438,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **On nomination.** When its player, or the player with one of its reminders, is nominated, something happens; on a Fabled, Loric or rule, any nomination.
 
 - Part: `src/lib/core/data/parts/on-nominated.ts`
-- Read by: `core/rules/day/nominations.ts`, `core/rules/rule-sources.ts`, `features/grimoire/NominationAsk.svelte`, `features/modes/rule-switches.ts`
+- Read by: `core/rules/day/nominations.ts`, `core/rules/rule-sources.ts`, `features/grimoire/night/NominationAsk.svelte`, `features/modes/rule-switches.ts`
 
 ### onNominating
 
@@ -613,14 +613,14 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Swaps characters.** Its night step swaps two chosen players’ characters.
 
 - Part: `src/lib/core/data/parts/swaps-characters.ts`
-- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/ChangeCharacterStep.svelte`
+- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
 
 ### swapsForAbility
 
 **Swaps for an ability.** Its player’s token is swapped for a character whose ability they gain.
 
 - Part: `src/lib/core/data/parts/swaps-for-ability.ts`
-- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/SeatCharacterFlow.svelte`, `features/grimoire/SeatSheet.svelte`
+- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/seats/SeatCharacterFlow.svelte`, `features/grimoire/seats/SeatSheet.svelte`
 
 ### takesNeighbourAlignment
 

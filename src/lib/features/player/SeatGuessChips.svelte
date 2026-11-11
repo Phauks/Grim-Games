@@ -3,7 +3,7 @@
 	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import type { GenericGuess } from './grim-guesses.ts';
 

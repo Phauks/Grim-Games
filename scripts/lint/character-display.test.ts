@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  */
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const eslint = new ESLint({ cwd: root });
-const AT = 'src/lib/features/grimoire/BankReminderDialog.svelte';
+const AT = 'src/lib/features/grimoire/reminders/BankReminderDialog.svelte';
 
 const head = `<script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';

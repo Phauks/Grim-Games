@@ -20,7 +20,7 @@ import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameStarts } from '#lib/features/grimoire/device-notes.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-import type { NightWalk } from '#lib/features/grimoire/night-walk.svelte.ts';
+import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 import type { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';
 import { tonight } from '#lib/core/rules/night/board-steps.ts';
 import { pendingSetup, type TrayItem } from '#lib/features/board/setup-tray.ts';

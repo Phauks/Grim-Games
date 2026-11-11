@@ -32,7 +32,7 @@ import {
 import type { Box } from '#lib/features/board/name-placement.ts';
 import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 import { fitReminders } from '#lib/features/board/reminder-fan.ts';
-import { remindersBeside } from './true-character-marks.ts';
+import { remindersBeside } from '#lib/features/grimoire/seats/true-character-marks.ts';
 
 /**
  * Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;

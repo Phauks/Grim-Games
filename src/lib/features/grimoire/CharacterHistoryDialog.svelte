@@ -4,7 +4,7 @@
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import AlignmentPill from './AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatChanges } from './history.ts';
 

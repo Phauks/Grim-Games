@@ -1,0 +1,127 @@
+<script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
+	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { SeatId } from '#lib/core/model/index.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+
+	/**
+	 * Which living player becomes the Demon `characterId` (shared by the Demon's own star pass,
+	 * `StarPassPrompt`, and the Hindu's optional rule, `ReincarnateAsk`): the Demon's ability,
+	 * then the players who may take it on. Confirm makes the chosen player that Demon, evil;
+	 * Cancel leaves everyone as they are.
+	 */
+	interface Props {
+		grimoire: Grimoire;
+		open: boolean;
+		characterId: CharacterId;
+		heirs: SeatId[];
+		/** Chosen first: the player a rule says takes it on (the Scarlet Woman). */
+		preferred?: SeatId;
+		/**
+		 * The character whose rule makes it `preferred`'s (`starPass`): its ability is shown under
+		 * the Demon's, and that player's option stands out (Trevor, 2026-11-02).
+		 */
+		preferredBy?: CharacterId;
+		/**
+		 * The character whose ability passes it on (the Imp's star pass): its night step wakes
+		 * the new Demon, so the night order adds no second wake at the end of the night.
+		 */
+		by?: CharacterId;
+	}
+
+	let {
+		grimoire,
+		open = $bindable(),
+		characterId,
+		heirs,
+		preferred,
+		preferredBy,
+		by
+	}: Props = $props();
+
+	const game = $derived(grimoire.game);
+	const characters = $derived(grimoire.open.characters);
+	const demon = $derived(characters.get(characterId));
+	// eslint-disable-next-line grim/names-as-badges -- a dialog title is plain text ("Choose the new Imp", Trevor 2026-10-19); the badge is in the body
+	const title = $derived(`Choose the new ${demon?.name ?? 'Demon'}`);
+	// eslint-disable-next-line grim/names-as-badges -- a field label is plain text ("New Imp"); the badge is in the body
+	const choiceLabel = $derived(`New ${demon?.name ?? 'Demon'}`);
+
+	const reason = $derived(preferred && preferredBy ? characters.get(preferredBy) : undefined);
+	const reasonSeat = $derived(preferred ? game.seats[preferred] : undefined);
+
+	let choice = $state<SeatId>('');
+	$effect(() => {
+		if (open) choice = preferred ?? heirs[0] ?? '';
+	});
+
+	function confirm() {
+		if (choice && heirs.includes(choice))
+			grimoire.run({
+				type: 'AssignCharacter',
+				seatId: choice,
+				characterId,
+				alignment: 'evil',
+				...(by ? { by } : {})
+			});
+	}
+</script>
+
+<ConfirmDialog bind:open {title} onConfirm={confirm}>
+	{#if demon}<div class="ability">
+			<CharacterPiece template="row" character={demon} info>
+				{#snippet abilityText()}<AbilityText text={demon.ability} names={[demon.name]} />{/snippet}
+			</CharacterPiece>
+		</div>{/if}
+	{#if reason && reasonSeat}<div class="ability reason">
+			<CharacterPiece
+				template="row"
+				character={reason}
+				alignment={reasonSeat.alignment}
+				playerName={seatName(game, preferred!)}
+				info
+			>
+				{#snippet abilityText()}<AbilityText
+						text={reason.ability}
+						names={[reason.name]}
+					/>{/snippet}
+			</CharacterPiece>
+		</div>{/if}
+	<ChoiceGroup
+		label={choiceLabel}
+		value={choice}
+		options={heirs.map((id) => ({ value: id, label: seatName(game, id) }))}
+		onChange={(id) => (choice = id)}
+		emphasized={reason ? preferred : undefined}
+	>
+		<!-- The whole option picks the player: its badge opens nothing (Trevor, 2026-11-08). -->
+		{#snippet item(option)}
+			{@const s = game.seats[option.value]}
+			{#if s?.characterId}<CharacterPiece
+					template="badge"
+					characterId={s.characterId}
+					character={characters.get(s.characterId)}
+					alignment={s.alignment}
+					playerName={option.label}
+					interactive={false}
+				/>{:else}{option.label}{/if}
+		{/snippet}
+	</ChoiceGroup>
+</ConfirmDialog>
+
+<style>
+	.ability {
+		margin: 0 0 var(--space-3);
+	}
+	/* Why one player should take it on: the rule character's ability, framed like that option. */
+	.reason {
+		padding: var(--space-2);
+		border: calc(0.25 * var(--u)) solid var(--accent);
+		border-radius: var(--card-radius);
+		box-shadow: 0 0 var(--space-3) var(--accent);
+	}
+</style>

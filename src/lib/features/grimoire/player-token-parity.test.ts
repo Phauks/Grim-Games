@@ -8,7 +8,7 @@ import { parsePlayerReminders, parsePlayerTokens } from '#lib/features/player/pl
 import { bankItems, playerBankItems } from '#lib/features/board/bank-items.ts';
 
 // A player's reminder tray (player/PlayerReminderBin) and the Storyteller's bank
-// (grimoire/ReminderBank) are built from the same pieces (Trevor, 2026-11-06: "Player view
+// (grimoire/reminders/ReminderBank) are built from the same pieces (Trevor, 2026-11-06: "Player view
 // doesn't have number tokens? I'm gonna be annoyed if once again I am chasing feature
 // parity"; then "I want them to use the same components for parity"). The player's tray had
 // a token list of its own, so the bank's # token never reached it. These fail when a token
@@ -16,8 +16,8 @@ import { bankItems, playerBankItems } from '#lib/features/board/bank-items.ts';
 
 const source = (path: string) => readFileSync(`src/lib/${path}`, 'utf8');
 const bankItemsSource = source('features/board/bank-items.ts');
-const bank = source('features/grimoire/ReminderBank.svelte');
-const pill = source('features/grimoire/ReminderHandPill.svelte');
+const bank = source('features/grimoire/reminders/ReminderBank.svelte');
+const pill = source('features/grimoire/reminders/ReminderHandPill.svelte');
 const tray = source('features/player/PlayerReminderBin.svelte');
 const model = source('core/model/types.ts');
 

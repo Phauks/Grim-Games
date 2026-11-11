@@ -9,14 +9,14 @@
 		type BankGroup,
 		type BankItem
 	} from '#lib/features/board/bank-items.ts';
-	import DeleteTokenConfirm from '#lib/features/grimoire/DeleteTokenConfirm.svelte';
-	import GenericLookDialog from '#lib/features/grimoire/GenericLookDialog.svelte';
-	import HeldTokenPick from '#lib/features/grimoire/HeldTokenPick.svelte';
-	import ReminderAbout from '#lib/features/grimoire/ReminderAbout.svelte';
+	import DeleteTokenConfirm from '#lib/features/grimoire/reminders/DeleteTokenConfirm.svelte';
+	import GenericLookDialog from '#lib/features/grimoire/reminders/GenericLookDialog.svelte';
+	import HeldTokenPick from '#lib/features/grimoire/reminders/HeldTokenPick.svelte';
+	import ReminderAbout from '#lib/features/grimoire/reminders/ReminderAbout.svelte';
 	import ReminderInHand from '#lib/features/board/ReminderInHand.svelte';
-	import ReminderTray from '#lib/features/grimoire/ReminderTray.svelte';
+	import ReminderTray from '#lib/features/grimoire/reminders/ReminderTray.svelte';
 	import { trayFace, type TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
-	import { dropOnTap } from '#lib/features/grimoire/reminder-in-hand.ts';
+	import { dropOnTap } from '#lib/features/grimoire/reminders/reminder-in-hand.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';

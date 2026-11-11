@@ -13,7 +13,11 @@ import {
 import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 import { characterLookup, type Reminder } from '#lib/core/model/index.ts';
 import { townGame } from '#lib/core/town/town-game.ts';
-import { handMarks, handRole, type HandMarks } from '#lib/features/grimoire/hand-marks.ts';
+import {
+	handMarks,
+	handRole,
+	type HandMarks
+} from '#lib/features/grimoire/reminders/hand-marks.ts';
 import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 
 /** The marks for the token in hand on the seats as this grim shows them; none with none in hand. */

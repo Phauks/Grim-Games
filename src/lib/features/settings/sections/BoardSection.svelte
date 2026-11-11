@@ -5,7 +5,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import StepFocusSetting, {
 		STEP_FOCUS_LABEL
-	} from '#lib/features/grimoire/StepFocusSetting.svelte';
+	} from '#lib/features/grimoire/night/StepFocusSetting.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';

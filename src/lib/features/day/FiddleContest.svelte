@@ -11,7 +11,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import { requestEndGame } from '#lib/features/grimoire/end-game-request.svelte.ts';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';

@@ -7,8 +7,12 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { SeatArranging } from './seat-arranging.svelte.ts';
-	import { countOff, leaveSeating, letPhonesMove } from './seating-mode.svelte.ts';
+	import type { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import {
+		countOff,
+		leaveSeating,
+		letPhonesMove
+	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 
 	/**
 	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,

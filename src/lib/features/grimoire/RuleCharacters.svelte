@@ -12,7 +12,7 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { reminderPlacing } from './board.ts';
-	import CharacterPicker from './CharacterPicker.svelte';
+	import CharacterPicker from '#lib/features/grimoire/seats/CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placedLook } from '#lib/features/board/reminders.ts';
 	import { kindOf, type RuleKind } from './rule-stacks.ts';

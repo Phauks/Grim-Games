@@ -13,7 +13,7 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SeatChooser from '#lib/features/grimoire/SeatChooser.svelte';
+	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

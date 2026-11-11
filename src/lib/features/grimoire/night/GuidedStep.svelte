@@ -1,0 +1,797 @@
+<script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
+	import { sideSwipe } from './side-swipe.ts';
+	import StepPiece from './StepPiece.svelte';
+	import NightAlerts from './NightAlerts.svelte';
+	import StepAfflictions from './StepAfflictions.svelte';
+	import StepIfChosen from './StepIfChosen.svelte';
+	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
+	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
+	import GainedAbilityStep from './GainedAbilityStep.svelte';
+	import MadAsStep from './MadAsStep.svelte';
+	import JinxChoiceStep from './JinxChoiceStep.svelte';
+	import CountdownStep from './CountdownStep.svelte';
+	import ChosenKillStep from './ChosenKillStep.svelte';
+	import TallyKillStep from './TallyKillStep.svelte';
+	import NoAttackStep from './NoAttackStep.svelte';
+	import NightSuggested from './NightSuggested.svelte';
+	import StorytellerVisit from '#lib/features/grimoire/StorytellerVisit.svelte';
+	import NightShownTo from './NightShownTo.svelte';
+	import NightYesNo from './NightYesNo.svelte';
+	import TravellerAlignment from '#lib/features/grimoire/seats/TravellerAlignment.svelte';
+	import SetupAlignmentStep from './SetupAlignmentStep.svelte';
+	import TravellerJoins from '#lib/features/grimoire/seats/TravellerJoins.svelte';
+	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
+	import { believesDemon } from '#lib/core/rules/night/evil-info.ts';
+	import { falseInfoSource } from '#lib/core/rules/night/info/reliability.ts';
+	import {
+		TRAVELLER_ALIGNMENT_STEP,
+		TRAVELLER_JOINS_STEP
+	} from '#lib/core/rules/setup/traveller-alignment.ts';
+	import { seesGrimoire } from '#lib/core/rules/night/sees-grimoire.ts';
+	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
+	import type { InfoChoice, InfoPicker } from '#lib/core/rules/night/info/picker.ts';
+	import type { Night } from '#lib/core/model/overrides.ts';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import StepReminderRow from './StepReminderRow.svelte';
+	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
+	import {
+		nightTextStepLines,
+		rowsOnLines,
+		stepNightText
+	} from '#lib/core/rules/night/night-text.ts';
+	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
+	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
+	import {
+		cardsOnLines,
+		stepInfoCards,
+		withChosen,
+		type FilledInfoToken,
+		type StepCard
+	} from '#lib/core/rules/night/info-token-characters.ts';
+	import { trueCharacter } from '#lib/core/model/index.ts';
+	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
+	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
+	import { seatMisfits } from '#lib/features/grimoire/board.ts';
+	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import { givesNumber, seatName, stepName } from './night-steps.ts';
+	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
+	import {
+		reminderCopies,
+		reminderKey,
+		stepTokenCharacter
+	} from '#lib/features/board/reminders.ts';
+	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
+	import ReminderMoveConfirm from '#lib/features/grimoire/reminders/ReminderMoveConfirm.svelte';
+	import { shownCommands } from './record-shown.ts';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes/jinxes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+
+	/**
+	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
+	 * character, its reminders to place or move onto a chosen seat, and Show to player.
+	 * Nothing happens unless the Storyteller taps it; Done ticks the step.
+	 */
+	interface Props {
+		open: boolean;
+		grimoire: Grimoire;
+		step: NightStep | undefined;
+		night: Night;
+		/**
+		 * Info tokens, for the steps that show the player something; with a token, opened
+		 * straight at that card (one the step's text names, Trevor 2026-10-19), with the
+		 * characters the step's rules fill in.
+		 */
+		onInfoTokens: (token?: InfoToken, filled?: FilledInfoToken) => void;
+		/** Demon info with no bluffs yet: open the Demon bluffs sheet. */
+		onChooseBluffs?: () => void;
+		/** A Traveller's alignment by draw. */
+		onDraw: (seatId: string) => void;
+		/** Tonight's steps, to move to the one before or after without ticking anything. */
+		steps?: readonly NightStep[];
+		onStep?: (step: NightStep) => void;
+		/** A player who looks at the Grimoire (the Spy, the Widow): the board, shown clean. */
+		onShowGrimoire?: () => void;
+		/**
+		 * A reminder put on, or moved to, a seat tapped on the board (Trevor, 2026-11-06), the
+		 * step closed meanwhile; false for the list of players instead.
+		 */
+		onPlace?: (
+			reminder: { characterId: CharacterId; label: string },
+			at?: { reminderId: string; seatId: SeatId }
+		) => boolean;
+	}
+
+	let {
+		open = $bindable(),
+		grimoire,
+		step,
+		night,
+		onInfoTokens,
+		onChooseBluffs,
+		onDraw,
+		steps = [],
+		onStep,
+		onShowGrimoire,
+		onPlace
+	}: Props = $props();
+
+	// Previous and Next inside the step, by icon or a sideways swipe (Trevor, 2026-10-17).
+	const index = $derived(step ? steps.findIndex((s) => s.id === step.id) : -1);
+	function go(by: number) {
+		const next = steps[index + by];
+		if (index >= 0 && next) onStep?.(next);
+	}
+	const swipe = sideSwipe(go);
+
+	const game = $derived(grimoire.game);
+	const characters = $derived(grimoire.open.characters);
+	const holders = $derived(step ? stepHolders(game, step, characters) : []);
+	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
+	/**
+	 * The step's character's jinxes with characters in play, word for word, where the
+	 * Storyteller runs it (L107; https://wiki.bloodontheclocktower.com/Djinn).
+	 */
+	const stepJinxes = $derived.by(() => {
+		const id = step?.character?.id;
+		if (!id) return [];
+		const { jinxes, inPlay } = gameJinxes(game, officialData.current);
+		return jinxesOnStep(jinxes, id, inPlay);
+	});
+	/**
+	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
+	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
+	 */
+	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
+	/** Whose tokens the step places: a gained ability's, not its holder's (M50). */
+	const tokensOf = $derived(step ? stepTokenCharacter(step, characters) : undefined);
+	const rows = $derived.by(() => {
+		const character = tokensOf;
+		// A jinx's night choice places none of its character's reminders (JinxChoiceStep).
+		if (!character || step?.jinxChoice) return [];
+		return [...new Set(character.reminders)].flatMap((label) => {
+			const on = placedAll(label);
+			const n = Math.max(
+				total.get(reminderKey({ characterId: character.id, label })) ?? 1,
+				on.length
+			);
+			return Array.from({ length: n }, (_, i) => ({
+				label,
+				at: on[i],
+				// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
+				key: `${label}:${i}`
+			}));
+		});
+	});
+	/** Where each copy of a label is on the board, in seating order. */
+	function placedAll(label: string) {
+		return game.seating.flatMap((seatId) =>
+			game.seats[seatId].reminders
+				.filter((x) => x.characterId === tokensOf?.id && x.label === label)
+				.map((r) => ({ seatId, reminderId: r.reminderId }))
+		);
+	}
+
+	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
+	let choosing = $state<{ label: string; at?: { reminderId: string } } | undefined>();
+	let chooserOpen = $state(false);
+
+	/**
+	 * A card that shows the true character of a player the Storyteller taps first (the
+	 * Dreamer's, Trevor 2026-10-24): which player is asked here, then the card opens.
+	 */
+	let asking = $state<{ token: InfoToken; filled: FilledInfoToken } | undefined>();
+	let askOpen = $state(false);
+	// eslint-disable-next-line grim/names-as-badges -- the dialog's spoken name; its heading shows the badge
+	const askTitle = $derived(`${step?.character?.name ?? ''} chose`);
+	function chooseCard(token: InfoToken, filled?: FilledInfoToken) {
+		if (filled?.chosenAt === undefined) return onInfoTokens(token, filled);
+		asking = { token, filled };
+		askOpen = true;
+	}
+	/**
+	 * The player was chosen: the card opens with their character in its place. `shownAs` is the
+	 * character a Valid Information row shows them as (the Recluse as a Minion); else their own.
+	 */
+	function chosen(seatId: SeatId, shownAs?: CharacterId) {
+		askOpen = false;
+		const ask = asking;
+		const id = shownAs ?? trueCharacter(game, seatId, characters);
+		const character = id ? characters.get(id) : undefined;
+		if (!ask) return;
+		// Under the Vortox the waking Townsfolk's card must not show the true character.
+		const type = step?.character?.type;
+		const mustBeFalse = type !== undefined && falseInfoSource(game, characters, type) !== undefined;
+		onInfoTokens(
+			ask.token,
+			character ? withChosen(ask.filled, character, mustBeFalse) : ask.filled
+		);
+	}
+	/**
+	 * The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27: only
+	 * valid picks, e.g. only Minions for the Preacher).
+	 */
+	const misfits = $derived.by(() => {
+		const id = tokensOf?.id;
+		if (!choosing || !id) return undefined;
+		return seatMisfits(
+			game,
+			{ characterId: id, label: choosing.label },
+			characters,
+			grimoire.atDawn
+		);
+	});
+	function choose(label: string, at?: { reminderId: string; seatId: SeatId }) {
+		const id = tokensOf?.id;
+		if (id && onPlace?.({ characterId: id, label }, at)) return;
+		choosing = { label, at };
+		chooserOpen = true;
+	}
+	function put(seatId: SeatId) {
+		chooserOpen = false;
+		const picked = choosing;
+		choosing = undefined;
+		const id = tokensOf?.id;
+		if (!picked || !id) return;
+		if (picked.at) moveConfirm?.request(picked.at.reminderId, seatId);
+		else
+			grimoire.run({
+				type: 'AddReminder',
+				seatId,
+				reminder: { characterId: id, label: picked.label }
+			});
+	}
+
+	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
+	let stepChanges = $state<readonly CharacterId[]>([]);
+	$effect.pre(() => {
+		void step?.id;
+		stepChanges = [];
+	});
+	/**
+	 * The step's text as numbered lines (Trevor, 2026-11-06), every step alike: Minion info,
+	 * Demon info, Dusk and Dawn are "treated like character" (`step-parts.test.ts`).
+	 */
+	const textLines = $derived(step ? stepNightText(step, night) : undefined);
+	/** Minion info and Demon info: their cards are the lines after their text. */
+	const evilStep = $derived(
+		step?.id === 'minioninfo' || step?.id === 'demoninfo' ? step.id : undefined
+	);
+	/** The info token cards the step offers (`stepInfoCards`). */
+	const stepCards = $derived(
+		step?.character
+			? stepInfoCards(
+					step.character,
+					step.reminder,
+					{ prepValues: game.prepValues, game, characters, changed: stepChanges },
+					step.infoTokenCharacters
+				)
+			: []
+	);
+	/** The step's cards, each on the line naming it. */
+	const placedCards = $derived(
+		cardsOnLines(textLines ? nightTextStepLines(textLines) : [], stepCards)
+	);
+	/** Each row under the line naming its token; the rest under Reminders (M75). */
+	/** Valid Information sits on the first line of a step with text, not Minion or Demon info's. */
+	const infoOnLine = $derived(!!textLines && !evilStep);
+	const rowsPlaced = $derived(rowsOnLines(textLines, rows));
+	/** A line's eye, named for its card as the card's tile is ("You are (Imp)"). */
+	function cardLabel(card: StepCard): string {
+		const owners = (card.filled?.characterIds ?? []).flatMap((id) => {
+			const c = characters.get(id);
+			return c ? [c.name] : [];
+		});
+		const name = owners.length
+			? // eslint-disable-next-line grim/names-as-badges -- the eye's spoken name, never shown
+				t('info-tokens.cardFor', { card: card.token.text, name: owners.join(', ') })
+			: card.token.text;
+		return `${t('show.toPlayer')}: ${name}`;
+	}
+	/** The lines whose card was shown at this step, drawn as marked; forgotten on a new step. */
+	let shownLines = $state<readonly number[]>([]);
+	$effect.pre(() => {
+		void step?.id;
+		shownLines = [];
+	});
+	/** "You are", when the step's text names it. */
+	const youAreCard = $derived(infoTokensNamedIn(step?.reminder).find((t) => t.id === 'you-are'));
+
+	/**
+	 * The step's card filled in from the player chosen, if it has one (the Dreamer's "This
+	 * player is"): a Valid Information row's Show to player opens it for that row's player, so
+	 * the other token is picked too, never the one character alone.
+	 */
+	const chosenCard = $derived(stepCards.find((c) => c.filled?.chosenAt !== undefined));
+	function showChosen(seatId: SeatId, shownAs: CharacterId) {
+		if (!chosenCard?.filled) return;
+		asking = { token: chosenCard.token, filled: chosenCard.filled };
+		chosen(seatId, shownAs);
+	}
+	let showOpen = $state(false);
+	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
+	let shownId = $state<CharacterId | undefined>();
+	/** A card from Minion info or Demon info, shown instead of the step's character. */
+	let shownCard = $state<ShownInfoCard | undefined>();
+	const shownCharacter = $derived(
+		shownId ? characters.get(shownId) : (step?.character ?? undefined)
+	);
+
+	/**
+	 * A step that gives a number offers the "Your number is" info token (Trevor, 2026-10-18),
+	 * starting at the suggested number when the game knows one.
+	 */
+	const numberCard = STANDARD_INFO_TOKENS.find((t) => t.id === 'number')?.text ?? '';
+	const numberStep = $derived(!!step && givesNumber(step));
+	let number = $state(0);
+	$effect.pre(() => {
+		const answer = step?.info?.kind === 'answer' ? step.info.answers[0] : undefined;
+		number = answer?.kind === 'number' ? answer.value : 0;
+	});
+	/** A row of Valid Information shown to the player is recorded (`record-shown.ts`). */
+	function record(picker: InfoPicker, choice: InfoChoice) {
+		if (grimoire.open.viewOnly) return;
+		for (const command of shownCommands(game, characters, picker, choice)) grimoire.run(command);
+	}
+	/** The Yes/No info token, only its answer, as the Info tokens sheet shows it. */
+	function showAnswer(answer: string) {
+		shownId = undefined;
+		shownCard = { detail: answer };
+		showOpen = true;
+	}
+	function showNumber(n: number) {
+		// Over the open step, as with a suggestion's Show to player.
+		shownId = undefined;
+		shownCard = { title: numberCard, detail: String(n) };
+		showOpen = true;
+	}
+</script>
+
+{#snippet evilCards(id: 'minioninfo' | 'demoninfo')}
+	<EvilInfoCards
+		{game}
+		{characters}
+		step={id}
+		{textLines}
+		name={step ? stepName(step) : undefined}
+		onShow={(card) => {
+			// Over the open step, as with a suggestion's Show to player: closing it here showed
+			// the board for a moment when the player view closed (Trevor, 2026-10-26).
+			shownId = undefined;
+			shownCard = card;
+			showOpen = true;
+		}}
+		onChooseBluffs={() => {
+			open = false;
+			onChooseBluffs?.();
+		}}
+	/>
+{/snippet}
+
+<!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
+{#snippet reminderRow({ label, at }: (typeof rows)[number])}<StepReminderRow
+		{game}
+		{characters}
+		character={tokensOf}
+		{label}
+		{at}
+		onchoose={() => choose(label, at)}
+		onreturn={(id) => moveConfirm?.requestReturn(id)}
+	/>{/snippet}
+
+<Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
+	{#snippet headActions()}
+		{#if steps.length > 0}
+			<IconButton icon="back" label="Previous step" disabled={index <= 0} onclick={() => go(-1)} />
+			<IconButton
+				icon="forward"
+				label="Next step"
+				disabled={index < 0 || index >= steps.length - 1}
+				onclick={() => go(1)}
+			/>
+		{/if}
+		<!-- Beside the X, which closes the step: no Done (Trevor, 2026-10-20). Both open over
+		     the step, which stays open under them. -->
+		<IconButton icon="info" label="Info tokens" onclick={() => onInfoTokens()} />
+		<IconButton
+			icon="showToPlayer"
+			label="Show to player"
+			disabled={!step?.character}
+			onclick={() => {
+				shownCard = undefined;
+				shownId = undefined;
+				showOpen = true;
+			}}
+		/>
+	{/snippet}
+	<!-- The step scrolls on its own under its header. -->
+	<div
+		class="scroll"
+		role="group"
+		aria-label="Night step"
+		data-step-name={step ? stepName(step) : undefined}
+		onpointerdown={swipe.start}
+		onpointerup={swipe.end}
+		onpointercancel={swipe.cancel}
+	>
+		{#if step}
+			<!-- A step heads with the standard row, as every list of characters shows it (Trevor,
+			     2026-11-02): icon in its ring, the name band with who wakes, a character's whole
+			     ability beneath. Dusk, Dawn and the info steps are the same row with their picture
+			     (Trevor, 2026-11-05). -->
+			{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
+			{#snippet seats()}{#each holders as s (s)}<SeatBadge {game} seatId={s} />{/each}{/snippet}
+			<div class="row-head">
+				<StepPiece
+					{step}
+					template={step.character ? 'row' : 'name'}
+					info
+					alignment={one && step.character ? alignmentOf(game, one) : undefined}
+					playerName={one ? seatName(game, one) : undefined}
+				>
+					{#snippet tags()}
+						<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
+						{#if step.storytellerAbility}<span class="who" data-testid="step-who">Storyteller</span
+							>{/if}
+					{/snippet}
+					<!-- Several players under the band, on every kind of step alike, so the band keeps
+					     its name (Trevor, 2026-11-06: Minion info "conform totally" with a character). -->
+					{#if !step.storytellerAbility && holders.length > 1}<span
+							class="who"
+							data-testid="step-who">{@render seats()}</span
+						>{/if}
+					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
+								><AbilityText text={step.character.ability} names={[step.character.name]} /></span
+							>{/if}{/snippet}
+				</StepPiece>
+			</div>
+			<!-- What to do comes before any information (Trevor, 2026-10-20). Every step's text
+			     is its Steps, Dusk, Dawn and the info steps too (Trevor, 2026-11-06: "treated
+			     like character with the night order steps and eyes"); Minion info's and Demon
+			     info's cards are its next lines, each with the same eye. -->
+			<!-- Valid Information: on the first line (Trevor, 2026-11-09), else after the Steps. -->
+			{#snippet validInfo()}
+				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
+				<MadAsStep {grimoire} {step} />
+				<NightSuggested
+					{grimoire}
+					{step}
+					onShowNumber={numberStep ? showNumber : undefined}
+					onShowAnswer={showAnswer}
+					onRecord={record}
+					onShowChosen={chosenCard ? showChosen : undefined}
+					onShow={(id) => {
+						// Over the open step: closing the step in the same update threw inside the
+						// dialog library (an effect scheduled outside a batch, from the Undertaker's
+						// suggestion opened from the walk-through).
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+					onShowCharacters={(set) => {
+						// Every token on one card, as the Godfather is shown its Outsiders; with none,
+						// the card says so ("No Outsiders", Trevor 2026-10-28).
+						shownId = undefined;
+						shownCard =
+							set.value.length === 0
+								? { title: `No ${TYPE_PLURALS[set.type]}` }
+								: {
+										characters: set.value.flatMap((id) => {
+											const character = characters.get(id);
+											return character ? [{ character }] : [];
+										})
+									};
+						showOpen = true;
+					}}
+				/>
+				<NightShownTo
+					{grimoire}
+					{step}
+					onShow={(id) => {
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+					onShowCard={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+				/>
+				<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
+			{/snippet}
+			{#if textLines}
+				<h3>Steps</h3>
+				<!-- Minion info's and Demon info's cards sit on the lines that say to show them, as a
+				     character's info tokens do (EvilInfoCards draws the same NightTextLines). -->
+				{#if evilStep}{@render evilCards(evilStep)}{:else}
+					<NightTextLines
+						steps={textLines}
+						character={step.character}
+						name={stepName(step)}
+						alignment={one && step.character ? alignmentOf(game, one) : undefined}
+						marked={(i) => shownLines.includes(i)}
+					>
+						{#snippet lineExtra(i)}{#if i === 0 && infoOnLine}<span class="line-info"
+									>{@render validInfo()}</span
+								>{/if}{#if rowsPlaced.onLine[i]}<span
+									class="line-reminders"
+									data-testid="line-reminders"
+									>{#each rowsPlaced.onLine[i] as row (row.key)}{@render reminderRow(
+											row
+										)}{/each}</span
+								>{/if}{/snippet}
+						{#snippet lineEnd(
+							i
+						)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
+									aria-label={cardLabel(card)}
+									onclick={() => {
+										if (!shownLines.includes(i)) shownLines = [...shownLines, i];
+										chooseCard(card.token, card.filled);
+									}}
+								/>{/each}{/snippet}
+					</NightTextLines>
+				{/if}
+			{/if}
+			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes
+			     under it and comes back with its X. -->
+			{#if step.character && onShowGrimoire && seesGrimoire(step.character)}
+				<Button
+					variant="quiet"
+					icon="showToPlayer"
+					onclick={() => {
+						open = false;
+						onShowGrimoire();
+					}}>Show the Grimoire</Button
+				>
+			{/if}
+			<JinxChoiceStep {grimoire} {step} />
+			<NightAlerts {grimoire} {step} withoutImpaired />
+			<StepIfChosen {grimoire} {step} />
+			{#if stepJinxes.length > 0}
+				<h3>{t('characters.jinxes')}</h3>
+				<ul class="jinxes" data-testid="step-jinxes">
+					{#each stepJinxes as jinx (jinx.characters.join('+'))}
+						<li><JinxNote {jinx} {characters} /></li>
+					{/each}
+				</ul>
+			{/if}
+			{#if step.id === TRAVELLER_JOINS_STEP}
+				<TravellerJoins {grimoire} travellers={step.travellers ?? []} />
+			{/if}
+			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
+				<TravellerAlignment
+					{grimoire}
+					travellers={step.travellers ?? []}
+					onDraw={(seatId) => {
+						open = false;
+						onDraw(seatId);
+					}}
+				/>
+			{/if}
+			<!-- Two Storytellers (the Knaves): whom each waking player went to for their info. -->
+			{#if step.info?.kind === 'answer' || step.info?.kind === 'picker'}
+				{#each holders as seatId (seatId)}
+					<StorytellerVisit
+						{game}
+						{characters}
+						{seatId}
+						seatLabel={// eslint-disable-next-line grim/names-as-badges -- the group's accessible name only
+						seatName(game, seatId)}
+						run={(command) => grimoire.run(command)}
+					/>
+				{/each}
+			{/if}
+			{#if step.setupAlignments}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<SetupAlignmentStep
+					{grimoire}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+				/>
+			{/if}
+			{#if !infoOnLine}{@render validInfo()}{/if}
+			{#if step.character}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<ChangeCharacterStep
+					{grimoire}
+					{step}
+					onChanges={(ids) => (stepChanges = ids)}
+					onShow={(id) => {
+						// With "You are" when the step's text names it: the player learns their new
+						// character (the Pit-Hag's "Show the *YOU ARE* token & their new character token").
+						const character = characters.get(id);
+						shownId = youAreCard && character ? undefined : id;
+						shownCard =
+							youAreCard && character
+								? { title: youAreCard.text, characters: [{ character }] }
+								: undefined;
+						showOpen = true;
+					}}
+				/>
+				<StorytellerAbilityStep
+					{grimoire}
+					{step}
+					onShow={(id) => {
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+				/>
+				<!-- The Philosopher's chosen good character (gainedFrom.choose). -->
+				<GainedAbilityStep {grimoire} {step} />
+				<!-- The Courtier's Drunk 1, 2, 3: moved on each other night, as its text says. -->
+				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
+				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->
+				<ChosenKillStep {grimoire} {step} />
+				<!-- The Yaggababble's phrase count from the day just ended. -->
+				<TallyKillStep {grimoire} {step} />
+				<!-- M15a: the Toymaker's No attack, on the Demon's step. -->
+				<NoAttackStep {grimoire} {step} />
+			{/if}
+			{#if numberStep}
+				<h3>Info token</h3>
+				<div class="number" data-testid="step-number">
+					<span class="card-text" aria-hidden="true">{numberCard}</span>
+					<NumberSelect
+						bind:value={number}
+						label={numberCard}
+						hideLabel
+						min={0}
+						max={Math.max(game.seating.length, 1)}
+					/>
+					<ShowToPlayerButton onclick={() => showNumber(number)} />
+				</div>
+			{/if}
+			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18), in its Steps;
+			     on its own only when the step has no text. -->
+			{#if evilStep && !textLines}{@render evilCards(evilStep)}{/if}
+			<!-- A player who believes they are the Demon is shown a fake world (Trevor, 2026-10-29). -->
+			{#each believers as seatId (seatId)}
+				<EvilInfoCards
+					{game}
+					{characters}
+					step="believer"
+					believer={seatId}
+					{night}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+					onChooseBluffs={() => {
+						open = false;
+						onChooseBluffs?.();
+					}}
+					onFakeChange={(info) => grimoire.run({ type: 'SetFakeEvilInfo', seatId, info })}
+				/>
+			{/each}
+			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). Over the open
+			     step, which stays open under the sheet, as with onShow above. -->
+			<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
+			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
+			<StepAfflictions {grimoire} {step} />
+			{#if rowsPlaced.rest.length > 0}
+				<h3>Reminders</h3>
+				<ul class="reminders">
+					{#each rowsPlaced.rest as row (row.key)}
+						<li>{@render reminderRow(row)}</li>
+					{/each}
+				</ul>
+			{/if}
+		{/if}
+	</div>
+	<!--
+		Inside the step, which stays open under it, so closing it goes straight back to the step
+		with nothing in between (Trevor, 2026-10-26), and the step's modal never hides it from
+		screen readers.
+	-->
+	<ShowToPlayer
+		bind:open={showOpen}
+		characters={shownCharacter ? [{ character: shownCharacter }] : []}
+		cards={shownCard && [shownCard]}
+	/>
+</Dialog>
+
+<SeatChooser
+	bind:open={chooserOpen}
+	title={choosing ? `Put ${choosing.label} on` : 'Put on'}
+	{game}
+	{characters}
+	{misfits}
+	onChoose={put}
+/>
+
+<SeatChooser bind:open={askOpen} title={askTitle} {game} {characters} onChoose={chosen}>
+	{#snippet heading()}
+		{#if step?.character}<CharacterPiece
+				template="badge"
+				characterId={step.character.id}
+				character={step.character}
+				interactive={false}
+			/>{/if} chose
+	{/snippet}
+</SeatChooser>
+
+<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+
+<style>
+	.scroll {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.number {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
+	.card-text {
+		font-weight: 600;
+	}
+	.who {
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
+	/* Several waking players, under the band: they wrap onto more lines rather than run off
+	   the right edge (Trevor, 2026-11-08), as the Minions card in the Steps does. */
+	span.who {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.row-head {
+		margin-bottom: var(--space-1);
+	}
+	h3 {
+		margin: var(--space-2) 0 var(--space-1);
+		font-size: 1rem;
+	}
+	.jinxes {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		list-style: none;
+	}
+	/* Room under each token for its words' band, and beside it for words wider than it. */
+	.reminders {
+		display: grid;
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.reminders li {
+		padding: 0 0 var(--space-2) var(--space-2);
+	}
+	/* Under the line that names the token, in the step's own words' column (M75). */
+	.line-info {
+		display: block;
+		font-family: var(--font-body);
+	}
+	.line-reminders {
+		display: grid;
+		gap: var(--space-2);
+		padding-top: var(--space-2);
+	}
+</style>

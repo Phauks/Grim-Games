@@ -3,7 +3,7 @@
 	import {
 		seatingFromSetup,
 		type SeatingFrom
-	} from '#lib/features/grimoire/seating-mode.svelte.ts';
+	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import BagSettings from './BagSettings.svelte';

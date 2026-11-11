@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import AlignmentPill from './AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
 	import { untrack } from 'svelte';
 	import { findJinx, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';

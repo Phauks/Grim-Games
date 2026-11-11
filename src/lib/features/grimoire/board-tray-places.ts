@@ -14,7 +14,7 @@ import {
 import { bankLabel, bankLook, type BankItem } from '#lib/features/board/bank-items.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
-import type ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
+import type ReminderMoveConfirm from '#lib/features/grimoire/reminders/ReminderMoveConfirm.svelte';
 import { isGeneric, looksLike, onBoard } from '#lib/features/board/reminders.ts';
 import type { TrayPlaces } from '#lib/features/board/tray-gestures.svelte.ts';
 
