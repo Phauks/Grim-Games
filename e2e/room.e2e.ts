@@ -154,6 +154,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	page,
 	browser
 }, testInfo) => {
+	// Two pages through join, seat, rename, rejoin and a new code: about 30s on a CI tablet run.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	// Read the code once the room is open: before that the share code isn't the room's yet.
