@@ -27,18 +27,31 @@ jobs:
     # The tag must match the installed @playwright/test; scripts/scripts.test.ts checks it.
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
-      options: --ipc=host
+      # The runner's own DejaVu, read-only, so the font needs no download (see Prepare container).
+      options: --ipc=host -v /usr/share/fonts/truetype/dejavu:/opt/runner-dejavu:ro
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       # The container runs as root over a checkout owned by the runner user, so git refuses
       # the repo without safe.directory and the changelog and update notes come out empty.
       # DejaVu is the runner's monospace font; the image lacks it, and its fallback monospace
-      # has narrower letters that change wrapping in the layout tests.
+      # has narrower letters that change wrapping in the layout tests. The core set (what
+      # fonts-dejavu-core installs) is copied from the runner, because the Ubuntu mirrors stopped
+      # resolving from the container for over an hour on 2026-11-11; apt is the fallback.
       - name: Prepare container
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
+          core="DejaVuSans DejaVuSans-Bold DejaVuSansMono DejaVuSansMono-Bold DejaVuSerif DejaVuSerif-Bold"
+          have=yes
+          for f in $core; do [ -f "/opt/runner-dejavu/$f.ttf" ] || have=no; done
+          if [ "$have" = yes ]; then
+            mkdir -p /usr/share/fonts/truetype/dejavu
+            for f in $core; do cp "/opt/runner-dejavu/$f.ttf" /usr/share/fonts/truetype/dejavu/; done
+            fc-cache -f >/dev/null 2>&1 || true
+            echo "DejaVu copied from the runner"
+          else
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -58,7 +71,8 @@ jobs:
     # The tag must match the installed @playwright/test; scripts/scripts.test.ts checks it.
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
-      options: --ipc=host
+      # The runner's own DejaVu, read-only, so the font needs no download (see Prepare container).
+      options: --ipc=host -v /usr/share/fonts/truetype/dejavu:/opt/runner-dejavu:ro
     # Each shard runs a sixth of the tests (fullyParallel spreads single tests, not files). With
     # three shards, a shard took 25 to 32 minutes on 2026-10-27 and runners never queued, so six
     # halve the wait. Branch rules require "E2E done", not the shards, so the count can change.
@@ -72,11 +86,23 @@ jobs:
       # The container runs as root over a checkout owned by the runner user, so git refuses
       # the repo without safe.directory and the changelog and update notes come out empty.
       # DejaVu is the runner's monospace font; the image lacks it, and its fallback monospace
-      # has narrower letters that change wrapping in the layout tests.
+      # has narrower letters that change wrapping in the layout tests. The core set (what
+      # fonts-dejavu-core installs) is copied from the runner, because the Ubuntu mirrors stopped
+      # resolving from the container for over an hour on 2026-11-11; apt is the fallback.
       - name: Prepare container
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
+          core="DejaVuSans DejaVuSans-Bold DejaVuSansMono DejaVuSansMono-Bold DejaVuSerif DejaVuSerif-Bold"
+          have=yes
+          for f in $core; do [ -f "/opt/runner-dejavu/$f.ttf" ] || have=no; done
+          if [ "$have" = yes ]; then
+            mkdir -p /usr/share/fonts/truetype/dejavu
+            for f in $core; do cp "/opt/runner-dejavu/$f.ttf" /usr/share/fonts/truetype/dejavu/; done
+            fc-cache -f >/dev/null 2>&1 || true
+            echo "DejaVu copied from the runner"
+          else
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends fonts-dejavu-core
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: 22
