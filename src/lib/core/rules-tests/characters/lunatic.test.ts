@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { believedDemon, believesDemon, chosenLikeDemon } from '#lib/core/rules/night/evil-info.ts';
-import { nightKiller } from '#lib/core/rules/night/night-alerts.ts';
+import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {

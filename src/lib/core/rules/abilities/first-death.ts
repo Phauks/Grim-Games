@@ -14,7 +14,11 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { firstDeathSaver, type FirstDeathSaver } from './protection.ts';
-import { nightKiller, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import {
+	nightKiller,
+	onDeathApplies,
+	onDeathTrigger
+} from '#lib/core/rules/night/night-killers.ts';
 
 /** The ability that stops this death, when it is the player's first and the ability works. */
 export function survivesFirstDeath(

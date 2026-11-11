@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayUseDeath } from '#lib/core/rules/day/day-claims.ts';
 import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
-import { registrations } from '#lib/core/rules/abilities/ability.ts';
+import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
 import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';

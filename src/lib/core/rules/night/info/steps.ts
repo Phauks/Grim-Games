@@ -24,7 +24,9 @@ import { type NightStep, wakesTooNote } from '#lib/core/rules/night/night-order.
 import { type Night } from '#lib/core/model/overrides.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { type NightAnswer } from './reliability.ts';
-import { type NightToday, markedSeats, nightAnswer } from './answers.ts';
+import { nightAnswer } from './answers.ts';
+import { type NightToday } from './answer-groups.ts';
+import { markedSeats } from './answer-groups.ts';
 import { type InfoPicker, infoPicker } from './picker.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 

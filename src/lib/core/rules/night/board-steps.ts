@@ -20,7 +20,7 @@ import { livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
 import { evilInfoNotesLeftOut } from '#lib/core/rules/jinxes/holder-jinxes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';
 import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from './night-killers.ts';
 import {
 	characterStepSeats,
 	wakesMarked,

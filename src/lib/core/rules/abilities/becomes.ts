@@ -20,7 +20,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
-import { registrations } from './ability.ts';
+import { registrations } from './registration.ts';
 
 /**
  * Why `seatId` can't turn good by an ability, by a jinx on the script that says `noTurnGood`:

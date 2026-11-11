@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
-import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { deathVerdict } from '#lib/core/rules/night/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {

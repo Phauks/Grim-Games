@@ -28,7 +28,7 @@ import {
 	secondDemonReverts
 } from './jinx-effects.ts';
 import { unchoosablePartners } from './jinx-targets.ts';
-import type { NightAlert } from '#lib/core/rules/night/night-alerts.ts';
+import type { NightAlert } from '#lib/core/rules/night/night-alert.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The Related Jinxes section of a character's wiki page; none for a homebrew character. */

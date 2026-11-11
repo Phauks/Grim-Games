@@ -16,7 +16,8 @@ import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/types
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
-import { abilityState, registrations } from '#lib/core/rules/abilities/ability.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { blockThreshold, votesWithoutToken } from './voting.ts';
 import { uncountedVoteBy } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { mayVote, tableRule } from './voting-table.ts';

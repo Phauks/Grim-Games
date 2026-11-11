@@ -6,7 +6,7 @@ import { parseCharacterRules } from '../character-rules.ts';
 import { parseCharacter } from '../parse.ts';
 import { Issues } from '../validate.ts';
 import { actsWhenDead } from '#lib/core/rules/abilities/dead-characters.ts';
-import { onDeathTrigger } from '#lib/core/rules/night/night-alerts.ts';
+import { onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
 import { OFFICIAL_RULES, rulesOf } from './index.ts';
 

@@ -27,11 +27,10 @@ import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, Game, SeatId } from '#lib/core/model/types.ts';
 import {
 	abilityState,
-	registrations,
-	registrationWorlds,
 	type AbilitySource,
 	type Impairment
 } from '#lib/core/rules/abilities/ability.ts';
+import { registrations, registrationWorlds } from '#lib/core/rules/abilities/registration.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 

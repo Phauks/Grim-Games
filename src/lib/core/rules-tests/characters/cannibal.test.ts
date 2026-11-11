@@ -14,7 +14,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState, registrations } from '#lib/core/rules/abilities/ability.ts';
+import { abilityState } from '#lib/core/rules/abilities/ability.ts';
+import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import {
 	gainedAbilities,
 	hasAbilityOf,

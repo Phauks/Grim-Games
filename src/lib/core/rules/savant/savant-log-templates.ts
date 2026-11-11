@@ -6,7 +6,7 @@ import type { CharacterType } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
-import type { RegistrationWorld } from '#lib/core/rules/abilities/ability.ts';
+import type { RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
 
 import {
 	text,

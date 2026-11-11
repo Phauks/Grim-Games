@@ -8,7 +8,7 @@ import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, DayLog, Game, SeatId } from '#lib/core/model/types.ts';
-import type { RegistrationWorld } from '#lib/core/rules/abilities/ability.ts';
+import type { RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
 
 import type { SavantGroup, SavantPart } from './savant.ts';
 

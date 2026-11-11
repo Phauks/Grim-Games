@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { registrationWorlds } from '#lib/core/rules/abilities/ability.ts';
+import { registrationWorlds } from '#lib/core/rules/abilities/registration.ts';
 import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
 import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 import {

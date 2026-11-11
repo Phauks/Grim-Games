@@ -22,13 +22,8 @@ import {
 	type Game,
 	type SeatId
 } from '#lib/core/model/types.ts';
-import {
-	abilityState,
-	registrations,
-	registrationWorlds,
-	type AbilitySource,
-	type RegistrationWorld
-} from './ability.ts';
+import { abilityState, type AbilitySource } from './ability.ts';
+import { registrations, registrationWorlds, type RegistrationWorld } from './registration.ts';
 import { protection } from './protection.ts';
 import { gainedBy, heldAbilitiesOf } from './gained-abilities.ts';
 import { killsMarkedBy } from '#lib/core/rules/jinxes/jinx-effects.ts';

@@ -14,7 +14,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import type { RegistrationWorld } from '#lib/core/rules/abilities/ability.ts';
+import type { RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
 import { carries, lastShown } from './token-carriers.ts';
 import { mostPairs, neighbourPairs } from './neighbour-pairs.ts';
 import type { InfoOption } from './picker.ts';

@@ -6,7 +6,7 @@ import { aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selector
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/setup/distribution.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
-import type { RegistrationWorld } from '#lib/core/rules/abilities/ability.ts';
+import type { RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
 import { abnormalSinceDawn } from '#lib/core/rules/night/info/abnormal-uses.ts';
 
 import {
