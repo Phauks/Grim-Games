@@ -23,14 +23,14 @@ describe('readJinxRules (M44)', () => {
 			{ not: { inPlay: 'saint' } },
 			{ alive: 'mayor' }
 		];
-		expect(read({ impairs: { kind: 'drunk', when } })).toEqual({
-			rules: { impairs: { kind: 'drunk', when } },
+		expect(read({ trueInfo: { when } })).toEqual({
+			rules: { trueInfo: { when } },
 			issues: []
 		});
-		expect(read({ impairs: { kind: 'drunk', when: [{ not: 'sleepy' }] } }).issues).toContain(
-			'jinxes.chef.impairs.when[0].not: unknown condition "sleepy"'
+		expect(read({ trueInfo: { when: [{ not: 'sleepy' }] } }).issues).toContain(
+			'jinxes.chef.trueInfo.when[0].not: unknown condition "sleepy"'
 		);
-		expect(read({ impairs: { kind: 'drunk', when: [{ alive: 3 }] } }).rules).toBeUndefined();
+		expect(read({ trueInfo: { when: [{ alive: 3 }] } }).rules).toBeUndefined();
 	});
 
 	it('reads cannotChoose, a redirect, and a learned character', () => {

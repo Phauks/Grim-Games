@@ -84,7 +84,16 @@
 	},
 	"jinxes": {
 		"goblin": {
-			"madAsPartner": true
+			"patch": {
+				"parts": {
+					"madAs": {
+						"token": "Mad",
+						"mad": "carrier",
+						"choose": ["townsfolk", "outsider"],
+						"characters": ["goblin"]
+					}
+				}
+			}
 		}
 	},
 	"madAs": {

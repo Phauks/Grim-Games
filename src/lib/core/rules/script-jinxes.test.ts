@@ -75,7 +75,13 @@ const lamplighter = (extra: Json = {}) => ({
 	...extra
 });
 
-const DRUNK_WHILE_IN_PLAY = { impairs: { who: 'partner', kind: 'drunk', when: ['self-in-play'] } };
+const DRUNK_WHILE_IN_PLAY = {
+	patch: {
+		who: 'partner',
+		when: ['self-in-play'],
+		parts: { impairs: { self: { reason: 'drunk' } } }
+	}
+};
 
 describe('a script jinx between two official characters', () => {
 	const entries = (rules?: Json) => [
@@ -100,7 +106,7 @@ describe('a script jinx between two official characters', () => {
 			{
 				characters: ['monk', 'chef'],
 				reason: 'While the Monk is in play, the Chef is drunk.',
-				rules: { impairs: { who: 'partner', kind: 'drunk', when: ['self-in-play'] } }
+				rules: DRUNK_WHILE_IN_PLAY
 			}
 		]);
 		const cast = castWith({ script });
@@ -111,28 +117,6 @@ describe('a script jinx between two official characters', () => {
 			['drunk', { characterId: 'monk', seatId: seats[1] }]
 		]);
 		// No Monk in play: the Chef is sober.
-		const without = cast(['chef', 'saint', 'imp', 'empath', 'poisoner']);
-		expect(abilityState(without.game, without.seats[0], without.ctx.characters).works).toBe(true);
-	});
-
-	// M61b: the verb `impairs` is a preset of a patch of the part `impairs`.
-	it('does the same when the jinx says it as a patch of the part `impairs`', () => {
-		const patch = {
-			patch: {
-				who: 'partner',
-				when: ['self-in-play'],
-				parts: { impairs: { self: { reason: 'drunk' } } }
-			}
-		};
-		const { script, warnings } = load(entries(patch));
-		expect(warnings).toEqual([]);
-		const cast = castWith({ script });
-		const { game, ctx, seats } = cast(['chef', 'monk', 'imp', 'empath', 'poisoner']);
-		const state = abilityState(game, seats[0], ctx.characters);
-		expect(state.works).toBe(false);
-		expect(state.impairments.map((i) => [i.reason, i.source])).toEqual([
-			['drunk', { characterId: 'monk', seatId: seats[1] }]
-		]);
 		const without = cast(['chef', 'saint', 'imp', 'empath', 'poisoner']);
 		expect(abilityState(without.game, without.seats[0], without.ctx.characters).works).toBe(true);
 	});
@@ -216,7 +200,7 @@ describe('a script that rewords an official jinx', () => {
 		]);
 		expect(script.jinxes).toBeUndefined();
 		expect(rulesForJinx(script, 'damsel', 'spy', committedCharacters())).toEqual({
-			impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+			patch: { when: ['partner-in-play'], parts: { impairs: { self: { reason: 'poisoned' } } } }
 		});
 	});
 });
@@ -422,7 +406,11 @@ describe('homebrew sentences', () => {
 			lamplighter({
 				jinxes: [
 					jinx('washerwoman', 'A living Lamplighter takes it.', {
-						impairs: { who: 'partner', kind: 'no-ability', when: ['self-alive'] }
+						patch: {
+							who: 'partner',
+							when: ['self-alive'],
+							parts: { impairs: { self: { reason: 'no-ability' } } }
+						}
 					})
 				]
 			}),
@@ -555,7 +543,11 @@ describe('homebrew sentences', () => {
 						nightChoice: { chooses: 'good', partner: 'acts' }
 					}),
 					jinx('magician', 'No Magician ability.', {
-						impairs: { who: 'partner', kind: 'no-ability', when: ['self-in-play'] }
+						patch: {
+							who: 'partner',
+							when: ['self-in-play'],
+							parts: { impairs: { self: { reason: 'no-ability' } } }
+						}
 					})
 				]
 			},
@@ -565,10 +557,10 @@ describe('homebrew sentences', () => {
 			'magician'
 		]);
 		const rules = (a: string, b: string) => ownJinxRules({ script }, a, b, characters);
-		expect(rules('fortuneteller', 'lamplighter')?.impairs?.kind).toBe('drunk');
+		expect(rules('fortuneteller', 'lamplighter')?.patch?.parts.impairs?.self?.reason).toBe('drunk');
 		expect(rules('hexer', 'lilmonsta')?.alsoBecomes).toEqual({ type: 'minion' });
 		expect(rules('gloom', 'sage')?.nightChoice).toEqual({ chooses: 'good', partner: 'acts' });
-		expect(rules('magician', 'gloom')?.impairs?.kind).toBe('no-ability');
+		expect(rules('magician', 'gloom')?.patch?.parts.impairs?.self?.reason).toBe('no-ability');
 	});
 });
 
@@ -827,7 +819,11 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 			lamplighter({
 				jinxes: [
 					jinx('empath', 'A dead Lamplighter poisons the Empath.', {
-						impairs: { who: 'partner', kind: 'poisoned', when: ['self-dead'] }
+						patch: {
+							who: 'partner',
+							when: ['self-dead'],
+							parts: { impairs: { self: { reason: 'poisoned' } } }
+						}
 					})
 				]
 			}),
@@ -910,7 +906,10 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 			lamplighter({
 				jinxes: [
 					jinx('gloom', 'The Lamplighter is drunk on the first night.', {
-						impairs: { kind: 'drunk', when: [{ night: 1 }, 'partner-alive'] }
+						patch: {
+							when: [{ night: 1 }, 'partner-alive'],
+							parts: { impairs: { self: { reason: 'drunk' } } }
+						}
 					})
 				]
 			}),
@@ -936,7 +935,11 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 			lamplighter({
 				jinxes: [
 					jinx('empath', 'With the Baron about, the Empath is drunk.', {
-						impairs: { who: 'partner', kind: 'drunk', when: [{ inPlay: 'baron' }] }
+						patch: {
+							who: 'partner',
+							when: [{ inPlay: 'baron' }],
+							parts: { impairs: { self: { reason: 'drunk' } } }
+						}
 					})
 				]
 			}),
@@ -1647,7 +1650,7 @@ describe('a script jinx that patches its character’s rules', () => {
 	});
 });
 
-// M61c: the verb `madAsPartner` is a preset of a patch of the part `madAs`.
+// M61c: a patch of the part `madAs`.
 describe('a script jinx that patches the Cerenovus’s madAs', () => {
 	const MAD_AS = { token: 'Mad', mad: 'carrier', choose: ['townsfolk', 'outsider'] };
 	const entries = (rules: Json) => [
@@ -1660,20 +1663,18 @@ describe('a script jinx that patches the Cerenovus’s madAs', () => {
 		'imp'
 	];
 
-	it('lets the Cerenovus choose the Baron, as the verb would', () => {
-		const patch = { patch: { parts: { madAs: { ...MAD_AS, characters: ['baron'] } } } };
-		for (const rules of [patch, { madAsPartner: true }]) {
-			const { script, warnings, characters } = load(entries(rules));
-			expect(warnings).toEqual([]);
-			const cast = castWith({ script, characters });
-			const { game } = cast(['cerenovus', 'chef', 'empath', 'imp']);
-			expect(madAsPartners(game, 'cerenovus', characters)).toEqual(['baron']);
-			expect(madAsChoice(game, 'cerenovus', characters)?.partners).toEqual(['baron']);
-		}
+	it('lets the Cerenovus choose the Baron', () => {
+		const rules = { patch: { parts: { madAs: { ...MAD_AS, characters: ['baron'] } } } };
+		const { script, warnings, characters } = load(entries(rules));
+		expect(warnings).toEqual([]);
+		const cast = castWith({ script, characters });
+		const { game } = cast(['cerenovus', 'chef', 'empath', 'imp']);
+		expect(madAsPartners(game, 'cerenovus', characters)).toEqual(['baron']);
+		expect(madAsChoice(game, 'cerenovus', characters)?.partners).toEqual(['baron']);
 	});
 });
 
-// M61d: `wakesWhen.deadAtLeast`, and the verb `deadAtLeast` as a preset of a patch of it.
+// M61d: `wakesWhen.deadAtLeast`, and a patch of it.
 describe('a custom character that wakes once enough players are dead', () => {
 	const dies =
 		(n: number) =>
@@ -1700,38 +1701,35 @@ describe('a custom character that wakes once enough players are dead', () => {
 		);
 	});
 
-	it('wakes on one death while its jinx partner is in play, by patch or by the verb', () => {
+	it('wakes on one death while its jinx partner is in play, by a patch', () => {
 		const own = { wakesWhen: { deadAtLeastLiving: true } };
-		const patch = {
+		const rules = {
 			patch: {
 				when: ['partner-in-play'],
 				parts: { wakesWhen: { deadAtLeastLiving: true, deadAtLeast: 1 } }
 			}
 		};
-		const verb = { deadAtLeast: { dead: 1, when: ['partner-in-play'] } };
-		for (const rules of [patch, verb]) {
-			const { script, warnings, characters } = load([
-				lamplighter({
-					rules: own,
-					jinxes: [
-						{ id: 'imp', reason: 'With the Imp in play, one death wakes the Lamplighter.', rules }
-					]
-				}),
-				'chef',
-				'empath',
-				'imp',
-				'poisoner'
-			]);
-			expect(warnings).toEqual([]);
-			const cast = castWith({ script, characters });
-			const one = cast(ids, dies(1));
-			expect(wakeConditionMet(one.game, 'lamplighter', one.seats[0], characters, new Set())).toBe(
-				true
-			);
-			const noImp = cast(['lamplighter', 'chef', 'empath', 'poisoner', 'saint'], dies(1));
-			expect(
-				wakeConditionMet(noImp.game, 'lamplighter', noImp.seats[0], characters, new Set())
-			).toBe(false);
-		}
+		const { script, warnings, characters } = load([
+			lamplighter({
+				rules: own,
+				jinxes: [
+					{ id: 'imp', reason: 'With the Imp in play, one death wakes the Lamplighter.', rules }
+				]
+			}),
+			'chef',
+			'empath',
+			'imp',
+			'poisoner'
+		]);
+		expect(warnings).toEqual([]);
+		const cast = castWith({ script, characters });
+		const one = cast(ids, dies(1));
+		expect(wakeConditionMet(one.game, 'lamplighter', one.seats[0], characters, new Set())).toBe(
+			true
+		);
+		const noImp = cast(['lamplighter', 'chef', 'empath', 'poisoner', 'saint'], dies(1));
+		expect(wakeConditionMet(noImp.game, 'lamplighter', noImp.seats[0], characters, new Set())).toBe(
+			false
+		);
 	});
 });

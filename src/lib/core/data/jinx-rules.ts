@@ -8,7 +8,7 @@
  *
  * **Effects.** Each key is one effect, a general verb that names no character. Its value is
  * `true`, or an object of its parameters; a verb with one main parameter may be written as that
- * value alone (`"deadAtLeast": 1` is `{"dead": 1}`). Every effect object may also say:
+ * value alone (`"noKill": "token"` is `{"on": "token"}`). Every effect object may also say:
  * - `who`: whose behaviour it changes, `self` (this file's character, the default) or
  *   `partner` (the key's character). So a block may live in either character's file, and one
  *   jinx's sentence lives in one place: "the Vizier's jinx leaves the Magician with no ability"
@@ -41,8 +41,8 @@
  * (often with a night alert as well). These only tell the Storyteller, who applies them: a
  * night alert or a note on a step, never enforced: `storytellerChooses` with `player`,
  * `wakes`, `grimoire`, `noKill` with `token` or `killer`, every `learns` but `good-players`,
- * `partnerInPlay`, `arbitraryDeaths`, `guessesPartner`, `notShown` `given-ability`,
- * `madAsPartner`, and `storytellerHas` `no-ability`.
+ * `partnerInPlay`, `arbitraryDeaths`, `guessesPartner`, `notShown` `given-ability`, and
+ * `storytellerHas` `no-ability`.
  *
  * **Needs.** A verb that works through another part of a character's rules says so ("Needs
  * …"): on its subject unless the bullet says the partner. Without it the rule does nothing, so
@@ -122,14 +122,12 @@
  *   Jinxes). Without `always` it only adds: listing what the subject already may register as
  *   (the Spy as good) changes nothing, and the script warns;
  * - `impairs`: the subject's player is `kind` (`poisoned`, `drunk` or `no-ability`) whatever
- *   any ability's state: with `partner-in-play`, while the partner is in play, alive or dead
- *   (the Spy and the Widow poison the Damsel, the Vizier leaves the Magician with no ability,
- *   Legion the Engineer and the Hatter); with `has-partner-ability`, while they have the
- *   partner's ability (the Alchemist-Mastermind has no ability; needs `gainsAbilityOf` or
- *   `gainedFrom`). `who: "both"` with `unlessImpaired` is that player and the partner's, while
- *   neither is otherwise drunk or poisoned (the Alchemist-Organ Grinder: both drunk while both
- *   are sober). One about the subject's own player is a preset of a `patch` of the part
- *   `impairs` (`self.reason`, `data/jinx-presets.ts`, M61b);
+ *   any ability's state, with `has-partner-ability`, while they have the partner's ability
+ *   (the Alchemist-Mastermind has no ability; needs `gainsAbilityOf` or `gainedFrom`).
+ *   `who: "both"` with `unlessImpaired` is that player and the partner's, while neither is
+ *   otherwise drunk or poisoned (the Alchemist-Organ Grinder: both drunk while both are
+ *   sober). One about one player alone is a `patch` of the part `impairs` (`self.reason`: the
+ *   Spy and the Widow poison the Damsel while in play, alive or dead);
  * - `noKill`: no kill from the subject tonight `on`: `token`, while the partner's own
  *   `stopsWaking` or `stopsKilling` token is on its player (the Exorcist's Chosen on the
  *   Yaggababble, the Princess's Doesn't Kill on the Al-Hadikhia; needs the partner's
@@ -181,9 +179,6 @@
  *   extra day is a night instead, whose choice the `chooser`'s player makes (`partner`, the
  *   default, or `self`), a `jinx-night` hold with no `winner`: the chooser's own ability
  *   decides (the Mastermind with the Al-Hadikhia);
- * - `deadAtLeast`: the subject's `wakesWhen` dead count is met once `dead` players are dead
- *   (with `partner-in-play`, the King with the Leviathan or Riot). Needs `wakesWhen`. A preset
- *   of a `patch` of the part `wakesWhen` with `deadAtLeast` (`data/jinx-presets.ts`, M61d);
  * - `nightChoice`: each night but the first, the subject's player chooses an alive player
  *   not chosen before (`chooses: "good"`, a good one; `any`), and a chosen partner either uses
  *   its ability without dying (`partner: "acts"`) or dies and gains it (`dies`), worked out in
@@ -269,10 +264,6 @@
  *   ability (with `partner-alive`, the Lleech with the Mastermind). Needs `gameEnd`;
  * - `killsMarked`: the subject's kill (`deathCause.victim`) also kills the player carrying the
  *   partner's reminder `token` (the Slayer shooting the Lleech's host, "Poisoned");
- * - `madAsPartner`: the subject's `madness` may be about the partner, though the partner is
- *   not good: a `may-mad-as` night alert at its step (the Cerenovus with the Goblin). Needs
- *   `madness`. A preset of a `patch` of the part `madAs`, the partner among its `characters`
- *   (`data/jinx-presets.ts`, M61c);
  * - `thinksPartnerSetup`: while the subject's player thinks they are the partner (their seat
  *   shows the partner's token), the partner's own setup change applies as if it were in play
  *   (the Marionette who thinks they are the Balloonist or the Huntsman). Needs the partner's
@@ -530,10 +521,6 @@ export function presetJinxEnd(end: JinxEnd): JinxEnd {
 	return JINX_END_TABLE.has(end.kind) ? JINX_END_TABLE.expand(end.kind, end) : end;
 }
 
-export interface DeadAtLeast extends JinxEffect {
-	dead: number;
-}
-
 export const NIGHT_CHOICE_CHOOSES = ['good', 'any'] as const;
 export const NIGHT_CHOICE_PARTNER = ['acts', 'dies'] as const;
 
@@ -627,7 +614,6 @@ export interface JinxRules {
 	protects?: JinxProtects;
 	grimoire?: GrimoireRule;
 	endsGame?: JinxEnd;
-	deadAtLeast?: DeadAtLeast;
 	nightChoice?: NightChoice;
 	partnerSetup?: JinxEffect;
 	partnerInPlay?: JinxEffect;
@@ -647,7 +633,6 @@ export interface JinxRules {
 	keepsAbility?: KeepsAbilityPatch;
 	survives?: Survives;
 	killsMarked?: TokenEffect;
-	madAsPartner?: JinxEffect;
 	thinksPartnerSetup?: JinxEffect;
 	voter?: VoterPatch;
 	abnormalCounts?: AbnormalCountsRule;
@@ -660,15 +645,6 @@ export interface JinxRules {
  */
 export interface JinxPatch extends JinxEffect {
 	parts: CharacterRules;
-	/** The older verb this patch was read from (`impairs`), when it was one (M61b). */
-	preset?: JinxPresetVerb;
 }
-
-/**
- * The verbs read as a {@link JinxPatch} (M61b, M61c): `impairs` about the subject's own
- * player, `madAsPartner` (the part `madAs` with the partner among its `characters`),
- * `deadAtLeast` (the part `wakesWhen` with `deadAtLeast`).
- */
-export type JinxPresetVerb = 'impairs' | 'madAsPartner' | 'deadAtLeast';
 
 export type JinxRuleKey = keyof JinxRules;

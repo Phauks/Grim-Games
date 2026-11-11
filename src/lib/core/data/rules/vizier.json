@@ -58,12 +58,18 @@
 			"notDeclared": true
 		},
 		"magician": {
-			"impairs": {
+			"noExecuteNow": "partner",
+			"patch": {
 				"who": "partner",
-				"kind": "no-ability",
-				"when": ["self-in-play"]
-			},
-			"noExecuteNow": "partner"
+				"when": ["self-in-play"],
+				"parts": {
+					"impairs": {
+						"self": {
+							"reason": "no-ability"
+						}
+					}
+				}
+			}
 		},
 		"preacher": {
 			"keepsProtection": true

@@ -36,7 +36,7 @@ describe('Hatter + Legion jinx', () => {
 
 	it('is data in both rules', () => {
 		expect(jinxRulesBetween('hatter', 'legion', committedCharacters())).toEqual({
-			impairs: { kind: 'no-ability', when: ['partner-in-play'] },
+			patch: { when: ['partner-in-play'], parts: { impairs: { self: { reason: 'no-ability' } } } },
 			allEvilBecome: {}
 		});
 	});

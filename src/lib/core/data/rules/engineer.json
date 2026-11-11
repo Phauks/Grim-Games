@@ -65,9 +65,15 @@
 					}
 				]
 			},
-			"impairs": {
-				"kind": "no-ability",
-				"when": ["partner-in-play"]
+			"patch": {
+				"when": ["partner-in-play"],
+				"parts": {
+					"impairs": {
+						"self": {
+							"reason": "no-ability"
+						}
+					}
+				}
 			}
 		}
 	},

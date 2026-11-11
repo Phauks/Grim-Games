@@ -324,7 +324,7 @@ export function storytellerHasAlerts(
  *   Wraith, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
  * - `not-shown-given` (`notShown` `given-ability`), at the partner's step: this player has the partner's
  *   ability but isn't shown the ability it gave (the Alchemist-Boffin);
- * - `may-mad-as` (`madAsPartner`), at this character's step: its madness may be about the
+ * - `may-mad-as` (a `patch` of `madAs` naming the partner), at this character's step: its madness may be about the
  *   partner (the Cerenovus with the Goblin,
  *   https://wiki.bloodontheclocktower.com/Cerenovus#Related_Jinxes);
  * - `reverts` (`notSecondDemon`), at the partner's step: this player carries their own

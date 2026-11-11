@@ -172,7 +172,6 @@ const JINX: FieldSpec = someOf({
 		bothAlive: opt(T),
 		stops: opt(T)
 	}),
-	deadAtLeast: verb({ dead: COUNT }, { key: 'dead', spec: COUNT, is: 'number' }),
 	nightChoice: verb({
 		chooses: oneOf(NIGHT_CHOICE_CHOOSES),
 		partner: oneOf(NIGHT_CHOICE_PARTNER)
@@ -198,7 +197,6 @@ const JINX: FieldSpec = someOf({
 	keepsAbility: verb({ afterDeath: T }),
 	survives: choiceVerb('on', ['carrier-executed']),
 	killsMarked: verb({ token: STR }, { key: 'token', spec: STR, is: 'string' }),
-	madAsPartner: verb(),
 	thinksPartnerSetup: verb(),
 	voter: verb({ countsOnlyWith: T }),
 	abnormalCounts: choiceVerb('counts', ABNORMAL_COUNTS),

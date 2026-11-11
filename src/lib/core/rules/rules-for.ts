@@ -2,11 +2,9 @@
  * A character's rules as they are in a game (M61): its block (`rulesIn`: with its optional rule
  * when the game turned it on), with each jinx `patch` in effect laid over it. A jinx patch is
  * "while both are on the script and its `when` holds, these parts in place of the character's
- * own" (`data/jinx-rules.ts`), so a jinx can change anything a rules block can say. An older
- * verb that is a patch counts as one (`data/jinx-presets.ts`).
+ * own" (`data/jinx-rules.ts`), so a jinx can change anything a rules block can say.
  */
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import { jinxPatches } from '#lib/core/data/jinx-presets.ts';
 import { rulesIn } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -29,9 +27,7 @@ export function rulesFor(
 	const own = rulesIn(game, characterId, characters);
 	if (!game.script) return own;
 	const patches = ownJinxes(game, characterId, () => true, characters)
-		.flatMap(({ partner, rule }) =>
-			jinxPatches(rule, { partner, own }).map((patch) => ({ partner, patch }))
-		)
+		.flatMap(({ partner, rule }) => (rule.patch ? [{ partner, patch: rule.patch }] : []))
 		.filter(
 			({ partner, patch }) =>
 				!aboutHolder(patch) && jinxApplies(game, characterId, partner, patch, characters, at)

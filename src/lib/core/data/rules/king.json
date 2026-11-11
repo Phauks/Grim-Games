@@ -20,15 +20,25 @@
 	},
 	"jinxes": {
 		"leviathan": {
-			"deadAtLeast": {
-				"dead": 1,
-				"when": ["partner-in-play"]
+			"patch": {
+				"when": ["partner-in-play"],
+				"parts": {
+					"wakesWhen": {
+						"deadAtLeastLiving": true,
+						"deadAtLeast": 1
+					}
+				}
 			}
 		},
 		"riot": {
-			"deadAtLeast": {
-				"dead": 1,
-				"when": ["partner-in-play"]
+			"patch": {
+				"when": ["partner-in-play"],
+				"parts": {
+					"wakesWhen": {
+						"deadAtLeastLiving": true,
+						"deadAtLeast": 1
+					}
+				}
 			}
 		}
 	},

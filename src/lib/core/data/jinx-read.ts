@@ -318,7 +318,14 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		read: (raw, path, issues) => {
 			const kind = readEnum(raw, 'kind', IMPAIR_KINDS, path, issues, true);
 			const unless = readBoolean(raw, 'unlessImpaired', path, issues);
-			return kind ? { kind, ...(unless ? { unlessImpaired: true } : {}) } : undefined;
+			if (!kind) return undefined;
+			// One about one player alone is a `patch` of the part `impairs`.
+			const gained = Array.isArray(raw.when) && raw.when.includes('has-partner-ability');
+			if (raw.who !== 'both' && !unless && !gained) {
+				issues.add(path, 'about one player alone: write a `patch` of the part `impairs`');
+				return undefined;
+			}
+			return { kind, ...(unless ? { unlessImpaired: true } : {}) };
 		}
 	},
 	noKill: {
@@ -365,14 +372,6 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		}
 	},
 	endsGame: { fields: [], read: readEnd },
-	deadAtLeast: {
-		fields: ['dead'],
-		main: 'dead',
-		read: (raw, path, issues) => {
-			const dead = readPositive(raw, 'dead', path, issues);
-			return dead === undefined ? undefined : { dead };
-		}
-	},
 	nightChoice: {
 		fields: ['chooses', 'partner'],
 		read: (raw, path, issues) => {
@@ -408,7 +407,6 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 	keepsAbility: flagVerb('afterDeath'),
 	survives: enumVerb('on', ['carrier-executed']),
 	killsMarked: labelVerb('token'),
-	madAsPartner: plain,
 	thinksPartnerSetup: plain,
 	voter: flagVerb('countsOnlyWith'),
 	abnormalCounts: enumVerb('counts', ABNORMAL_COUNTS),
