@@ -307,6 +307,7 @@ import {
 	type SeatedType
 } from './types.ts';
 import type { CharacterRules } from './character-rules.ts';
+import { presetTable } from './presets.ts';
 import type { JinxCondition } from './jinx-conditions.ts';
 import type { PROTECTS_FROM } from './parts/protects.ts';
 import type { TurnsPlayers } from './turns-players-rules.ts';
@@ -438,14 +439,12 @@ export const JINX_END_KINDS = [
 ] as const;
 export type JinxEndKind = (typeof JINX_END_KINDS)[number];
 /** The official end kinds that are presets of a `condition` (`presetJinxEnd`). */
-export const JINX_END_PRESETS = [
-	'nominated-marked-executed',
-	'marked-executed',
-	'day-without-execution',
-	'ability-stopped',
-	'executed'
-] as const;
-export type JinxEndPreset = (typeof JINX_END_PRESETS)[number];
+export type JinxEndPreset =
+	| 'nominated-marked-executed'
+	| 'marked-executed'
+	| 'day-without-execution'
+	| 'ability-stopped'
+	| 'executed';
 /** What a jinx `condition` end waits for. */
 export const JINX_END_EVENTS = ['executed', 'day-ends', 'ability-used'] as const;
 /** Whose players a jinx `condition` end is about: its own, the partner's, or the partner's `token`'s. */
@@ -488,32 +487,47 @@ export interface JinxEnd extends JinxEffect {
 	stops?: true;
 }
 
-/** A jinx end of an official kind as the `condition` it is a preset of. */
+/** The official end kinds, each the `condition` it is a preset of. */
+const JINX_END_TABLE = presetTable<JinxEndPreset, JinxEnd, JinxEnd>({
+	'nominated-marked-executed': (end) => ({
+		...end,
+		kind: 'condition',
+		event: 'executed',
+		subject: end.token ? 'marked' : 'partner',
+		nominatedBySelf: true
+	}),
+	'marked-executed': (end) => ({
+		...end,
+		kind: 'condition',
+		event: 'executed',
+		subject: 'marked',
+		died: true
+	}),
+	executed: ({ player, ...end }) => ({
+		...end,
+		kind: 'condition',
+		event: 'executed',
+		subject: player ?? 'self'
+	}),
+	'day-without-execution': (end) => ({
+		...end,
+		kind: 'condition',
+		event: 'day-ends',
+		noExecution: true,
+		bothAlive: true
+	}),
+	'ability-stopped': (end) => ({
+		...end,
+		kind: 'condition',
+		event: 'ability-used',
+		subject: 'partner',
+		stops: true
+	})
+});
+
+/** A jinx end of an official kind as the `condition` it is a preset of; any other as it is. */
 export function presetJinxEnd(end: JinxEnd): JinxEnd {
-	const { kind, ...rest } = end;
-	const base = { ...rest, kind: 'condition' as const };
-	switch (kind) {
-		case 'nominated-marked-executed':
-			return {
-				...base,
-				preset: kind,
-				event: 'executed',
-				subject: end.token ? 'marked' : 'partner',
-				nominatedBySelf: true
-			};
-		case 'marked-executed':
-			return { ...base, preset: kind, event: 'executed', subject: 'marked', died: true };
-		case 'executed': {
-			const { player, ...own } = base;
-			return { ...own, preset: kind, event: 'executed', subject: player ?? 'self' };
-		}
-		case 'day-without-execution':
-			return { ...base, preset: kind, event: 'day-ends', noExecution: true, bothAlive: true };
-		case 'ability-stopped':
-			return { ...base, preset: kind, event: 'ability-used', subject: 'partner', stops: true };
-		default:
-			return end;
-	}
+	return JINX_END_TABLE.has(end.kind) ? JINX_END_TABLE.expand(end.kind, end) : end;
 }
 
 export interface DeadAtLeast extends JinxEffect {

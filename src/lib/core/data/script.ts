@@ -13,7 +13,7 @@
  */
 import type { GameData } from './game-data.ts';
 import { findJinx } from './jinxes.ts';
-import { withSpecialParts } from './special-parts.ts';
+import { withSpecialParts } from './tpi-special-hooks.ts';
 import { normaliseCharacterId, parseCharacter, parseSpecial } from './parse.ts';
 import {
 	CHARACTER_TYPES,

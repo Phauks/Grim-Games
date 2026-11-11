@@ -2,6 +2,7 @@ import { anyOf, B, obj, oneOf, opt, TOKEN } from '../field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, type Alignment, type CharacterType } from '../types.ts';
 import type { Issues } from '../validate.ts';
 import { DAY_MARKS, type DayMark } from './day-mark.ts';
+import { presetTable } from '../presets.ts';
 import { specPart } from './part.ts';
 import type { ReminderLabel } from '../types.ts';
 
@@ -100,7 +101,7 @@ export interface AnswerGroup {
 }
 
 /** The official names that are a block, and the block each expands to. */
-const ANSWER_PRESETS: Readonly<Record<AnswerPreset, AnswerAsked>> = {
+const ANSWER_PRESETS = presetTable<AnswerPreset, unknown, AnswerAsked>({
 	'evil-dead': { question: 'count', among: 'dead', alignment: 'evil' },
 	'evil-marked': { question: 'count', among: 'marked', alignment: 'evil' },
 	'abnormal-abilities': { question: 'count', among: 'abnormal' },
@@ -117,7 +118,7 @@ const ANSWER_PRESETS: Readonly<Record<AnswerPreset, AnswerAsked>> = {
 	'correct-guesses': { question: 'count', among: 'guessed' },
 	'statement-true': { question: 'statement' },
 	'winning-alignment': { question: 'storyteller', choices: ['good', 'evil', 'neither'] }
-};
+});
 
 /** A question as asked: a building block, with the official name it was written as. */
 export type AnswerAsked = { preset?: AnswerPreset } & (
@@ -145,7 +146,7 @@ function asked(
 	if (isAnswerBlock(name)) return { question: name, ...(group as AnswerGroup) };
 	if (name === 'storyteller') return { question: name, choices: choices ?? [] };
 	if (name === 'statement') return { question: name };
-	return { ...ANSWER_PRESETS[name], preset: name };
+	return ANSWER_PRESETS.expand(name, undefined);
 }
 
 /** A night answer worked out from the grimoire and today's log (the Town Crier). */

@@ -7,6 +7,7 @@ import {
 	type ReminderLabel
 } from '../types.ts';
 import type { Issues } from '../validate.ts';
+import { presetTable } from '../presets.ts';
 import { specPart } from './part.ts';
 
 /**
@@ -91,7 +92,7 @@ const MATCHING_BLOCKS: readonly LearnsBlock[] = [
 const UNCHOSEN_BLOCKS: readonly LearnsBlock[] = ['count', 'direction', 'distance'];
 
 /** The official names that are a building block, and the block each expands to. */
-const PRESETS: Partial<Record<LearnsMeasure, Omit<Learns, 'preset'>>> = {
+const PRESETS = presetTable<Exclude<LearnsMeasure, LearnsBlock>, unknown, Omit<Learns, 'preset'>>({
 	'evil-alive-neighbours': { measure: 'count', scope: 'alive-neighbours', alignment: 'evil' },
 	'evil-pairs': { measure: 'count', scope: 'neighbour-pairs', alignment: 'evil' },
 	'woke-tonight': { measure: 'count', choose: 2, alive: true, woke: true },
@@ -117,7 +118,7 @@ const PRESETS: Partial<Record<LearnsMeasure, Omit<Learns, 'preset'>>> = {
 		killer: true
 	},
 	'type-differs-from-token': { measure: 'players', choose: 1 }
-};
+});
 
 export interface Learns {
 	measure: LearnsMeasure;
@@ -187,9 +188,8 @@ export const learns = specPart(
 		if ((measure === 'demon-or-token' || measure === 'type-differs-from-token') && !token) {
 			issues.add(`${path}.token`, 'missing');
 		}
-		const preset = PRESETS[measure];
-		const block = preset?.measure ?? measure;
-		const out: Learns = preset ? { ...preset, preset: measure } : { measure };
+		const out: Learns = PRESETS.has(measure) ? PRESETS.expand(measure, value) : { measure };
+		const block = out.measure;
 		// The Balloonist's token marks who was shown, which the players shown now must differ from.
 		if (token && measure === 'type-differs-from-token') out.differsFromToken = token;
 		else if (token) out.token = token;
