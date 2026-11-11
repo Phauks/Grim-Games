@@ -241,8 +241,9 @@ describe('deathCauses', () => {
 		}
 		expect(issues.list.map((i) => i.split(': ')[0])).toEqual([
 			'rules.deathCause.kind',
-			'rules.deathCause.victim.as',
-			'rules.deathCause.victim.as',
+			// A victim with `as` is a "registers" one; one without takes no `as`.
+			'rules.deathCause.victim.who',
+			'rules.deathCause.victim.who',
 			'rules.deathCause.kind'
 		]);
 	});

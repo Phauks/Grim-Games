@@ -27,7 +27,7 @@ export type { Kills } from './parts/kills.ts';
 export { PROTECTS_FROM, type Protects } from './parts/protects.ts';
 export type { ShownTo } from './parts/shown-to.ts';
 export type { Registers, RegistersAs, TokenRegisters } from './parts/registers-as.ts';
-export type { ImpairmentReason, Impairs, TokenImpairment } from './impairs-rules.ts';
+export type { ImpairmentReason, Impairs, TokenImpairment } from './parts/impairs.ts';
 export type { AnswerGroup, Answers, Learns, LearnsBlock } from './night-info-rules.ts';
 export { isLearnsBlock } from './night-info-rules.ts';
 

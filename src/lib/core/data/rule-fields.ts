@@ -28,7 +28,6 @@ import {
 	type FieldSpec
 } from './field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, SEATED_TYPES } from './types.ts';
-import { DEATH_KINDS } from './death-cause-rules.ts';
 import { TURNS_PLAYERS } from './turns-players-rules.ts';
 import { JINX_FIELDS } from './jinx-fields.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
@@ -40,7 +39,6 @@ const SEATED = oneOf(SEATED_TYPES);
 const SOME_TYPES = anyOf(CHARACTER_TYPES);
 const SOME_SEATED = anyOf(SEATED_TYPES);
 const ALIGNMENT = oneOf(ALIGNMENTS);
-const IMPAIRMENTS = oneOf(['drunk', 'poisoned', 'no-ability']);
 const DAY_GROUPS = oneOf([
 	'madness',
 	'day-ability',
@@ -101,11 +99,6 @@ const INFO_TOKEN = obj({
 	token: opt(STR),
 	after: opt(STR)
 });
-const PLACEHOLDER_STEP = obj({
-	tokens: list(obj({ label: TOKEN, action: oneOf(['place', 'remove']) })),
-	either: opt(B)
-});
-
 /** Each rule's fields, by its key in the rules block. */
 export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 	afterExecution: obj({
@@ -205,25 +198,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		minAlive: NUM,
 		beforeNominations: T
 	}),
-	deathCause: variants(
-		{ label: 'None', has: 'none', spec: obj({ none: STR }) },
-		{
-			label: 'Causes a death',
-			has: 'kind',
-			spec: obj({
-				kind: oneOf(DEATH_KINDS),
-				onlyWith: opt(STRS),
-				afterChanging: opt(SEATED),
-				victim: opt(
-					obj({
-						who: oneOf(['self', 'not-self', 'alive-neighbour', 'registers']),
-						as: opt(oneOf(['demon', 'not-demon', 'good', 'townsfolk'])),
-						notSelf: opt(T)
-					})
-				)
-			})
-		}
-	),
 	deathCheck: obj({
 		kind: oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked-killed-by-demon']),
 		token: opt(TOKEN)
@@ -313,20 +287,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		joinsWinner: opt(B),
 		alwaysWinsWith: opt(ALIGNMENT),
 		contest: opt(obj({ chooser: TYPES, tie: ALIGNMENT }))
-	}),
-	impairs: optObj({
-		self: obj({ reason: IMPAIRMENTS, aliveAtMost: opt(NUM) }),
-		tokens: byToken(
-			obj({
-				reason: IMPAIRMENTS,
-				on: oneOf(['carrier', 'others']),
-				type: opt(TYPES),
-				whileWorks: opt(B),
-				whileKept: opt(obj({ token: TOKEN, nearest: opt(TYPES) }))
-			})
-		),
-		clears: TOKENS,
-		truthful: TOKENS
 	}),
 	infoTokenCharacters: byKey(
 		variants(
@@ -447,11 +407,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 			{ label: 'At a nomination', has: 'nominated', spec: obj({ nominated: ALIGNMENT }) }
 		)
 	),
-	reminderPlaceholders: optObj({
-		first: list(PLACEHOLDER_STEP),
-		other: list(PLACEHOLDER_STEP),
-		note: STR
-	}),
 	reminderTargets: byToken(
 		optObj({
 			seat: oneOf(['self', 'other', 'any']),
@@ -503,51 +458,6 @@ export const RULE_FIELDS: Partial<Record<keyof typeof PARTS, FieldSpec>> = {
 		duplicates: opt(anyOf(ALIGNMENTS)),
 		notes: opt(STRS),
 		readsBrackets: opt(T)
-	}),
-	setupPrep: optObj({
-		reminders: list(
-			obj({
-				label: TOKEN,
-				text: STR,
-				target: variants(
-					{ label: 'Its player', has: 'self', spec: obj({ self: T }) },
-					{
-						label: 'A chosen player',
-						has: 'choose',
-						spec: obj({
-							choose: oneOf([
-								'demon',
-								'townsfolk',
-								'outsider',
-								'minion',
-								'good',
-								'evil',
-								'any',
-								'not-demon',
-								'same-alignment',
-								'copies',
-								'nearest-townsfolk-anticlockwise',
-								'nearest-townsfolk-clockwise'
-							]),
-							choice: STR,
-							notSelf: opt(B)
-						})
-					}
-				),
-				reason: STR,
-				timing: opt(oneOf(['setup', 'first-day'])),
-				when: opt(optObj({ minOutsiders: NUM, exactOutsiders: NUM, minCopies: NUM })),
-				first: opt(T)
-			})
-		),
-		notes: list(
-			obj({
-				text: STR,
-				tokens: opt(TOKENS),
-				value: opt(obj({ key: STR, label: STR, character: opt(oneOf(['good'])) }))
-			})
-		),
-		none: STR
 	}),
 	swapsCharacters: optObj({ notTypes: SOME_SEATED, chooser: SEATED }),
 	turnsPlayersInto: obj({ type: SEATED, players: oneOf(TURNS_PLAYERS) })

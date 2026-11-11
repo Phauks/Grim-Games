@@ -21,7 +21,7 @@ import {
 	type DeathCauseFlag,
 	type TargetMiss
 } from '#lib/core/rules/index.ts';
-import type { RegistersAs } from '#lib/core/data/death-cause-rules.ts';
+import type { RegistersAs } from '#lib/core/data/parts/death-cause.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	isOnScript,
