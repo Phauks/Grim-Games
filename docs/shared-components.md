@@ -222,7 +222,9 @@ reader (`readSpec`, `data/read-spec.ts`), its value's type (`SpecValue`) and the
 builder's fields, with a `refine` for a check the spec can't say (and, where the rule's value
 is not the shape written, the value it reads as: a preset expanded, a setting kept to one kind).
 Every part has its field; the only hand-written reader left is the jinxes part's, whose fields
-are `data/jinx-fields.ts`.
+are `data/jinx-fields.ts`. An official name that stands for a building block (a learns or
+answers question, a game end or hold, a jinx end) is a preset in a `presetTable`
+(`data/presets.ts`), which expands it and keeps the name as `preset`; never a new `switch`.
 
 - Reminder prompts (`rules/reminder-prompts.ts`): `reminderPrompts`, moved
 - Reminder targets (`reminder-targets.ts`): `reminderTargets`, moved; `maxPlaced` keeps a token to that many players at once (the Goon's Drunk), new

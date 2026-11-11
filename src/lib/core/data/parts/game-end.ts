@@ -7,6 +7,7 @@ import {
 	type ReminderLabel
 } from '../types.ts';
 import type { Issues } from '../validate.ts';
+import { presetTable } from '../presets.ts';
 import { specPart } from './part.ts';
 
 /**
@@ -47,7 +48,7 @@ import { specPart } from './part.ts';
  *   (https://wiki.bloodontheclocktower.com/Atheist).
  *
  * `condition` is the building block (M60, M78): an `event`, what must hold, and what happens.
- * Every kind above is a preset that expands to one (`presetCondition`), keeping its name.
+ * Every kind above is a preset that expands to one (`END_PRESETS`), keeping its name.
  * - `event`:
  *   - `executed`: its `subject` dies by execution: its own player (`self`), a player with its
  *     `token` (`marked`), or either of the two (`either`, with `otherAlive`: the other one lives);
@@ -146,7 +147,7 @@ export interface EndsGame {
  *   died by its own kill), `spentToken` (unless its token marks that it already happened);
  * - `then`: `blocks-good` (good can't win), `becomes-demon` (its player may become the Demon)
  *   or `demon-passes` (a living player of type `to` may become this Demon).
- * The official kinds are presets that expand to one (`presetHold`), keeping their name:
+ * The official kinds are presets that expand to one (`HOLD_PRESETS`), keeping their name:
  * - `marked-alive`: its living player and the player with its `token` are both alive, so good
  *   can't win (the Evil Twin);
  * - `becomes-demon`: its living player may become the Demon while `aliveAtLeast` players
@@ -172,26 +173,28 @@ export interface HoldsGame {
 	spentToken?: ReminderLabel;
 }
 
-/** The `condition` an official hold is, with that kind as its preset. */
-function presetHold(h: HoldsGame): HoldsGame {
-	const base = { kind: 'condition' as const, preset: h.kind };
-	switch (h.kind) {
-		case 'marked-alive':
-			return { ...base, then: 'blocks-good', whileAlive: true, token: h.token };
-		case 'becomes-demon':
-			return { ...base, then: 'becomes-demon', whileAlive: true, aliveAtLeast: h.aliveAtLeast };
-		case 'death-passes':
-			return {
-				...base,
-				then: 'demon-passes',
-				ownKill: true,
-				to: h.to,
-				...(h.spentToken ? { spentToken: h.spentToken } : {})
-			};
-		default:
-			return h;
-	}
-}
+/** The official holds, each the `condition` it is a preset of. */
+const HOLD_PRESETS = presetTable<Exclude<HoldKind, 'condition'>, HoldsGame, HoldsGame>({
+	'marked-alive': (h) => ({
+		kind: 'condition',
+		then: 'blocks-good',
+		whileAlive: true,
+		token: h.token
+	}),
+	'becomes-demon': (h) => ({
+		kind: 'condition',
+		then: 'becomes-demon',
+		whileAlive: true,
+		aliveAtLeast: h.aliveAtLeast
+	}),
+	'death-passes': (h) => ({
+		kind: 'condition',
+		then: 'demon-passes',
+		ownKill: true,
+		to: h.to,
+		...(h.spentToken ? { spentToken: h.spentToken } : {})
+	})
+});
 
 /**
  * - `ends` / `holds`: above;
@@ -306,7 +309,7 @@ function checkKeys(
 function readEnd(e: EndsGame, path: string, issues: Issues): EndsGame {
 	if (e.kind !== 'condition') {
 		checkKeys(e, ['kind', ...END_NEEDS[e.kind]], END_NEEDS[e.kind], path, issues);
-		return presetCondition(e) ?? e;
+		return END_PRESETS.expand(e.kind, e);
 	}
 	checkKeys(e, CONDITION_KEYS, ['event'], path, issues);
 	if (e.event) checkCondition(e, path, issues);
@@ -318,7 +321,7 @@ function readHold(h: HoldsGame, path: string, issues: Issues): HoldsGame {
 	if (h.kind !== 'condition') {
 		const needs = h.kind === 'death-passes' ? ['to', 'spentToken'] : HOLD_NEEDS[h.kind];
 		checkKeys(h, ['kind', ...needs], needs, path, issues);
-		return presetHold(h);
+		return HOLD_PRESETS.expand(h.kind, h);
 	}
 	checkKeys(h, HOLD_CONDITION_KEYS, ['then'], path, issues);
 	if (h.then === 'demon-passes' && !h.to) issues.add(`${path}.to`, 'missing');
@@ -360,93 +363,101 @@ function checkCondition(c: EndsGame, path: string, issues: Issues) {
 		issues.add(`${path}.wins`, '`opposing` is about who was executed');
 }
 
-/** The `condition` an official kind is, with that kind as its preset, or undefined. */
-function presetCondition(e: EndsGame): EndsGame | undefined {
-	const base = { kind: 'condition' as const, preset: e.kind };
-	const team = e.winner ? { winner: e.winner } : {};
-	switch (e.kind) {
-		case 'executed-loses':
-			return { ...base, event: 'executed', subject: 'self', wins: 'opposing' };
-		case 'executed-with-token':
-			return {
-				...base,
-				event: 'executed',
-				subject: 'self',
-				carries: true,
-				token: e.token,
-				wins: 'own'
-			};
-		case 'nominated-marked-executed':
-			return {
-				...base,
-				event: 'executed',
-				subject: 'marked',
-				token: e.token,
-				nominatedBySelf: true,
-				wins: 'opposing'
-			};
-		case 'day-without-execution':
-			return { ...base, event: 'day-ends', whileAlive: true, noExecution: true, ...team };
-		case 'alive-at-dusk':
-			return {
-				...base,
-				event: 'dusk',
-				whileAlive: true,
-				noExecution: true,
-				aliveTotal: e.alive,
-				wins: 'own'
-			};
-		case 'survives-day':
-			return { ...base, event: 'day-ends', whileAlive: true, onDay: e.day, ...team };
-		case 'executions-of-alignment':
-			return {
-				...base,
-				event: 'always',
-				whileAlive: true,
-				alignment: e.alignment,
-				executions: e.count,
-				...team
-			};
-		case 'alignment-alive':
-			return {
-				...base,
-				event: 'always',
-				whileAlive: true,
-				alignment: e.alignment,
-				aliveAtMost: e.alive,
-				...team
-			};
-		case 'marked-executed':
-			return {
-				...base,
-				event: 'executed',
-				subject: 'either',
-				token: e.token,
-				alignment: e.winner === 'good' ? 'evil' : 'good',
-				otherAlive: true,
-				...team
-			};
-		case 'dead-without-demon':
-			return {
-				...base,
-				event: 'no-demon',
-				...(e.night !== undefined ? { night: e.night } : {}),
-				...team
-			};
-		case 'extra-day':
-			return { ...base, event: 'demon-executed', then: 'extra-day' };
-		case 'used-on-loses':
-			return { ...base, event: 'ability-used', on: e.on, wins: 'other' };
-		case 'guesses-evil-team':
-			return { ...base, event: 'guessed', types: ['demon', 'minion'], ...team };
-		case 'cult-joined':
-			return { ...base, event: 'vote-passed', wins: 'own' };
-		case 'storyteller-executed':
-			return { ...base, event: 'storyteller-executed', ...team };
-		default:
-			return undefined;
-	}
-}
+/** Who wins, when the entry names a team. */
+const teamOf = (e: EndsGame) => (e.winner ? { winner: e.winner } : {});
+
+/** The official kinds, each the `condition` it is a preset of. */
+const END_PRESETS = presetTable<Exclude<EndKind, 'condition'>, EndsGame, EndsGame>({
+	'executed-loses': {
+		kind: 'condition',
+		event: 'executed',
+		subject: 'self',
+		wins: 'opposing'
+	},
+	'executed-with-token': (e) => ({
+		kind: 'condition',
+		event: 'executed',
+		subject: 'self',
+		carries: true,
+		token: e.token,
+		wins: 'own'
+	}),
+	'nominated-marked-executed': (e) => ({
+		kind: 'condition',
+		event: 'executed',
+		subject: 'marked',
+		token: e.token,
+		nominatedBySelf: true,
+		wins: 'opposing'
+	}),
+	'day-without-execution': (e) => ({
+		kind: 'condition',
+		event: 'day-ends',
+		whileAlive: true,
+		noExecution: true,
+		...teamOf(e)
+	}),
+	'alive-at-dusk': (e) => ({
+		kind: 'condition',
+		event: 'dusk',
+		whileAlive: true,
+		noExecution: true,
+		aliveTotal: e.alive,
+		wins: 'own'
+	}),
+	'survives-day': (e) => ({
+		kind: 'condition',
+		event: 'day-ends',
+		whileAlive: true,
+		onDay: e.day,
+		...teamOf(e)
+	}),
+	'executions-of-alignment': (e) => ({
+		kind: 'condition',
+		event: 'always',
+		whileAlive: true,
+		alignment: e.alignment,
+		executions: e.count,
+		...teamOf(e)
+	}),
+	'alignment-alive': (e) => ({
+		kind: 'condition',
+		event: 'always',
+		whileAlive: true,
+		alignment: e.alignment,
+		aliveAtMost: e.alive,
+		...teamOf(e)
+	}),
+	'marked-executed': (e) => ({
+		kind: 'condition',
+		event: 'executed',
+		subject: 'either',
+		token: e.token,
+		alignment: e.winner === 'good' ? 'evil' : 'good',
+		otherAlive: true,
+		...teamOf(e)
+	}),
+	'dead-without-demon': (e) => ({
+		kind: 'condition',
+		event: 'no-demon',
+		...(e.night !== undefined ? { night: e.night } : {}),
+		...teamOf(e)
+	}),
+	'extra-day': { kind: 'condition', event: 'demon-executed', then: 'extra-day' },
+	'used-on-loses': (e) => ({ kind: 'condition', event: 'ability-used', on: e.on, wins: 'other' }),
+	'guesses-evil-team': (e) => ({
+		kind: 'condition',
+		event: 'guessed',
+		types: ['demon', 'minion'],
+		...teamOf(e)
+	}),
+	'cult-joined': { kind: 'condition', event: 'vote-passed', wins: 'own' },
+	'storyteller-executed': (e) => ({
+		kind: 'condition',
+		event: 'storyteller-executed',
+		...teamOf(e)
+	})
+});
 
 /**
  * How a character's ability ends the game, keeps it going or changes who wins: the `gameEnd`
