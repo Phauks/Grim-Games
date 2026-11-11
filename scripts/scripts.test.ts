@@ -7,6 +7,8 @@ import { findInScript, findInSvelte } from './check-separators.ts';
 import { previewsToDelete } from './delete-old-previews.ts';
 import { annotationText, flakyTests, pageSnapshot, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
+import { catalogue } from './generate-parts-catalogue.ts';
+import { compare, findings } from './check-knip-prod.ts';
 
 describe('generate-icons', () => {
 	it('every catalogue icon exists in @iconify-json/ph in every weight', () => {
@@ -20,6 +22,32 @@ describe('generate-icons', () => {
 			);
 			expect(onDisk.toString(), name).toBe(content);
 		}
+	});
+});
+
+describe('generate-parts-catalogue', () => {
+	it('docs/rules-parts.md matches the parts (run `npm run parts:catalogue`)', () => {
+		const onDisk = readFileSync(new URL('../docs/rules-parts.md', import.meta.url), 'utf8');
+		expect(onDisk).toBe(catalogue());
+	});
+});
+
+describe('check-knip-prod', () => {
+	it('lists unused files and exports from the report', () => {
+		const report = {
+			issues: [
+				{ file: 'b.ts', exports: [{ name: 'x' }, { name: 'reset', namespace: 'timers' }] },
+				{ file: 'a.ts', files: [{ name: 'a.ts' }] }
+			]
+		};
+		expect(findings(report)).toEqual(['a.ts', 'b.ts: timers.reset', 'b.ts: x']);
+	});
+
+	it('fails only on new entries, and reports entries the list can lose', () => {
+		expect(compare(['a.ts', 'c.ts: y'], ['a.ts', 'b.ts: x'])).toEqual({
+			added: ['c.ts: y'],
+			gone: ['b.ts: x']
+		});
 	});
 });
 
