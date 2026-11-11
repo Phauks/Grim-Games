@@ -4,8 +4,8 @@
  * `rules/night-order.ts`), so the model never imports the rules.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { DayGroup } from '#lib/core/data/day-reminder-rules.ts';
-import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
+import type { DayGroup } from '#lib/core/data/parts/day-reminders.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/parts/info-token-characters.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
 
 /** Which night: the first night or any other. */

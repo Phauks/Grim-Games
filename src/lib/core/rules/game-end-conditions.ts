@@ -1,10 +1,10 @@
 /**
- * The `condition` game ends (M60, `data/game-end-rules.ts`): an event, what must hold and who
+ * The `condition` game ends (M60, `data/parts/game-end.ts`): an event, what must hold and who
  * wins. The Saint, Goblin, Fearmonger, Vortox, Mayor, Leviathan and Legion are presets of it.
  * Each end keeps the official kind it was written as for its rule, key and wording, and a
  * custom one is `condition`. Part of `game-end.ts`.
  */
-import type { EndsGame } from '#lib/core/data/game-end-rules.ts';
+import type { EndsGame } from '#lib/core/data/parts/game-end.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';

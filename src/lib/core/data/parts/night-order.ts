@@ -1,6 +1,7 @@
 import { BANDS, MARKERS, type Band } from '../../night-placement/bands.ts';
-import { checkKeys, describe, isObject, readString, type Issues } from '../validate.ts';
-import { objectPart } from './part.ts';
+import { optObj, STR, type SpecValue } from '../field-spec.ts';
+import type { Issues } from '../validate.ts';
+import { specPart } from './part.ts';
 
 /**
  * Where its step goes on one night: in a stage of the night (`night-placement/bands.ts`), right
@@ -25,58 +26,36 @@ export interface NightOrder {
 	other?: NightPlace;
 }
 
-function readPlace(
-	raw: unknown,
+const PLACE = optObj({ stage: STR, after: STR });
+
+/** A night's place, or why it can't be one, for `night`'s stages. */
+function placeOf(
+	place: SpecValue<typeof PLACE>,
 	path: string,
 	issues: Issues,
 	night: 'firstNight' | 'otherNight'
 ): NightPlace | undefined {
-	if (!isObject(raw)) {
-		issues.add(path, `expected object, got ${describe(raw)}`);
-		return undefined;
-	}
-	checkKeys(raw, ['stage', 'after'], path, issues);
-	const out: NightPlace = {};
-	const errors = issues.list.length;
-	const stage = readString(raw, 'stage', path, issues, false);
-	if (stage !== undefined) {
-		if (BANDS[night].includes(stage) && !MARKERS.includes(stage)) out.stage = stage as Band;
-		else issues.add(`${path}.stage`, `not a stage of this night: ${stage}`);
-	}
-	const after = readString(raw, 'after', path, issues, false);
+	const before = issues.list.length;
+	const { stage, after } = place;
+	if (stage !== undefined && (!BANDS[night].includes(stage) || MARKERS.includes(stage)))
+		issues.add(`${path}.stage`, `not a stage of this night: ${stage}`);
 	if (after === '') issues.add(`${path}.after`, 'expected a character id or night marker');
-	else if (after !== undefined) out.after = after;
-	if (issues.list.length === errors && !out.stage && !out.after)
-		issues.add(path, 'expected stage or after');
-	return issues.list.length === errors ? out : undefined;
+	else if (stage === undefined && after === undefined) issues.add(path, 'expected stage or after');
+	return issues.list.length > before ? undefined : (place as NightPlace);
 }
 
-export const nightOrder = objectPart(
+export const nightOrder = specPart(
 	'Night position',
 	'Where its night steps go: right after another character’s step or a night marker.',
-	(raw, path, issues): NightOrder | undefined => {
-		if (!isObject(raw)) {
-			issues.add(path, `expected object, got ${describe(raw)}`);
+	optObj({ first: PLACE, other: PLACE }),
+	(value, path, issues): NightOrder | undefined => {
+		if (!value.first && !value.other) {
+			issues.add(path, 'expected first or other');
 			return undefined;
 		}
-		checkKeys(raw, ['first', 'other'], path, issues);
-		const out: NightOrder = {};
-		let ok = true;
-		for (const night of ['first', 'other'] as const) {
-			if (raw[night] === undefined) continue;
-			const place = readPlace(
-				raw[night],
-				`${path}.${night}`,
-				issues,
-				night === 'first' ? 'firstNight' : 'otherNight'
-			);
-			if (place) out[night] = place;
-			else ok = false;
-		}
-		if (ok && !out.first && !out.other) {
-			issues.add(path, 'expected first or other');
-			ok = false;
-		}
-		return ok ? out : undefined;
+		const first = value.first && placeOf(value.first, `${path}.first`, issues, 'firstNight');
+		const other = value.other && placeOf(value.other, `${path}.other`, issues, 'otherNight');
+		if ((value.first && !first) || (value.other && !other)) return undefined;
+		return { ...(first ? { first } : {}), ...(other ? { other } : {}) };
 	}
 );

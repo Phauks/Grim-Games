@@ -2,7 +2,7 @@
  * Valid targets for reminder tokens (Trevor, 2026-10-16): which seats a token may go on,
  * so the board can show fitting and unfitting players while the Storyteller places or
  * drags one. Each character's rules block says where its tokens go (`reminderTargets`, see
- * `data/target-rules.ts`): our `data/rules/<id>.json`, or a custom character's `rules`.
+ * `data/parts/reminder-targets.ts`): our `data/rules/<id>.json`, or a custom character's `rules`.
  *
  * This only suggests and warns: a token on an unfitting seat is never refused (the
  * Storyteller can override anything). Checks use the true character and the alignment the
@@ -14,7 +14,7 @@
  * as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
-import type { NeighbourRule, TargetRule } from '#lib/core/data/target-rules.ts';
+import type { NeighbourRule, TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {

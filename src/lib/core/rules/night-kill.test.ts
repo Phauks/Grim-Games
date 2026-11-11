@@ -74,7 +74,7 @@ describe('kills part', () => {
 
 	it('refuses a bad count or another character’s token', () => {
 		expect(parse({ kills: { by: 'demon', count: 0 } }).issues).toEqual([
-			'rules.kills.count: expected a whole number from 1, got 0'
+			'rules.kills.count: expected a whole number above 0, got 0'
 		]);
 		expect(parse({ kills: { by: 'demon', delayed: 'Drunk' } }).issues).toEqual([
 			'rules.kills.delayed: not one of this character’s reminders'

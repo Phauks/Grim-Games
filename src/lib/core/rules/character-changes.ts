@@ -15,7 +15,7 @@
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/parts/info-token-characters.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
 import type { NightStep } from './night-order.ts';

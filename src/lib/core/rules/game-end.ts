@@ -11,7 +11,7 @@
  *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta; a Scarlet Woman who took over). Alive means the `dead` flag (`isAliveForWin`), except a
  *   Zombuul's first death and a Lleech whose host lives (`aliveForEnd`).
  * - Characters that end it themselves, keep it going once the Demon is dead (`holds`), or
- *   flip every result say so in their rules block's `gameEnd` (`data/game-end-rules.ts`): the
+ *   flip every result say so in their rules block's `gameEnd` (`data/parts/game-end.ts`): the
  *   Saint, Evil Twin, Vortox, Mayor, Leviathan, Fearmonger, Summoner, Mastermind, Klutz,
  *   Damsel, Goblin, Legion, Alsaahir, Scarlet Woman, Imp, Fang Gu, Zombuul, Lleech and Heretic
  *   among the official ones. An end with
@@ -24,7 +24,7 @@
  * Rules checked "at dusk" (Vortox, Mayor, Leviathan's day 5) use `dayEnded` for today, and
  * every day closed by Dawn ("New day") before it.
  */
-import type { EndKind } from '#lib/core/data/game-end-rules.ts';
+import type { EndKind } from '#lib/core/data/parts/game-end.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, inPlay, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -64,7 +64,7 @@ export { livesWhileDead } from './game-end-helpers.ts';
 
 /**
  * Which rule ends the game. `demon-dead` and `two-alive` are the usual ends; the rest are a
- * character's `gameEnd.ends` kind (`data/game-end-rules.ts`), named in `characterId`:
+ * character's `gameEnd.ends` kind (`data/parts/game-end.ts`), named in `characterId`:
  * - `demon-dead`: every Demon is dead (`seats`: the Demons);
  * - `two-alive`: just 2 players live, not counting Travellers (`seats`: who is alive);
  * - `executed-loses`: its player died by execution, so their team loses (`seats`: them);

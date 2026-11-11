@@ -4,7 +4,7 @@
  * [Librarian · Alex]", "[Saint] is alive", "[Slayer] is poisoned") (Trevor, 2026-10-15).
  *
  * What each character shows is the `dayReminders` part of its rules block
- * (`data/day-reminder-rules.ts`). Characters without one fall back to keywords in their
+ * (`data/parts/day-reminders.ts`). Characters without one fall back to keywords in their
  * ability text and TPI `special`, flagged `autoDetected`.
  *
  * Everything is driven by grimoire state: seats, their reminders, who is dead and (when
@@ -26,7 +26,7 @@ import {
 	type DayReminderRules,
 	type DayReminderSpec,
 	type DeathCauseMatch
-} from '#lib/core/data/day-reminder-rules.ts';
+} from '#lib/core/data/parts/day-reminders.ts';
 import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { effectDayLines, type DayLineEffect } from './reminder-effects.ts';

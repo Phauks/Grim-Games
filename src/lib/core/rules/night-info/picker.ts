@@ -169,7 +169,7 @@ type PickerShape = Pick<PickerSpec, 'kind' | 'seatCount' | 'answer' | 'judgement
 /**
  * The picker each `learns` building block shows: its kind and, from `choose`, how many players
  * are tapped. Every official name is a preset of a block, expanded when read
- * (`data/night-info-rules.ts`).
+ * (`data/parts/answers.ts`, `data/parts/learns.ts`).
  */
 const BLOCK_SHAPES: Readonly<Record<LearnsBlock, Omit<PickerShape, 'seatCount'>>> = {
 	count: { kind: 'number' },
