@@ -47,21 +47,11 @@ export type GameEvent =
 	| { type: 'SeatInPlaySet'; seatId: SeatId; inPlay: boolean }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: PlayerName }
-	/**
-	 * The single note on a seat of games saved before 2026-10-26; replayed as the seat's
-	 * untitled note `n1`. No `note` clears it. Never written now.
-	 */
-	| { type: 'SeatNoteSet'; seatId: SeatId; note?: string }
 	/** Adds or replaces the seat's note with `note.noteId`. */
 	| { type: 'SeatNoteSaved'; seatId: SeatId; note: GameNote }
 	| { type: 'SeatNoteDeleted'; seatId: SeatId; noteId: string }
 	/** The seat's avatar and frame; a missing one clears it. */
 	| { type: 'SeatLookSet'; seatId: SeatId; avatar?: AvatarId; frame?: FrameId }
-	/**
-	 * The single general note of games saved before 2026-10-23; replayed as the untitled
-	 * note `n1`. No `notes` clears it. Never written now.
-	 */
-	| { type: 'GameNotesSet'; notes?: string }
 	/** Adds or replaces the game note with `note.noteId`. */
 	| { type: 'GameNoteSet'; note: GameNote }
 	| { type: 'GameNoteDeleted'; noteId: string }
@@ -173,8 +163,6 @@ export type GameEvent =
 	| { type: 'DayTallySet'; characterId: CharacterId; count: number }
 	/** A player killed today by a character's `dayTally` ability (the Yaggababble's). */
 	| { type: 'DayTallyDeath'; characterId: CharacterId; seatId: SeatId }
-	/** Version 3 to 17's Demon voted mark; replays as `DayMarkSet` for `demon-voted`. */
-	| { type: 'DemonVotedSet'; voted?: boolean }
 	/** No `value` clears it. */
 	| { type: 'PrepValueSet'; key: string; value?: string }
 	/** No `characterId` clears the seat's pretend character. */

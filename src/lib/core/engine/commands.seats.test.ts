@@ -171,19 +171,6 @@ describe('seats', () => {
 		);
 	});
 
-	it("replays an older game's single seat note as the seat's first, untitled note", () => {
-		const { session, seats } = newGame(names);
-		const game = applyEvent(session.game, { type: 'SeatNoteSet', seatId: seats[1], note: 'Word' });
-		expect(game.seats[seats[1]].notes).toEqual([
-			{ noteId: 'n1', title: '', text: 'Word', hidden: false }
-		]);
-		const edited = applyEvent(game, { type: 'SeatNoteSet', seatId: seats[1], note: 'Word 2' });
-		expect(edited.seats[seats[1]].notes?.map((n) => n.text)).toEqual(['Word 2']);
-		expect(
-			'notes' in applyEvent(game, { type: 'SeatNoteSet', seatId: seats[1] }).seats[seats[1]]
-		).toBe(false);
-	});
-
 	it("keeps the avatar and frame a seat's player picked, and clears them (plan R6)", () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, {
@@ -203,7 +190,7 @@ describe('seats', () => {
 		expect(cleared.game.seats[seats[1]].avatar).toBe('initials');
 		expect('frame' in cleared.game.seats[seats[1]]).toBe(false);
 		expect(refused(s, ctx, { type: 'SetSeatLook', seatId: 'nobody' })).toBe('unknown-seat');
-		// A picture from the earlier icon set, saved by that beta build, is dropped on replay.
+		// A picture that is not one of the avatars is dropped on replay.
 		const replayed = applyEvent(s.game, {
 			type: 'SeatLookSet',
 			seatId: seats[1],
@@ -241,13 +228,6 @@ describe('seats', () => {
 		expect('notes' in run(deleted, ctx, { type: 'DeleteGameNote', noteId: 'n2' }).game).toBe(false);
 		expect(refused(s, ctx, { type: 'DeleteGameNote', noteId: 'n9' })).toBe('unknown-note');
 		expect(refused(s, ctx, { type: 'SetGameNote', noteId: 'n9', ...note })).toBe('unknown-note');
-	});
-
-	it("replays an older game's single general note as its first, untitled note", () => {
-		const { session } = newGame(names);
-		const game = applyEvent(session.game, { type: 'GameNotesSet', notes: 'Ana asked' });
-		expect(game.notes).toEqual([{ noteId: 'n1', title: '', text: 'Ana asked', hidden: false }]);
-		expect('notes' in applyEvent(game, { type: 'GameNotesSet' })).toBe(false);
 	});
 
 	it('moves the note with its player when seats swap', () => {

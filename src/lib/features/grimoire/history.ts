@@ -238,10 +238,6 @@ function describeEvent(
 					]
 				: [text('Removed a reminder')];
 		}
-		case 'SeatNoteSet':
-			return event.note
-				? [text('Note on '), seatPart(before, event.seatId)]
-				: [text('Cleared the note on '), seatPart(before, event.seatId)];
 		case 'SeatNoteSaved':
 			return event.note.title
 				? [text('Note on '), seatPart(before, event.seatId), text(`: ${event.note.title}`)]
@@ -250,8 +246,6 @@ function describeEvent(
 			return [text('Deleted a note on '), seatPart(before, event.seatId)];
 		case 'SeatLookSet':
 			return [text('Avatar and frame for '), seatPart(before, event.seatId)];
-		case 'GameNotesSet':
-			return [text(event.notes ? 'Game notes' : 'Cleared the game notes')];
 		case 'GameNoteSet':
 			return [text(event.note.title ? `Game note: ${event.note.title}` : 'Game note')];
 		case 'GameNoteDeleted':
@@ -399,8 +393,6 @@ function describeEvent(
 		}
 		case 'DayEntryRemoved':
 			return [text('Removed from the day log')];
-		case 'DemonVotedSet':
-			return [text(dayMarkLine('demon-voted', event.voted))];
 		case 'DayMarkSet':
 			return [text(dayMarkLine(event.mark, event.value))];
 		case 'DayTallySet':
