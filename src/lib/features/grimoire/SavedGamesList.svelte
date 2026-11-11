@@ -134,7 +134,7 @@
 						<ScriptName name="Unreadable game"
 							>{#snippet sub()}{game.problem === 'too-new'
 									? 'Saved by a newer version: refresh to update'
-									: 'This save is damaged'}{/snippet}</ScriptName
+									: "This game can't be opened"}{/snippet}</ScriptName
 						>
 					</span>
 					<DeleteButton
