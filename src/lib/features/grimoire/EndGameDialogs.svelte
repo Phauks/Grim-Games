@@ -3,8 +3,8 @@
 	import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 	import { tick } from 'svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
-	import { endedGames, type EndedGame } from './device-notes.ts';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
+	import { endedGames, type EndedGame } from '#lib/features/board/device-notes.ts';
 	import { endGameRequest } from './end-game-request.svelte.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';

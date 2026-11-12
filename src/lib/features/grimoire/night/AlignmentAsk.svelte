@@ -1,5 +1,5 @@
 <script lang="ts">
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

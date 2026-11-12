@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import ResumeGameRow from '#lib/features/room/ResumeGameRow.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
-	import { forgetGame } from '#lib/features/grimoire/forget-game.ts';
+	import { forgetGame } from '#lib/features/game/forget-game.ts';
 	import { forgetLocalTown } from '#lib/features/player/local-town.svelte.ts';
 	import { forgetRoom } from '#lib/features/room/player.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';

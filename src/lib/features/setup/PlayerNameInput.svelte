@@ -7,7 +7,7 @@
 	 * room's names are its list, and any typed name is kept.
 	 */
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { suggestNames } from '#lib/features/grimoire/device-notes.ts';
+	import { suggestNames } from '#lib/features/board/device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import Combobox from '#lib/ui/primitives/Combobox.svelte';
 

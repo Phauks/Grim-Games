@@ -4,8 +4,8 @@ import { placeLabSetup } from '#lib/core/lab/lab-setup.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { replacementReminder } from '#lib/core/rules/setup/bag-characters.ts';
 import { OpenGame } from '#lib/features/game/session.svelte.ts';
-import { gameStarts, nightViews } from '#lib/features/grimoire/device-notes.ts';
-import { forgetGame } from '#lib/features/grimoire/forget-game.ts';
+import { gameStarts, nightViews } from '#lib/features/board/device-notes.ts';
+import { forgetGame } from '#lib/features/game/forget-game.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 
 /** The lab game's script name, shown on its board. */

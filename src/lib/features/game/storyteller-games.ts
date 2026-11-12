@@ -14,7 +14,7 @@ import {
 	nightUnderway,
 	nightViews,
 	type EndedGame
-} from './device-notes.ts';
+} from '#lib/features/board/device-notes.ts';
 import { phaseText } from './phase-text.ts';
 
 export interface StorytellerGames {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { roomHost } from './host.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 
 	/**
 	 * On the grim cover, how many messages wait (Trevor, 2026-10-27: "Integrate this messaging

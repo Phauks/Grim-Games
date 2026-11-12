@@ -8,7 +8,7 @@ import {
 	reminderCopyIds,
 	reminderSpots,
 	seatLayouts
-} from '#lib/features/grimoire/device-notes.ts';
+} from '#lib/features/board/device-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 
 /** The board's own notes a viewer needs to draw the grimoire as this device does. */

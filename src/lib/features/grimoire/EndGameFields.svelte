@@ -10,7 +10,7 @@
 	} from '#lib/core/rules/game-end/end-reason.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { endReasonLabel } from './end-reason-label.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';

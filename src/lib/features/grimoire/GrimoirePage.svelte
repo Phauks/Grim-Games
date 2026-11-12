@@ -16,7 +16,7 @@
 	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { Grimoire } from './grimoire.svelte.ts';
 	import GrimoireBoard from './GrimoireBoard.svelte';
-	import PlayersDialog from '#lib/features/room/PlayersDialog.svelte';
+	import PlayersDialog from '#lib/features/grimoire/hosting/PlayersDialog.svelte';
 
 	interface Props {
 		gameId: GameId;

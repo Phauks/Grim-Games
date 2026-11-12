@@ -4,7 +4,7 @@
 	import * as gameClock from '#lib/core/rules/game-clock.ts';
 	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
-	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 	import StorytellerProfile from '#lib/features/player/StorytellerProfile.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import GameInfoSheet, { type GameInfoRow } from './GameInfoSheet.svelte';

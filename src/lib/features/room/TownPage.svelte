@@ -29,7 +29,7 @@
 	import { RoomTown } from './town.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
-	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
+	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 
 	/**
 	 * Public Town (Trevor, 2026-10-26): a tablet in the middle of the table showing the

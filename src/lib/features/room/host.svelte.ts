@@ -42,7 +42,7 @@ import type {
 import type { SoundOutput } from '#lib/core/sound/soundboard.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-import { seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { seatLayouts } from '#lib/features/board/device-notes.ts';
 import { storedNotes, type BoardNotes } from './board-notes.ts';
 import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 import { fetchWithTimeout } from '#lib/ui/fetch.ts';

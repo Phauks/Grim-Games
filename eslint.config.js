@@ -132,7 +132,7 @@ const NO_HAND_BUILT_SEAT_NAME = {
 
 const LOCAL_STORAGE_TODO = [
 	'src/lib/features/board/board-looks.svelte.ts',
-	'src/lib/features/grimoire/device-notes.ts',
+	'src/lib/features/board/device-notes.ts',
 	'src/lib/features/info-tokens/custom-tokens.svelte.ts',
 	'src/lib/features/library/library-labels.svelte.ts',
 	'src/lib/features/player/player-settings.svelte.ts',
@@ -297,8 +297,42 @@ export default defineConfig(
 						},
 						OLD_CHARACTER_PIECES,
 						{
-							group: ['#lib/features/grimoire/*', '**/features/grimoire/**'],
+							group: ['**/features/grimoire/**'],
 							message: 'The board is shared: pass grimoire state in rather than importing it.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		// The room hosts the grimoire and draws its board on watch pages; nothing else of the
+		// grimoire's reaches the room or the game store, so the grimoire may use both. Repeats
+		// the features rule.
+		files: ['src/lib/features/room/**', 'src/lib/features/game/**'],
+		ignores: ['**/*.test.ts'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@ark-ui/*'],
+							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
+						},
+						OLD_CHARACTER_PIECES,
+						{
+							group: [
+								'**/features/grimoire/**',
+								'!**/features/grimoire/GrimoireBoard.svelte',
+								'!**/features/grimoire/grimoire.svelte.ts'
+							],
+							message:
+								'The room only draws the grimoire board: put shared pieces in features/game or features/board.'
 						}
 					]
 				}

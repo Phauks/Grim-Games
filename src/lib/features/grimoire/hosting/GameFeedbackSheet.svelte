@@ -5,7 +5,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import { gameFeedback } from './game-feedback.svelte.ts';
+	import { gameFeedback } from '#lib/features/room/game-feedback.svelte.ts';
 
 	/**
 	 * Players' feedback on a finished game, for the Storyteller (Trevor, 2026-10-25): the

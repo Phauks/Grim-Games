@@ -29,7 +29,7 @@
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
 	import PlayersOnlyGames from '#lib/features/player/PlayersOnlyGames.svelte';
-	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
+	import SavedGamesSection from '#lib/features/game/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
 	import PlayerTravellerPick from './PlayerTravellerPick.svelte';

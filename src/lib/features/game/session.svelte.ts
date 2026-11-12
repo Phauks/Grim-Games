@@ -33,7 +33,7 @@ import {
 	type GameId
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { endedGames, seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { endedGames, seatLayouts } from '#lib/features/board/device-notes.ts';
 import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { allowedOffScriptIn, duplicatesAllowedIn } from '#lib/features/modes/game-mode.ts';
 import { IdbGameStore } from './idb-store.ts';

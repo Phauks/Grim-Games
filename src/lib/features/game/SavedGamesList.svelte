@@ -24,10 +24,10 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import type { EndedGame } from './device-notes.ts';
+	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import { gameStageText, storytellerGames } from './storyteller-games.ts';
 	import { gameModeName } from './game-mode-name.ts';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);

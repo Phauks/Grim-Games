@@ -15,7 +15,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import RoomTransferDialog from '#lib/features/room/RoomTransferDialog.svelte';
+	import RoomTransferDialog from '#lib/features/grimoire/hosting/RoomTransferDialog.svelte';
 	import { roomTransfer } from '#lib/features/room/room-transfer.svelte.ts';
 
 	/**

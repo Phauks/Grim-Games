@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { LiveGame } from '#lib/core/sync/live-games.ts';
-	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 	import { openAccount } from '#lib/features/shell/shell.ts';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';

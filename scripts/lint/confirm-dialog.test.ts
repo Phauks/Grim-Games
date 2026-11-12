@@ -20,7 +20,7 @@ describe('grim/confirm-dialog', () => {
 
 <Dialog bind:open title="Delete?" role="alertdialog">x</Dialog>
 `;
-		expect(await problems(code, 'src/lib/features/grimoire/SavedGamesList.svelte')).toBe(1);
+		expect(await problems(code, 'src/lib/features/game/SavedGamesList.svelte')).toBe(1);
 		expect(await problems(code, 'src/lib/ui/primitives/ConfirmDialog.svelte')).toBe(0);
 	}, 60_000);
 });

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/index.ts';
 import { MemoryGameStore, type EngineContext } from '#lib/core/engine/index.ts';
-import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+import { endedGames } from '#lib/features/board/device-notes.ts';
 import { carryFrom, setNextGame } from './next-game.ts';
 import { OpenGame } from './session.svelte.ts';
 

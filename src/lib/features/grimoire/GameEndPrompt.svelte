@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import { untrack } from 'svelte';
 	import { findJinx, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -25,7 +25,7 @@
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { dismissedGameEnds } from './device-notes.ts';
+	import { dismissedGameEnds } from '#lib/features/board/device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import { tonight } from '#lib/core/rules/night/board-steps.ts';
 	import { isGeneric, reminderWords } from '#lib/features/board/reminders.ts';

@@ -4,7 +4,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { TransferDetails } from '#lib/core/sync/room.ts';
 	import { TRANSFER_CODE_LENGTH } from '#lib/core/sync/room-transfer.ts';
-	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
