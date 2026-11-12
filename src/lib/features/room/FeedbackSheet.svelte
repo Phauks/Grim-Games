@@ -16,11 +16,14 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
+	import GameResult from './GameResult.svelte';
 
 	/**
-	 * A player's feedback once the game is over (Trevor, 2026-10-20, plan R4): a rating in half
-	 * stars, accolades for the Storyteller and a comment, anonymous unless they turn it off.
-	 * It opens from Rate game and starts from what this phone last sent; Send replaces it.
+	 * The Game over sheet (Trevor, 2026-11-12, plan R4 option A): this phone's result with
+	 * Share result on top (GameResult), then the player's feedback (Trevor, 2026-10-20): a
+	 * rating in half stars, accolades for the Storyteller and a comment, anonymous unless they
+	 * turn it off. It opens from Game over and starts from what this phone last sent; Send
+	 * replaces it.
 	 */
 	interface Props {
 		player: RoomPlayer;
@@ -59,6 +62,7 @@
 
 <Dialog bind:open title={t('room.feedback.title')}>
 	<form onsubmit={send} data-testid="feedback-sheet">
+		<GameResult {player} {open} />
 		<fieldset>
 			<legend>{t('room.feedback.rating')}</legend>
 			<div class="stars">

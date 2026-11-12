@@ -140,7 +140,7 @@ export type ClientMessage =
 	/** The grimoire for viewers; ignored while the link is off. */
 	| { type: 'grimoire'; grimoire: SharedGrimoire }
 	/** The game `gameId` is over (protocol 2). */
-	| { type: 'game-over'; gameId: string; winner?: Alignment; reason?: string }
+	| { type: 'game-over'; gameId: string; winner?: Alignment; reason?: string; result?: string }
 	/**
 	 * The finished grimoire for every player (Share grim, Trevor 2026-10-20, plan R5): only
 	 * once the game `gameId` is over, and kept until it is reopened or a new game starts.

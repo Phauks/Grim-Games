@@ -407,7 +407,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const status = phone.getByTestId('join-status');
 	await expect(status).toHaveText('');
 	// Hidden until the game is over.
-	const rate = phone.getByRole('button', { name: 'Rate game' });
+	const rate = phone.getByRole('button', { name: 'Game over', exact: true });
 	await expect(rate).toHaveCount(0);
 
 	await page.goto(board);
@@ -423,7 +423,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await expect(status).toHaveText('Game over: Good won');
 
 	await rate.tap();
-	const sheet = phone.getByRole('dialog', { name: 'Rate this game' });
+	const sheet = phone.getByRole('dialog', { name: 'Game over' });
 	const send = sheet.getByRole('button', { name: 'Send' });
 	await expect(send).toBeDisabled();
 	// A second tap on the same star takes off half.
@@ -436,8 +436,8 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const other = await otherContext.newPage();
 	await other.goto(`/join/${code}`);
 	await expect(other.getByTestId('join-status')).toHaveText('Game over: Good won');
-	await other.getByRole('button', { name: 'Rate game' }).tap();
-	const otherSheet = other.getByRole('dialog', { name: 'Rate this game' });
+	await other.getByRole('button', { name: 'Game over', exact: true }).tap();
+	const otherSheet = other.getByRole('dialog', { name: 'Game over' });
 	await otherSheet.getByRole('button', { name: 'Star 2' }).tap();
 	await otherSheet.getByRole('button', { name: 'Send' }).tap();
 	await expect(otherSheet).toHaveCount(0);
@@ -677,7 +677,7 @@ test('after a game the room votes on the next script, and the next game opens in
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Game over');
-	const rate = phone.getByRole('button', { name: 'Rate game' });
+	const rate = phone.getByRole('button', { name: 'Game over', exact: true });
 	await expect(rate).toBeVisible();
 
 	await page.goto('/new');

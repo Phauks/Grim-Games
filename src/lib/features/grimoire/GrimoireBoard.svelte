@@ -113,6 +113,7 @@
 	import AlignmentAsk from '#lib/features/grimoire/night/AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { gameResult } from '#lib/features/room/game-result.ts';
 	import { screenshotPart } from '#lib/ui/screenshot.ts';
 	import { EXPORT_HASH } from '#lib/features/history/export-hash.ts';
 	import GameFeedbackSheet from '#lib/features/grimoire/hosting/GameFeedbackSheet.svelte';
@@ -575,6 +576,16 @@
 			...(ended.reason ? { reason: ended.reason } : {})
 		};
 		if (!watching) roomHost().setEnded(game.gameId, over || undefined);
+	});
+	// Phones in the room get the game's name-free result page to share (plan R4).
+	$effect(() => {
+		if (watching || !ended || !roomHost().code) return;
+		const gameId = game.gameId;
+		void untrack(exportGame)
+			.then(gameResult)
+			.then((id) => roomHost().setResult(gameId, id))
+			// Offline: the phones get no link, and their Share result stays off.
+			.catch(() => undefined);
 	});
 	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
 	let exportOpen = $state(false);
