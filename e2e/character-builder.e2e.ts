@@ -251,6 +251,8 @@ test('picks where a character wakes from the night stages', async ({ page }) => 
 	await page
 		.getByTestId('character-ability')
 		.fill('Each night*, choose a player (not yourself): they are safe from the Demon tonight.');
+	// The night has its own tab (M82).
+	await page.getByRole('tab', { name: 'Night' }).tap();
 	const other = page.getByTestId('night-place-other');
 	const stage = (name: string) => other.getByRole('button', { name: new RegExp(`^${name}`) });
 	// It doesn't wake without night text.
@@ -279,6 +281,7 @@ test('picks where a character wakes from the night stages', async ({ page }) => 
 
 	// It is saved with the character.
 	await page.reload();
+	await page.getByRole('tab', { name: 'Night' }).tap();
 	await expect(stage('Minions')).toHaveAttribute('aria-expanded', 'true');
 	await page.getByRole('button', { name: 'Download character JSON' }).tap();
 	await expect(page.getByRole('dialog').getByTestId('builder-json')).toContainText('"minions"');
@@ -294,6 +297,10 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	await page.getByTestId('reminders').getByRole('button', { name: 'Add a reminder' }).tap();
 	await page.getByRole('textbox', { name: 'Reminder 1' }).first().fill('Lit');
 
+	// The rules have their own tab, which counts them (M82).
+	const rulesTab = page.getByRole('tab', { name: /^Rules/ });
+	await expect(rulesTab).toHaveText('Rules · 0');
+	await rulesTab.tap();
 	const rules = page.getByTestId('rules');
 	await expect(rules).toHaveText('None');
 
@@ -324,6 +331,7 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
 	await confirm.tap();
 	await expect(rules).toContainText('Who marked · Reminder Lit · From any · Night');
+	await expect(rulesTab).toHaveText('Rules · 2');
 
 	// Change: the ⋯ opens the rule with its settings; Rules text shows the same rule as text.
 	await rules.getByRole('button', { name: 'Protects options' }).tap();
@@ -342,6 +350,7 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 
 	// The rules go with the saved character and survive a reload.
 	await page.reload();
+	await rulesTab.tap();
 	await expect(rules).toContainText('Protects');
 	await rules.getByRole('button', { name: 'Curses options' }).tap();
 	await page.getByRole('menuitem', { name: 'Remove' }).tap();
@@ -354,6 +363,7 @@ test('a jinx is built with its partner and effects as fields (M79)', async ({ pa
 	await page.getByTestId('character-name').fill('Lamplighter');
 	await page.getByTestId('character-ability').fill('Each night*, choose a player: they can’t die.');
 
+	await page.getByRole('tab', { name: /^Rules/ }).tap();
 	await page.getByTestId('add-rule').tap();
 	const dialog = page.getByRole('dialog', { name: 'Add a rule' });
 	await dialog.getByRole('combobox', { name: 'Rule' }).tap();

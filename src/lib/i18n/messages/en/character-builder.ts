@@ -62,6 +62,8 @@ export const characterBuilder = {
 	'character-builder.chooseLinked': 'Choose a character',
 	'character-builder.setupText': 'Text',
 	'character-builder.rules': 'Rules',
+	'character-builder.rulesTab': 'Rules · {count}',
+	'character-builder.formTabs': 'Character parts',
 	'character-builder.addRule': 'Add a rule',
 	'character-builder.addRuleTitle': 'Add a rule',
 	'character-builder.editRuleTitle': 'Change a rule',
