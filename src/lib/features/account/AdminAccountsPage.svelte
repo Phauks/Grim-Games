@@ -1,28 +1,33 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { openAccount } from '#lib/features/shell/shell.ts';
-	import FriendRows from '#lib/features/friends/FriendRows.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
+	import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
 	import { account as me } from './account.svelte.ts';
 	import { changeAccount, deleteAccount, listAccounts } from './admin-accounts-api.ts';
 	import {
-		adminAccountMatches,
-		sortAdminAccounts,
+		firstAdminAccountDirection,
+		orderAdminAccounts,
 		type AdminAccount,
-		type AdminAccountAction
+		type AdminAccountAction,
+		type AdminAccountColumn as Column
 	} from './admin-accounts-protocol.ts';
 
-	// Accounts, at /accounts (plan S27, Trevor 2026-10-30): every account, by email; tapping one
-	// opens its details, where an admin acts on it. The Worker decides who may.
+	// Accounts, at /accounts (plan S27, Trevor 2026-10-30): every account; tapping one opens its
+	// details, where an admin acts on it. The Worker decides who may. A table like Live games
+	// (Trevor, 2026-11-12), the most recently used first.
 
-	let accounts = $state<AdminAccount[]>([]);
-	let filter = $state('');
+	/** Undefined until the list arrives, so "None" never shows while it loads. */
+	let accounts = $state<AdminAccount[]>();
+	let columnFilters = $state<Partial<Record<Column, ColumnFilter>>>({});
+	let sort = $state<DataSort<Column>>({ column: 'lastUsed', direction: 'descending' });
 	let shown = $state<AdminAccount>();
 	let detailsOpen = $state(false);
 	let busy = $state(false);
@@ -31,7 +36,75 @@
 
 	const none = t('common.none');
 	const date = (ms: number | undefined) => (ms === undefined ? none : intl.date(ms));
-	const visible = $derived(accounts.filter((account) => adminAccountMatches(account, filter)));
+	const type = (account: AdminAccount) =>
+		t(account.admin ? 'account.you.typeAdmin' : 'account.you.typeUser');
+	const rows = $derived(orderAdminAccounts(accounts ?? [], sort.column, sort.direction));
+
+	const columns = $derived<DataColumn<Column, AdminAccount>[]>([
+		{
+			id: 'email',
+			flush: true,
+			label: t('account.you.email'),
+			rowHeader: true,
+			sortable: true,
+			filterKind: 'text',
+			// Its filter finds an account by its id as well, as support is asked by id.
+			value: (a) => [a.email, a.id]
+		},
+		{
+			id: 'username',
+			flush: true,
+			label: t('account.you.username'),
+			width: '18%',
+			sortable: true,
+			secondLine: true,
+			filterKind: 'text',
+			value: (a) => a.username
+		},
+		{
+			id: 'type',
+			flush: true,
+			label: t('account.admin.typeColumn'),
+			width: 'max(9%, 7rem)',
+			wide: true,
+			sortable: true,
+			value: type
+		},
+		{
+			id: 'devices',
+			flush: true,
+			label: t('account.admin.devicesColumn'),
+			width: 'max(9%, 7.5rem)',
+			wide: true,
+			sortable: true,
+			value: (a) => a.devices
+		},
+		{
+			id: 'lastUsed',
+			flush: true,
+			label: t('account.admin.lastUsed'),
+			width: 'max(12%, 8rem)',
+			sortable: true,
+			secondLine: true,
+			value: (a) => a.lastSeenAt
+		},
+		{
+			id: 'since',
+			flush: true,
+			label: t('account.you.since'),
+			width: 'max(12%, 7rem)',
+			wide: true,
+			sortable: true,
+			value: (a) => a.createdAt
+		}
+	]);
+
+	function onSort(column: Column) {
+		sort =
+			sort.column === column
+				? { column, direction: sort.direction === 'ascending' ? 'descending' : 'ascending' }
+				: { column, direction: firstAdminAccountDirection(column) };
+	}
 
 	async function load() {
 		try {
@@ -45,6 +118,12 @@
 		if (me.admin) void load();
 	});
 
+	/** The list again, the open account with it. */
+	async function refresh() {
+		await load();
+		if (shown) shown = accounts?.find((a) => a.id === shown?.id);
+	}
+
 	function open(account: AdminAccount) {
 		shown = account;
 		detailsOpen = true;
@@ -52,8 +131,8 @@
 
 	/** Puts the account as it is now in the list, or takes it out when it is gone. */
 	function replace(id: string, account: AdminAccount | undefined) {
-		const rest = accounts.filter((a) => a.id !== id);
-		accounts = sortAdminAccounts(account ? [...rest, account] : rest);
+		const rest = (accounts ?? []).filter((a) => a.id !== id);
+		accounts = account ? [...rest, account] : rest;
 		shown = account;
 		if (!account) detailsOpen = false;
 	}
@@ -101,8 +180,17 @@
 	});
 </script>
 
-<Page title={t('account.admin.title')}>
-	{#if me.status === 'checking'}
+<!-- Refresh is always there, disabled until it applies, so nothing moves when the list appears. -->
+<Page title={t('account.admin.title')} iconActions>
+	{#snippet actions()}
+		<IconButton
+			icon="refresh"
+			label={t('errors.diag.refresh')}
+			disabled={!me.admin || !accounts}
+			onclick={refresh}
+		/>
+	{/snippet}
+	{#if me.status === 'checking' || (me.admin && !accounts)}
 		<p class="none" aria-busy="true">{t('reports.checking')}</p>
 	{:else if !me.admin}
 		<div class="none">
@@ -110,32 +198,53 @@
 			<Button onclick={openAccount}>{t('account.signIn.title')}</Button>
 		</div>
 	{:else}
-		<div class="filter">
-			<SearchField
-				label={t('account.admin.filter')}
-				placeholder={t('account.admin.filter')}
-				bind:value={filter}
-				testid="admin-account-filter"
-			/>
-		</div>
-		<FriendRows items={visible} key={(account) => account.id} testid="admin-accounts">
-			{#snippet label(account)}
-				<button type="button" class="open" onclick={() => open(account)}>
-					<span class="email">{account.email}</span>
-					<span class="username">{account.username ?? none}</span>
+		<DataTable
+			label={t('account.admin.title')}
+			{columns}
+			{rows}
+			key={(account) => account.id}
+			{sort}
+			{onSort}
+			bind:columnFilters
+			narrow="hide"
+			fit="container"
+			hideKey="admin-accounts"
+			pageSize={50}
+			empty={none}
+			testid="admin-accounts"
+		>
+			{#snippet cell(account, column)}
+				<!-- Every cell opens the same account, so a tap anywhere on the row does; only the
+				     email is in the tab order. -->
+				<button
+					type="button"
+					class="open"
+					tabindex={column.id === 'email' ? undefined : -1}
+					onclick={() => open(account)}
+				>
+					{#if column.id === 'email'}
+						<span class="email">{account.email}</span>
+					{:else if column.id === 'username'}
+						{account.username ?? none}
+					{:else if column.id === 'type'}
+						{type(account)}
+					{:else if column.id === 'devices'}
+						{account.devices}
+					{:else if column.id === 'lastUsed'}
+						{date(account.lastSeenAt)}
+					{:else}
+						{date(account.createdAt)}
+					{/if}
 				</button>
 			{/snippet}
-		</FriendRows>
+		</DataTable>
 	{/if}
 </Page>
 
 <Dialog bind:open={detailsOpen} title={shown?.email ?? t('account.admin.title')}>
 	<!-- Label, value, and what removes it (or nothing), as Account settings. The account is
-	     its id, so deleting it sits on that row. -->
+	     its id, so deleting it sits on that row; the email is the dialog's title. -->
 	<dl data-testid="admin-account">
-		<dt>{t('account.you.email')}</dt>
-		<dd data-testid="admin-account-email">{shown?.email ?? none}</dd>
-		<span></span>
 		<dt>{t('account.you.username')}</dt>
 		<dd data-testid="admin-account-username">{shown?.username ?? none}</dd>
 		<DeleteButton
@@ -144,9 +253,7 @@
 			disabled={busy || !shown?.username}
 		/>
 		<dt>{t('account.you.type')}</dt>
-		<dd>
-			{shown ? t(shown.admin ? 'account.you.typeAdmin' : 'account.you.typeUser') : none}
-		</dd>
+		<dd>{shown ? type(shown) : none}</dd>
 		<span></span>
 		<dt>{t('account.you.password')}</dt>
 		<dd>{shown?.hasPassword ? t('account.you.passwordSet') : none}</dd>
@@ -185,28 +292,25 @@
 />
 
 <style>
-	.filter {
-		margin-bottom: var(--space-3);
-	}
 	/* The whole row opens the account. */
 	.open {
-		display: grid;
 		width: 100%;
+		height: 100%;
 		min-height: var(--tap-target);
-		padding: 0;
+		padding: var(--space-1) var(--space-2);
 		border: 0;
 		background: none;
 		color: inherit;
 		font: inherit;
 		text-align: start;
+		overflow-wrap: anywhere;
 		cursor: pointer;
+	}
+	:global([data-testid='admin-accounts'] tr:has(.open:hover)) {
+		background: var(--surface-hover);
 	}
 	.email {
 		font-family: var(--font-account);
-	}
-	.username {
-		color: var(--on-surface-muted);
-		font-weight: normal;
 	}
 	dl {
 		margin: 0 0 var(--space-3);

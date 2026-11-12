@@ -151,12 +151,13 @@ export const account = {
 
 	// Admins' Accounts page (plan S27).
 	'account.admin.title': 'Accounts',
-	'account.admin.filter': 'Email, username or id',
 	'account.admin.listFailed': 'Could not load the accounts',
 	'account.admin.actionFailed': 'The account could not be changed',
 	'account.admin.adminsOnly': 'Only admin accounts see accounts.',
 	'account.admin.devices': 'Signed-in devices',
 	'account.admin.lastUsed': 'Last used',
+	'account.admin.typeColumn': 'Type',
+	'account.admin.devicesColumn': 'Devices',
 	'account.admin.signOut': 'Sign out everywhere',
 	'account.admin.signOutTitle': 'Sign out every device?',
 	'account.admin.signOutText':
