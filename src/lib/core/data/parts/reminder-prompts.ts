@@ -7,6 +7,7 @@ export type ReminderPrompt = (typeof REMINDER_PROMPTS)[number];
 
 /** Reminders whose placing is the moment to change the seat's state, by label. */
 export const reminderPrompts = specPart(
+	'tokens',
 	'Reminder prompts',
 	'Reminders whose placing asks to mark the seat dead or revive it.',
 	byToken(oneOf(REMINDER_PROMPTS))

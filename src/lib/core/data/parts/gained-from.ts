@@ -25,6 +25,7 @@ import { specPart, type PartValue } from './part.ts';
  *   character), whose token stays as it is (Trevor, 2026-11-03).
  */
 export const gainedFrom = specPart(
+	'abilities',
 	'Ability gained from',
 	'The ability it has is another player’s, found by its token.',
 	obj({

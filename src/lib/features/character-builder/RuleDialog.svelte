@@ -5,26 +5,30 @@
 	import {
 		BUILDER_RULES,
 		builderRule,
+		findRules,
 		fitsFields,
 		readRuleText,
 		ruleProblems,
 		ruleText,
 		type BuilderRule
 	} from '#lib/core/rules/character-builder-rules.ts';
+	import { RULE_GROUPS, type RuleGroup } from '#lib/core/data/parts/part.ts';
 	import { startFor } from '#lib/core/data/field-spec.ts';
 	import { type CharacterFields } from '#lib/core/rules/character-builder.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import RuleValueField from './RuleValueField.svelte';
 
 	/**
 	 * Adds one rule to a custom character, or changes one it has (M62, Trevor picked "Add a
-	 * rule", 2026-11-09). Like Add a setup change: the rule is picked from a drop-down with its
-	 * description, then its settings are filled in with fields made for that rule
-	 * (`RuleValueField`). "Rules text" writes the same rule as text instead, and is where a rule
+	 * rule", 2026-11-09). A new rule is found first (M80, Trevor 2026-11-12: "do it all"): by
+	 * name or description in the search box, or under its group's tab (where it belongs in a
+	 * game, `group` in its part file); then its settings are filled in with fields made for that
+	 * rule (`RuleValueField`), and the rule's row above them goes back to finding another. "Rules text" writes the same rule as text instead, and is where a rule
 	 * the fields can't hold whole (a setting they don't list) is changed, so nothing is lost.
 	 */
 	interface Props {
@@ -51,6 +55,10 @@
 	);
 
 	let key = $state('');
+	/** Finding the rule to add, before its settings. */
+	let finding = $state(false);
+	let query = $state('');
+	let group = $state<RuleGroup>('setup');
 	let value = $state<unknown>();
 	let asText = $state(false);
 	let rulesText = $state('');
@@ -80,9 +88,25 @@
 	$effect(() => {
 		if (!open) return;
 		const start = editing;
-		const first = available[0]?.key ?? '';
-		untrack(() => (start ? load(start.key, start.value) : load(first, undefined)));
+		untrack(() => {
+			query = '';
+			finding = !start;
+			if (start) load(start.key, start.value);
+			else key = '';
+		});
 	});
+
+	function pick(next: string) {
+		load(next, undefined);
+		finding = false;
+	}
+
+	const groupTabs = RULE_GROUPS.map((value) => ({
+		value,
+		label: t(`character-builder.ruleGroup.${value}`)
+	}));
+
+	const found = $derived(findRules(available, query));
 
 	const read = $derived.by((): { value: unknown } | { error: string } | undefined => {
 		if (!rule) return undefined;
@@ -113,10 +137,6 @@
 		return ruleProblems(fields, key, read.value, reminders);
 	});
 
-	const ruleOptions = $derived(
-		available.map((r) => ({ value: r.key, label: r.label, description: r.description }))
-	);
-
 	function save() {
 		if (!read || 'error' in read || problems.length) return;
 		onSave(key, read.value);
@@ -124,57 +144,98 @@
 	}
 </script>
 
+{#snippet ruleList(rules: readonly BuilderRule[])}
+	<ul class="list" data-testid="rule-list">
+		{#each rules as r (r.key)}
+			<li>
+				<button type="button" class="pick" data-rule={r.key} onclick={() => pick(r.key)}>
+					<span class="name">{r.label}</span>
+					<span class="about">{r.description}</span>
+				</button>
+			</li>
+		{:else}
+			<li class="none">{t('common.none')}</li>
+		{/each}
+	</ul>
+{/snippet}
+
 <Dialog
 	bind:open
 	title={editing ? t('character-builder.editRuleTitle') : t('character-builder.addRuleTitle')}
 	size="full"
 >
-	<div class="rule" data-testid="rule-dialog">
-		<Select
-			label={t('character-builder.rule')}
-			value={key}
-			options={ruleOptions}
-			disabled={!!editing}
-			placeholder={t('common.none')}
-			testid="rule-pick"
-			onChange={(next: string) => load(next, undefined)}
-		/>
-		<p class="description">{rule?.description || t('common.none')}</p>
-		<Toggle
-			label={t('character-builder.rulesText')}
-			checked={asText}
-			disabled={!rule || (asText && !backToFields)}
-			onChange={setText}
-		/>
-		{#if rule && asText}
-			<TextField
-				label={t('character-builder.rulesText')}
-				hideLabel
-				multiline
-				rows={8}
-				bind:value={rulesText}
-				testid="rule-json"
+	{#if finding}
+		<div class="find" data-testid="rule-dialog">
+			<SearchField
+				label={t('character-builder.findRule')}
+				bind:value={query}
+				testid="rule-search"
 			/>
-		{:else if rule}
-			<div class="settings" data-testid="rule-settings">
-				<RuleValueField
-					spec={rule.field}
-					{value}
-					onchange={(v) => (value = v)}
-					label={rule.label}
-					{reminders}
-					{characters}
-					top
+			{#if query.trim()}
+				{@render ruleList(found)}
+			{:else}
+				<Tabs bind:value={group} tabs={groupTabs} label={t('character-builder.ruleGroups')} dense>
+					{#snippet panel(tab)}
+						{@render ruleList(available.filter((r) => r.group === tab))}
+					{/snippet}
+				</Tabs>
+			{/if}
+		</div>
+	{:else}
+		<div class="rule" data-testid="rule-dialog">
+			{#if editing}
+				<div class="chosen">
+					<span class="name">{rule?.label}</span>
+					<span class="about">{rule?.description || t('common.none')}</span>
+				</div>
+			{:else}
+				<button
+					type="button"
+					class="pick chosen"
+					data-testid="rule-pick"
+					aria-label={t('character-builder.otherRule', { rule: rule?.label ?? '' })}
+					onclick={() => (finding = true)}
+				>
+					<span class="name">{rule?.label}</span>
+					<span class="about">{rule?.description || t('common.none')}</span>
+				</button>
+			{/if}
+			<Toggle
+				label={t('character-builder.rulesText')}
+				checked={asText}
+				disabled={!rule || (asText && !backToFields)}
+				onChange={setText}
+			/>
+			{#if rule && asText}
+				<TextField
+					label={t('character-builder.rulesText')}
+					hideLabel
+					multiline
+					rows={8}
+					bind:value={rulesText}
+					testid="rule-json"
 				/>
-			</div>
-		{/if}
-		<!-- Reserved room at the foot: problems come and go as it is typed, so nothing moves. -->
-		<ul class="problems" role="status" data-testid="rule-problems">
-			{#each problems as problem (problem)}
-				<li>{problem}</li>
-			{/each}
-		</ul>
-	</div>
+			{:else if rule}
+				<div class="settings" data-testid="rule-settings">
+					<RuleValueField
+						spec={rule.field}
+						{value}
+						onchange={(v) => (value = v)}
+						label={rule.label}
+						{reminders}
+						{characters}
+						top
+					/>
+				</div>
+			{/if}
+			<!-- Reserved room at the foot: problems come and go as it is typed, so nothing moves. -->
+			<ul class="problems" role="status" data-testid="rule-problems">
+				{#each problems as problem (problem)}
+					<li>{problem}</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 	{#snippet actions()}
 		<ModalActions
 			onCancel={() => (open = false)}
@@ -189,9 +250,50 @@
 		display: grid;
 		gap: var(--space-3);
 	}
-	.description {
+	.find {
+		display: grid;
+		gap: var(--space-2);
+	}
+	.list {
+		display: grid;
 		margin: 0;
-		font-style: italic;
+		padding: 0;
+		list-style: none;
+	}
+	.list > li + li {
+		border-top: thin solid var(--border);
+	}
+	.none {
+		padding-block: var(--space-2);
+	}
+	.pick {
+		display: grid;
+		gap: var(--space-1);
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: var(--space-2) 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.chosen {
+		display: grid;
+		gap: var(--space-1);
+	}
+	.chosen.pick {
+		padding-inline: var(--space-2);
+		border: thin solid var(--border);
+		border-radius: var(--radius-md);
+	}
+	.name {
+		font-weight: 600;
+	}
+	.about {
+		color: var(--on-surface-muted);
+		font-size: 0.9rem;
 	}
 	.settings {
 		display: grid;

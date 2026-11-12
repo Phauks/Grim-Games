@@ -9,6 +9,7 @@ import type { Part } from './part.ts';
  * builder fields come from the same verbs (`jinx-read.ts`).
  */
 export const jinxes: Part<Readonly<Record<CharacterId, JinxRules>>> = {
+	group: 'setup',
 	label: 'Jinxes',
 	description: 'What each jinx with another character changes, while both are on the script.',
 	field: JINX_FIELDS,

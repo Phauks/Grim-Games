@@ -12,6 +12,7 @@ export const TOKEN_ON_TYPE = obj({ token: TOKEN, type: opt(oneOf(CHARACTER_TYPES
  * the stopped step (`rules/night/night-alerts.ts`).
  */
 export const stopsWaking = specPart(
+	'night',
 	'Stops waking',
 	'Its token on a player stops them waking tonight.',
 	TOKEN_ON_TYPE

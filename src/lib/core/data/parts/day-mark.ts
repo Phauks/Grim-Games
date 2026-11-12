@@ -19,6 +19,7 @@ export type DayMark = (typeof DAY_MARKS)[number];
  * While such a character is in play, End day asks for any of today's marks still unset.
  */
 export const dayMark = specPart(
+	'day',
 	'Day mark',
 	'A fact about today the Storyteller marks for its night answer.',
 	obj({ mark: oneOf(DAY_MARKS), yes: TOKEN, no: TOKEN }),

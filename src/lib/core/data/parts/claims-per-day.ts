@@ -6,6 +6,7 @@ import { countPart } from './part.ts';
  * guesses; otherwise all its notes. One more warns, never locks.
  */
 export const claimsPerDay = countPart(
+	'day',
 	'Claims a day',
 	'At most this many of its day claims logged each day.'
 );

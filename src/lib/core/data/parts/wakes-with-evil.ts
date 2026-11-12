@@ -5,6 +5,7 @@ import { truePart } from './part.ts';
  * and Demon step (`night-order.ts`; the Wraith, https://wiki.bloodontheclocktower.com/Wraith).
  */
 export const wakesWithEvil = truePart(
+	'night',
 	'Wakes with evil',
 	'Its player wakes whenever other evil players wake.'
 );

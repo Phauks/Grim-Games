@@ -160,6 +160,7 @@ export interface Learns {
 
 /** First-night information the Storyteller picks from the truthful options (the Chef). */
 export const learns = specPart(
+	'night',
 	'First-night information',
 	'First-night information the Storyteller picks from the truthful options.',
 	obj({

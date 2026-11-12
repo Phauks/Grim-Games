@@ -5,6 +5,7 @@ import { tokenPart } from './part.ts';
  * dies may nominate straight away (https://wiki.bloodontheclocktower.com/Riot).
  */
 export const nomineesNominate = tokenPart(
+	'day',
 	'Nominees nominate',
 	'While this reminder is in play, each nominee who dies nominates straight away.'
 );

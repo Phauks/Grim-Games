@@ -9,6 +9,7 @@ import { specPart } from './part.ts';
  * `rules/abilities/becomes.ts` (`passOnSeats`).
  */
 export const passesOn = specPart(
+	'deaths',
 	'Passes on',
 	'When its player dies, another player becomes this character.',
 	optObj({ alive: T, alignment: oneOf(ALIGNMENTS) })

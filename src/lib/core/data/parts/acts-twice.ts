@@ -8,6 +8,7 @@ import { specPart, type PartValue } from './part.ts';
  * (https://wiki.bloodontheclocktower.com/Barista).
  */
 export const actsTwice = specPart(
+	'abilities',
 	'Acts twice',
 	'Its token on a player makes their ability work twice until dusk.',
 	obj({ token: TOKEN })

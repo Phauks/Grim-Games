@@ -7,6 +7,7 @@ import { stringPart } from './part.ts';
  * line shows.
  */
 export const optionalRuleText = stringPart(
+	'setup',
 	'Optional rule text',
 	'Our own short wording of the optional rule, shown beside its switch.'
 );

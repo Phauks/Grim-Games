@@ -7,6 +7,7 @@ import { truePart } from './part.ts';
  * simulate evil characters that are not in play). Read by `rules/abilities/pretend.ts`.
  */
 export const pretendTeam = truePart(
+	'setup',
 	'Pretend evil team',
 	'While it is in play the Storyteller may pretend some players are Minions and a Demon.'
 );

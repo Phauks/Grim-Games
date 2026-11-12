@@ -19,6 +19,7 @@ export type MadAsWho = (typeof MAD_AS_WHO)[number];
  *   the token (the Pixie, https://wiki.bloodontheclocktower.com/Pixie).
  */
 export const madAs = specPart(
+	'day',
 	'Mad as',
 	'The character a player is mad as, found by its token.',
 	// With `mad: "carrier"`: `choose`, the types the character is chosen from, and

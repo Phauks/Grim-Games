@@ -15,6 +15,7 @@ export type CounterTime = (typeof COUNTER_TIMES)[number];
  * Storyteller's setting says.
  */
 export const counter = specPart(
+	'tokens',
 	'Counter',
 	'Its run of day or night tokens gains the next one each dawn or dusk.',
 	obj({ tokens: TOKENS, at: oneOf(COUNTER_TIMES), replaces: opt(T) }),

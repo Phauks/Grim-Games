@@ -6,6 +6,7 @@ import { truePart } from './part.ts';
  * view records it (`rules/abilities/wishes.ts`); a granted wish may carry a standard effect.
  */
 export const wish = truePart(
+	'day',
 	'Wish',
 	'Once per game its player may make a wish; the Storyteller grants or declines it.'
 );

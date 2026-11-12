@@ -20,6 +20,7 @@ export type TurnsPlayers = (typeof TURNS_PLAYERS)[number];
  * (Sushi Buffet). It names a behaviour and its type, never a character (the Kazali).
  */
 export const turnsPlayersInto = specPart(
+	'night',
 	'Turns players into',
 	'Players it turns into another type at setup.',
 	obj({ type: oneOf(SEATED_TYPES), players: oneOf(TURNS_PLAYERS) })

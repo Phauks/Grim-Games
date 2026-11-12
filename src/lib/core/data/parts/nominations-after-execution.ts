@@ -7,6 +7,7 @@ import { specPart } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Butcher).
  */
 export const nominationsAfterExecution = specPart(
+	'day',
 	'Nominations after an execution',
 	'More nominations its player may make each day after the first execution.',
 	COUNT

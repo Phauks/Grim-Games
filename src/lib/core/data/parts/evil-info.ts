@@ -22,6 +22,7 @@ import { specPart, type PartValue } from './part.ts';
  * Minion info and Demon info steps come back (`late-evil-info.ts`; the Poppy Grower's Evil Wakes).
  */
 export const evilInfo = specPart(
+	'night',
 	'Evil info steps',
 	'How it changes the Minion and Demon info steps.',
 	optObj({

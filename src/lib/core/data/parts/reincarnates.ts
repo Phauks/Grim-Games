@@ -11,6 +11,7 @@ import { specPart, type PartValue } from './part.ts';
  * becomes that Demon (the Hindu's optional rule: a Minion). Without it, a Demon is not reborn.
  */
 export const reincarnates = specPart(
+	'deaths',
 	'Reborn as Travellers',
 	'The first players to die are reborn as Travellers.',
 	obj({ first: COUNT, demonTo: opt(oneOf(SEATED_TYPES)) })

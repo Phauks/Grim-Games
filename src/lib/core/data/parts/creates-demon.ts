@@ -5,6 +5,7 @@ import { booleanPart } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Pit-Hag), so the Demon may change hands.
  */
 export const createsDemon = booleanPart(
+	'night',
 	'Creates a Demon',
 	'Its night ability can turn a player into a new Demon.'
 );

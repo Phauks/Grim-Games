@@ -27,6 +27,7 @@ import { specPart } from './part.ts';
  * no one else evil).
  */
 export const becomes = specPart(
+	'abilities',
 	'Becomes',
 	'Its token says a player changed character or alignment.',
 	obj({

@@ -31,6 +31,7 @@ export type NominatedEffect = SpecValue<typeof NOMINATED_EFFECT>;
  * with a "No Ability" reminder is spent once that marks it.
  */
 export const onNominated = specPart(
+	'day',
 	'On nomination',
 	'When its player, or the player with one of its reminders, is nominated, something happens; on a Fabled, Loric or rule, any nomination.',
 	obj({

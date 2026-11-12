@@ -11,6 +11,7 @@ import { specPart, type PartValue } from './part.ts';
  * Read by `rules/night/info/reliability.ts`.
  */
 export const falseInfo = specPart(
+	'night',
 	'False information',
 	'These character types’ information must be false.',
 	optObj({

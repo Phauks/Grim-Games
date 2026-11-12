@@ -29,6 +29,7 @@ export type PlaceholderAction = PlaceholderToken['action'];
  * character's wiki page (the rules authority).
  */
 export const reminderPlaceholders = specPart(
+	'tokens',
 	'Night text reminders',
 	'What each reminder named in its night text means.',
 	optObj({ first: list(PLACEHOLDER), other: list(PLACEHOLDER), note: STR }),
