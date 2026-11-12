@@ -57,7 +57,10 @@ describe('Psychopath', () => {
 			// The Psychopath may not use their ability again today."
 			// The Sailor's protection flags the kill for the Storyteller (warn, never lock).
 			const s = scenario(['psychopath', 'sailor', 'chef', 'empath', 'imp']);
-			expect(dayUseOf('psychopath', s.characters)).toMatchObject({ who: 'chosen', kills: true });
+			expect(dayUseOf(s.game, 'psychopath', s.characters)).toMatchObject({
+				who: 'chosen',
+				kills: true
+			});
 			expect(protection(s.game, s.seat('sailor'), s.characters, 'day')).toMatchObject({
 				characterId: 'sailor'
 			});

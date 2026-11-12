@@ -33,7 +33,6 @@ import {
 	type RegistersAs,
 	type VictimRule
 } from '#lib/core/data/parts/death-cause.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** A `deathCause` rule for a character whose ability can cause a death. */
@@ -49,16 +48,21 @@ export interface DeathCauseOption {
 }
 
 /** A character's `deathCause` rule, from the rules block it carries. */
-function deathCauseRule(id: CharacterId, characters: CharacterLookup): DeathCauseRule | undefined {
-	return rulesOf(id, characters)?.deathCause;
+function deathCauseRule(
+	game: Game,
+	id: CharacterId,
+	characters: CharacterLookup
+): DeathCauseRule | undefined {
+	return rulesFor(game, id, characters)?.deathCause;
 }
 
 /** The `deathCause` rule of a character that can cause a death, if any. */
 export function deathCauseEntry(
+	game: Game,
 	id: CharacterId,
 	characters: CharacterLookup
 ): DeathCauseEntry | undefined {
-	const rule = deathCauseRule(id, characters);
+	const rule = deathCauseRule(game, id, characters);
 	return rule && 'kind' in rule ? rule : undefined;
 }
 
@@ -68,6 +72,7 @@ export function deathCauseEntry(
  * play), in that order, each once.
  */
 export function deathCauses(
+	game: Game,
 	scriptIds: Iterable<CharacterId>,
 	characters: CharacterLookup,
 	inPlay: Iterable<CharacterId> = []
@@ -76,7 +81,7 @@ export function deathCauses(
 	const present = new Set(ids);
 	const out: DeathCauseOption[] = [];
 	for (const id of ids) {
-		const rule = deathCauseRule(id, characters);
+		const rule = deathCauseRule(game, id, characters);
 		if (rule && 'kind' in rule) {
 			if (!rule.onlyWith || rule.onlyWith.some((other) => present.has(other))) {
 				out.push({ characterId: id, kind: rule.kind });
@@ -96,11 +101,15 @@ export function deathCauses(
  * Virgin's nominator, https://wiki.bloodontheclocktower.com/Virgin), which counts as an execution
  * for everything that asks (the Saint, https://wiki.bloodontheclocktower.com/Saint).
  */
-export function isExecution(cause: DeathCause | undefined, characters: CharacterLookup): boolean {
+export function isExecution(
+	game: Game,
+	cause: DeathCause | undefined,
+	characters: CharacterLookup
+): boolean {
 	if (cause === 'execution') return true;
 	if (cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause))
 		return false;
-	return deathCauseEntry(cause, characters)?.kind === 'execution';
+	return deathCauseEntry(game, cause, characters)?.kind === 'execution';
 }
 
 /**
@@ -108,7 +117,7 @@ export function isExecution(cause: DeathCause | undefined, characters: Character
  * rule that waits on a change (`afterChanging`) counts only once it has happened.
  */
 export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathCauseOption[] {
-	return deathCauses(scriptCharacterIds(game.script), characters, [
+	return deathCauses(game, scriptCharacterIds(game.script), characters, [
 		...charactersInPlay(game),
 		...game.ruleCharacters
 	]).filter((o) => changedEnough(game, o.characterId, characters));
@@ -230,7 +239,7 @@ export function validDeathCauses(
 
 		/** Who an ability can kill: its own player when it only causes its own death. */
 		const ruleOf = (id: CharacterId): VictimRule | undefined => {
-			const entry = deathCauseEntry(id, characters);
+			const entry = deathCauseEntry(game, id, characters);
 			return entry?.kind === 'own-death' ? { who: 'self' } : entry?.victim;
 		};
 		// A gained ability: the rules of the character it came from.
@@ -238,7 +247,7 @@ export function validDeathCauses(
 		const gainedFor = new Map<SeatId, CharacterId>();
 		for (const h of from ? holders : []) {
 			const id = gainedFrom(game, h, characterId, characters);
-			const entry = id === undefined ? undefined : deathCauseEntry(id, characters);
+			const entry = id === undefined ? undefined : deathCauseEntry(game, id, characters);
 			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedFor.set(h, id);
 		}
 		if (from && gainedFor.size === 0) continue;
@@ -253,7 +262,7 @@ export function validDeathCauses(
 			for (const ability of heldAbilitiesOf(game, h, characters)) {
 				if (ability.via !== characterId) continue;
 				held = true;
-				const entry = deathCauseEntry(ability.characterId, characters);
+				const entry = deathCauseEntry(game, ability.characterId, characters);
 				if (!entry || entry.kind === 'gained-ability') continue;
 				if (
 					!gainedFor.has(h) ||
@@ -268,7 +277,7 @@ export function validDeathCauses(
 			if (id !== undefined) return ruleOf(id);
 			return kind === 'own-death'
 				? { who: 'self' }
-				: deathCauseEntry(characterId, characters)?.victim;
+				: deathCauseEntry(game, characterId, characters)?.victim;
 		};
 		const acting = holders.filter(
 			(h) =>
@@ -329,7 +338,7 @@ export function validDeathCauses(
  * True for a rule without one.
  */
 function changedEnough(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
-	const type = deathCauseEntry(characterId, characters)?.afterChanging;
+	const type = deathCauseEntry(game, characterId, characters)?.afterChanging;
 	if (type === undefined) return true;
 	return game.seating.some((s) => {
 		const seat = game.seats[s];

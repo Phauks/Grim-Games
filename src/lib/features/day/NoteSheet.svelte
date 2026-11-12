@@ -45,7 +45,7 @@
 			)
 	);
 	/** The claim the player makes in town (L56): guesses, or one statement true or false. */
-	const claim = $derived(target && dayClaim(target.characterId, game.characters));
+	const claim = $derived(target && dayClaim(game.game, target.characterId, game.characters));
 	const scriptIds = $derived(
 		game.game.script.entries.map((e) => (e.kind === 'official' ? e.id : e.character.id))
 	);
@@ -55,7 +55,8 @@
 	 * many as the rules block allows (the Juggler's 5), else one per player.
 	 */
 	const slotCount = $derived(
-		(target && guessLimit(target.characterId, game.characters)) ?? game.game.seating.length
+		(target && guessLimit(game.game, target.characterId, game.characters)) ??
+			game.game.seating.length
 	);
 	/** A drop-down's value for nothing chosen. */
 	const NONE = 'none';

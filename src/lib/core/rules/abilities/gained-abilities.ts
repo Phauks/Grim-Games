@@ -196,8 +196,12 @@ function gainingCharacter(
  * Sweetheart's). The wiki's Cannibal summary: the Cannibal keeps such an ability when they die,
  * but loses their Cannibal ability (https://wiki.bloodontheclocktower.com/Cannibal).
  */
-export function keptWhenDead(characterId: CharacterId, characters: CharacterLookup): boolean {
-	return worksWhenDead(characterId, characters) || actsWhenDead(characterId, characters);
+export function keptWhenDead(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	return worksWhenDead(characterId, characters) || actsWhenDead(game, characterId, characters);
 }
 
 /**
@@ -216,7 +220,10 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 		if (via === undefined || !rule?.wakes) continue;
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (!gained) continue;
-		if (dead && (gained.status !== 'has-ability' || !keptWhenDead(gained.characterId, characters)))
+		if (
+			dead &&
+			(gained.status !== 'has-ability' || !keptWhenDead(game, gained.characterId, characters))
+		)
 			continue;
 		const learns =
 			gained.status === 'has-ability' && !dead
@@ -528,7 +535,7 @@ export function hasAbilityOf(
 		ability.how !== 'own' &&
 		state.dead &&
 		state.impairments.length === 0 &&
-		keptWhenDead(characterId, characters)
+		keptWhenDead(game, characterId, characters)
 	);
 }
 

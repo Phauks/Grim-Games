@@ -129,7 +129,7 @@
 	let dayUse = $state<DayUseDialog>();
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
 		// Who it was used on, when its rules ask (Trevor, 2026-10-30).
-		const rule = dayUseOf(characterId, game.characters);
+		const rule = dayUseOf(game.game, characterId, game.characters);
 		if (rule) {
 			dayUse?.ask({ seatId, characterId, rule });
 			return;
@@ -154,11 +154,13 @@
 		const id = reminder.characterId;
 		const head = reminder.segments[0];
 		if (!id || head?.kind !== 'character' || head.ref.seatId) return undefined;
-		return ruleCharacterUse(id, game.characters) && g.ruleCharacters.includes(id) ? id : undefined;
+		return ruleCharacterUse(g, id, game.characters) && g.ruleCharacters.includes(id)
+			? id
+			: undefined;
 	}
 	/** Its player chosen (AnyoneUseButton): DayUseDialog asks who dies. */
 	function anyoneChose(characterId: CharacterId, seatId: SeatId) {
-		const rule = dayUseOf(characterId, game.characters);
+		const rule = dayUseOf(game.game, characterId, game.characters);
 		if (rule) dayUse?.ask({ seatId, characterId, rule });
 	}
 
@@ -245,14 +247,14 @@
 
 	/** The token that marks an ability used: "No Ability", or its own (the Golem's). */
 	const spentOf = (characterId: CharacterId) =>
-		dayUseOf(characterId, game.characters)?.spentToken ?? NO_ABILITY;
+		dayUseOf(game.game, characterId, game.characters)?.spentToken ?? NO_ABILITY;
 	/**
 	 * Used, for a once-per-game day ability or one whose use is about a player (`dayUse`: the
 	 * Psychopath's daily kill, the Klutz's choice once dead; Trevor, 2026-10-30).
 	 */
 	const usedButton = (characterId: CharacterId) =>
 		isOnceOnlyDayAbility(characterId, game.characters) ||
-		dayUseOf(characterId, game.characters) !== undefined;
+		dayUseOf(game.game, characterId, game.characters) !== undefined;
 
 	function hasNote(target: NoteTarget): boolean {
 		return g.today.entries.some(
@@ -271,7 +273,7 @@
 	// ── A player's day button, on their ability row ──
 	/** The claim a character's player makes in town, from its rules block (L56). */
 	const claimOf = (characterId: CharacterId | undefined) =>
-		characterId === undefined ? undefined : dayClaim(characterId, game.characters);
+		characterId === undefined ? undefined : dayClaim(game.game, characterId, game.characters);
 	/**
 	 * Used for a once-per-game day ability; for a player's claim in town, Guesses (the
 	 * Juggler) or Statement (the Gossip) while "Log player claims" is on.
@@ -284,7 +286,7 @@
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(hasRuleDayControl(characterId, game.characters) ||
+		(hasRuleDayControl(game.game, characterId, game.characters) ||
 			usedButton(characterId) ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
@@ -387,7 +389,7 @@
 		seat: game.seatName(seatId)
 	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	{#if characterId && hasRuleDayControl(characterId, game.characters)}
+	{#if characterId && hasRuleDayControl(game.game, characterId, game.characters)}
 		<RuleDayControl {game} {characterId} {seatId} {who} />
 	{:else if characterId && usedButton(characterId)}
 		{@const isUsed = used(seatId, characterId)}

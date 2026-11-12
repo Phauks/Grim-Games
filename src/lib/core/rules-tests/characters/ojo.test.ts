@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -67,7 +68,7 @@ describe('Ojo', () => {
 				'chef',
 				'poisoner'
 			]);
-			expect(killChoice('ojo', start.characters)).toBe('character');
+			expect(killChoice(start.game, 'ojo', start.characters)).toBe('character');
 			expect(namedCharacterKill(start.game, 'plaguedoctor', start.characters)).toEqual({
 				storytellerChooses: false,
 				seats: [start.seat('plaguedoctor')]
@@ -96,7 +97,9 @@ describe('Ojo', () => {
 				})
 			);
 			expect(text).toContain('[+Dead]');
-			expect(killChoice('ojo', scenario(['ojo', 'chef']).characters)).toBe('character');
+			expect(killChoice(plainGame(), 'ojo', scenario(['ojo', 'chef']).characters)).toBe(
+				'character'
+			);
 		});
 
 		it("kills the named character's player as a Demon kill", () => {

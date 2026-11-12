@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { castWith, plainGame, run } from '#lib/core/model/fixtures.test-support.ts';
 import { dayClaim } from '#lib/core/rules/day/day-claims.ts';
 import type { DayEntry, Game } from '#lib/core/model/types.ts';
 import {
@@ -101,7 +101,7 @@ describe('Amnesiac', () => {
 			game.today.entries.filter((e): e is Extract<DayEntry, { kind: 'note' }> => e.kind === 'note');
 
 		it('is a claim the day log keeps', () => {
-			expect(dayClaim('amnesiac', characters)).toBe('ability-guess');
+			expect(dayClaim(plainGame(), 'amnesiac', characters)).toBe('ability-guess');
 		});
 
 		it('keeps the Storyteller’s answer, and a later edit changes it', () => {

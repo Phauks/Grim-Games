@@ -15,7 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	plainGame,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/abilities/becomes.ts';
@@ -125,7 +129,7 @@ describe('Cacklejack', () => {
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Cacklejack#How_to_Run)', () => {
 		it('logs a day choice of any player, marked Not Me', () => {
 			// Wiki: "Each day, the Cacklejack chooses a player. Mark them with the NOT ME reminder."
-			expect(dayUseOf('cacklejack', characters)).toMatchObject({ who: 'chosen' });
+			expect(dayUseOf(plainGame(), 'cacklejack', characters)).toMatchObject({ who: 'chosen' });
 			const s = scenario(['cacklejack', 'acrobat', 'chef', 'imp', 'poisoner']).newDay();
 			const token = { characterId: 'cacklejack', label: 'Not Me' };
 			for (const seatId of s.game.seating)

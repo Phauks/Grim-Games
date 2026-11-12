@@ -98,8 +98,8 @@ describe('Lycanthrope', () => {
 				)
 			).toMatchObject({ kind: 'dies', seatIds: [s.seat('farmer')], demonKills: false });
 			// A night death by the Lycanthrope sets off the Farmer.
-			const trigger = onDeathTrigger('farmer', s.characters)!;
-			expect(onDeathApplies(trigger, 'lycanthrope', s.characters)).toBe(true);
+			const trigger = onDeathTrigger(s.game, 'farmer', s.characters)!;
+			expect(onDeathApplies(s.game, trigger, 'lycanthrope', s.characters)).toBe(true);
 		});
 		it('Example 3: Evil target survives; Demon kills the Lycanthrope', () => {
 			// Wiki: "The Lycanthrope attacks the Godfather. The Godfather does not die, because the
