@@ -1,4 +1,4 @@
-import { COUNT, obj, oneOf } from '../field-spec.ts';
+import { COUNT, obj, oneOf, worded } from '../field-spec.ts';
 import { specPart, type PartValue } from './part.ts';
 
 const QUIET_PLAYERS = ['veterans'] as const;
@@ -13,7 +13,16 @@ export const quietStart = specPart(
 	'While in play, some players may not talk for the first part of each day.',
 	// `seconds`: how long the quiet lasts from the start of each day; `players`: who stays
 	// quiet (the players the Storyteller picked as veterans).
-	obj({ seconds: COUNT, players: oneOf(QUIET_PLAYERS) })
+	obj({
+		seconds: worded(
+			{ label: 'Quiet for (seconds)', about: 'How long, from the start of each day.' },
+			COUNT
+		),
+		players: worded(
+			{ label: 'Who stays quiet', names: { veterans: 'Players picked as veterans' } },
+			oneOf(QUIET_PLAYERS)
+		)
+	})
 );
 
 export type QuietStart = PartValue<typeof quietStart>;

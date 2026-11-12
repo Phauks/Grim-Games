@@ -73,6 +73,7 @@ export const characterBuilder = {
 	'character-builder.ruleShape': '{label} kind',
 	'character-builder.ruleReminder': '{label} reminder',
 	'character-builder.ruleKey': '{label} name',
+	'character-builder.optionalHelp': 'Optional. {help}',
 	'character-builder.addSetting': 'Add to {label}',
 	'character-builder.removeSetting': 'Remove {label} {number}',
 	'character-builder.changeCharacter': 'Change {name}',
