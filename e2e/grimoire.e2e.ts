@@ -1,3 +1,4 @@
+import { tabNames } from './tabs.ts';
 import { chooseExecution } from './execution.ts';
 import { readFileSync } from 'node:fs';
 import { tapStartGame } from './start-game.ts';
@@ -3697,7 +3698,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	// Every tab players' /play has, Grim and Notes too (Trevor, 2026-10-23: "feature parity").
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(sheet)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');

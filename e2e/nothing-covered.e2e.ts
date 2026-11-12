@@ -1,3 +1,4 @@
+import { openNotes } from './tabs.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNothingCovered } from './occlusion.ts';
 import { pickNumber } from './number-select.ts';
@@ -93,14 +94,13 @@ test("the Storyteller's player view after Game over covers nothing", async ({ pa
 
 	const scroll = view.getByTestId('script-scroll');
 	const bar = view.getByRole('tablist');
-	await view.getByRole('tab', { name: 'Notes' }).tap();
-	await foldNotes(view);
+	await foldNotes(await openNotes(view));
 	const scrollBox = (await scroll.boundingBox())!;
 	await expectBarAtBottom(bar, scrollBox.y + scrollBox.height);
 	await expectNothingCovered(page, view);
 	// Back to a long tab and to the short one again: the bar stays put.
 	await view.getByRole('tab', { name: 'Script' }).tap();
-	await view.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(view);
 	await expectBarAtBottom(bar, scrollBox.y + scrollBox.height);
 });
 
@@ -115,11 +115,11 @@ test('the players’ screen covers nothing, on paper or the theme', async ({ pag
 		if (!paper) await page.getByRole('button', { name: 'Trouble Brewing', exact: true }).tap();
 		await expect(page.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
 		await expectNothingCovered(page);
-		for (const tab of ['Night', 'Notes']) {
-			await page.getByRole('tab', { name: tab }).tap();
-			await expectNothingCovered(page);
-		}
-		await foldNotes(page.getByRole('main'));
+		await page.getByRole('tab', { name: 'Night' }).tap();
+		await expectNothingCovered(page);
+		const notes = await openNotes(page);
+		await expectNothingCovered(page);
+		await foldNotes(notes);
 		await expectBarAtBottom(page.getByRole('tablist'), page.viewportSize()!.height);
 		await page.getByRole('tab', { name: 'Script' }).tap();
 	}

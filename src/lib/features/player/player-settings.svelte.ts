@@ -63,6 +63,11 @@ export interface PlayerSettings {
 	 * 2026-10-29), as the Storyteller's board does with its own choice.
 	 */
 	reminderLines: ReminderLines;
+	/**
+	 * Notes show beside the Script, Night or Grim tab, where the screen has room (plan E3);
+	 * set from the Notes button in the tabs' bar, and remembered.
+	 */
+	notesBeside: boolean;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -233,7 +238,8 @@ const DEFAULTS: PlayerSettings = {
 	matchShape: false,
 	townMatchShape: true,
 	sheetBackground: 'theme',
-	reminderLines: DEFAULT_REMINDER_LINES
+	reminderLines: DEFAULT_REMINDER_LINES,
+	notesBeside: false
 };
 
 function read(): PlayerSettings {
@@ -250,7 +256,8 @@ function read(): PlayerSettings {
 			townMatchShape: raw.townMatchShape !== false,
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ?? DEFAULTS.sheetBackground,
-			reminderLines: parseReminderLines(raw.reminderLines)
+			reminderLines: parseReminderLines(raw.reminderLines),
+			notesBeside: raw.notesBeside === true
 		};
 	} catch {
 		return DEFAULTS;

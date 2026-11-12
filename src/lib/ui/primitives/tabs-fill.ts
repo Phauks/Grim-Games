@@ -18,6 +18,9 @@ export function fillToBottom(root: HTMLElement) {
 		const top = rect.top - view.top + scrolled;
 		const room = Math.floor(height - top - following);
 		if (room > rect.height) root.style.minHeight = `${room}px`;
+		// The room from the top of the tabs to the foot of what scrolls them, for an aside
+		// beside the panels that must end above the bar (Tabs `aside`).
+		root.style.setProperty('--fill-room', `${room}px`);
 	};
 	fit();
 	const observer = new ResizeObserver(fit);
@@ -34,6 +37,7 @@ export function fillToBottom(root: HTMLElement) {
 		window.removeEventListener('resize', fit);
 		root.style.removeProperty('min-height');
 		root.style.removeProperty('margin-bottom');
+		root.style.removeProperty('--fill-room');
 	};
 }
 

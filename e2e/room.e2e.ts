@@ -1,3 +1,4 @@
+import { openNotes } from './tabs.ts';
 import { expectNothingCovered } from './occlusion.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { addNote, expectNotes, noteRows, rewriteNote } from './notes.ts';
@@ -899,7 +900,7 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 
-	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(phone);
 	// The player's own notes, not a seat's (each seat has its own "+ New note" too).
 	const myNotes = phone
 		.locator('section.collapsible')
@@ -929,7 +930,7 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 	const second = await startGame(page);
 	expect(second).not.toBe(board);
 	await expect(phone.getByTestId('grim-seat').nth(1)).not.toHaveAttribute('data-guess', 'true');
-	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(phone);
 	// The new game's notebook starts with no notes at all, not a blank one (Trevor, 2026-10-29).
 	await expect(myNotes.getByRole('button', { name: 'New note' })).toBeVisible();
 	await expect(phone.locator('[data-note]')).toHaveCount(0);
@@ -2606,7 +2607,7 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await notesDialog.getByRole('button', { name: 'Close' }).tap();
 
 	// The Notes tab lists every seat with its notes, written the same way.
-	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(phone);
 	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
 	const row = phone.locator('[data-seat-note]').nth(2);
 	await expectNotes(row, ['Claim: Claims Chef: 1', 'Untitled: Quiet all day']);
@@ -2621,7 +2622,7 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await expect(noteRows(row)).toHaveCount(3);
 	// On this phone only, and kept after a reload.
 	await phone.reload();
-	await phone.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(phone);
 	await expectNotes(phone.locator('[data-seat-note]').nth(2), [
 		'Claim: Claims Chef: 0',
 		'Untitled: Quiet all day',

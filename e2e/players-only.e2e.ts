@@ -1,3 +1,4 @@
+import { openNotes } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickNumber } from './number-select.ts';
 import { leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
@@ -52,7 +53,7 @@ test('a player sets up and marks their own town with no room', async ({ page }) 
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', /Jo Ann, dead, ghost vote used/);
 
 	// Notes lists the town's seats for notes on players, as in a room (Trevor, 2026-11-06).
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	const rows = page.locator('[data-seat-note]');
 	await expect(rows).toHaveCount(7);
 	await expect(rows.nth(2)).toContainText('Jo Ann');
@@ -123,8 +124,7 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await expect(page.getByTestId('grim-seat')).toHaveCount(6);
 
 	// A note written in this game, kept on the phone.
-	await page.getByRole('tab', { name: 'Notes' }).tap();
-	const notes = page.getByRole('tabpanel');
+	const notes = await openNotes(page);
 	await notes.getByTestId('new-note').first().tap();
 	await noteTitle(newNoteRow(notes)).fill('Bob claims Chef');
 	await leaveNote(page);
@@ -142,7 +142,7 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await expect(fresh).toHaveCount(7);
 	await expect(fresh.nth(0)).not.toHaveAttribute('aria-label', /dead/);
 	// Notes go too: they are "usually associated with actions in a game" (Trevor, 2026-11-10).
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expect(notes.getByTestId('new-note').first()).toBeVisible();
 	await expect.poll(noteSummaries(notes)).not.toContain('Bob claims Chef');
 	expect(await storedNotes(page)()).not.toContain('Bob claims Chef');
@@ -161,8 +161,7 @@ test('New game in the header clears a Local Grim board and its notes', async ({ 
 	await sheet.getByRole('textbox', { name: 'Name' }).fill('Sam');
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	await page.getByRole('tab', { name: 'Notes' }).tap();
-	const notes = page.getByRole('tabpanel');
+	const notes = await openNotes(page);
 	await notes.getByTestId('new-note').first().tap();
 	await noteTitle(newNoteRow(notes)).fill('Sam claims Chef');
 	await leaveNote(page);
@@ -176,7 +175,7 @@ test('New game in the header clears a Local Grim board and its notes', async ({ 
 	const seats = page.getByTestId('grim-seat');
 	await expect(seats).toHaveCount(7);
 	await expect(seats.nth(1)).not.toHaveAttribute('aria-label', /Sam/);
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expect(notes.getByTestId('new-note').first()).toBeVisible();
 	await expect.poll(noteSummaries(notes)).not.toContain('Sam claims Chef');
 	expect(await storedNotes(page)()).not.toContain('Sam claims Chef');

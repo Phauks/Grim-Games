@@ -184,8 +184,13 @@
 		grid-template-columns: none;
 		gap: 0;
 	}
+	/* Never so narrow that "+ New pad" is cut off: in a narrow column (Notes beside the
+	   Script or Grim tab) they go one to a row. */
 	.pads {
-		grid-template-columns: repeat(auto-fill, minmax(min(45%, calc(12 * var(--u))), 1fr));
+		grid-template-columns: repeat(
+			auto-fill,
+			minmax(max(min(45%, calc(12 * var(--u))), min(100%, calc(8 * var(--u)))), 1fr)
+		);
 	}
 	.thumb {
 		position: relative;
