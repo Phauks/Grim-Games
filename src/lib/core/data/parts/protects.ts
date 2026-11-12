@@ -45,6 +45,7 @@ export type Protects = (
  * the Demon's kill only, any kill, or an execution only.
  */
 export const protects = specPart(
+	'deaths',
 	'Protects',
 	'The ability stops a death: its own player’s, a marked player’s or any good player’s.',
 	obj({

@@ -31,6 +31,7 @@ export type TokenRegisters = SpecValue<typeof TOKEN_REGISTERS>;
  * player, as evil; `TokenRegisters`). A Fabled's tokens work while it is in play.
  */
 export const registersAs = specPart(
+	'abilities',
 	'Registers as',
 	'Players who may register as another alignment or character type.',
 	optObj({ self: REGISTERS, tokens: byToken(TOKEN_REGISTERS) })

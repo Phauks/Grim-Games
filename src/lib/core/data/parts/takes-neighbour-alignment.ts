@@ -5,6 +5,7 @@ import { truePart } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Cult_Leader); its night step offers the change.
  */
 export const takesNeighbourAlignment = truePart(
+	'abilities',
 	'Takes a neighbour’s alignment',
 	'Each night its player becomes the alignment of a living neighbour.'
 );

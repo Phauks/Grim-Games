@@ -6,6 +6,7 @@ import { countPart } from './part.ts';
  * more warns, never locks: the Storyteller may still fix the seating.
  */
 export const seatSwapsPerDay = countPart(
+	'day',
 	'Seat swaps a day',
 	'While its player is alive, at most this many seat swaps each day.'
 );

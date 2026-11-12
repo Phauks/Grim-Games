@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { pickNumber } from './number-select.ts';
+import { openTab } from './tabs.ts';
 
 // The Character builder in Prepare (Trevor, 2026-10-17): make a homebrew character, save it on
 // the device, find it in the Library, and put it on a script with the Script builder.
@@ -287,8 +288,8 @@ test('picks where a character wakes from the night stages', async ({ page }) => 
 	await expect(page.getByRole('dialog').getByTestId('builder-json')).toContainText('"minions"');
 });
 
-// A Rules section (M62, Trevor picked "Add a rule", 2026-11-09): rules are added one at a time
-// from a drop-down and filled in with fields made for each rule, or written as rules text, each
+// A Rules section (M62, Trevor picked "Add a rule", 2026-11-09): rules are added one at a time,
+// found by name or under their group's tab (M80), and filled in with fields made for each rule, or written as rules text, each
 // checked as a script would load it; a row's ⋯ changes or removes it.
 test('rules are added, changed and removed one at a time', async ({ page }) => {
 	await page.goto('/build-character');
@@ -307,8 +308,11 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	// A rule with one reminder: its value is picked from the character's own reminders.
 	await page.getByTestId('add-rule').tap();
 	let dialog = page.getByRole('dialog', { name: 'Add a rule' });
-	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
-	await page.getByRole('option', { name: /^Curses/ }).tap();
+	// Each group's tab lists its rules; Curses is about abilities, not the night.
+	await openTab(page, 'Night');
+	await expect(dialog.getByRole('tabpanel', { name: 'Night' })).not.toContainText('Curses');
+	await openTab(page, 'Abilities');
+	await dialog.getByRole('button', { name: /^Curses/ }).tap();
 	await expect(dialog.getByRole('combobox', { name: 'Curses' })).toHaveText(/Lit/);
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(rules).toContainText('Curses');
@@ -317,8 +321,17 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	// A rule with several settings gets a field for each, checked as they are filled in.
 	await page.getByTestId('add-rule').tap();
 	dialog = page.getByRole('dialog', { name: 'Add a rule' });
-	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
-	await page.getByRole('option', { name: /^Protects/ }).tap();
+	// The search finds a rule by any words of its name or description, in every group; a rule
+	// the character has already is not offered again.
+	const search = dialog.getByRole('searchbox', { name: 'Find a rule' });
+	await search.fill('curse');
+	await expect(dialog.getByTestId('rule-list')).toHaveText('None');
+	await search.fill('kill');
+	await dialog.getByRole('button', { name: /^Kills/ }).tap();
+	// The picked rule's row goes back to finding another.
+	await dialog.getByRole('button', { name: 'Pick another rule instead of Kills' }).tap();
+	await search.fill('protect');
+	await dialog.getByRole('button', { name: /^Protects/ }).tap();
 	const confirm = dialog.getByRole('button', { name: 'Confirm' });
 	await expect(confirm).toBeDisabled();
 	await dialog.getByRole('combobox', { name: 'Who' }).tap();
@@ -366,8 +379,8 @@ test('a jinx is built with its partner and effects as fields (M79)', async ({ pa
 	await page.getByRole('tab', { name: /^Rules/ }).tap();
 	await page.getByTestId('add-rule').tap();
 	const dialog = page.getByRole('dialog', { name: 'Add a rule' });
-	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
-	await page.getByRole('option', { name: /^Jinxes/ }).tap();
+	await openTab(page, 'Setup');
+	await dialog.getByRole('button', { name: /^Jinxes/ }).tap();
 
 	// The partner is picked with the character picker, not typed as an id.
 	await dialog.getByRole('button', { name: 'Add to Jinxes' }).tap();

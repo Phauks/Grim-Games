@@ -51,6 +51,7 @@ export type DayUseVote = SpecValue<typeof DAY_USE_VOTES>;
  * for: Trevor, 2026-10-30.
  */
 export const dayUse = specPart(
+	'day',
 	'Day ability use',
 	'Who marking its day ability used asks for, and what follows.',
 	optObj({

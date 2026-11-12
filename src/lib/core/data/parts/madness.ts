@@ -24,6 +24,7 @@ export type MadnessChosenBy = (typeof MADNESS_CHOSEN_BY)[number];
  *   nomination is recorded.
  */
 export const madness = specPart(
+	'day',
 	'Madness',
 	'A player it makes mad may be executed or die for breaking it.',
 	obj({

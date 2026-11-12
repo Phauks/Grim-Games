@@ -10,6 +10,7 @@ import { specPart } from './part.ts';
  * A nomination that breaks it is recorded with a warning (warn, never lock).
  */
 export const nominating = specPart(
+	'day',
 	'Who may nominate',
 	'Only the Storyteller nominates, or its player may nominate only so many times a game.',
 	variants(

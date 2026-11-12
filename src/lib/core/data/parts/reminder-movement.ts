@@ -26,6 +26,7 @@ import { specPart, type PartValue } from './part.ts';
  * `why` and `relocates` are our own summaries, never wiki prose.
  */
 export const reminderMovement = specPart(
+	'tokens',
 	'Reminders that stay',
 	'Which of its reminder tokens stay where they were placed.',
 	optObj({ fixed: TOKENS, why: STR, relocates: STR, followsNeighbours: TOKENS }),

@@ -6,6 +6,7 @@ import { booleanPart } from './part.ts';
  * Sushi Buffet's Ivory draft drafts at most one such character (`modes/draft.ts`).
  */
 export const makesExtraEvil = booleanPart(
+	'setup',
 	'Makes extra evil',
 	'The ability can make an extra evil player.'
 );

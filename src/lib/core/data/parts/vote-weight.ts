@@ -10,6 +10,7 @@ import { specPart, type PartValue } from './part.ts';
  * (https://wiki.bloodontheclocktower.com/God_of_Ug).
  */
 export const voteWeight = specPart(
+	'day',
 	'Vote weight',
 	'What a vote counts as for the player carrying its reminder, or for its own player.',
 	variants(

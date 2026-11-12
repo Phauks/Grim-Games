@@ -15,6 +15,7 @@ export const EXECUTED_INSTEAD_OF = ['same-alignment'] as const;
  *   pointed at most (`rules/day/explosion.ts`).
  */
 export const execution = specPart(
+	'day',
 	'Execution',
 	'What it does around an execution.',
 	optObj({ insteadOf: oneOf(EXECUTED_INSTEAD_OF), explodes: COUNT })

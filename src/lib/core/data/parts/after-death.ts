@@ -10,6 +10,7 @@ import { specPart, type PartValue } from './part.ts';
  * (https://wiki.bloodontheclocktower.com/Banshee).
  */
 export const afterDeath = specPart(
+	'deaths',
 	'What its dead player may still do',
 	'How many times its player may still nominate and vote once dead, by cause of death.',
 	// `cause`: death causes or character ids; `nominations`: a day (the living make one, the dead

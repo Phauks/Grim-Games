@@ -9,6 +9,7 @@ import { specPart, type PartValue } from './part.ts';
  * The seat's ⋯ menu offers the swap (`features/grimoire/seats/SeatCharacterFlow.svelte`).
  */
 export const swapsForAbility = specPart(
+	'abilities',
 	'Swaps for an ability',
 	'Its player’s token is swapped for a character whose ability they gain.',
 	obj({ token: TOKEN, good: anyOf(SEATED_TYPES), evil: anyOf(SEATED_TYPES) })

@@ -32,6 +32,7 @@ export type GivesAbilityTo = (typeof GIVES_ABILITY_TO)[number];
  *   instead (M68, Trevor 2026-11-06), so it never offers these.
  */
 export const givesAbility = specPart(
+	'abilities',
 	'Gives an ability',
 	'It gives another player an ability held without its token.',
 	obj({

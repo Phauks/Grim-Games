@@ -8,6 +8,7 @@ import { specPart, type PartValue } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Widow).
  */
 export const shownTo = specPart(
+	'night',
 	'Shown to',
 	'Who is woken and shown this character’s token.',
 	optObj({ minions: T, carrier: TOKEN }),

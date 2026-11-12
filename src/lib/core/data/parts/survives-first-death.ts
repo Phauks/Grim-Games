@@ -6,6 +6,7 @@ import { specPart } from './part.ts';
  * marks the ability used (the Fool's "No Ability").
  */
 export const survivesFirstDeath = specPart(
+	'deaths',
 	'Survives the first death',
 	'Its player’s first death does not happen.',
 	obj({ spentToken: TOKEN })

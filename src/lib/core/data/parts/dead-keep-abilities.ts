@@ -9,6 +9,7 @@ import { specPart, type PartValue } from './part.ts';
  * https://schnauzerclub.neocities.org/scripts/thephantomdetectives; `rules/rule-sources.ts`).
  */
 export const deadKeepAbilities = specPart(
+	'deaths',
 	'Dead keep abilities',
 	'While in play, dead players keep their abilities, except some types, and living players of some types have none until they die.',
 	obj({ deadLose: anyOf(SEATED_TYPES), livingLose: anyOf(SEATED_TYPES) })

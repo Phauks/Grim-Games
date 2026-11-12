@@ -465,6 +465,7 @@ const END_PRESETS = presetTable<Exclude<EndKind, 'condition'>, EndsGame, EndsGam
  * a behaviour and its parameters, never a character.
  */
 export const gameEnd = specPart(
+	'deaths',
 	'Game end',
 	'How the ability ends the game, keeps it going, or changes who wins.',
 	obj({

@@ -11,6 +11,7 @@ import { specPart, type PartValue } from './part.ts';
  * Poisoned by Dead while a death ability resolves), so it never happens on its own.
  */
 export const tokenFlow = specPart(
+	'tokens',
 	'Token flow',
 	'Its tokens that take the place of the one before on the same player, in order.',
 	obj({ tokens: TOKENS }),

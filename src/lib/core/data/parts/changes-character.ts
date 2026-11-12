@@ -43,6 +43,7 @@ import { specPart } from './part.ts';
  *   neighbours).
  */
 export const changesCharacter = specPart(
+	'night',
 	'Changes character',
 	'Its night step makes a chosen player another character.',
 	obj({

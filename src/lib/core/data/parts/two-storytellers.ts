@@ -6,6 +6,7 @@ import { truePart } from './part.ts';
  * picks which one they go to; `rules/abilities/storytellers.ts` makes the liar's information false.
  */
 export const twoStorytellers = truePart(
+	'setup',
 	'Two Storytellers',
 	'There are two Storytellers: one gives false ability information, and they may switch once.'
 );

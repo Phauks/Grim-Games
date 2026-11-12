@@ -49,6 +49,7 @@ export type TokenImpairment = SpecValue<typeof TOKEN_IMPAIRMENT>;
  * (the Barista's "Sober & Healthy" under the Vortox).
  */
 export const impairs = specPart(
+	'abilities',
 	'Drunk, poisoned or no ability',
 	'How the ability leaves players drunk, poisoned or with no ability.',
 	optObj({

@@ -8,6 +8,7 @@ import { enumPart } from './part.ts';
  * drafted, or later, as Grimbits' draft tool does (`modes/draft.ts`).
  */
 export const gainsAbilityOf = enumPart(
+	'abilities',
 	'Gains the ability of',
 	'Its player has the ability of a not-in-play character of this type.',
 	SEATED_TYPES

@@ -6,6 +6,7 @@ import { tokenPart } from './part.ts';
  * picks each goal, https://wiki.bloodontheclocktower.com/Zenomancer).
  */
 export const noteOn = tokenPart(
+	'tokens',
 	'Storyteller’s note on',
 	'Its reminder whose every copy carries the Storyteller’s own words for that player.'
 );

@@ -96,6 +96,7 @@ const TAKES = { any: [], set: ['values'], delta: ['values', 'also', 'minUsual'] 
  * `summary` and `notes` are our own words, never wiki prose.
  */
 export const setupModifier = specPart(
+	'setup',
 	'Setup change',
 	'How its bracketed text changes which characters are dealt.',
 	obj({
