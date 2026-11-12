@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { Attachment } from 'svelte/attachments';
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import { fitWords } from '#lib/ui/fit-words.ts';
@@ -80,6 +81,19 @@
 	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
 	const showMenu = $derived(navDrawer.pageButton);
 	let row = $state<HTMLElement>();
+	// A byline with no words yet (the player screen's line kept free for the script's author)
+	// stays under the band's line, so every page's band ends after its title or its byline
+	// (Trevor, 2026-11-12: B).
+	let blankSubtitle = $state(false);
+	const watchBlank: Attachment<HTMLElement> = (node) => {
+		const check = () => (blankSubtitle = !node.textContent?.trim());
+		check();
+		const observer = new MutationObserver(check);
+		observer.observe(node, { childList: true, subtree: true, characterData: true });
+		return () => observer.disconnect();
+	};
+	// A row of text buttons goes under the band on a phone; icon buttons stay on the title's row.
+	const buttonsBelow = $derived(!titleBelow && !iconActions && !!actions);
 </script>
 
 <!--
@@ -96,8 +110,13 @@
 {/snippet}
 <main class="page" class:wide class:fill>
 	<PageMenuButton />
-	<div class="head-band" class:visually-hidden={hideTitle}>
-		<header class="head">
+	<div class="head" class:visually-hidden={hideTitle}>
+		<header class="head-grid" class:buttons-below={buttonsBelow}>
+			{#if !hideTitle}<span
+					class="head-band"
+					class:with-subtitle={!!subtitle && !blankSubtitle}
+					aria-hidden="true"
+				></span>{/if}
 			{#if titleBelow}
 				<!-- The title on the buttons' row when it fits there at full size, else under them
 			     (Trevor, 2026-11-01); the byline under both, across the page. -->
@@ -121,7 +140,6 @@
 					{#if actions}<div class="actions" data-testid="page-actions">
 							{@render actions()}
 						</div>{/if}
-					{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
 				</div>
 			{:else}
 				<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
@@ -137,8 +155,8 @@
 							{@render actions()}
 						</div>{/if}
 				</div>
-				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
 			{/if}
+			{#if subtitle}<p class="subtitle" {@attach watchBlank}>{@render subtitle()}</p>{/if}
 		</header>
 	</div>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
@@ -184,24 +202,59 @@
 		width: max(0rem, calc(var(--menu-inset) + var(--tap-target) - var(--page-gutter)));
 	}
 	.head {
-		display: grid;
-		gap: var(--space-1);
 		container: page-head / inline-size;
 	}
 	/*
-	 * The page's head (its buttons, title and byline) on a raised band with a line along its
-	 * foot, set apart from the content as the bottom tab bar is (Trevor, 2026-11-10: C2). The
-	 * band reaches out over the page's top padding, its gutters and half the gap under the
-	 * head, with padding to match, so nothing moves; it scrolls away with the page. Its own
-	 * background, not a layer: no stacking context, so a full-screen stage or a menu inside
-	 * the page still rises over the status bar's strip, and the hamburger sits over the band.
+	 * The head's parts on one grid, so the band can end after the title or its byline while a
+	 * phone's row of text buttons sits under it. Each part names its row: the title's row,
+	 * the byline, then (phones) the buttons.
 	 */
-	.head-band:not(.visually-hidden) {
+	.head-grid {
+		display: grid;
+		grid-template-columns: [full-start] minmax(0, 1fr) [full-end];
+	}
+	.head-grid > * {
+		grid-column: full;
+	}
+	.title-row {
+		grid-row: 1;
+	}
+	.subtitle {
+		grid-row: 2;
+		margin: var(--space-1) 0 0;
+		color: var(--on-surface-muted);
+	}
+	/*
+	 * The page's title and byline on a raised band with a line along its foot, set apart from
+	 * the content as the bottom tab bar is (Trevor, 2026-11-10: C2), the same on every page:
+	 * buttons under the title and a byline with no words yet stay below the line (Trevor,
+	 * 2026-11-12: B). The band reaches out over the page's top padding, its gutters and half the
+	 * gap under it, so nothing moves; it scrolls away with the page. A plain box behind the
+	 * parts, not a layer: no stacking context, so a full-screen stage or a menu inside the page
+	 * still rises over the status bar's strip, and the hamburger sits over the band.
+	 */
+	.head-band {
 		--band-foot: calc(0.5 * var(--space-4));
-		margin: calc(-1 * var(--menu-inset)) calc(-1 * var(--page-gutter)) calc(-1 * var(--band-foot)); /* overlap-ok: the band takes the page's padding and half the gap, and gives it back as padding */
-		padding: var(--menu-inset) var(--page-gutter) calc(var(--band-foot) - 1px); /* px-ok: the hairline below */
+		grid-row: 1 / 2;
+		align-self: stretch;
+		margin: calc(-1 * var(--menu-inset)) calc(-1 * var(--page-gutter)) calc(-1 * var(--band-foot)); /* overlap-ok: the band takes the page's padding and half the gap under it */
 		border-bottom: 1px solid var(--border); /* px-ok: a hairline, as the tab bar's */
 		background: var(--surface-raised);
+	}
+	.head-band.with-subtitle {
+		grid-row: 1 / 3;
+	}
+	/* Text buttons: their own row under the band on a phone, a full gap below the title. */
+	.buttons-below > .title-row {
+		display: contents;
+	}
+	.buttons-below > .title-row > :global(*) {
+		grid-row: 1;
+		grid-column: full;
+	}
+	.buttons-below > .title-row > .actions {
+		grid-row: 3;
+		margin-top: var(--space-4);
 	}
 	/*
 	 * A narrow page (phones): the actions get their own row under the title, so a wide button
@@ -264,6 +317,21 @@
 		.actions {
 			justify-content: flex-end;
 		}
+		.buttons-below {
+			grid-template-columns:
+				[full-start] minmax(calc(20 * var(--u)), 1fr)
+				minmax(0, auto) [full-end];
+			align-items: center;
+			column-gap: var(--space-3);
+		}
+		.buttons-below > .title-row > :global(*) {
+			grid-column: 1;
+		}
+		.buttons-below > .title-row > .actions {
+			grid-row: 1;
+			grid-column: 2;
+			margin-top: 0;
+		}
 	}
 	/*
 	 * `titleBelow`: the buttons alone on the first row, level with the hamburger, with the title
@@ -275,16 +343,13 @@
 		grid-template-columns: minmax(0, 1fr) auto;
 		grid-template-areas:
 			'. actions'
-			'title title'
-			'sub sub';
+			'title title';
 		align-items: center;
 		row-gap: var(--space-1);
 		column-gap: var(--space-3);
 	}
 	.title-row[data-title-below]:global([data-one-row]) {
-		grid-template-areas:
-			'title actions'
-			'sub sub';
+		grid-template-areas: 'title actions';
 	}
 	/* Room for the hamburger before the title, when the title shares the buttons' row. Without
 	   it the buttons have the whole first row, the hamburger floating over its empty start. */
@@ -296,9 +361,7 @@
 	}
 	.title-row[data-title-below]:global([data-one-row]):has(> .menu-room) {
 		grid-template-columns: auto minmax(0, 1fr) auto;
-		grid-template-areas:
-			'room title actions'
-			'sub sub sub';
+		grid-template-areas: 'room title actions';
 	}
 	.title-row[data-title-below] > .menu-room {
 		grid-area: room;
@@ -311,13 +374,6 @@
 		flex-wrap: nowrap;
 		justify-content: flex-end;
 		min-height: var(--tap-target);
-	}
-	.title-row[data-title-below] > .subtitle {
-		grid-area: sub;
-	}
-	.subtitle {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.toolbar {
 		display: flex;
