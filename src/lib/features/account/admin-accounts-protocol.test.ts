@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-	adminAccountMatches,
 	adminAccountPath,
+	firstAdminAccountDirection,
+	orderAdminAccounts,
 	parseAdminAccountPath,
 	sortAdminAccounts,
 	type AdminAccount
@@ -48,11 +49,27 @@ describe('the admins’ list of accounts (plan S27)', () => {
 		expect(sortAdminAccounts([bob, ann])).toEqual([ann, bob]);
 	});
 
-	it('filters by any part of the email, username or id, in any case', () => {
-		expect(adminAccountMatches(ann, '')).toBe(true);
-		expect(adminAccountMatches(ann, ' ANN@ ')).toBe(true);
-		expect(adminAccountMatches(ann, 'nnie')).toBe(true);
-		expect(adminAccountMatches(ann, 'cedar')).toBe(true);
-		expect(adminAccountMatches(bob, 'annie')).toBe(false);
+	it('orders by any column, ties by email, so the list never shuffles', () => {
+		const cy = { ...account('cy@example.com', 'Cy', 'c'.repeat(64)), admin: true };
+		const used = { ...ann, devices: 2, lastSeenAt: 20, createdAt: 5 };
+		const idle = { ...bob, createdAt: 9 };
+		expect(orderAdminAccounts([idle, used, cy], 'lastUsed', 'descending')).toEqual([
+			used,
+			idle,
+			cy
+		]);
+		expect(orderAdminAccounts([idle, used, cy], 'since', 'descending')).toEqual([idle, used, cy]);
+		expect(orderAdminAccounts([used, idle, cy], 'type', 'descending')).toEqual([cy, used, idle]);
+		expect(orderAdminAccounts([cy, used, idle], 'devices', 'ascending')).toEqual([idle, cy, used]);
+		// No username sorts first, as "None" leads a table's filter list.
+		expect(orderAdminAccounts([used, cy, idle], 'username', 'ascending')).toEqual([idle, used, cy]);
+		expect(orderAdminAccounts([cy, idle, used], 'email', 'descending')).toEqual([cy, idle, used]);
+	});
+
+	it('starts dates and counts at the newest and busiest, text at A', () => {
+		expect(firstAdminAccountDirection('lastUsed')).toBe('descending');
+		expect(firstAdminAccountDirection('devices')).toBe('descending');
+		expect(firstAdminAccountDirection('email')).toBe('ascending');
+		expect(firstAdminAccountDirection('username')).toBe('ascending');
 	});
 });
