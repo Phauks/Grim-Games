@@ -4,6 +4,7 @@ import {
 	DJINN_THREE_ALIVE,
 	DUPLICATE_DEMONS,
 	INFINITE_NAMED,
+	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED,
 	choicesOf,
 	switched
@@ -26,6 +27,26 @@ describe('rule switches', () => {
 		expect(many.setup.pool).toMatchObject({ announceRange: false, count: { min: 1, max: 4 } });
 		// The copy a game keeps is still a valid rule file.
 		expect(parseSpecialRule(many).ok).toBe(true);
+	});
+
+	// Trevor (2026-10-22): +1 and Infinite Possibilities "alwasy have those added to the bag",
+	// and a game where they may or may not be in play "would be beneficial to be built".
+	it('let +1 and Infinite Possibilities deal none, with +1 telling the table one may be', () => {
+		const none = switched(plusOne, { 'plus-one:may-be-none': true });
+		expect(none.setup.pool).toMatchObject({ count: { min: 0, max: 1 } });
+		expect(none.setup.information?.[0]?.instructions).toBe(PLUS_ONE_MAY_BE);
+		expect(parseSpecialRule(none).ok).toBe(true);
+		// Named, the Storyteller names it, or says none is.
+		const named = switched(plusOne, { 'plus-one:named': true, 'plus-one:may-be-none': true });
+		expect(named.setup.information?.[0]?.instructions).toBe(PLUS_ONE_NAMED);
+		expect(named.setup.pool).toMatchObject({ count: { min: 0, max: 1 } });
+		const many = switched(infinite, { 'infinite-possibilities:may-be-none': true });
+		expect(many.setup.pool).toMatchObject({ announceRange: true, count: { min: 0, max: 4 } });
+		expect(many.setup.information).toBeUndefined();
+		expect(choicesOf([none, many], (id) => specialRuleById(id))).toEqual({
+			'plus-one:may-be-none': true,
+			'infinite-possibilities:may-be-none': true
+		});
 	});
 
 	// https://beardytas.com/garden-of-djinn/the-djinns-bargain/: the page's 3-player limit,
