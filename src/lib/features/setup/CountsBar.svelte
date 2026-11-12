@@ -230,11 +230,12 @@
 	.game .label {
 		font-size: 0.66rem;
 	}
-	/* Everyone at the table in gold, as the setup sheet's own column is. */
+	/* Everyone at the table in the setup sheet's own column colour, with the same edge as the
+	   type pills beside it (Trevor, 2026-11-12: "matches other pills"). */
 	.game .everyone {
 		background: var(--count-current);
 		color: var(--on-count-current);
-		box-shadow: none;
+		box-shadow: var(--button-ring);
 	}
 	/* A type's cell opens its count's popup; it looks as the Travellers' does. */
 	button.cell {
