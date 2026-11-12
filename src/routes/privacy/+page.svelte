@@ -26,10 +26,11 @@
 	{#snippet subtitle()}Last updated {updated}{/snippet}
 	<PageSection title="Summary">
 		<p>
-			{APP_NAME} has no analytics, no advertising and no tracking cookies. Your games and settings stay
-			on your device. Our server stores a custom script only when you share it, a live room's public table
-			only while it is open (and the whole grimoire only while its view-only link is on or an admin watches),
-			a report only when you send one, and your account only if you sign in.
+			{APP_NAME} has no advertising and no tracking cookies, and follows no one across the web. Your games
+			and settings stay on your device. Our server stores a custom script only when you share it, a live
+			room's public table only while it is open (and the whole grimoire only while its view-only link
+			is on or an admin watches), a short record of each game played in a live room with no names in it
+			(below), a report only when you send one, and your account only if you sign in.
 		</p>
 	</PageSection>
 	<PageSection title="What stays on your device">
@@ -174,6 +175,14 @@
 			the room holds, and the Storyteller and players are not shown that they are watching. While an
 			admin watches, the Storyteller's device sends the room the whole grimoire, and it is deleted
 			when they stop.
+		</p>
+		<p>
+			So the site's admins can see how the app is used, each live room adds a short record to a game
+			history when it opens and when each of its games finishes: the room's code, when the game
+			started and finished, the script's name, how many seats the table had, the most phones in the
+			room at once, and, if the Storyteller ended the game, which team won and how. It holds no
+			names, characters, notes, accounts or anything else from the grimoire, and stays after the
+			room is deleted. Only the site's admins can read it.
 		</p>
 		<p>
 			A player who turns on Alert while locked or closed (Settings, Sound) gives each room they are

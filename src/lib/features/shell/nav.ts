@@ -23,6 +23,7 @@ export interface NavItem {
 		| '/friends'
 		| '/reports'
 		| '/live-games'
+		| '/game-history'
 		| '/test-room'
 		| '/accounts'
 		| '/about'
@@ -154,6 +155,14 @@ export const LIVE_GAMES_ITEM: NavItem = {
 	path: '/live-games',
 	label: 'shell.navLiveGames',
 	icon: 'watchers'
+};
+
+/** Games played in live rooms on every site (Trevor, 2026-11-12); Admin group, admins only. */
+export const GAME_HISTORY_ITEM: NavItem = {
+	id: 'game-history',
+	path: '/game-history',
+	label: 'shell.navGameHistory',
+	icon: 'history'
 };
 
 /**
