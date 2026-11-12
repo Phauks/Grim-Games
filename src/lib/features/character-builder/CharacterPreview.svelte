@@ -49,9 +49,11 @@
 {@render children?.()}
 <!-- Reserved room: problems come and go as the form is filled, so nothing moves. -->
 <ul class="problems" role="status" aria-label={t('character-builder.problems')}>
-	{#each problems as problem (problem.kind)}
+	{#each problems as problem, i (i)}
 		<li data-warn={problem.kind !== 'id-official' ? '' : undefined}>
-			{t(`character-builder.problem.${problem.kind}`)}
+			{t(`character-builder.problem.${problem.kind}`, {
+				clause: problem.kind === 'setup-unread' ? problem.clause : ''
+			})}
 		</li>
 	{/each}
 </ul>

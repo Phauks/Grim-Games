@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { GameData } from '#lib/core/data/index.ts';
-	import { timestampName } from '#lib/core/timestamp-name.ts';
+	import { randomCharacterName } from '#lib/core/rules/new-character-name.ts';
 	import {
 		blocksSaving,
 		characterEntry,
@@ -19,7 +19,7 @@
 	import CollectionField from './CollectionField.svelte';
 	import { CHARACTER_DRAFT_VERSION, emptyCharacterDraft, type CharacterDraft } from './draft.ts';
 	import type { SavedCharacter } from './saved-characters.ts';
-	import { CharacterBuilderDraft, savedCharacters } from './stores.svelte.ts';
+	import { CharacterBuilderDraft, savedCharacterNames, savedCharacters } from './stores.svelte.ts';
 
 	/**
 	 * The Character builder over the page you are on (Trevor, 2026-10-18: "open that page as a
@@ -45,7 +45,7 @@
 
 	function start(): CharacterDraft {
 		const saved = savedId ? savedCharacters.get(savedId) : undefined;
-		if (!saved) return emptyCharacterDraft();
+		if (!saved) return emptyCharacterDraft(savedCharacterNames());
 		return {
 			version: CHARACTER_DRAFT_VERSION,
 			fields: fieldsFromEntry(saved.entry),
@@ -55,7 +55,7 @@
 
 	const f = $derived(draft.current.fields);
 	const problems = $derived(characterProblems(f, data));
-	// As on the page, a missing name never stops saving: it gets a timestamp name.
+	// As on the page, a missing name never stops saving: it gets a random name.
 	const canSave = $derived(!blocksSaving(problems.filter((p) => p.kind !== 'name-missing')));
 	const changed = $derived(JSON.stringify(characterEntry(f)) !== startJson);
 
@@ -91,7 +91,7 @@
 
 	function save() {
 		if (!canSave) return;
-		if (!f.name.trim()) f.name = timestampName();
+		if (!f.name.trim()) f.name = randomCharacterName(savedCharacterNames());
 		const id = savedCharacters.save(f, draft.current.editing);
 		const saved = savedCharacters.get(id);
 		close();
