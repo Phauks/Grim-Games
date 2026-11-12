@@ -6,7 +6,7 @@
 import type { Script } from '#lib/core/data/index.ts';
 import type { PublicPhase } from './public-projection.ts';
 import { roomPreview, type RoomPreview } from './room-preview.ts';
-import type { RoomState } from './room.ts';
+import type { GameOver, RoomState } from './room.ts';
 
 /** The admins' list of open rooms; signed-out and other accounts get 404. */
 export const LIVE_GAMES_API = '/api/admin/games';
@@ -30,8 +30,25 @@ export interface LiveGame {
 	preview: RoomPreview;
 	/** Phones connected now. */
 	phones: number;
+	/** The Storyteller's device is connected now (Trevor, 2026-11-12: tell a game going on from a room left open). */
+	storyteller: boolean;
 	/** Night, day or setup, once the Storyteller's board is open. */
 	phase?: PublicPhase;
+	/** The game in play is over, as End game said: who won and how. */
+	ended?: Omit<GameOver, 'gameId'>;
+	/** Games started in this room. */
+	games: number;
+	/** When the room opened (milliseconds since the epoch). */
+	opened?: number;
+}
+
+/** What the room knows of itself besides its state. */
+export interface LiveGameFacts {
+	phones: number;
+	storyteller: boolean;
+	games: number;
+	active: number;
+	opened?: number;
 }
 
 export interface LiveGameList {
@@ -42,17 +59,23 @@ export function liveGame(
 	code: string,
 	room: RoomState,
 	script: Script | undefined,
-	phones: number,
-	active: number
+	facts: LiveGameFacts
 ): LiveGame {
 	const game: LiveGame = {
 		code,
-		active,
+		active: facts.active,
 		preview: roomPreview(room, script),
-		phones
+		phones: facts.phones,
+		storyteller: facts.storyteller,
+		games: facts.games
 	};
+	if (facts.opened !== undefined) game.opened = facts.opened;
 	const phase = room.public?.corner?.phase;
 	if (phase) game.phase = phase;
+	if (room.ended && room.ended.gameId === room.gameId) {
+		const { winner, reason } = room.ended;
+		game.ended = { ...(winner ? { winner } : {}), ...(reason ? { reason } : {}) };
+	}
 	return game;
 }
 

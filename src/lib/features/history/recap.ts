@@ -19,7 +19,7 @@ import {
 import type { EndReason } from '#lib/core/rules/game-end/end-reason.ts';
 import type { GameRecap, RecapCharacter } from './recap-html.ts';
 import { causeLabel } from '#lib/features/grimoire/board.ts';
-import { endReasonLabel } from '#lib/features/grimoire/end-reason-label.ts';
+import { endReasonLabel } from '#lib/features/game/end-reason-label.ts';
 import { historyItems, type HistoryPart } from '#lib/features/grimoire/history.ts';
 
 export interface RecapSource {
