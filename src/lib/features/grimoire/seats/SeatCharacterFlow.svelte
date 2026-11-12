@@ -12,7 +12,7 @@
 	import { barredAbilities, jinxedPartners } from '#lib/core/rules/jinxes/jinxes.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import CharacterPicker from '#lib/features/grimoire/seats/CharacterPicker.svelte';
 	import JinxedPick from '#lib/features/grimoire/night/JinxedPick.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';

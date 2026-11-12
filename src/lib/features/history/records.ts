@@ -2,7 +2,7 @@ import { deriveGameRecord, type GameRecord } from '#lib/core/stats/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { gameStore } from '#lib/features/game/session.svelte.ts';
 import { labGameId } from '#lib/features/character-lab/lab-store.svelte.ts';
-import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+import { endedGames } from '#lib/features/board/device-notes.ts';
 
 /**
  * The records of the games ended on this device, worked out from their saved logs each time

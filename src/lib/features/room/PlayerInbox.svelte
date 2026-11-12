@@ -2,7 +2,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
-	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';

@@ -7,7 +7,7 @@
 import type { GameId } from '#lib/core/model/index.ts';
 import type { PublicCorner, PublicPhase } from '#lib/core/sync/public-projection.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { gameModeParts } from './game-mode-name.ts';
+import { gameModeParts } from '#lib/features/game/game-mode-name.ts';
 
 /**
  * The corner's lines as this device's eyes show them (Game info and Settings > Board; Trevor,

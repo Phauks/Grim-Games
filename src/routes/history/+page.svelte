@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import SavedGamesList from '#lib/features/grimoire/SavedGamesList.svelte';
+	import SavedGamesList from '#lib/features/game/SavedGamesList.svelte';
 	import HistoryStats from '#lib/features/history/HistoryStats.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';

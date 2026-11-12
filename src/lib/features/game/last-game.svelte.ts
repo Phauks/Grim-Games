@@ -11,7 +11,7 @@ import { scriptLogo } from '#lib/core/data/script-logo.ts';
 import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
-import { storytellerGameLine, storytellerGames } from '#lib/features/grimoire/storyteller-games.ts';
+import { storytellerGameLine, storytellerGames } from '#lib/features/game/storyteller-games.ts';
 import { keptLocalTown, localTownVisits } from '#lib/features/player/local-town.svelte.ts';
 import { openPlayersOnly } from '#lib/features/player/open-players-only.ts';
 import {

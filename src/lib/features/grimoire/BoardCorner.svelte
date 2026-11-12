@@ -11,7 +11,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import { phaseText } from './phase-text.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 
 	/**
 	 * The board's lower left corner (Trevor, 2026-10-17): the script's name, small and clear of

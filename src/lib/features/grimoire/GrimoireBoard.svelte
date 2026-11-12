@@ -10,7 +10,7 @@
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from '#lib/features/grimoire/seats/AlignmentDraw.svelte';
-	import { endedGames, type EndedGame } from './device-notes.ts';
+	import { endedGames, type EndedGame } from '#lib/features/board/device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -115,7 +115,7 @@
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
 	import { screenshotPart } from '#lib/ui/screenshot.ts';
 	import { EXPORT_HASH } from '#lib/features/history/export-hash.ts';
-	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
+	import GameFeedbackSheet from '#lib/features/grimoire/hosting/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from '#lib/features/grimoire/night/StarPassPrompt.svelte';

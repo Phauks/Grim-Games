@@ -18,7 +18,7 @@ import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { currentSetupStep } from '#lib/features/setup/setup-steps.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { gameStarts } from '#lib/features/grimoire/device-notes.ts';
+import { gameStarts } from '#lib/features/board/device-notes.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 import type { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';

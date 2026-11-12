@@ -15,7 +15,7 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
-	import type { EndedGame } from '#lib/features/grimoire/device-notes.ts';
+	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';

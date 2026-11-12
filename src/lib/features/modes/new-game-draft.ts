@@ -3,7 +3,7 @@ import { resolve } from '$app/paths';
 import type { ResolvedPathname } from '$app/types';
 import type { Game, GameId } from '#lib/core/model/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { forgetGame } from '#lib/features/grimoire/forget-game.ts';
+import { forgetGame } from '#lib/features/game/forget-game.ts';
 
 /**
  * What New game was set to when Start game was pressed, so Back from the start flow's next

@@ -5,7 +5,7 @@
  */
 import type { SeatId } from '#lib/core/model/index.ts';
 import { roomHost } from '#lib/features/room/host.svelte.ts';
-import { suggestNames } from '#lib/features/grimoire/device-notes.ts';
+import { suggestNames } from '#lib/features/board/device-notes.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 
 interface NameSource {

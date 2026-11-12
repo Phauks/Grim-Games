@@ -9,7 +9,7 @@
 	import { gameScriptLogo } from '#lib/core/engine/index.ts';
 	import LeaveGameDialog, { type LeaveCard } from '#lib/features/room/LeaveGameDialog.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { storytellerGameLine } from './storyteller-games.ts';
+	import { storytellerGameLine } from '#lib/features/game/storyteller-games.ts';
 
 	/**
 	 * Leaving the board asks first, whether through the app's navigation or Back; the game stays

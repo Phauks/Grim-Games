@@ -34,7 +34,7 @@
 	import { picksCharacterOnlyBy } from '#lib/core/rules/jinxes/holder-jinxes.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import AlignmentPill from '#lib/features/grimoire/seats/AlignmentPill.svelte';
+	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from '#lib/features/grimoire/seats/CharacterPicker.svelte';

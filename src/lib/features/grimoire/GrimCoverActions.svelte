@@ -9,7 +9,7 @@
 	import BoardScriptDialog from '#lib/features/grimoire/BoardScriptDialog.svelte';
 	import type { BoardPlayerSource } from '#lib/features/grimoire/board-player-source.ts';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
-	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
+	import InboxNotice from '#lib/features/grimoire/hosting/InboxNotice.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 

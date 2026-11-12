@@ -14,7 +14,7 @@
 		parseReminderCopyIds,
 		parseReminderSpots,
 		type EndedGame
-	} from '#lib/features/grimoire/device-notes.ts';
+	} from '#lib/features/board/device-notes.ts';
 	import { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
 	import { parseAspect, parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';

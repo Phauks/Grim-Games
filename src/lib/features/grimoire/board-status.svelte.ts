@@ -9,9 +9,9 @@ import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 import { scriptVersion } from '#lib/features/player/player-script.ts';
 import { roomHost } from '#lib/features/room/host.svelte.ts';
 import { cornerLines } from './corner-lines.ts';
-import { gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
+import { gameStarts, nightUnderway, type EndedGame } from '#lib/features/board/device-notes.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
-import { phaseText } from './phase-text.ts';
+import { phaseText } from '#lib/features/game/phase-text.ts';
 
 /** What the status reads from the board, fresh on each call. */
 export interface BoardStatusContext {

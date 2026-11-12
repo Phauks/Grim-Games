@@ -10,9 +10,9 @@
 	import ShareCode from '#lib/ui/share/ShareCode.svelte';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import { roomHost } from './host.svelte.ts';
-	import { roomTransfer } from './room-transfer.svelte.ts';
-	import VoteTimeLeft from './VoteTimeLeft.svelte';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { roomTransfer } from '#lib/features/room/room-transfer.svelte.ts';
+	import VoteTimeLeft from '#lib/features/room/VoteTimeLeft.svelte';
 
 	/**
 	 * Room transfer, the Storyteller's side (Trevor, 2026-10-28), from the board's ⋯ > Session

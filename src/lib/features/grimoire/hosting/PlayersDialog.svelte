@@ -3,11 +3,11 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { playersDialog } from './players-dialog.svelte.ts';
-	import PlayersPanel from './PlayersPanel.svelte';
-	import ShowRolesButton from './ShowRolesButton.svelte';
-	import CountOffDialog from './CountOffDialog.svelte';
-	import TravellerPickDialog from './TravellerPickDialog.svelte';
+	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
+	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
+	import ShowRolesButton from '#lib/features/room/ShowRolesButton.svelte';
+	import CountOffDialog from '#lib/features/room/CountOffDialog.svelte';
+	import TravellerPickDialog from '#lib/features/room/TravellerPickDialog.svelte';
 
 	/** Players over the board, from ⋯ on every screen, so the Storyteller never leaves the game. */
 	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();

@@ -22,7 +22,7 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { gameStore, OpenGame } from '#lib/features/game/session.svelte.ts';
-	import { endedGames } from '#lib/features/grimoire/device-notes.ts';
+	import { endedGames } from '#lib/features/board/device-notes.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';

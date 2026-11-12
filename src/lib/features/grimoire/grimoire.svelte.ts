@@ -39,7 +39,7 @@ import {
 	reminderSpots,
 	seatLayouts,
 	type NightView
-} from './device-notes.ts';
+} from '#lib/features/board/device-notes.ts';
 
 /**
  * The grimoire board's controller: runs commands on the open game and shows warnings and
