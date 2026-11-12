@@ -1,0 +1,60 @@
+{
+	"clauses": [
+		{
+			"id": "executions",
+			"when": {
+				"at": "event",
+				"event": "player-executed"
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "executed",
+						"alignments": ["good"]
+					}
+				},
+				{
+					"executions": {
+						"alignment": "good",
+						"atLeast": 2
+					}
+				}
+			],
+			"marks": "Good Player Executed",
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "evil"
+				}
+			]
+		},
+		{
+			"id": "announce",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "in-play"
+					},
+					"to": "each-player"
+				}
+			]
+		},
+		{
+			"id": "day-5",
+			"when": {
+				"at": "dusk",
+				"day": 5
+			},
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "evil"
+				}
+			]
+		}
+	]
+}

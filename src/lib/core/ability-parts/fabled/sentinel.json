@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "±1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [-1, 0, 1]
+							}
+						]
+					}
+				}
+			],
+			"storytellerMay": true
+		}
+	]
+}

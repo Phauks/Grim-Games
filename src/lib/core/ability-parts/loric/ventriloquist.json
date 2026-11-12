@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "spared",
+			"when": {
+				"at": "event",
+				"event": "nomination"
+			},
+			"if": [
+				{
+					"today": "mad-as-new-character"
+				}
+			],
+			"storytellerMay": true,
+			"marks": "Mad",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "nominee",
+					"from": "execution",
+					"until": "tomorrow"
+				}
+			]
+		}
+	]
+}

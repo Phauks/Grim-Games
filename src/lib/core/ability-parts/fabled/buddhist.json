@@ -1,0 +1,32 @@
+{
+	"clauses": [
+		{
+			"id": "announce",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"to": "each-player",
+					"info": {
+						"kind": "affected-players"
+					}
+				}
+			]
+		},
+		{
+			"id": "silence",
+			"when": {
+				"at": "day"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "veterans-silent"
+				}
+			]
+		}
+	]
+}

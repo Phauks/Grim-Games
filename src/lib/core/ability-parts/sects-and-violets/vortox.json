@@ -1,0 +1,51 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "lies",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "falsify-info",
+					"of": "townsfolk"
+				}
+			]
+		},
+		{
+			"id": "win",
+			"when": {
+				"at": "dusk"
+			},
+			"if": [
+				{
+					"noExecutionToday": true
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "evil"
+				}
+			]
+		}
+	]
+}

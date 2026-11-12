@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "ask",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-game",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "yes-no-answer"
+					}
+				}
+			]
+		}
+	]
+}

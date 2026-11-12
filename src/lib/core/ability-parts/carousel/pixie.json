@@ -1,0 +1,44 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"marks": "Mad",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "character-of",
+						"types": ["townsfolk"],
+						"reminders": {
+							"target": "Mad"
+						}
+					}
+				}
+			]
+		},
+		{
+			"id": "gain",
+			"when": {
+				"at": "event",
+				"event": "marked-dies"
+			},
+			"if": [
+				{
+					"wasMad": true
+				}
+			],
+			"marks": "Has Ability",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "marked"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,18 @@
+{
+	"hatches": ["Which alignment is winning is Storyteller judgement."],
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Show good, evil or neither: the alignment the Storyteller believes is winning."
+				}
+			]
+		}
+	]
+}

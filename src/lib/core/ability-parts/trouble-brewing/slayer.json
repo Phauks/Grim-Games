@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "shoot",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-game",
+			"publicly": true,
+			"spent": "No Ability",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"types": ["demon"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		}
+	]
+}

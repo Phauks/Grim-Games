@@ -1,0 +1,8 @@
+{
+	"characters": ["heretic", "baron"],
+	"patches": [
+		{
+			"op": "exclusive"
+		}
+	]
+}

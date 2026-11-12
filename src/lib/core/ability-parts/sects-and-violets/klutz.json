@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "choose",
+			"when": {
+				"at": "death",
+				"learned": true
+			},
+			"publicly": true,
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"alignments": ["evil"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "other-team"
+				}
+			]
+		}
+	]
+}

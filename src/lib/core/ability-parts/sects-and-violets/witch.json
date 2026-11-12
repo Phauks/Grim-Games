@@ -1,0 +1,49 @@
+{
+	"clauses": [
+		{
+			"id": "curse",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Cursed",
+			"effects": [
+				{
+					"do": "arm",
+					"who": "chosen",
+					"on": "nominates",
+					"until": "dusk-tomorrow",
+					"effects": [
+						{
+							"do": "kill",
+							"who": "chosen"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "fade",
+			"when": {
+				"at": "always"
+			},
+			"if": [
+				{
+					"alive": {
+						"exactly": 3
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "lose-ability",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,62 @@
+{
+	"clauses": [
+		{
+			"id": "evil-townsfolk",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "1 Townsfolk is evil",
+						"ops": [],
+						"notes": ["Turn one Townsfolk evil during setup."]
+					}
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "evil-player",
+						"reminders": {
+							"each": "Know"
+						}
+					}
+				}
+			]
+		},
+		{
+			"id": "relearn",
+			"when": {
+				"at": "event",
+				"event": "marked-dies"
+			},
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "learn",
+							"info": {
+								"measure": "evil-player",
+								"reminders": {
+									"each": "Know"
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

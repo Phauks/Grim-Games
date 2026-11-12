@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "madden",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 2,
+				"what": "player"
+			},
+			"marks": "Mad",
+			"effects": [
+				{
+					"do": "madness",
+					"who": "chosen",
+					"as": "second-chosen-evil",
+					"until": "dusk-tomorrow",
+					"penalty": "death"
+				}
+			]
+		}
+	]
+}

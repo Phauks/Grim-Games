@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "lose",
+			"when": {
+				"at": "death",
+				"by": "execution"
+			},
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "other-team"
+				}
+			]
+		}
+	]
+}

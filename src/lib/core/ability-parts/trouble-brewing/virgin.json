@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "execute",
+			"when": {
+				"at": "nominated"
+			},
+			"limit": "first-time",
+			"spent": "No Ability",
+			"if": [
+				{
+					"registers": {
+						"who": "nominator",
+						"types": ["townsfolk"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "execute",
+					"who": "nominator"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "madden",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player-and-character",
+				"alignment": "good"
+			},
+			"marks": "Mad",
+			"effects": [
+				{
+					"do": "madness",
+					"who": "chosen",
+					"as": "chosen-character",
+					"until": "dusk-tomorrow"
+				}
+			]
+		}
+	]
+}

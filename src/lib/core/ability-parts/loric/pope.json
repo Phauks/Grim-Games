@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Duplicate good characters",
+						"ops": [],
+						"notes": ["Good characters may appear more than once, and may be bluffs too."]
+					}
+				}
+			]
+		}
+	]
+}

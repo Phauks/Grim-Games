@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "tea-party",
+			"when": {
+				"at": "death"
+			},
+			"marks": "Tea Party Tonight",
+			"optional": true,
+			"effects": [
+				{
+					"do": "become",
+					"who": "minions-and-demon",
+					"into": "chosen-character"
+				}
+			]
+		}
+	]
+}

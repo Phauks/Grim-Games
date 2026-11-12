@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "nominate",
+			"when": {
+				"at": "event",
+				"event": "nominates"
+			},
+			"limit": "once-per-game",
+			"spent": "May Not Nominate",
+			"if": [
+				{
+					"registers": {
+						"who": "nominee",
+						"types": ["demon"],
+						"not": true
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "nominee"
+				}
+			]
+		}
+	]
+}

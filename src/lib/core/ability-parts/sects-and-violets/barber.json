@@ -1,0 +1,24 @@
+{
+	"clauses": [
+		{
+			"id": "haircut",
+			"when": {
+				"at": "death"
+			},
+			"optional": true,
+			"choose": {
+				"count": 2,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "swap",
+					"who": "chosen",
+					"with": "chosen",
+					"what": "character"
+				}
+			]
+		}
+	],
+	"hatches": ["the Demon makes this choice, not the Barber: a clause has no 'chooser' yet"]
+}

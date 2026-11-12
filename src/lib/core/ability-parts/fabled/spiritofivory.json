@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "limit",
+			"when": {
+				"at": "always"
+			},
+			"spent": "No More Evil",
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "max-one-extra-evil"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,32 @@
+{
+	"clauses": [
+		{
+			"id": "gain",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "character",
+				"alignment": "good"
+			},
+			"marks": "Drunk",
+			"spent": "Is The Philosopher",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "chosen"
+				},
+				{
+					"do": "impair",
+					"who": "chosen",
+					"as": "drunk",
+					"until": "always"
+				}
+			]
+		}
+	]
+}

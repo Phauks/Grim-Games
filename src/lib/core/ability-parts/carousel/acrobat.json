@@ -1,0 +1,34 @@
+{
+	"clauses": [
+		{
+			"id": "watch",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Chosen",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"if": [
+						{
+							"choice": "impaired"
+						}
+					],
+					"effects": [
+						{
+							"do": "kill",
+							"who": "self",
+							"marks": "Dead"
+						}
+					]
+				}
+			]
+		}
+	]
+}

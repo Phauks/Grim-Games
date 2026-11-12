@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "master",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notSelf": true
+			},
+			"marks": "Master",
+			"effects": [
+				{
+					"do": "vote-only-with",
+					"who": "self",
+					"with": "chosen",
+					"until": "tomorrow"
+				}
+			]
+		}
+	]
+}

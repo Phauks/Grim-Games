@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "safe",
+			"when": {
+				"at": "always"
+			},
+			"if": [
+				{
+					"neighboursGood": true
+				}
+			],
+			"marks": "Cannot Die",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "alive-neighbours",
+					"from": "any"
+				}
+			]
+		}
+	]
+}

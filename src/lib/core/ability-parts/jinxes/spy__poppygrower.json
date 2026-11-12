@@ -1,0 +1,11 @@
+{
+	"characters": ["spy", "poppygrower"],
+	"patches": [
+		{
+			"op": "suppress",
+			"character": "spy",
+			"clause": "grimoire",
+			"while": "partner-has-ability"
+		}
+	]
+}

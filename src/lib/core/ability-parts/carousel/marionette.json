@@ -1,0 +1,45 @@
+{
+	"clauses": [
+		{
+			"id": "seat",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Neighbours the Demon",
+						"ops": [],
+						"notes": [
+							"Put a Townsfolk in the bag instead of the Marionette.",
+							"Seat the Marionette next to the Demon."
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "believe",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Is The Marionette",
+			"effects": [
+				{
+					"do": "believe",
+					"who": "self",
+					"isA": "townsfolk"
+				},
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					},
+					"to": "the-demon"
+				}
+			]
+		}
+	]
+}

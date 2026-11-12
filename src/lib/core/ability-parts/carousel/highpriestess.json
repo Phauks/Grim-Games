@@ -1,0 +1,20 @@
+{
+	"hatches": [
+		"Whom the Storyteller believes the player should talk to most is Storyteller judgement."
+	],
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Point to the player the Storyteller believes they should talk to most."
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,9 @@
+{
+	"characters": ["lleech", "slayer"],
+	"patches": [
+		{
+			"op": "storyteller",
+			"note": "The Slayer's shot on the Lleech's host kills the host."
+		}
+	]
+}

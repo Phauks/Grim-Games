@@ -1,0 +1,56 @@
+{
+	"clauses": [
+		{
+			"id": "known",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "in-play"
+					},
+					"to": "each-minion"
+				}
+			]
+		},
+		{
+			"id": "new-minion",
+			"when": {
+				"at": "event",
+				"event": "new-minion"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "in-play"
+					},
+					"to": "each-minion"
+				}
+			]
+		},
+		{
+			"id": "guessed",
+			"when": {
+				"at": "event",
+				"event": "minion-guess"
+			},
+			"limit": "once-per-game",
+			"publicly": true,
+			"spent": "Guess Used",
+			"if": [
+				{
+					"choice": "guess-right"
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "other-team"
+				}
+			]
+		}
+	]
+}

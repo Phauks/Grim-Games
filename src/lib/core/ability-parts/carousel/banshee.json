@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "wail",
+			"when": {
+				"at": "death",
+				"by": "demon"
+			},
+			"marks": "Has Ability",
+			"effects": [
+				{
+					"do": "learn",
+					"to": "each-player",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					}
+				},
+				{
+					"do": "vote-rights",
+					"who": "self",
+					"nominations": 2,
+					"votes": 2
+				}
+			]
+		}
+	]
+}

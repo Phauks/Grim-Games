@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "friend",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notSelf": true
+			},
+			"evenIfImpaired": true,
+			"marks": "Friend",
+			"effects": [
+				{
+					"do": "become",
+					"who": "self",
+					"into": "alignment-of-chosen"
+				}
+			]
+		}
+	]
+}

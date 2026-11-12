@@ -1,0 +1,58 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Has Ability",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				},
+				{
+					"do": "keep-ability",
+					"who": "chosen"
+				},
+				{
+					"do": "impair",
+					"who": "townsfolk-neighbours",
+					"as": "poisoned",
+					"until": "always",
+					"marks": "Poisoned"
+				}
+			]
+		},
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "−1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [-1]
+							}
+						],
+						"notes": ["With no Outsiders to remove, nothing changes."]
+					}
+				}
+			]
+		}
+	],
+	"hatches": [
+		"only Minions keep their ability and only 1 neighbour is poisoned: no 'if chosen is a Minion' on a single effect"
+	]
+}

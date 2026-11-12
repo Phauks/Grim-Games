@@ -1,0 +1,16 @@
+{
+	"clauses": [
+		{
+			"id": "rule",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "jinxes-public"
+				}
+			]
+		}
+	]
+}

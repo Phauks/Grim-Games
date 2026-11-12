@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "vote",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "only-dead-and-self-vote"
+				},
+				{
+					"do": "game-rule",
+					"rule": "no-majority-needed"
+				}
+			]
+		}
+	]
+}

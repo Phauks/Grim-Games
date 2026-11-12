@@ -1,0 +1,43 @@
+{
+	"clauses": [
+		{
+			"id": "lunch",
+			"when": {
+				"at": "event",
+				"event": "executee-dies"
+			},
+			"marks": "Lunch",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "executed"
+				}
+			]
+		},
+		{
+			"id": "poisoned",
+			"when": {
+				"at": "event",
+				"event": "executee-dies"
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "executed",
+						"alignments": ["evil"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "impair",
+					"who": "self",
+					"as": "poisoned",
+					"until": "good-executed",
+					"marks": "Poisoned"
+				}
+			]
+		}
+	]
+}

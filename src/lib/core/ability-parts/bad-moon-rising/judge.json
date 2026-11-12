@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "force",
+			"when": {
+				"at": "event",
+				"event": "nomination"
+			},
+			"limit": "once-per-game",
+			"optional": true,
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "force-execution"
+				}
+			]
+		}
+	]
+}

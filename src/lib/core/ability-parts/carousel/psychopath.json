@@ -1,0 +1,41 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "day",
+				"before": "nominations"
+			},
+			"publicly": true,
+			"optional": true,
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "roshambo",
+			"when": {
+				"at": "always"
+			},
+			"if": [
+				{
+					"choice": "won-roshambo"
+				}
+			],
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "execution"
+				}
+			]
+		}
+	]
+}

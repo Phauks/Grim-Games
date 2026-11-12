@@ -1,0 +1,41 @@
+{
+	"clauses": [
+		{
+			"id": "announce",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"marks": "Protected",
+			"effects": [
+				{
+					"do": "learn",
+					"to": "each-player",
+					"info": {
+						"kind": "affected-players"
+					}
+				}
+			]
+		},
+		{
+			"id": "something-bad",
+			"when": {
+				"at": "event",
+				"event": "marked-dies"
+			},
+			"storytellerMay": true,
+			"marks": "Something Bad",
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Decide who is most responsible for the protected player's death."
+				},
+				{
+					"do": "kill",
+					"who": "another-player"
+				}
+			]
+		}
+	],
+	"hatches": ["who is most responsible for a death is the Storyteller's judgement"]
+}

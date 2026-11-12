@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "unknown",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "storyteller-choice"
+				}
+			]
+		},
+		{
+			"id": "guess",
+			"when": {
+				"at": "day"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "guess-accuracy"
+					}
+				}
+			]
+		}
+	]
+}

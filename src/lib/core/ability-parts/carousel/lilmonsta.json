@@ -1,0 +1,69 @@
+{
+	"clauses": [
+		{
+			"id": "babysit",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true,
+				"by": "minions"
+			},
+			"marks": "Is The Demon",
+			"effects": [
+				{
+					"do": "register",
+					"who": "chosen",
+					"as": {
+						"types": ["demon"]
+					}
+				}
+			]
+		},
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"storytellerMay": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "a-player"
+				}
+			]
+		},
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+1 Minion",
+						"ops": [
+							{
+								"kind": "set",
+								"type": "demon",
+								"values": [0]
+							},
+							{
+								"kind": "delta",
+								"type": "minion",
+								"values": [1]
+							}
+						],
+						"notes": ["Lil’ Monsta is not dealt: an extra Minion goes in the bag instead."]
+					}
+				}
+			]
+		}
+	]
+}

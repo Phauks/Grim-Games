@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "watch",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"optional": true,
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "watches-night"
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"clauses": [
+		{
+			"id": "hide",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "evil-info",
+					"change": "hidden"
+				}
+			]
+		},
+		{
+			"id": "reveal",
+			"when": {
+				"at": "death",
+				"by": "any"
+			},
+			"marks": "Evil Wakes",
+			"effects": [
+				{
+					"do": "evil-info",
+					"change": "restored"
+				}
+			]
+		}
+	]
+}

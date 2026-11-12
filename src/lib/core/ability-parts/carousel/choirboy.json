@@ -1,0 +1,44 @@
+{
+	"clauses": [
+		{
+			"id": "king",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+the King",
+						"ops": [],
+						"requires": "king",
+						"notes": ["If the King is not already in play, swap a Townsfolk for the King."]
+					}
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "event",
+				"event": "demon-kills"
+			},
+			"if": [
+				{
+					"characterIs": {
+						"who": "killed",
+						"id": "king"
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "demon-player"
+					}
+				}
+			]
+		}
+	]
+}

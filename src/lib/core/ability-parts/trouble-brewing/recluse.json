@@ -1,0 +1,22 @@
+{
+	"clauses": [
+		{
+			"id": "register",
+			"when": {
+				"at": "always"
+			},
+			"storytellerMay": true,
+			"evenIfDead": true,
+			"effects": [
+				{
+					"do": "register",
+					"who": "self",
+					"as": {
+						"alignments": ["evil"],
+						"types": ["minion", "demon"]
+					}
+				}
+			]
+		}
+	]
+}

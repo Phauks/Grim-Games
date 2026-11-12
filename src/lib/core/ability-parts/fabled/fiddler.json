@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "fiddle",
+			"when": {
+				"at": "day"
+			},
+			"actor": "the-demon",
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notSelf": true
+			},
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "chosen-publicly"
+				}
+			]
+		}
+	]
+}
