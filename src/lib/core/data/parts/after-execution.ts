@@ -22,6 +22,7 @@ import { specPart, type PartValue } from './part.ts';
  *   Poisoned after an evil lunch).
  */
 export const afterExecution = specPart(
+	'day',
 	'After an execution',
 	'Its token goes on its player, or on the executed player, when a player dies by execution.',
 	obj({

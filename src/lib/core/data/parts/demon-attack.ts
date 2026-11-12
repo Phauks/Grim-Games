@@ -16,6 +16,7 @@ export type DemonTarget = (typeof DEMON_TARGETS)[number];
  * Demon attacks (named on the Demon's step by `features/grimoire/night/night-walk.svelte.ts`).
  */
 export const demonAttack = specPart(
+	'deaths',
 	'Demon attack',
 	'While in play, the Demon may choose not to attack at night, may have to once per game, or attacks whom the rule says.',
 	// `mustSkipOnce`: the Demon must choose not to attack at least once per game. This reminder

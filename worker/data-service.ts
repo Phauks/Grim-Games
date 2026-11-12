@@ -1,6 +1,7 @@
 /**
  * The shared data Worker, `grim-games-data` (wrangler.data.jsonc): accounts, script share
- * codes, reports with their admins, and friends and groups (worker/friends/), for production and every preview of the app (worker/shared-data.ts). Live rooms and
+ * codes, reports with their admins, friends and groups (worker/friends/), and the admins' game
+ * history (worker/game-ledger.ts), for production and every preview of the app (worker/shared-data.ts). Live rooms and
  * the script mirror stay in each build: a room only lasts one game and its protocol can
  * differ between builds, and the mirror is a cache.
  *
@@ -21,6 +22,7 @@ import { localShare, SharedScript, type ShareEnv } from './share.ts';
 import type { DataCall, DataKind } from './shared-data.ts';
 import { FriendBook } from './friends/book.ts';
 import { FriendGroup } from './friends/group.ts';
+import { GameLedger } from './game-ledger.ts';
 
 export {
 	AccountDirectory,
@@ -29,6 +31,7 @@ export {
 	AccountUser,
 	FriendBook,
 	FriendGroup,
+	GameLedger,
 	ReportBox,
 	SharedScript
 };
@@ -38,6 +41,7 @@ type DataEnv = Omit<AccountEnv, 'DATA'> &
 	Pick<ReportBoxEnv, 'REPORTS'> & {
 		FRIEND_BOOKS: DurableObjectNamespace<FriendBook>;
 		FRIEND_GROUPS: DurableObjectNamespace<FriendGroup>;
+		GAME_LEDGER: DurableObjectNamespace<GameLedger>;
 	};
 
 /** Each kind's class, and its object by key. */
@@ -52,7 +56,8 @@ const kinds: Record<DataKind, [{ prototype: object }, (env: DataEnv, key: string
 	share: [SharedScript, localShare],
 	reports: [ReportBox, localReports],
 	friends: [FriendBook, (env, key) => env.FRIEND_BOOKS.get(env.FRIEND_BOOKS.idFromName(key))],
-	groups: [FriendGroup, (env, key) => env.FRIEND_GROUPS.get(env.FRIEND_GROUPS.idFromName(key))]
+	groups: [FriendGroup, (env, key) => env.FRIEND_GROUPS.get(env.FRIEND_GROUPS.idFromName(key))],
+	ledger: [GameLedger, (env, key) => env.GAME_LEDGER.get(env.GAME_LEDGER.idFromName(key))]
 };
 
 /** The methods the app may call on each kind of object: its own, not the runtime's. */

@@ -29,13 +29,41 @@
 
 	const scriptName = (g: LiveGame) => g.preview.script?.name || t('common.none');
 	const storyteller = (g: LiveGame) => g.preview.storyteller || t('common.none');
-	const phase = (g: LiveGame) => (g.phase ? phaseText(g.phase) : t('common.none'));
+	/** Over (and who won), or the phase the board is in. */
+	const gameState = (g: LiveGame) => {
+		if (g.ended) {
+			if (g.ended.winner === 'good') return t('room.liveGames.goodWon');
+			if (g.ended.winner === 'evil') return t('room.liveGames.evilWon');
+			return t('room.liveGames.gameOver');
+		}
+		return g.phase ? phaseText(g.phase) : t('common.none');
+	};
+	/** Who is connected now: an open room nobody is in is a game left, not one being played. */
+	const connected = (g: LiveGame) => {
+		if (g.storyteller && g.phones) {
+			return t('room.liveGames.storytellerAndPhones', { count: g.phones });
+		}
+		if (g.storyteller) return t('room.liveGames.storytellerHere');
+		if (g.phones) return t('room.liveGames.phonesHere', { count: g.phones });
+		return t('common.none');
+	};
+	const opened = (g: LiveGame) =>
+		g.opened === undefined ? t('common.none') : time.format(g.opened);
 	const seated = (g: LiveGame) =>
 		g.preview.seats === undefined
 			? t('common.none')
 			: t('room.liveGames.seatedOf', { seated: g.preview.seated ?? 0, seats: g.preview.seats });
 
-	type Column = 'code' | 'script' | 'storyteller' | 'phase' | 'seated' | 'phones' | 'active';
+	type Column =
+		| 'code'
+		| 'script'
+		| 'storyteller'
+		| 'state'
+		| 'connected'
+		| 'seated'
+		| 'games'
+		| 'opened'
+		| 'active';
 	const columns = $derived<DataColumn<Column, LiveGame>[]>([
 		{
 			id: 'code',
@@ -55,38 +83,57 @@
 			id: 'storyteller',
 			flush: true,
 			label: t('room.liveGames.storyteller'),
-			width: '15%',
+			width: '10%',
 			wide: true,
 			value: storyteller
 		},
 		{
-			id: 'phase',
+			id: 'state',
 			flush: true,
-			label: t('room.liveGames.phase'),
-			width: 'max(10%, 5.5rem)',
-			value: phase
+			label: t('room.liveGames.state'),
+			width: 'max(12%, 6.5rem)',
+			value: gameState
+		},
+		{
+			id: 'connected',
+			flush: true,
+			label: t('room.liveGames.connected'),
+			width: '13%',
+			wide: true,
+			value: connected
 		},
 		{
 			id: 'seated',
 			flush: true,
 			label: t('room.liveGames.seated'),
-			width: '10%',
+			width: '8%',
 			wide: true,
+			wider: true,
 			value: seated
 		},
 		{
-			id: 'phones',
+			id: 'games',
 			flush: true,
-			label: t('room.liveGames.phones'),
-			width: '8%',
+			label: t('room.liveGames.games'),
+			width: '6%',
 			wide: true,
-			value: (g) => g.phones
+			wider: true,
+			value: (g) => g.games
+		},
+		{
+			id: 'opened',
+			flush: true,
+			label: t('room.liveGames.opened'),
+			width: 'max(10%, 6rem)',
+			wide: true,
+			wider: true,
+			value: (g) => g.opened ?? 0
 		},
 		{
 			id: 'active',
 			flush: true,
 			label: t('room.liveGames.active'),
-			width: 'max(14%, 7rem)',
+			width: 'max(10%, 6rem)',
 			wide: true,
 			value: (g) => g.active
 		}
@@ -156,12 +203,16 @@
 						{scriptName(game)}
 					{:else if column.id === 'storyteller'}
 						{storyteller(game)}
-					{:else if column.id === 'phase'}
-						{phase(game)}
+					{:else if column.id === 'state'}
+						{gameState(game)}
+					{:else if column.id === 'connected'}
+						{connected(game)}
 					{:else if column.id === 'seated'}
 						{seated(game)}
-					{:else if column.id === 'phones'}
-						{game.phones}
+					{:else if column.id === 'games'}
+						{game.games}
+					{:else if column.id === 'opened'}
+						{opened(game)}
 					{:else}
 						{time.format(game.active)}
 					{/if}

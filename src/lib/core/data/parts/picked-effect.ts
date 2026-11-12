@@ -31,6 +31,7 @@ export type ReminderEffectKind = (typeof REMINDER_EFFECTS)[number];
  * reminder `token`, whose effect the Storyteller picks from `effects` or writes.
  */
 export const pickedEffect = specPart(
+	'abilities',
 	'Picked effect',
 	'Its reminder carries an effect the Storyteller picks, or their own words.',
 	obj({ token: TOKEN, effects: anyOf(REMINDER_EFFECTS) })

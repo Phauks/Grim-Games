@@ -45,6 +45,7 @@ function placeOf(
 }
 
 export const nightOrder = specPart(
+	'night',
 	'Night position',
 	'Where its night steps go: right after another character’s step or a night marker.',
 	optObj({ first: PLACE, other: PLACE }),

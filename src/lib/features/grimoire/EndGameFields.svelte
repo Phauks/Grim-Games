@@ -12,7 +12,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import { endReasonLabel } from './end-reason-label.ts';
+	import { endReasonLabel } from '#lib/features/game/end-reason-label.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**

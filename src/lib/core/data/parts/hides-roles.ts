@@ -5,6 +5,7 @@ import { truePart } from './part.ts';
  * Tor, https://wiki.bloodontheclocktower.com/Tor): phones show no role to a living player.
  */
 export const hidesRoles = truePart(
+	'setup',
 	'Hides roles',
 	'While it is in play, players learn their character and alignment only when they die.'
 );

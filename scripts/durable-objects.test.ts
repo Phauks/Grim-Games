@@ -84,7 +84,8 @@ describe('wrangler.jsonc keeps every Durable Object and its data', () => {
 });
 
 // The shared data Worker holds accounts, share codes and reports (wrangler.data.jsonc, Trevor 2026-10-19),
-// each account's friends (plan F1, 2026-10-29) and groups (plan F6, 2026-10-31).
+// each account's friends (plan F1, 2026-10-29) and groups (plan F6, 2026-10-31), and the admins'
+// game history (Trevor, 2026-11-12).
 const DATA_KEPT = {
 	bindings: {
 		ACCOUNT_USERS: 'AccountUser',
@@ -94,9 +95,10 @@ const DATA_KEPT = {
 		REPORTS: 'ReportBox',
 		FRIEND_BOOKS: 'FriendBook',
 		ACCOUNT_DIRECTORY: 'AccountDirectory',
-		FRIEND_GROUPS: 'FriendGroup'
+		FRIEND_GROUPS: 'FriendGroup',
+		GAME_LEDGER: 'GameLedger'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5']
 };
 
 const dataText = readFileSync(new URL('../wrangler.data.jsonc', import.meta.url), 'utf8');

@@ -6,6 +6,7 @@ import { truePart } from './part.ts';
  * `rules/night/info/reliability.ts`.
  */
 export const breaksRules = truePart(
+	'setup',
 	'Storyteller breaks rules',
 	'While it is in play the Storyteller may break the game rules, so any information may be given.'
 );

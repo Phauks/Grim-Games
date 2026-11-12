@@ -9,6 +9,7 @@ import { specPart } from './part.ts';
  * (`setupPrep` note `value`) holding the character named, saved even when not in play.
  */
 export const evilLearns = specPart(
+	'night',
 	'Evil learns',
 	'Each evil player learns who carries its reminder.',
 	obj({ carrier: TOKEN, named: opt(STR) })

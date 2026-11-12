@@ -6,6 +6,7 @@ import { truePart } from './part.ts';
  * player evil warns, never blocks.
  */
 export const limitsExtraEvil = truePart(
+	'setup',
 	'Limits extra evil',
 	'While it is in play there can’t be more than one extra evil player.'
 );

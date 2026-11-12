@@ -6,6 +6,7 @@ import { booleanPart } from './part.ts';
  * the living ones in the reminder bank.
  */
 export const actsWhenDead = booleanPart(
+	'deaths',
 	'Acts when dead',
 	'The ability still acts once its player is dead.'
 );

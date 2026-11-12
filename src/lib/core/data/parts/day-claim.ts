@@ -12,6 +12,7 @@ export type DayClaim = (typeof DAY_CLAIMS)[number];
 
 /** The claim its player makes by day, logged from their day row and seat ⋯ menu (L56). */
 export const dayClaim = enumPart(
+	'day',
 	'Day claim',
 	'The claim its player makes by day, logged from their day row and seat menu.',
 	DAY_CLAIMS

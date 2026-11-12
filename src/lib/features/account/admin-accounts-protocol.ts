@@ -62,11 +62,45 @@ export function sortAdminAccounts(accounts: readonly AdminAccount[]): AdminAccou
 	return [...accounts].sort((a, b) => a.email.localeCompare(b.email) || a.id.localeCompare(b.id));
 }
 
-/** Whether an account's email, username or id holds the filter's text, in any case. */
-export function adminAccountMatches(account: AdminAccount, filter: string): boolean {
-	const wanted = filter.trim().toLowerCase();
-	if (!wanted) return true;
-	return [account.email, account.username ?? '', account.id].some((text) =>
-		text.toLowerCase().includes(wanted)
-	);
+/** The columns of the admins' table of accounts (Trevor, 2026-11-12: a table like Live games). */
+export type AdminAccountColumn = 'email' | 'username' | 'type' | 'devices' | 'lastUsed' | 'since';
+
+/** What a column sorts by: text in reading order, numbers and times by size. */
+function sortValue(account: AdminAccount, column: AdminAccountColumn): string | number {
+	switch (column) {
+		case 'email':
+			return account.email;
+		case 'username':
+			return account.username ?? '';
+		case 'type':
+			return account.admin ? 1 : 0;
+		case 'devices':
+			return account.devices;
+		case 'lastUsed':
+			return account.lastSeenAt ?? 0;
+		case 'since':
+			return account.createdAt;
+	}
+}
+
+/**
+ * The accounts in a column's order, ties by email (sortAdminAccounts), so the list never
+ * shuffles between loads.
+ */
+export function orderAdminAccounts(
+	accounts: readonly AdminAccount[],
+	column: AdminAccountColumn,
+	direction: 'ascending' | 'descending'
+): AdminAccount[] {
+	const sign = direction === 'ascending' ? 1 : -1;
+	return sortAdminAccounts(accounts).sort((a, b) => {
+		const x = sortValue(a, column);
+		const y = sortValue(b, column);
+		return sign * (typeof x === 'number' ? x - (y as number) : x.localeCompare(y as string));
+	});
+}
+
+/** A column's first direction: the newest, busiest and admins first; text from A. */
+export function firstAdminAccountDirection(column: AdminAccountColumn): 'ascending' | 'descending' {
+	return column === 'email' || column === 'username' ? 'ascending' : 'descending';
 }

@@ -9,6 +9,7 @@ import { specPart, type PartValue } from './part.ts';
  * by `rules/day/day-tally.ts` (Trevor, 2026-11-02: M17c).
  */
 export const dayTally = specPart(
+	'day',
 	'Day tally',
 	'A count the Storyteller keeps of times its player does something today.',
 	obj({ label: STR, kills: opt(T) })

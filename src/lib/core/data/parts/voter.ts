@@ -13,6 +13,7 @@ import { specPart, type PartValue } from './part.ts';
  *   (`tokenGiverInfo` in `rules/day/vote-weights.ts`).
  */
 export const voter = specPart(
+	'day',
 	'How its player votes',
 	'Its player may vote only with another, must vote, or needs a vote token to vote.',
 	optObj({ onlyWith: TOKEN, must: T, minAlive: COUNT, needsToken: T, learnsGiver: T }),

@@ -3,8 +3,9 @@ import { listedAdmin, signIn } from './admin.ts';
 import { theMenu } from './shell.ts';
 
 // Accounts (plan S27, Trevor 2026-10-30: "accounts should allow seeing all accounts as a base,
-// and clicking into an account opens a modal for the details"): an admin sees every account,
-// opens one, then signs it out everywhere, removes its username or deletes it.
+// and clicking into an account opens a modal for the details"): an admin sees every account in a
+// table like Live games (Trevor, 2026-11-12), opens one, then signs it out everywhere, removes
+// its username or deletes it.
 
 test('an admin sees every account, opens one and signs it out, removes its username and deletes it', async ({
 	page,
@@ -31,18 +32,22 @@ test('an admin sees every account, opens one and signs it out, removes its usern
 	await signIn(admin, adminEmail);
 	await (await theMenu(admin)).getByRole('link', { name: 'Accounts' }).tap();
 	await expect(admin).toHaveURL(/\/accounts$/);
-	// Every account is listed with nothing typed, the admin's own as well.
+	// Every account is listed with no filter on, the most recently used first: the admin's own,
+	// just signed in, is on the first page whatever else the server holds.
 	const list = admin.getByTestId('admin-accounts');
 	await expect(list.getByRole('button', { name: adminEmail })).toBeVisible();
-	await expect(list.getByRole('button', { name: email })).toBeVisible();
 
-	// The filter narrows the list by any part of a username.
-	const filter = admin.getByLabel('Email, username or id', { exact: true });
-	await filter.fill(name.slice(1).toUpperCase());
-	await expect(list.getByRole('button')).toHaveCount(1);
+	// A column's filter narrows the list by any part of a username.
+	const filterBy = async (column: string, text: string) => {
+		await list.getByRole('button', { name: new RegExp(`^Filter ${column}`) }).tap();
+		const popover = admin.getByRole('dialog', { name: `Filter ${column}` });
+		await popover.getByLabel(`Search ${column}`, { exact: true }).fill(text);
+		await popover.getByRole('button', { name: 'Close' }).tap();
+	};
+	await filterBy('Username', name.slice(1).toUpperCase());
+	await expect(list.getByRole('rowheader')).toHaveCount(1);
 	await list.getByRole('button', { name: email }).tap();
 	const details = admin.getByRole('dialog', { name: email });
-	await expect(details.getByTestId('admin-account-email')).toHaveText(email);
 	await expect(details.getByTestId('admin-account-username')).toHaveText(name);
 	await expect(details.getByTestId('admin-account-devices')).toHaveText('1');
 
@@ -73,8 +78,8 @@ test('an admin sees every account, opens one and signs it out, removes its usern
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(details).toBeHidden();
-	await filter.fill(email);
-	await expect(admin.getByTestId('admin-accounts-none')).toHaveText('None');
+	await expect(list.getByRole('rowheader')).toHaveCount(0);
+	await expect(list.getByRole('cell', { name: 'None' })).toBeVisible();
 	await admin.reload();
 	await expect(
 		admin.getByTestId('admin-accounts').getByRole('button', { name: adminEmail })

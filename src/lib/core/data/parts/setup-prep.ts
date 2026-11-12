@@ -112,6 +112,7 @@ export type SetupNote = SpecValue<typeof NOTE>;
  * `reason` and `none` are our own summaries, never wiki prose.
  */
 export const setupPrep = specPart(
+	'setup',
 	'Setup preparation',
 	'Tokens and steps to prepare before the first night.',
 	optObj({ reminders: list(REMINDER), notes: list(NOTE), none: STR })

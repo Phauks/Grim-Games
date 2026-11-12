@@ -5,6 +5,7 @@ import { tokenPart } from './part.ts';
  * Demon on the babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  */
 export const carrierIsDemon = tokenPart(
+	'abilities',
 	'Carrier is the Demon',
 	'Its reminder makes whoever carries it the Demon while they do.'
 );

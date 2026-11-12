@@ -5,6 +5,7 @@ import { booleanPart } from './part.ts';
  * play (the Djinn, https://wiki.bloodontheclocktower.com/Djinn; Trevor, 2026-10-17).
  */
 export const jinxesOnly = booleanPart(
+	'setup',
 	'Only jinxes',
 	'Its ability is only the jinxes, so a game never starts with it in play.'
 );

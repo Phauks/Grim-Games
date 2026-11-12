@@ -103,3 +103,62 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(history.getByRole('button', { name: 'Show' }).first()).toBeVisible();
 	await adminContext.close();
 });
+
+// Trevor, 2026-11-12: "verify that it accurately can see live games and previously run games,
+// i want better history and usage"; he picked option B, a Game history page beside Live games.
+test('Live games tells a finished game from one going on, and Game history keeps it', async ({
+	page,
+	browser
+}, testInfo) => {
+	test.slow();
+	const shown = await openRoom(page);
+	const board = new URL(page.url()).pathname.replace(/\/room$/, '');
+
+	const adminContext = await browser.newContext({ ...testInfo.project.use });
+	const admin = await adminContext.newPage();
+	// Signed out, the history is not there at all.
+	expect((await admin.request.get('/api/admin/history')).status()).toBe(404);
+	await signIn(admin, listedAdmin(testInfo, 5));
+	await admin.goto('/live-games');
+	let row = admin.getByTestId('live-games').locator('tr', { hasText: shown });
+	// The Storyteller's device is connected: a game going on, not a room left open.
+	await expect(row).toContainText('Storyteller');
+	await expect(row).not.toContainText('Game over');
+
+	await page.goto(board);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game' })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('combobox', { name: 'Winner' }).tap();
+	await page.getByRole('option', { name: 'Good', exact: true }).tap();
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
+
+	// The list says the game is over and who won, and that the room has run one game.
+	await expect(async () => {
+		await admin.getByRole('button', { name: 'Refresh' }).tap();
+		row = admin.getByTestId('live-games').locator('tr', { hasText: shown });
+		await expect(row).toContainText('Game over, good won', { timeout: 2000 });
+	}).toPass();
+
+	// Game history, in the menu's Admin group, keeps the finished game with no names in it.
+	await (await theMenu(admin)).getByRole('link', { name: 'Game history' }).tap();
+	await expect(admin).toHaveURL(/\/game-history$/);
+	const games = admin.getByTestId('game-history-games');
+	const game = games.locator('tr', { hasText: shown });
+	await expect(async () => {
+		await admin.getByRole('button', { name: 'Refresh' }).tap();
+		await expect(game).toContainText('Trouble Brewing', { timeout: 2000 });
+	}).toPass();
+	await expect(admin.getByTestId('game-history-summary')).toContainText('Games');
+	await expect(admin.getByTestId('game-history-scripts')).toContainText('Trouble Brewing');
+	if (testInfo.project.name.startsWith('tablet')) {
+		// Wide enough for every column: who won and what finished it.
+		await expect(game).toContainText('Good');
+		await expect(game).toContainText('End game');
+	}
+	await adminContext.close();
+});

@@ -7,6 +7,7 @@ import { enumPart } from './part.ts';
  * second bluff set is theirs.
  */
 export const believesType = enumPart(
+	'setup',
 	'Believes type',
 	'The type of character its player is shown instead of its own.',
 	SEATED_TYPES

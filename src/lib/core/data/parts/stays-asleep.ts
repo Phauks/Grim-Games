@@ -6,6 +6,7 @@ import { enumPart } from './part.ts';
  * not count, https://wiki.bloodontheclocktower.com/Chambermaid).
  */
 export const staysAsleep = enumPart(
+	'night',
 	'Stays asleep',
 	'The nights its player does not wake for its step: the Storyteller acts alone.',
 	['first', 'other', 'both'] as const

@@ -10,6 +10,7 @@ import { specPart } from './part.ts';
  * player who chooses, who may still choose themself (the Demon swapping itself).
  */
 export const swapsCharacters = specPart(
+	'night',
 	'Swaps characters',
 	'Its night step swaps two chosen players’ characters.',
 	optObj({ notTypes: anyOf(SEATED_TYPES), chooser: oneOf(SEATED_TYPES) })

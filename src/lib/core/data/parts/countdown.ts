@@ -10,6 +10,7 @@ import { specPart, type PartValue } from './part.ts';
  * as its How to Run says. Shown at the character's night step (`rules/reminders/countdown.ts`).
  */
 export const countdown = specPart(
+	'tokens',
 	'Countdown',
 	'Its token counts down one step a night.',
 	obj({ tokens: TOKENS }),
