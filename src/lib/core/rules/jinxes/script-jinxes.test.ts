@@ -25,7 +25,7 @@ import { keepsAbilityWhenDead } from '#lib/core/rules/abilities/dead-characters.
 import { demonInfo } from '#lib/core/rules/night/evil-info.ts';
 import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { evilInfoNotesLeftOut } from './holder-jinxes.ts';
-import { gainedEnd, madAsPartners, notShownGiven, survivesCarrierBy } from './jinx-effects.ts';
+import { gainedEnd, notShownGiven, survivesCarrierBy } from './jinx-effects.ts';
 import { jinxStoppers } from './jinx-ends.ts';
 import { answerCauses, nightAnswer } from '#lib/core/rules/night/info/answers.ts';
 import { reliability } from '#lib/core/rules/night/info/reliability.ts';
@@ -39,11 +39,14 @@ import { type NightAlert } from '#lib/core/rules/night/night-alert.ts';
 import { nightKill } from '#lib/core/rules/night/night-kill.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
+import { dayUseOf } from '#lib/core/rules/day/day-claims.ts';
+import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 import {
 	barredAbilities,
 	createdTooLate,
 	givenInstead,
 	jinxForbidsBecoming,
+	madAsPartners,
 	neighbourBecoming,
 	ownJinxRules,
 	scriptJinxes,
@@ -1644,6 +1647,28 @@ describe('a script jinx that patches its character’s rules', () => {
 			dead: true
 		}));
 		expect(voteWorth(after.game, after.seats[0], characters)).toBe(1);
+	});
+
+	// Refactor review D1: every game reader reads rules through rulesFor, so a patch reaches
+	// readers that once read the plain block (the day ability, the night kill).
+	it('reaches every game reader, such as the day ability and the night kill', () => {
+		const rules = {
+			patch: {
+				parts: { dayUse: { who: 'chosen', kills: true }, kills: { by: 'other' } },
+				when: ['partner-alive']
+			}
+		};
+		const { script, warnings, characters } = load(entries(rules));
+		expect(warnings).toEqual([]);
+		const { game } = castWith({ script, characters })([
+			'lamplighter',
+			'imp',
+			'chef',
+			'empath',
+			'poisoner'
+		]);
+		expect(dayUseOf(game, 'lamplighter', characters)).toEqual({ who: 'chosen', kills: true });
+		expect(nightKiller(game, 'lamplighter', characters)?.by).toBe('other');
 	});
 
 	it('rejects a patch part its reader rejects, or jinxes inside a patch', () => {

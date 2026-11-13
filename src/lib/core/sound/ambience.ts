@@ -266,3 +266,13 @@ export function parseAmbience(scene: AmbienceScene, raw: unknown): string {
 		? (raw as string)
 		: DEFAULT_AMBIENCE[scene];
 }
+
+/**
+ * Where a looped recording of `duration` seconds is at `nowMs` on the wall clock, so devices
+ * that start it at different moments still play the same point together, as near as their
+ * clocks agree.
+ */
+export function loopOffset(nowMs: number, duration: number): number {
+	if (!(duration > 0) || !Number.isFinite(nowMs)) return 0;
+	return (nowMs / 1000) % duration;
+}

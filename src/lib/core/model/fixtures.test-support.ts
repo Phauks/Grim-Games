@@ -146,6 +146,14 @@ export function newGame(
 	return { session, ctx, seats };
 }
 
+/**
+ * A game on an empty script: no jinx or optional rule is in effect, so the game's rules readers
+ * (`rulesFor`) give each character's own rules block.
+ */
+export function plainGame(): GameSession['game'] {
+	return newGame(5, { script: { meta: { name: 'Plain' }, entries: [] } }).session.game;
+}
+
 /** A step of {@link castGame}: a command, or a function of the seat ids that returns one. */
 export type CastStep = Command | ((seats: string[]) => Command);
 

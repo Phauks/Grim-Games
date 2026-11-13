@@ -176,7 +176,7 @@ export const REMINDERS_DECIDERS: Deciders<
 				refuse('invalid-effect', `no reminder effect ${String(effect.kind)}`);
 			if (!Number.isInteger(effect.night) || effect.night < 1)
 				refuse('invalid-effect', 'an effect acts on a night numbered 1 or more');
-			const rule = pickedEffectOf(reminder, ctx.characters);
+			const rule = pickedEffectOf(game, reminder, ctx.characters);
 			if (effect.kind !== 'other' && !rule?.effects.includes(effect.kind))
 				warn('effect-not-listed', 'this reminder’s rules do not list that effect');
 		}

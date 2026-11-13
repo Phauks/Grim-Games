@@ -57,7 +57,7 @@ function executedAmong(
 	if (end.died) {
 		return targets.flatMap((seatId) => {
 			const seat = game.seats[seatId];
-			if (!seat.dead || !isExecution(seat.deathCause, characters)) return [];
+			if (!seat.dead || !isExecution(game, seat.deathCause, characters)) return [];
 			const day = at.logs.findLastIndex((log) => at.executedOn(log).includes(seatId));
 			return [{ seatId, ...(day < 0 ? {} : { day }) }];
 		});

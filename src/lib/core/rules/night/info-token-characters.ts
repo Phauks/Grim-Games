@@ -23,11 +23,11 @@ import {
 	type InfoTokenCharacterRules,
 	type InfoTokenCharacters
 } from '#lib/core/data/parts/info-token-characters.ts';
-import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { prepValueKey } from '#lib/core/rules/day/day-reminders.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import type { NightTextLine } from './night-text.ts';
 
 /** The characters filled in, and how many the card may show in all on this step. */
@@ -69,12 +69,15 @@ export interface StepCard {
 }
 
 /**
- * A character's `infoTokenCharacters` rule, from the rules block it carries.
+ * A character's `infoTokenCharacters` rule: in the context's game when it has one (`rulesFor`,
+ * so jinx patches apply), else from the rules block the character carries.
  */
 export function infoTokenCharacterRulesOf(
-	character: Pick<Character, 'id' | 'edition' | 'rules'>
+	character: Pick<Character, 'id' | 'edition' | 'rules'>,
+	{ game, characters }: FillContext = {}
 ): InfoTokenCharacterRules | undefined {
-	return rulesOfCharacter(character)?.infoTokenCharacters;
+	const rules = game && characters ? rulesFor(game, character.id, characters) : character.rules;
+	return rules?.infoTokenCharacters;
 }
 
 /**
@@ -83,10 +86,11 @@ export function infoTokenCharacterRulesOf(
  */
 export function stepInfoTokens(
 	character: Pick<Character, 'id' | 'edition' | 'rules'>,
-	text: string | undefined
+	text: string | undefined,
+	context: FillContext = {}
 ): InfoToken[] {
 	const named = infoTokensNamedIn(text);
-	const offered = Object.entries(infoTokenCharacterRulesOf(character) ?? {}).flatMap(
+	const offered = Object.entries(infoTokenCharacterRulesOf(character, context) ?? {}).flatMap(
 		([id, rule]) => {
 			const token = STANDARD_INFO_TOKENS.find((t) => t.id === id);
 			const offers = ruleEntries(rule).some((e) => e.offer);
@@ -108,8 +112,11 @@ export function stepInfoCards(
 	context: FillContext = {},
 	own?: InfoTokenCharacterRules
 ): StepCard[] {
-	const rules: InfoTokenCharacterRules = { ...infoTokenCharacterRulesOf(character), ...own };
-	const tokens = stepInfoTokens(character, text);
+	const rules: InfoTokenCharacterRules = {
+		...infoTokenCharacterRulesOf(character, context),
+		...own
+	};
+	const tokens = stepInfoTokens(character, text, context);
 	const fill = (token: InfoToken, entry: InfoTokenCharacters) =>
 		token.asks?.characters ? fillCard(character, entry, token.asks.characters, context) : undefined;
 	return tokens.flatMap((token) => {

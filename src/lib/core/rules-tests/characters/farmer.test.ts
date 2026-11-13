@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
@@ -58,8 +59,8 @@ describe('Farmer', () => {
 			const s = scenario(['farmer', 'fearmonger', 'alchemist', 'imp', 'chef'])
 				.newDay()
 				.dies('farmer', 'imp');
-			const trigger = onDeathTrigger('farmer', s.characters)!;
-			expect(onDeathApplies(trigger, 'imp', s.characters)).toBe(true);
+			const trigger = onDeathTrigger(s.game, 'farmer', s.characters)!;
+			expect(onDeathApplies(s.game, trigger, 'imp', s.characters)).toBe(true);
 			// Only the alive good players may become the Farmer: never the evil Fearmonger or the Imp.
 			expect(passOnSeats(s.game, 'farmer', s.characters)).toEqual([
 				s.seat('alchemist'),
@@ -80,9 +81,9 @@ describe('Farmer', () => {
 				.newDay()
 				.newDay()
 				.dies('choirboy', 'imp');
-			const trigger = onDeathTrigger('farmer', s.characters)!;
+			const trigger = onDeathTrigger(s.game, 'farmer', s.characters)!;
 			expect(
-				onDeathApplies(trigger, s.game.seats[s.seat('choirboy')].deathCause, s.characters)
+				onDeathApplies(s.game, trigger, s.game.seats[s.seat('choirboy')].deathCause, s.characters)
 			).toBe(true);
 			const after = s.becomes('heretic', 'farmer');
 			const ids = after.game.seating.map((id) => after.game.seats[id].characterId);
@@ -100,9 +101,9 @@ describe('Farmer', () => {
 		it('is set off by a death at night, not by an execution', () => {
 			// Wiki: "If the Farmer died tonight, wake an alive good player."
 			const { characters } = scenario(['farmer', 'chef', 'imp', 'poisoner', 'monk']);
-			const trigger = onDeathTrigger('farmer', characters)!;
-			expect(onDeathApplies(trigger, 'imp', characters)).toBe(true);
-			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+			const trigger = onDeathTrigger(plainGame(), 'farmer', characters)!;
+			expect(onDeathApplies(plainGame(), trigger, 'imp', characters)).toBe(true);
+			expect(onDeathApplies(plainGame(), trigger, 'execution', characters)).toBe(false);
 		});
 
 		it('shows the new Farmer You Are with the Farmer token', () => {

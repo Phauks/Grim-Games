@@ -8,17 +8,18 @@
  * The Storyteller decides who dies and when: going past the count warns, never locks.
  */
 import type { DayTally } from '#lib/core/data/parts/day-tally.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** A character's `dayTally` rule, if it has one. */
 export function dayTallyOf(
+	game: Game,
 	characterId: CharacterId | undefined,
 	characters: CharacterLookup
 ): DayTally | undefined {
-	return characterId === undefined ? undefined : rulesOf(characterId, characters)?.dayTally;
+	return characterId === undefined ? undefined : rulesFor(game, characterId, characters)?.dayTally;
 }
 
 /** A day's count for `characterId`: 0 until the Storyteller sets one. */
@@ -46,7 +47,7 @@ export function tallyKills(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): TallyKills | undefined {
-	if (!dayTallyOf(characterId, characters)?.kills) return undefined;
+	if (!dayTallyOf(game, characterId, characters)?.kills) return undefined;
 	const count = tallyCount(game.today, characterId);
 	const died = (game.today.tallies?.[characterId]?.deaths ?? []).filter(
 		(s) => game.seats[s]?.dead === true && game.seats[s]?.deathCause === characterId
@@ -64,8 +65,9 @@ export function tallyKills(
  * when `cause` names one.
  */
 export function tallyKiller(
+	game: Game,
 	cause: string | undefined,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	return cause !== undefined && dayTallyOf(cause, characters)?.kills ? cause : undefined;
+	return cause !== undefined && dayTallyOf(game, cause, characters)?.kills ? cause : undefined;
 }

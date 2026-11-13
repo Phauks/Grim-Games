@@ -139,7 +139,7 @@ describe('Scarlet Woman', () => {
 			expect(changes).toEqual([
 				{ seatId: s.seat('scarletwoman'), from: 'scarletwoman', characterId: 'imp' }
 			]);
-			const steps = withCharacterChangeSteps([], changes, s.characters);
+			const steps = withCharacterChangeSteps(s.game, [], changes, s.characters);
 			expect(steps).toMatchObject([
 				{ changed: { seatId: s.seat('scarletwoman'), characterId: 'imp' } }
 			]);

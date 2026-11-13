@@ -291,6 +291,14 @@ select:focus-visible {
 	--on-type-band: var(--heading);
 	--type-band-ring: inset 0 0 0 0.125rem var(--heading);
 }
+/* The Script sheet's Players section and its everyone count, filled like a type band in the
+   setup sheet's own column colour (Trevor, 2026-11-13: "the players drop-down that looks like
+   Outsiders and Demons"). */
+[data-type-band='fill'] {
+	--type-ink: var(--count-current);
+	--type-band: var(--count-current);
+	--on-type-band: var(--on-count-current);
+}
 
 /* Placeholders in the theme's muted text, not the browser's grey (about 3.7:1 on the
    raised surface; Impeccable scan of beta, 2026-11-05). Opacity 1: Firefox dims them too. */

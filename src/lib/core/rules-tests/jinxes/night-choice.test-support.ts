@@ -119,8 +119,8 @@ export function nightChoiceTests(demon: CharacterId, partner: CharacterId, choic
 				expect(game.seats[seats[1]].dead).toBe(false);
 				if (choice.partner === 'dies') {
 					// Killed by the Demon, its own ability is set off as usual.
-					const trigger = onDeathTrigger(partner, ctx.characters)!;
-					expect(onDeathApplies(trigger, demon, ctx.characters)).toBe(true);
+					const trigger = onDeathTrigger(game, partner, ctx.characters)!;
+					expect(onDeathApplies(game, trigger, demon, ctx.characters)).toBe(true);
 				}
 			}
 		);

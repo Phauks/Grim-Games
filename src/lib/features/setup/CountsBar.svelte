@@ -77,6 +77,7 @@
 		<button
 			type="button"
 			class="cell everyone"
+			data-type-band="fill"
 			data-ok=""
 			aria-haspopup="dialog"
 			title={t('setup.sheet')}
@@ -229,12 +230,6 @@
 	}
 	.game .label {
 		font-size: 0.66rem;
-	}
-	/* Everyone at the table in gold, as the setup sheet's own column is. */
-	.game .everyone {
-		background: var(--count-current);
-		color: var(--on-count-current);
-		box-shadow: none;
 	}
 	/* A type's cell opens its count's popup; it looks as the Travellers' does. */
 	button.cell {

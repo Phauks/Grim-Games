@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type Command, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, type DeathCause, type Game } from '#lib/core/model/index.ts';
-import { ON_DEATH } from '#lib/core/rules/night/night-killers.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
@@ -180,8 +180,8 @@ describe('stepWakes', () => {
  * their ability says it works on their death), and each character's own page for when.
  */
 describe('stepWakes for every character set off by its death', () => {
-	const triggered = Object.entries(ON_DEATH).filter(([id]) =>
-		data.nightSheet.otherNight.includes(id)
+	const triggered = [...OFFICIAL_RULES].flatMap(([id, rules]) =>
+		rules.onDeath && data.nightSheet.otherNight.includes(id) ? [[id, rules.onDeath] as const] : []
 	);
 	const die =
 		(cause: DeathCause) =>

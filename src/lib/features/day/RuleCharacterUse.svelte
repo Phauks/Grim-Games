@@ -20,7 +20,7 @@
 	let { game, characterId, onChoose }: Props = $props();
 </script>
 
-{#if ruleCharacterUse(characterId, game.characters) === 'contest'}
+{#if ruleCharacterUse(game.game, characterId, game.characters) === 'contest'}
 	<FiddleContest {game} {characterId} />
 {:else}
 	<AnyoneUseButton {game} {characterId} {onChoose} />

@@ -140,7 +140,7 @@ class LiveDayTimer {
 		}
 		if (!this.#signalled) {
 			this.#signalled = true;
-			// Silent here: the Public Town and phones ring (room-sounds.ts), so the sound never
+			// Silent here: the Public Town and phones ring (room-sounds.svelte.ts), so the sound never
 			// gives away where the Storyteller sits (Trevor, 2026-10-30).
 			if (preferences.current.timerVibrate) vibrate();
 		}

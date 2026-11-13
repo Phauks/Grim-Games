@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { plainGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { parseCharacterRules } from '../character-rules.ts';
@@ -273,8 +273,10 @@ describe('custom characters', () => {
 		expect(character?.rules).toEqual({ reminderPrompts: { Hollowed: 'markDead' } });
 		const characters = new Map([[character!.id, character!]]);
 		expect(rulesOf('hollowking', characters)).toBe(character!.rules);
-		expect(reminderPrompt('Hollowed', 'hollowking', characters)).toBe('markDead');
-		expect(reminderPrompt('Hollowed', undefined, committedCharacters())).toBeUndefined();
+		expect(reminderPrompt(plainGame(), 'Hollowed', 'hollowking', characters)).toBe('markDead');
+		expect(
+			reminderPrompt(plainGame(), 'Hollowed', undefined, committedCharacters())
+		).toBeUndefined();
 	});
 
 	it('report a bad rules block like any other bad field', () => {
@@ -317,8 +319,8 @@ describe('custom characters', () => {
 		);
 		expect(issues.list).toEqual([]);
 		const characters = new Map([[lantern!.id, lantern!]]);
-		expect(actsWhenDead('lanternbearer', characters)).toBe(true);
-		expect(actsWhenDead('lanternbearer', committedCharacters())).toBe(false);
+		expect(actsWhenDead(plainGame(), 'lanternbearer', characters)).toBe(true);
+		expect(actsWhenDead(plainGame(), 'lanternbearer', committedCharacters())).toBe(false);
 	});
 
 	// A homebrew Townsfolk woken by a Demon kill, as the Sage is
@@ -338,9 +340,9 @@ describe('custom characters', () => {
 			{ strict: false, scriptFields: true }
 		);
 		expect(issues.list).toEqual([]);
-		expect(onDeathTrigger('lastwatch', new Map([[watcher!.id, watcher!]]))).toEqual({
+		expect(onDeathTrigger(plainGame(), 'lastwatch', new Map([[watcher!.id, watcher!]]))).toEqual({
 			by: 'demon'
 		});
-		expect(onDeathTrigger('lastwatch', testCharacters)).toBeUndefined();
+		expect(onDeathTrigger(plainGame(), 'lastwatch', testCharacters)).toBeUndefined();
 	});
 });

@@ -129,9 +129,9 @@ describe('Fiddler', () => {
 			// choose an evil player instead.)"
 			// The fiddle contest is its own dialog from the Fiddler's row (Trevor, 2026-11-03).
 			const s = scenario(['chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp']).rule('fiddler');
-			expect(ruleCharacterUse('fiddler', s.characters)).toBe('contest');
-			expect(ruleCharacterUse('doomsayer', s.characters)).toBe('anyone');
-			expect(ruleCharacterUse('djinn', s.characters)).toBeUndefined();
+			expect(ruleCharacterUse(s.game, 'fiddler', s.characters)).toBe('contest');
+			expect(ruleCharacterUse(s.game, 'doomsayer', s.characters)).toBe('anyone');
+			expect(ruleCharacterUse(s.game, 'djinn', s.characters)).toBeUndefined();
 			expect(contestChoosers(s.game, 'fiddler', s.characters)).toEqual([s.seat('imp')]);
 		});
 

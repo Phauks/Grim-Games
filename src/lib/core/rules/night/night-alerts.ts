@@ -66,7 +66,7 @@
  *   a partner's player, or would have their choice of one moved by the Storyteller to another
  *   player (`jinx-partner-alerts.ts`); a partner who chose them tonight is a `no-kill`
  *   (`noKill` `chosen`, `jinx-targets.ts`);
- * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
+ * and, when the step can kill (`nightKiller`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
  * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon),
@@ -275,7 +275,7 @@ export function nightStepAlerts(
 	out.push(...missingTokenAlerts(game, characterId, actors, characters));
 	out.push(...trueInfoAlerts(game, characterId, actors, characters));
 
-	const killer = nightKiller(characterId, characters);
+	const killer = nightKiller(game, characterId, characters);
 	out.push(...jinxStepAlerts(game, characterId, actors, killer?.by === 'demon', characters));
 	if (killer?.by === 'demon') {
 		const stopped = demonKillStops(game, characters);

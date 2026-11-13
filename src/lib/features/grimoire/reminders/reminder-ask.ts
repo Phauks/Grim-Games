@@ -80,6 +80,7 @@ export function freshAsks(
 			const characterId = reminder.like?.characterId ?? reminder.characterId;
 			// An ∞ token with only words asks as an official reminder with those words would.
 			const prompt = reminderPrompt(
+				game,
 				reminderWords(reminder),
 				characterId === GENERIC_REMINDER_ID ? undefined : characterId,
 				characters

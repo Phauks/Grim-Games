@@ -211,8 +211,7 @@ a moved table goes in the character's file, never in a TypeScript table. Rules c
 character: a rule becomes a behaviour with parameters that any character can use. Game rules and
 the engine read a block only through `rulesFor(game, id, characters)` (`rules/rules-for.ts`), which
 lays the game's optional rule and jinx patches over it; `rulesOf` is for setup, the night sheet,
-Reference and the builders. Lint `grim/rules-for` enforces it, and its `RULES_OF_TODO` in
-`eslint.config.js` only shrinks.
+Reference and the builders. Lint `grim/rules-for` enforces it.
 
 Each key of a rules block is one part, one file in `src/lib/core/data/parts/` with its reader,
 label and description, listed once in `parts/index.ts` (alphabetical). The block's type

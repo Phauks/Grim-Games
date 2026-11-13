@@ -18,6 +18,7 @@ export interface RuleSwitch {
 export type SwitchLabel =
 	| 'modes.switch.namedOne'
 	| 'modes.switch.namedMany'
+	| 'modes.switch.mayBeNone'
 	| 'modes.switch.threeAlive'
 	| 'modes.switch.duplicateDemons';
 
@@ -28,6 +29,9 @@ export type SwitchChoices = Readonly<Record<string, boolean>>;
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
 /** Infinite Possibilities' named setting, our wording (approved 2026-10-23). */
 export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
+/** +1 with no extra promised, our wording (drafted 2026-11-12, waiting on Trevor). */
+export const PLUS_ONE_MAY_BE =
+	'Tell the table that one character from off the script may be in play.';
 
 /**
  * +1 and Infinite Possibilities are the same part underneath (hidden characters from off the
@@ -55,6 +59,33 @@ const EXTRAS: readonly RuleSwitch[] = [
 						? { pool: { ...pool, announceRange: false } }
 						: {}),
 					information: [{ ...first, instructions: text }, ...rest]
+				}
+			};
+		}
+	},
+	{
+		// Trevor (2026-10-22): +1 and Infinite Possibilities always deal their extras, but a
+		// game where they may be in play "would be beneficial to be built". On, none may be
+		// dealt: the count starts at 0, so rolling may deal none and the range starts at 0.
+		id: 'may-be-none',
+		label: () => 'modes.switch.mayBeNone',
+		default: false,
+		apply: (rule, on) => {
+			const pool = rule.setup.pool;
+			if (!on || pool?.kind !== 'script-plus-hidden') return rule;
+			const rows = Object.values(pool.extras).reduce((a, n) => a + (n ?? 0), 0);
+			const count = { min: 0, max: pool.count?.max ?? rows };
+			// +1's own line promises one; it now says one may be in play, unless named.
+			const [first, ...rest] = rule.setup.information ?? [];
+			const promised = rule.id === 'plus-one' && first?.instructions !== PLUS_ONE_NAMED;
+			return {
+				...rule,
+				setup: {
+					...rule.setup,
+					pool: { ...pool, count },
+					...(promised
+						? { information: [{ ...first, instructions: PLUS_ONE_MAY_BE }, ...rest] }
+						: {})
 				}
 			};
 		}

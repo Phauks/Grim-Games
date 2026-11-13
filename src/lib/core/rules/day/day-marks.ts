@@ -46,7 +46,7 @@ export function dayMarkSeats(
 		if (!characterId || !rule || (mark && rule.mark !== mark)) return [];
 		if (
 			game.seats[seatId].dead &&
-			!actsWhenDead(characterId, characters) &&
+			!actsWhenDead(game, characterId, characters) &&
 			!keepsAbilityWhenDead(game, seatId, characters)
 		)
 			return [];

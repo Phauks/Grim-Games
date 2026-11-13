@@ -78,12 +78,12 @@ describe('Sage', () => {
 				.becomes('chef', 'nodashii', 'evil')
 				.dies('imp', 'pithag')
 				.dies('sage', 'pithag');
-			const trigger = onDeathTrigger('sage', s.characters)!;
-			expect(onDeathApplies(trigger, s.game.seats[s.seat('sage')].deathCause, s.characters)).toBe(
-				false
-			);
+			const trigger = onDeathTrigger(s.game, 'sage', s.characters)!;
+			expect(
+				onDeathApplies(s.game, trigger, s.game.seats[s.seat('sage')].deathCause, s.characters)
+			).toBe(false);
 			// A kill by the new Demon would have woken the Sage.
-			expect(onDeathApplies(trigger, 'nodashii', s.characters)).toBe(true);
+			expect(onDeathApplies(s.game, trigger, 'nodashii', s.characters)).toBe(true);
 		});
 	});
 
@@ -91,9 +91,10 @@ describe('Sage', () => {
 		it('wakes when the Demon kills them, not when executed', () => {
 			// Wiki: "If the Sage was killed by the Demon, wake the Sage."
 			const killed = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).dies('sage', 'imp');
-			const trigger = onDeathTrigger('sage', killed.characters)!;
+			const trigger = onDeathTrigger(killed.game, 'sage', killed.characters)!;
 			expect(
 				onDeathApplies(
+					killed.game,
 					trigger,
 					killed.game.seats[killed.seat('sage')].deathCause,
 					killed.characters
@@ -102,6 +103,7 @@ describe('Sage', () => {
 			const executed = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).execute('sage');
 			expect(
 				onDeathApplies(
+					executed.game,
 					trigger,
 					executed.game.seats[executed.seat('sage')].deathCause,
 					executed.characters

@@ -29,7 +29,7 @@ export function survivesFirstDeath(
 ): FirstDeathSaver | undefined {
 	const saver = firstDeathSaver(game, seatId, characters);
 	if (!saver) return undefined;
-	if (cause && nightKiller(cause, characters)?.ignoresProtection) return undefined;
+	if (cause && nightKiller(game, cause, characters)?.ignoresProtection) return undefined;
 	// Drunk or poisoned, the player has no ability (death itself is what the ability stops).
 	if (abilityState(game, seatId, characters).impairments.length > 0) return undefined;
 	return saver;
@@ -62,9 +62,9 @@ export function deathReminder(
 ): DeathReminder | undefined {
 	const seat = game.seats[seatId];
 	const characterId = trueCharacter(game, seatId, characters);
-	const trigger = characterId ? onDeathTrigger(characterId, characters) : undefined;
+	const trigger = characterId ? onDeathTrigger(game, characterId, characters) : undefined;
 	if (!seat || !characterId || !trigger?.places) return undefined;
-	if (!onDeathApplies(trigger, cause, characters)) return undefined;
+	if (!onDeathApplies(game, trigger, cause, characters)) return undefined;
 	if (abilityState(game, seatId, characters).impairments.length > 0) return undefined;
 	const label = trigger.places.toLowerCase();
 	const mine = (s: SeatId) =>

@@ -12,7 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
-import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { plainGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
@@ -72,7 +72,7 @@ describe('Yaggababble', () => {
 		});
 
 		it('keeps a count of the phrase said today, each one a death', () => {
-			expect(dayTallyOf('yaggababble', testCharacters)).toEqual({
+			expect(dayTallyOf(plainGame(), 'yaggababble', testCharacters)).toEqual({
 				label: 'Phrase said today',
 				kills: true
 			});
