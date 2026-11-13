@@ -17,6 +17,7 @@ import { describe, isObject, Issues } from './validate.ts';
 export type { ReminderPrompt } from './parts/reminder-prompts.ts';
 export type { NominatedEffect, OnNominated } from './parts/on-nominated.ts';
 export type { DeadKeepAbilities } from './parts/dead-keep-abilities.ts';
+export type { InfoDelay } from './parts/info-delay.ts';
 export type { NightWake } from './parts/night-wakes.ts';
 export type { NominatingEffect } from './parts/on-nominating.ts';
 export type { DayClaim } from './parts/day-claim.ts';

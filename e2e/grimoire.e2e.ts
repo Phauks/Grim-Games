@@ -7706,6 +7706,41 @@ async function stepNames(page: Page): Promise<string[]> {
 	return names;
 }
 
+// One Day More's Signal Failure (https://beardytas.com/garden-of-djinn/one-day-more/): "There
+// is a 24 hour delay impacting all characters with abilities that know or learn information."
+test('with One Day More, the Chef’s first-night number is kept and given the next night', async ({
+	page
+}) => {
+	await startWithRule(page, 'One Day More', [
+		[1, 'Chef'],
+		[2, 'Imp']
+	]);
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	const chef = await openStep(page, 'Chef');
+	const held = chef.getByTestId('held-info');
+	await expect(held).toContainText('Held from last night');
+	await expect(held).toContainText('None');
+	await expect(held.getByTestId('held-note')).toHaveText(
+		'Tonight’s information is kept for tomorrow night (One Day More).'
+	);
+	await chef
+		.getByRole('list', { name: 'Valid information' })
+		.getByRole('button', { name: 'Show to player' })
+		.tap();
+	await expect(shown.locator('.detail')).toHaveText('0');
+	await shown.locator('.close button').tap();
+	await expect(shown).toHaveCount(0);
+	await chef.getByRole('button', { name: 'Close' }).tap();
+	await nextNight(page);
+	// The Chef doesn't wake on other nights, but does tonight, to receive last night's number.
+	const again = await openStep(page, 'Chef');
+	const kept = again.getByTestId('held-info');
+	await expect(kept.locator('li')).toHaveCount(1);
+	await expect(kept.locator('li')).toContainText('Shown 0');
+	await kept.getByRole('button', { name: 'Show to player' }).tap();
+	await expect(shown.locator('.detail')).toHaveText('0');
+});
+
 test('with The Phantom Detectives, living Townsfolk sleep and the dead keep waking', async ({
 	page
 }) => {

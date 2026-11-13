@@ -146,6 +146,11 @@ export interface NightStep {
 	 * team pretends to be (`Game.pretend`, M26): the Storyteller acts it out for the table.
 	 */
 	pretend?: true;
+	/**
+	 * On a step added only so a player receives last night's information, under a rule that
+	 * delays it (One Day More's Signal Failure, `withHeldInfoSteps`): nothing new is worked out.
+	 */
+	heldInfo?: true;
 }
 
 export interface OmittedStep {

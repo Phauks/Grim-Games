@@ -65,6 +65,10 @@
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { givesNumber, seatName, stepName } from './night-steps.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
+	import { ruleSources } from '#lib/core/rules/rule-sources.ts';
+	import { delaysInfo, infoDelayOf } from '#lib/core/rules/night/info/held-info.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
+	import HeldInfo from './HeldInfo.svelte';
 	import {
 		reminderCopies,
 		reminderKey,
@@ -139,6 +143,14 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const holders = $derived(step ? stepHolders(game, step, characters) : []);
+	/**
+	 * One Day More's Signal Failure (`infoDelay`): this step's information is worked out tonight
+	 * and given tomorrow night, so the step lists what was kept from last night.
+	 */
+	const delay = $derived(infoDelayOf(ruleSources(game, characters, playedRules(game.gameId))));
+	const delayed = $derived(
+		!!delay && !!step?.character && delaysInfo(game, step.character.id, characters, delay.rule)
+	);
 	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
 	/**
 	 * The step's character's jinxes with characters in play, word for word, where the
@@ -352,6 +364,17 @@
 		showOpen = true;
 	}
 	function showNumber(n: number) {
+		// Kept for tomorrow under a delay, like any information the step records, in the same
+		// words as a Valid Information row, so showing it from either records it once.
+		const seatId = holders.length === 1 ? holders[0] : undefined;
+		const characterId = step?.character?.id;
+		const text = `Shown ${n}`;
+		const last = game.today.entries.findLast(
+			(e) => e.kind === 'info' && e.seatId === seatId && e.characterId === characterId
+		);
+		const recorded = last?.kind === 'info' && last.text === text;
+		if (delayed && !step?.heldInfo && seatId && characterId && !recorded && !grimoire.open.viewOnly)
+			grimoire.run({ type: 'RecordNightInfo', seatId, characterId, text });
 		// Over the open step, as with a suggestion's Show to player.
 		shownId = undefined;
 		shownCard = { title: numberCard, detail: String(n) };
@@ -463,6 +486,13 @@
 			     info's cards are its next lines, each with the same eye. -->
 			<!-- Valid Information: on the first line (Trevor, 2026-11-09), else after the Steps. -->
 			{#snippet validInfo()}
+				{#if delayed && delay && step.character}<HeldInfo
+						{grimoire}
+						characterId={step.character.id}
+						seats={holders}
+						by={delay.by}
+						onShowAnswer={showAnswer}
+					/>{/if}
 				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
 				<MadAsStep {grimoire} {step} />
 				<NightSuggested
