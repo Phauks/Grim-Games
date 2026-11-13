@@ -17,13 +17,12 @@ import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/charac
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
-import { jinxEffect, ownJinxEffects, ownJinxRules } from './jinxes.ts';
+import { jinxEffect, madAsPartners, ownJinxEffects, ownJinxRules } from './jinxes.ts';
 import { jinxApplies } from './jinx-when.ts';
 import {
 	gainedApplies,
 	gainedPartnerJinx,
 	jinxGuessers,
-	madAsPartners,
 	notShownGiven,
 	secondDemonReverts
 } from './jinx-effects.ts';

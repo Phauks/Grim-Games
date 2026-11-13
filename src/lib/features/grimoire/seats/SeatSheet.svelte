@@ -222,13 +222,13 @@
 	/** The Savant's information generator (L2), for a Savant seat while its switch is on. */
 	const savant = $derived(
 		seat?.characterId !== undefined &&
-			dayClaim(seat.characterId, characters) === 'statements' &&
+			dayClaim(game, seat.characterId, characters) === 'statements' &&
 			preferences.current.assistance.savantInfo
 	);
 	/** A player's claim in town (L56): Guesses or Statement, as on their day row. */
 	const claim = $derived.by(() => {
 		const id = seat?.characterId;
-		const c = id ? dayClaim(id, grimoire.open.characters) : undefined;
+		const c = id ? dayClaim(game, id, grimoire.open.characters) : undefined;
 		return preferences.current.assistance.playerClaims && c !== undefined && c !== 'statements'
 			? c
 			: undefined;

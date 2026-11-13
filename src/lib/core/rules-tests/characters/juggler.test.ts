@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
@@ -186,8 +187,8 @@ describe('Juggler', () => {
 			// each of any one player and any one character."
 			const s = scenario(cast).newDay();
 			expect(mayJuggle(s)).toBe(true);
-			expect(dayClaim('juggler', committedCharacters())).toBe('guesses');
-			expect(guessLimit('juggler', committedCharacters())).toBe(5);
+			expect(dayClaim(plainGame(), 'juggler', committedCharacters())).toBe('guesses');
+			expect(guessLimit(plainGame(), 'juggler', committedCharacters())).toBe(5);
 		});
 
 		it('is not offered guesses after the first day', () => {

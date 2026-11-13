@@ -1,21 +1,21 @@
-import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/index.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import { keptAfterPartner } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
-type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
-
 /**
  * Whether a character's ability still acts once its player is dead (`actsWhenDead` in its
  * rules block: our `data/rules/<id>.json`, or a custom character's own `rules`). Their
  * reminders stay with the living ones in the bank. The tests cite each wiki page.
  */
-export function actsWhenDead(characterId: CharacterId, characters: RulesLookup): boolean {
-	return rulesOf(characterId, characters)?.actsWhenDead === true;
+export function actsWhenDead(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	return rulesFor(game, characterId, characters)?.actsWhenDead === true;
 }
 
 /**
@@ -69,7 +69,8 @@ export function deadCharacters(game: Game, characters: CharacterLookup): Set<Cha
 		const ended = seat.dead && !keepsAbilityWhenDead(game, seatId, characters);
 		(ended ? dead : alive).add(seat.characterId);
 	}
-	for (const id of [...dead]) if (alive.has(id) || actsWhenDead(id, characters)) dead.delete(id);
+	for (const id of [...dead])
+		if (alive.has(id) || actsWhenDead(game, id, characters)) dead.delete(id);
 	return dead;
 }
 
@@ -86,7 +87,7 @@ export function reminderOwnerDead(
 	reminder: { characterId: CharacterId; ownerSeatId?: string },
 	characters: CharacterLookup
 ): boolean {
-	if (actsWhenDead(reminder.characterId, characters)) return false;
+	if (actsWhenDead(game, reminder.characterId, characters)) return false;
 	const ownerId = reminder.ownerSeatId;
 	if (ownerId && game.seats[ownerId])
 		return !!game.seats[ownerId].dead && !keepsAbilityWhenDead(game, ownerId, characters);

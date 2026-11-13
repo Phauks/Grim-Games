@@ -31,6 +31,7 @@ export const CLAIM_KEYS = {
 
 /** A short line for a day-log entry, in our words (the grimoire's History uses it). */
 export function describeEntry(
+	game: Game,
 	entry: DayEntry,
 	seatName: (seatId: SeatId | undefined) => string,
 	characterName: (id: CharacterId | undefined) => string,
@@ -85,7 +86,7 @@ export function describeEntry(
 			};
 			if (entry.passed !== undefined)
 				return t(entry.passed ? 'day.logAbilityVotePassed' : 'day.logAbilityVoteFailed', names);
-			const who = dayUseWho(entry.characterId, characters) ?? 'chosen';
+			const who = dayUseWho(game, entry.characterId, characters) ?? 'chosen';
 			if (entry.on === undefined)
 				return t(who === 'ally' ? 'day.logAbilityAnyone' : 'day.logAbility', names);
 			return t(`day.logAbilityOn.${who}`, { ...names, on: seatName(entry.on) });

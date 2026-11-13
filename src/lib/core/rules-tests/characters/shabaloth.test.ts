@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
@@ -160,7 +161,9 @@ describe('Shabaloth', () => {
 				label: 'Alive',
 				action: 'place'
 			});
-			expect(reminderPrompt('Alive', 'shabaloth', committedCharacters())).toBe('revive');
+			expect(reminderPrompt(plainGame(), 'Alive', 'shabaloth', committedCharacters())).toBe(
+				'revive'
+			);
 		});
 
 		it("replaces the regurgitated player's Dead with Alive", () => {

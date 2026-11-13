@@ -376,6 +376,7 @@ function describeEvent(
 			};
 			const ids: CharacterId[] = [];
 			const line = describeDayEntry(
+				after,
 				event.entry,
 				name,
 				(id) => {

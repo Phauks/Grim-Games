@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Character, Script } from '#lib/core/data/types.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { newGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, plainGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -22,11 +22,11 @@ import { type DeathKind } from '#lib/core/data/parts/death-cause.ts';
 const data = committedGameData();
 const official: Script = { entries: [] };
 const characters = characterLookup(data, official);
-const kindOf = (id: string) => deathCauseEntry(id, testCharacters)?.kind;
+const kindOf = (id: string) => deathCauseEntry(plainGame(), id, testCharacters)?.kind;
 /** Official characters whose ability can cause a death, by id. */
 const DEATH_CAUSE_ENTRIES = Object.fromEntries(
 	[...OFFICIAL_RULES].flatMap(([id]) => {
-		const entry = deathCauseEntry(id, testCharacters);
+		const entry = deathCauseEntry(plainGame(), id, testCharacters);
 		return entry ? [[id, entry]] : [];
 	})
 );
@@ -94,7 +94,7 @@ describe('kinds', () => {
 	// that night are its attacks (M32), so it kills only after changing a player into a Demon.
 	it('the Pit-Hag kills only once it has made a Demon', () => {
 		expect(kindOf('pithag')).toBe('kills');
-		expect(deathCauseEntry('pithag', testCharacters)?.afterChanging).toBe('demon');
+		expect(deathCauseEntry(plainGame(), 'pithag', testCharacters)?.afterChanging).toBe('demon');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Barber: only swaps characters.
@@ -127,16 +127,16 @@ describe('Demons', () => {
 	it('every Demon but the Leviathan kills', () => {
 		expect(demons.length).toBeGreaterThan(15);
 		for (const id of demons.filter((d) => d !== 'leviathan')) {
-			expect(deathCauseEntry(id, testCharacters), id).toMatchObject({ kind: 'kills' });
-			expect(deathCauseEntry(id, testCharacters)?.onlyWith, id).toBeUndefined();
+			expect(deathCauseEntry(plainGame(), id, testCharacters), id).toMatchObject({ kind: 'kills' });
+			expect(deathCauseEntry(plainGame(), id, testCharacters)?.onlyWith, id).toBeUndefined();
 		}
 	});
 
 	// https://wiki.bloodontheclocktower.com/Leviathan: it does not kill; with the Banshee
 	// jinx it chooses a player each night, and a chosen Banshee dies.
 	it('the Leviathan kills only with the Banshee', () => {
-		expect(deathCauses(['leviathan', 'empath'], characters)).toEqual([]);
-		expect(deathCauses(['leviathan', 'banshee'], characters)).toEqual([
+		expect(deathCauses(plainGame(), ['leviathan', 'empath'], characters)).toEqual([]);
+		expect(deathCauses(plainGame(), ['leviathan', 'banshee'], characters)).toEqual([
 			{ characterId: 'leviathan', kind: 'kills' }
 		]);
 	});
@@ -146,6 +146,7 @@ describe('deathCauses', () => {
 	it('keeps script order and drops characters that never cause a death', () => {
 		expect(
 			deathCauses(
+				plainGame(),
 				['washerwoman', 'virgin', 'slayer', 'tinker', 'poisoner', 'imp', 'philosopher'],
 				characters
 			)
@@ -162,7 +163,7 @@ describe('deathCauses', () => {
 	// so those in play are offered even when the script does not list them.
 	it('adds Travellers, Fabled and Loric in play after the script, each once', () => {
 		expect(
-			deathCauses(['imp', 'gunslinger'], characters, [
+			deathCauses(plainGame(), ['imp', 'gunslinger'], characters, [
 				'gunslinger',
 				'harlot',
 				'thief',
@@ -193,7 +194,9 @@ describe('deathCauses', () => {
 				{ kind: 'official', id: 'chef' }
 			]
 		};
-		expect(deathCauses(['brewdemon', 'brewfolk', 'chef'], characterLookup(data, script))).toEqual([
+		expect(
+			deathCauses(plainGame(), ['brewdemon', 'brewfolk', 'chef'], characterLookup(data, script))
+		).toEqual([
 			{ characterId: 'brewdemon', kind: 'kills' },
 			{ characterId: 'brewfolk', kind: 'unknown' }
 		]);
@@ -220,10 +223,10 @@ describe('deathCauses', () => {
 			]
 		};
 		const lookup = characterLookup(data, script);
-		expect(deathCauses(['hunter', 'sleeper', 'cook'], lookup)).toEqual([
+		expect(deathCauses(plainGame(), ['hunter', 'sleeper', 'cook'], lookup)).toEqual([
 			{ characterId: 'hunter', kind: 'kills' }
 		]);
-		expect(deathCauses(['hunter', 'sleeper', 'cook', 'banshee'], lookup)).toEqual([
+		expect(deathCauses(plainGame(), ['hunter', 'sleeper', 'cook', 'banshee'], lookup)).toEqual([
 			{ characterId: 'hunter', kind: 'kills' },
 			{ characterId: 'sleeper', kind: 'kills' }
 		]);
@@ -314,11 +317,11 @@ describe('the cause a reminder gives a death', () => {
 // counts as an execution (the Saint, https://wiki.bloodontheclocktower.com/Saint).
 describe('isExecution', () => {
 	it('is an execution, plain or by an ability that executes', () => {
-		expect(isExecution('execution', testCharacters)).toBe(true);
-		expect(isExecution('virgin', testCharacters)).toBe(true);
-		expect(isExecution('demon', testCharacters)).toBe(false);
-		expect(isExecution('exile', testCharacters)).toBe(false);
-		expect(isExecution('slayer', testCharacters)).toBe(false);
-		expect(isExecution(undefined, testCharacters)).toBe(false);
+		expect(isExecution(plainGame(), 'execution', testCharacters)).toBe(true);
+		expect(isExecution(plainGame(), 'virgin', testCharacters)).toBe(true);
+		expect(isExecution(plainGame(), 'demon', testCharacters)).toBe(false);
+		expect(isExecution(plainGame(), 'exile', testCharacters)).toBe(false);
+		expect(isExecution(plainGame(), 'slayer', testCharacters)).toBe(false);
+		expect(isExecution(plainGame(), undefined, testCharacters)).toBe(false);
 	});
 });

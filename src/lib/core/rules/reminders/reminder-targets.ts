@@ -13,7 +13,7 @@
  * https://wiki.bloodontheclocktower.com/Spy). So does a neighbour of a seat that may register
  * as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
-import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import type { NeighbourRule, TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -91,10 +91,11 @@ export interface TargetFit {
 
 /** The rule for a token, or undefined for a token whose character's rules give none. */
 export function targetRule(
+	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup
 ): TargetRule | undefined {
-	return rulesOf(reminder.characterId, characters)?.reminderTargets?.[reminder.label];
+	return rulesFor(game, reminder.characterId, characters)?.reminderTargets?.[reminder.label];
 }
 
 /**
@@ -110,7 +111,7 @@ export function reminderOffered(
 ): boolean {
 	const gives = rulesFor(game, reminder.characterId, characters)?.givesAbility;
 	if (gives?.standIns?.includes(reminder.label)) return false;
-	const min = targetRule(reminder, characters)?.minOwners;
+	const min = targetRule(game, reminder, characters)?.minOwners;
 	return min === undefined || ownerSeats(game, reminder.characterId, characters).length >= min;
 }
 
@@ -180,7 +181,7 @@ export function neighbourSeats(
 	characters: CharacterLookup,
 	centres?: readonly SeatId[]
 ): SeatId[] | undefined {
-	const near = targetRule(reminder, characters)?.neighbour;
+	const near = targetRule(game, reminder, characters)?.neighbour;
 	if (!near) return undefined;
 	const from = centres ?? neighbourCentres(game, reminder.characterId, near, characters);
 	return [...new Set(from.flatMap((id) => neighbours(game, id, near, characters)))];
@@ -232,7 +233,7 @@ export function reminderTargetMisses(
 	if (!Object.hasOwn(game.seats, seatId)) return [];
 	const chosen = choiceJinx(game, reminder, seatId, characters);
 	const jinxed: TargetMiss[] = chosen ? [chosen] : [];
-	const rule = targetRule(reminder, characters);
+	const rule = targetRule(game, reminder, characters);
 	if (!rule) return jinxed;
 	if (rule.global) return ['global'];
 

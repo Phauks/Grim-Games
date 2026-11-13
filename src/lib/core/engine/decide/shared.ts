@@ -522,12 +522,13 @@ export function guessesOf(
  * decides.
  */
 export function checkGuessLimit(
+	game: Game,
 	ctx: EngineContext,
 	characterId: CharacterId,
 	count: number,
 	warn: Warn
 ): void {
-	const limit = guessLimit(characterId, ctx.characters);
+	const limit = guessLimit(game, characterId, ctx.characters);
 	if (limit !== undefined && count > limit) {
 		warn('too-many-guesses', `the ${characterOf(ctx, characterId).name} guesses at most ${limit}`);
 	}

@@ -114,7 +114,9 @@ export function boardNightSteps(
 	// A player whose character changed since dawn wakes before Dawn to learn it; changes only
 	// count after the first New day, so only other nights have them.
 	const woken =
-		night === 'other' ? withCharacterChangeSteps(steps, today.changes ?? [], characters) : steps;
+		night === 'other'
+			? withCharacterChangeSteps(game, steps, today.changes ?? [], characters)
+			: steps;
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	return duskToDawn([
@@ -228,7 +230,8 @@ export function stepWakes(
 	const id = step.character?.id;
 	// A step that wakes the players its character marks (the Duchess's visitors) wakes only
 	// when someone is marked: no visitors, no visits tonight.
-	if (id !== undefined && !step.gained && wakesMarked(id, characters)) return holders.length > 0;
+	if (id !== undefined && !step.gained && wakesMarked(game, id, characters))
+		return holders.length > 0;
 	// An ability set off by its player's death (the Ravenkeeper, the Sage) wakes after the first
 	// night only on the night of that death, never while its player lives. A jinx with a partner
 	// in play may change that (the Leviathan's chosen Sage acts), so its step stays (warn, never
@@ -236,7 +239,7 @@ export function stepWakes(
 	const onDeath =
 		id !== undefined &&
 		game.pastDays.length > 0 &&
-		onDeathTrigger(id, characters) !== undefined &&
+		onDeathTrigger(game, id, characters) !== undefined &&
 		!jinxedInPlay(game, id, characters);
 	// One whose death gives the Storyteller an ability (`givesAbility` to the Storyteller: the
 	// Plague Doctor, https://wiki.bloodontheclocktower.com/Plague_Doctor) wakes every night after
@@ -287,6 +290,6 @@ function setOffByDeath(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): boolean {
-	const trigger = onDeathTrigger(characterId, characters);
-	return !!trigger && onDeathApplies(trigger, game.seats[seatId]?.deathCause, characters);
+	const trigger = onDeathTrigger(game, characterId, characters);
+	return !!trigger && onDeathApplies(game, trigger, game.seats[seatId]?.deathCause, characters);
 }
