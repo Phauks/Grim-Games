@@ -6,6 +6,7 @@
 import {
 	CHARACTER_TYPES,
 	type Character,
+	type CharacterId,
 	type CharacterType,
 	type GameData,
 	type LoadedScript,
@@ -46,6 +47,30 @@ export function sheetCharacters(script: LoadedScript, data: GameData): Character
 	return [...own, ...travellers];
 }
 
+/**
+ * The characters a game's script sheet lists, for both the Script and Night tabs: in a game
+ * (`inPlay` or `travellers` given), the script's characters with only the Travellers in play,
+ * each one whether the script recommends it or not (Trevor, 2026-11-02: a Voudon added though
+ * not recommended showed under Recommended Travellers; 2026-11-12: Travellers not in play showed
+ * in the Night tab). Outside a game, `listed` as it is.
+ */
+export function gameSheetCharacters(
+	listed: readonly Character[],
+	byId: ReadonlyMap<CharacterId, Character>,
+	inPlay?: readonly CharacterId[],
+	travellers?: readonly { characterId: CharacterId }[]
+): readonly Character[] {
+	if (inPlay === undefined && travellers === undefined) return listed;
+	const ids = [...(travellers ?? []).map((p) => p.characterId), ...(inPlay ?? [])];
+	const playing = ids
+		.filter((id, i) => ids.indexOf(id) === i)
+		.flatMap((id) => {
+			const c = listed.find((l) => l.id === id) ?? byId.get(id);
+			return c?.type === 'traveller' ? [c] : [];
+		});
+	return [...listed.filter((c) => c.type !== 'traveller'), ...playing];
+}
+
 export function playerJinxes(script: LoadedScript, data: GameData): ScriptJinx[] {
 	return scriptJinxes(
 		data.jinxes,
@@ -72,14 +97,20 @@ export interface PlayerNight {
 /**
  * The night order for players: every character on the script that wakes this night, in
  * order, with Dusk, Minion info, Demon info and Dawn. Uses the script's own `_meta` order
- * when it has one.
+ * when it has one. In a game, `characters` are the ones its Script tab lists
+ * (`gameSheetCharacters`), so a Traveller not in play has no step.
  */
-export function playerNight(script: LoadedScript, data: GameData, night: Night): PlayerNight {
+export function playerNight(
+	script: LoadedScript,
+	data: GameData,
+	night: Night,
+	characters: readonly Character[] = script.characters
+): PlayerNight {
 	const order = nightOrder({
 		night,
 		sheet: data.nightSheet,
 		official: data.byId,
-		inPlay: script.characters,
+		inPlay: characters,
 		// Always lay out Minion and Demon info: the player view doesn't know the player count.
 		players: MAX_DEALT_PLAYERS,
 		customOrder: night === 'first' ? script.meta.firstNight : script.meta.otherNight

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { editionScript } from '#lib/core/data/index.ts';
+import { editionScript, loadScript } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	gameSheetCharacters,
 	groupByType,
 	playerJinxes,
 	playerNight,
@@ -79,5 +80,58 @@ describe('scriptVersion', () => {
 			'3'
 		);
 		expect(scriptVersion(undefined, { version: ' ' })).toBeUndefined();
+	});
+
+	describe('in a game, Travellers not in play have no night steps', () => {
+		// Elven Court (GrayPockets) lists the Barista and its own Gremlin, a Traveller that wakes
+		// on other nights, and names the Barista in its `_meta` first night order. With neither
+		// in play, the game's Night tab showed both (Trevor, 2026-11-12).
+		const court = loadScript(
+			[
+				{ id: '_meta', name: 'Court', firstNight: ['dusk', 'barista', 'witch', 'dawn'] },
+				'witch',
+				'king',
+				'imp',
+				'barista',
+				{
+					id: 'gremlin',
+					name: 'Gremlin',
+					team: 'traveller',
+					ability: 'Each night*, something may happen to you.',
+					otherNight: 99.5,
+					otherNightReminder: 'Check on the Gremlin.'
+				}
+			],
+			data
+		).script!;
+		const steps = (night: 'first' | 'other', inPlay?: string[], travellers?: string[]) =>
+			playerNight(
+				court,
+				data,
+				night,
+				gameSheetCharacters(
+					court.characters,
+					data.byId,
+					inPlay,
+					travellers?.map((characterId) => ({ characterId }))
+				)
+			).entries.flatMap((e) => (e.kind === 'character' ? [e.character.id] : []));
+
+		it('leaves them out once the game says who plays', () => {
+			const seated = ['witch', 'king', 'imp'];
+			expect(steps('first', seated, [])).not.toContain('barista');
+			expect(steps('other', seated, [])).not.toContain('gremlin');
+			expect(steps('other', seated, [])).toEqual(expect.arrayContaining(['witch', 'king', 'imp']));
+		});
+
+		it('keeps one the town knows is in play', () => {
+			expect(steps('first', ['witch', 'imp'], ['barista'])).toContain('barista');
+			expect(steps('other', ['witch', 'imp', 'gremlin'])).toContain('gremlin');
+		});
+
+		it('keeps every Traveller on the script outside a game', () => {
+			expect(steps('first')).toContain('barista');
+			expect(steps('other')).toContain('gremlin');
+		});
 	});
 });

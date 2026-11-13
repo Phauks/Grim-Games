@@ -6,7 +6,7 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerNight } from './player-script.ts';
+	import { gameSheetCharacters, playerNight } from './player-script.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { sheetStyle } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
@@ -53,9 +53,15 @@
 		if (!officialData.current) void loadOfficialData();
 	});
 	const data = $derived(officialData.current);
-	const nights = $derived(
-		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n)) : []
-	);
+	/**
+	 * In a game, only the Travellers in play have night steps, as the Script tab lists only them
+	 * (Trevor, 2026-11-12: Elven Court's Barista and Gremlin showed though no one played them).
+	 */
+	const nights = $derived.by(() => {
+		if (!data) return [];
+		const characters = gameSheetCharacters(script.characters, data.byId, inPlay, travellers);
+		return (['first', 'other'] as const).map((n) => playerNight(script, data, n, characters));
+	});
 	const tabs = $derived([
 		{ value: 'script', label: t('player.tab.script'), icon: 'script' as const },
 		{ value: 'night', label: t('player.tab.night'), icon: 'night' as const },
