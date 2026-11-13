@@ -9,7 +9,8 @@ import {
 	STR,
 	STRS,
 	T,
-	variants
+	variants,
+	worded
 } from '../field-spec.ts';
 import {
 	ALIGNMENTS,
@@ -100,29 +101,111 @@ export const setupModifier = specPart(
 	'Setup change',
 	'How its bracketed text changes which characters are dealt.',
 	obj({
-		summary: STR,
-		ops: list(
-			obj({
-				kind: oneOf(['delta', 'set', 'any']),
-				type: oneOf(SEATED_TYPES),
-				values: opt(
-					variants(
-						{ label: 'Numbers', is: 'array', spec: NUMS },
-						{ label: 'Most', is: 'string', spec: oneOf(['most']) }
+		summary: worded(
+			{ label: 'Short summary', about: 'Shown beside its name in setup, such as +2 Outsiders.' },
+			STR
+		),
+		ops: worded(
+			{
+				label: 'Changes to type counts',
+				about: 'Each one changes how many of a character type are dealt.'
+			},
+			list(
+				obj({
+					kind: worded(
+						{
+							label: 'Change',
+							names: {
+								delta: 'Add to the usual count',
+								set: 'Set the count',
+								any: 'Storyteller decides'
+							}
+						},
+						oneOf(['delta', 'set', 'any'])
+					),
+					type: worded({ label: 'Character type' }, oneOf(SEATED_TYPES)),
+					values: opt(
+						worded(
+							{ label: 'Amounts', about: 'The numbers allowed. Most: most players are this type.' },
+							variants(
+								{ label: 'Numbers', is: 'array', spec: NUMS },
+								{ label: 'Most', is: 'string', spec: oneOf(['most']) }
+							)
+						)
+					),
+					also: opt(
+						worded(
+							{ label: 'Also allowed', about: 'Counts allowed as well, whatever the usual count.' },
+							NUMS
+						)
+					),
+					minUsual: opt(
+						worded(
+							{
+								label: 'Only with at least',
+								about: 'Applies only when the usual count of this type is at least this.'
+							},
+							COUNT
+						)
 					)
-				),
-				also: opt(NUMS),
-				minUsual: opt(COUNT)
-			})
+				})
+			)
 		),
-		requires: opt(STR),
+		requires: opt(
+			worded(
+				{
+					label: 'Needs in play',
+					about: 'The id of another character that must be in play with it.'
+				},
+				STR
+			)
+		),
 		alignments: opt(
-			list(obj({ type: oneOf(SEATED_TYPES), alignment: oneOf(ALIGNMENTS), count: COUNT }))
+			worded(
+				{
+					label: 'Start with the other alignment',
+					about: 'Players of a type that the Storyteller makes start with the other alignment.'
+				},
+				list(
+					obj({
+						type: worded({ label: 'Character type' }, oneOf(SEATED_TYPES)),
+						alignment: worded({ label: 'Starts as' }, oneOf(ALIGNMENTS)),
+						count: worded({ label: 'How many' }, COUNT)
+					})
+				)
+			)
 		),
-		copies: opt(NUMS),
-		duplicates: opt(anyOf(ALIGNMENTS)),
-		notes: opt(STRS),
-		readsBrackets: opt(T)
+		copies: opt(
+			worded(
+				{
+					label: 'Extra copies',
+					about: 'How many more of this character may be dealt, such as 0, 1, 2.'
+				},
+				NUMS
+			)
+		),
+		duplicates: opt(
+			worded(
+				{
+					label: 'Repeats allowed',
+					about: 'Which characters may be dealt more than once while it is in play.',
+					names: { good: 'Good characters', evil: 'Evil characters' }
+				},
+				anyOf(ALIGNMENTS)
+			)
+		),
+		notes: opt(
+			worded({ label: 'Setup notes', about: 'Extra notes for the Storyteller about setup.' }, STRS)
+		),
+		readsBrackets: opt(
+			worded(
+				{
+					label: 'Reads its bracketed text',
+					about: 'Its own [bracketed] text also changes setup.'
+				},
+				T
+			)
+		)
 	}),
 	(value, path, issues): SetupModifierRules | undefined => {
 		const before = issues.list.length;
