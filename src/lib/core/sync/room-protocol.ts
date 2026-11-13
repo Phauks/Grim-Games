@@ -176,6 +176,8 @@ export type ClientMessage =
 			roles?: Record<SeatId, SeatRole>;
 			/** Seats whose player may see theirs while `show` is off (room-roles.ts). */
 			open?: SeatId[];
+			/** When `show` turns itself off (epoch ms, the Storyteller's clock), for phones' countdown. */
+			until?: number;
 	  }
 	/**
 	 * Calls every player back to town: their phones sound and vibrate (plan U2). `sound` is the
@@ -309,6 +311,7 @@ export interface PlayerView {
 		>;
 	};
 	role?: SeatRole; // This player's own character, while players may see theirs.
+	roleUntil?: number; // When players stop seeing theirs (epoch ms), while all of them may.
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
 	profiles?: Partial<Record<SeatId, ProfileWords>>; // Each seat's player's tag-line and details.
 	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.

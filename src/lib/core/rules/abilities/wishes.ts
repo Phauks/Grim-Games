@@ -13,10 +13,10 @@
  * they remove the wish from the log.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId, WishEffect } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export type Wish = Extract<DayEntry, { kind: 'wish' }>;
 
@@ -38,8 +38,12 @@ export function grantedWishSeats(game: Game): SeatId[] {
 }
 
 /** Whether a character makes a wish (its `wish` rule). */
-export function makesWish(characterId: CharacterId | undefined, characters: CharacterLookup) {
-	return characterId !== undefined && rulesOf(characterId, characters)?.wish === true;
+export function makesWish(
+	game: Game,
+	characterId: CharacterId | undefined,
+	characters: CharacterLookup
+) {
+	return characterId !== undefined && rulesFor(game, characterId, characters)?.wish === true;
 }
 
 /** A granted wish whose effect is `effect`, the first one, if any. */

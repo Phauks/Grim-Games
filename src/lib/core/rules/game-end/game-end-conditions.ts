@@ -57,7 +57,8 @@ function executedSubjects(
 	}
 	return subjects
 		.filter(
-			(s) => game.seats[s].dead && isExecution(game.seats[s].deathCause, characters) && carries(s)
+			(s) =>
+				game.seats[s].dead && isExecution(game, game.seats[s].deathCause, characters) && carries(s)
 		)
 		.map((s) => ({ seats: [s], subject: s, tag: s }));
 }

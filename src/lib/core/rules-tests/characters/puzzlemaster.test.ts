@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
 	newGame,
+	plainGame,
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
@@ -122,7 +123,7 @@ describe('Puzzlemaster', () => {
 
 	describe('the guess (https://wiki.bloodontheclocktower.com/Puzzlemaster)', () => {
 		it('asks whom they guessed, and marks it Guess Used', () => {
-			expect(dayUseOf('puzzlemaster', committedCharacters())).toEqual({
+			expect(dayUseOf(plainGame(), 'puzzlemaster', committedCharacters())).toEqual({
 				who: 'guessed',
 				spentToken: 'Guess Used',
 				answer: 'demon-if-marked'

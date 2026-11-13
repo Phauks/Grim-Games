@@ -27,22 +27,29 @@ export interface RoomRoles {
 	 * character opens with theirs.
 	 */
 	open?: SeatId[];
+	/** When showing turns itself off (epoch ms), while `show` is on, for phones' countdown. */
+	until?: number;
 }
 
 /** The most seats a roles message carries: one per member. */
 const MAX_ROLE_SEATS = 40;
 
+/** A `roles` message as it arrives, every field unchecked. */
+export interface RolesSent {
+	gameId: unknown;
+	show: unknown;
+	roles?: unknown;
+	open?: unknown;
+	until?: unknown;
+}
+
 /**
  * The Storyteller's roles for game `gameId`, or `show: false` to hide them all but those of
- * the `open` seats. Only the game on the table counts; a malformed message changes nothing.
+ * the `open` seats, shown `until` then. Only the game on the table counts; a malformed message
+ * changes nothing.
  */
-export function setRoles(
-	room: RoomState,
-	gameId: unknown,
-	show: unknown,
-	raw: unknown,
-	rawOpen?: unknown
-): RoomState {
+export function setRoles(room: RoomState, sent: RolesSent): RoomState {
+	const { gameId, show, roles: raw, open: rawOpen, until: rawUntil } = sent;
 	if (typeof gameId !== 'string' || gameId !== room.gameId || typeof show !== 'boolean')
 		return room;
 	const known = new Set(room.public?.seats.map((s) => s.seatId));
@@ -60,7 +67,11 @@ export function setRoles(
 		}
 	}
 	const seen = room.roles?.gameId === gameId ? room.roles.seen : {};
-	return { ...room, roles: { gameId, show, seats, seen, ...(open.length ? { open } : {}) } };
+	const until = show && Number.isFinite(rawUntil) ? { until: rawUntil as number } : {};
+	return {
+		...room,
+		roles: { gameId, show, seats, seen, ...(open.length ? { open } : {}), ...until }
+	};
 }
 
 /**
@@ -86,6 +97,11 @@ export function memberRole(room: RoomState, memberId: string): SeatRole | undefi
 	const seatId = room.members.find((m) => m.memberId === memberId)?.seatId;
 	if (!roles || !seatId) return undefined;
 	return roles.show || roles.open?.includes(seatId) ? roles.seats[seatId] : undefined;
+}
+
+/** When this member stops seeing their role, while every player may see theirs. */
+export function memberRoleUntil(room: RoomState, memberId: string): number | undefined {
+	return memberRole(room, memberId) ? current(room)?.until : undefined;
 }
 
 /** A player looked at their role; nothing changes if they have none to see. */

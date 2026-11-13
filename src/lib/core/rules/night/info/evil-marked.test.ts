@@ -30,7 +30,7 @@ describe('evil-marked answers (Duchess)', () => {
 
 	it('wakes nobody while nobody is marked', () => {
 		const s = base();
-		expect(wakesMarked('duchess', s.characters)).toBe(true);
+		expect(wakesMarked(s.game, 'duchess', s.characters)).toBe(true);
 		expect(characterStepSeats(s.game, 'duchess', s.characters)).toEqual([]);
 		expect(nightStepInfo(s.game, { id: 'duchess' }, s.characters)).toBeUndefined();
 	});

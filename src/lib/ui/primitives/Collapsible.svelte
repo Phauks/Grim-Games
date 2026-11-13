@@ -90,10 +90,11 @@
 		/** A character type's colour family (`typeTone`). */
 		tone?: TypeTone;
 		/**
-		 * A band with no type colour, only a gold edge, for a section among type bands that isn't
-		 * a character type (the Script sheet's Jinxes and Players; Trevor, 2026-11-03, picked "B").
+		 * A band for a section among type bands that isn't a character type: `outline` has no
+		 * fill, only a gold edge (the Script sheet's Jinxes; Trevor, 2026-11-03, picked "B");
+		 * `fill` is filled like a type band (the Script sheet's Players; Trevor, 2026-11-13).
 		 */
-		outlined?: boolean;
+		band?: 'outline' | 'fill';
 		/**
 		 * Shown open regardless of the remembered choice, e.g. while a search is typed so every
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
@@ -153,7 +154,7 @@
 		storageKey,
 		level = 2,
 		tone,
-		outlined = false,
+		band,
 		forceOpen = false,
 		empty = false,
 		startClosed = false,
@@ -216,7 +217,7 @@
 	<div
 		bind:this={head}
 		class="head"
-		data-type-band={tone ?? (outlined ? 'outline' : undefined)}
+		data-type-band={tone ?? band}
 		data-aside-by-title={asideByTitle ? '' : undefined}
 	>
 		{#if lead}<div class="lead">{@render lead()}</div>{/if}

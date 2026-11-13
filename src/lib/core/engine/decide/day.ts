@@ -190,7 +190,7 @@ export const DAY_DECIDERS: Deciders<
 		if (!Number.isInteger(count) || count < 0) {
 			refuse('invalid-day-tally', 'a count is a whole number, 0 or more');
 		}
-		if (!dayTallyOf(characterId, ctx.characters)) {
+		if (!dayTallyOf(game, characterId, ctx.characters)) {
 			warn('no-day-tally', 'this character keeps no count by day');
 		}
 		if (count === tallyCount(game.today, characterId)) {
@@ -405,7 +405,7 @@ export const DAY_DECIDERS: Deciders<
 	DayNote(game, command, ctx, warn) {
 		const characterId = characterOf(ctx, command.characterId).id;
 		const guesses = guessesOf(game, ctx, command.guesses);
-		checkGuessLimit(ctx, characterId, guesses.length, warn);
+		checkGuessLimit(game, ctx, characterId, guesses.length, warn);
 		const text = typeof command.text === 'string' ? command.text : '';
 		if (text.trim() === '' && guesses.length === 0) {
 			warn('no-change', 'the note is empty');
@@ -429,7 +429,7 @@ export const DAY_DECIDERS: Deciders<
 	EditDayNote(game, command, ctx, warn) {
 		const entry = entryOfKind(game, command.entryId, 'note');
 		const guesses = guessesOf(game, ctx, command.guesses);
-		checkGuessLimit(ctx, entry.characterId, guesses.length, warn);
+		checkGuessLimit(game, ctx, entry.characterId, guesses.length, warn);
 		const text = typeof command.text === 'string' ? command.text : '';
 		// Clearing a note removes it: nothing requires a note.
 		if (text.trim() === '' && guesses.length === 0) {

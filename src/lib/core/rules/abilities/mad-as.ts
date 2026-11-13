@@ -13,7 +13,6 @@ import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
-import { madAsPartners } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** `characterId`'s `madAs` rule, if it has one. */
@@ -66,7 +65,7 @@ export function madAsOf(game: Game, seatId: SeatId, characters: CharacterLookup)
 export interface MadAsChoice {
 	/** The types the character is chosen from, with the jinxed partners it may also be. */
 	types: readonly CharacterType[];
-	partners: CharacterId[];
+	partners: readonly CharacterId[];
 	/** The token the choice is recorded on, once placed. */
 	token?: { reminderId: ReminderId; seatId: SeatId; madAs?: CharacterId };
 }
@@ -89,7 +88,7 @@ export function madAsChoice(
 				token = { reminderId: r.reminderId, seatId, ...(r.madAs ? { madAs: r.madAs } : {}) };
 	return {
 		types: rule.choose,
-		partners: [...new Set([...(rule.characters ?? []), ...madAsPartners(game, by, characters)])],
+		partners: rule.characters ?? [],
 		...(token ? { token } : {})
 	};
 }

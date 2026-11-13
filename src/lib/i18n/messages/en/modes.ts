@@ -213,6 +213,7 @@ export const modes = {
 	'modes.deleteRule': 'Delete {name}',
 	'modes.switch.namedOne': 'Storyteller announces character',
 	'modes.switch.namedMany': 'Storyteller announces characters',
+	'modes.switch.mayBeNone': 'May be none',
 	'modes.switch.threeAlive': '3-player limit',
 	'modes.switch.duplicateDemons': 'Duplicate Demons',
 	'modes.optionalRules': 'Optional rules',

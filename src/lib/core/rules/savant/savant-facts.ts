@@ -3,7 +3,7 @@
  * template shapes, and the helpers the templates share. `savant.ts` works them out.
  */
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -159,7 +159,7 @@ export function inPlayWith<T>(
 	rule: (r: CharacterRules) => T | undefined
 ): [CharacterId, T][] {
 	return [...f.inPlay].flatMap((id) => {
-		const r = rulesOf(id, f.characters);
+		const r = rulesFor(f.game, id, f.characters);
 		const value = r && rule(r);
 		return value === undefined || value === false ? [] : [[id, value] as [CharacterId, T]];
 	});
@@ -171,7 +171,7 @@ export const choiceMarkers = (f: Facts, type: CharacterType) =>
 
 /** Whether a character's night information is a number, or works once per game (`infoKind`). */
 export const infoIs = (f: Facts, id: CharacterId, kind: 'number' | 'oncePerGame') =>
-	rulesOf(id, f.characters)?.infoKind?.[kind] === true;
+	rulesFor(f.game, id, f.characters)?.infoKind?.[kind] === true;
 
 export function triples<T>(list: readonly T[]): [T, T, T][] {
 	const out: [T, T, T][] = [];
@@ -227,7 +227,7 @@ export function demonCanPass(f: Facts, w: RegistrationWorld): boolean | undefine
 	if (d === undefined) return undefined;
 	const rulesAt = (s: SeatId) => {
 		const id = trueCharacter(f.game, s, f.characters);
-		return id === undefined ? undefined : rulesOf(id, f.characters);
+		return id === undefined ? undefined : rulesFor(f.game, id, f.characters);
 	};
 	const holds = (s: SeatId) => rulesAt(s)?.gameEnd?.holds ?? [];
 	const others = alive(f).filter((s) => s !== d);

@@ -184,3 +184,60 @@ test("without a logo, the board shows the script's name in its place", async ({ 
 	await view.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(view.getByTestId('board-name')).toHaveText(name);
 });
+
+test('a script that hides its title still shows its name on the grim cover when it has no logo', async ({
+	page
+}) => {
+	// Trevor (2026-11-12): "When no script logo, grim cover doesn't show name of script".
+	// `hideTitle` is for a logo that carries the title, so without one the name takes its place.
+	const name = 'Lanterns Unlit';
+	await page.route(LOGO, (route) => route.abort());
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog
+		.getByLabel('Script JSON')
+		.fill(
+			JSON.stringify([{ id: '_meta', name, hideTitle: true, logo: LOGO }, 'chef', 'saint', 'imp'])
+		);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+	await page.goto('/new');
+	await pickScript(page, name);
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+
+	// The logo's link fails, so the name stands in its place, written once.
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await expect(cover.getByTestId('cover-name')).toHaveText(name);
+	await expect(cover.getByTestId('cover-name')).toBeVisible();
+	await expect(cover.getByRole('heading', { name })).toHaveCount(1);
+});
+
+test('a script that hides its title shows only its logo on the grim cover', async ({ page }) => {
+	const name = 'Lanterns Lit';
+	await page.route(LOGO, (route) =>
+		route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
+	);
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add script' });
+	await dialog
+		.getByLabel('Script JSON')
+		.fill(
+			JSON.stringify([{ id: '_meta', name, hideTitle: true, logo: LOGO }, 'chef', 'saint', 'imp'])
+		);
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText(name);
+	await page.goto('/new');
+	await pickScript(page, name);
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await expect(cover.getByTestId('script-logo')).toHaveAttribute('data-logo', LOGO);
+	await expect(cover.getByTestId('cover-name')).toHaveCount(0);
+	await expect(cover.getByRole('heading', { name })).toHaveCount(0);
+});

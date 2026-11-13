@@ -6,7 +6,6 @@
  * shot, Trevor 2026-10-25), or the Storyteller's call (`other`).
  */
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -42,10 +41,10 @@ export function parseEndReason(value: unknown): EndReason | undefined {
  * fall on a Demon (the Slayer's shot, the Gunslinger's, the Harlot's), and it is not a
  * Minion or Demon, whose killing their own Demon is the Storyteller's call.
  */
-export function killsDemon(id: CharacterId, characters: CharacterLookup): boolean {
+export function killsDemon(game: Game, id: CharacterId, characters: CharacterLookup): boolean {
 	const type = characters.get(id)?.type;
 	if (type === 'minion' || type === 'demon') return false;
-	const cause = rulesOf(id, characters)?.deathCause;
+	const cause = rulesFor(game, id, characters)?.deathCause;
 	if (!cause || !('kind' in cause) || cause.kind !== 'kills') return false;
 	const victim = cause.victim;
 	return !(victim?.who === 'registers' && victim.as !== 'demon') && victim?.who !== 'self';
@@ -55,9 +54,9 @@ function reasonOf(game: Game, characters: CharacterLookup, end: GameEnd): EndRea
 	if (end.rule === 'demon-dead') {
 		// How the Demon died: executed (or not recorded), or by an ability that kills Demons.
 		const causes = end.seats.map((id) => game.seats[id]?.deathCause);
-		const killer = causes.find((c) => c !== undefined && killsDemon(c, characters));
+		const killer = causes.find((c) => c !== undefined && killsDemon(game, c, characters));
 		if (killer) return characterReason(killer);
-		return causes.every((c) => c === undefined || isExecution(c, characters))
+		return causes.every((c) => c === undefined || isExecution(game, c, characters))
 			? 'demon-dead'
 			: 'other';
 	}
@@ -107,7 +106,7 @@ export function endCharacters(
 	const rules = (id: CharacterId) => rulesFor(game, id, characters)?.gameEnd;
 	const listed = [
 		...[...present].filter((id) => (rules(id)?.ends?.length ?? 0) > 0),
-		...[...present].filter((id) => killsDemon(id, characters)),
+		...[...present].filter((id) => killsDemon(game, id, characters)),
 		...[...present].filter((id) => rules(id)?.decidedByStoryteller || rules(id)?.joinsWinner)
 	];
 	return saved && !listed.includes(saved) ? [...listed, saved] : listed;

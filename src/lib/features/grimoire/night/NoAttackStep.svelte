@@ -26,7 +26,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const killsAsDemon = $derived(
-		!!step.character && nightKiller(step.character.id, characters)?.by === 'demon'
+		!!step.character && nightKiller(game, step.character.id, characters)?.by === 'demon'
 	);
 	const states = $derived(
 		killsAsDemon

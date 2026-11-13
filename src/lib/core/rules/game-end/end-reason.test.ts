@@ -10,7 +10,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	plainGame,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import {
 	detectedEndReason,
 	endCharacters,
@@ -100,12 +104,12 @@ describe('endCharacters', () => {
 
 describe('killsDemon', () => {
 	it('is an ability whose kill can fall on a Demon, not a Minion’s or Demon’s', () => {
-		expect(killsDemon('slayer', characters)).toBe(true);
-		expect(killsDemon('gunslinger', characters)).toBe(true);
-		expect(killsDemon('golem', characters)).toBe(false);
-		expect(killsDemon('assassin', characters)).toBe(false);
-		expect(killsDemon('imp', characters)).toBe(false);
-		expect(killsDemon('chef', characters)).toBe(false);
+		expect(killsDemon(plainGame(), 'slayer', characters)).toBe(true);
+		expect(killsDemon(plainGame(), 'gunslinger', characters)).toBe(true);
+		expect(killsDemon(plainGame(), 'golem', characters)).toBe(false);
+		expect(killsDemon(plainGame(), 'assassin', characters)).toBe(false);
+		expect(killsDemon(plainGame(), 'imp', characters)).toBe(false);
+		expect(killsDemon(plainGame(), 'chef', characters)).toBe(false);
 	});
 });
 

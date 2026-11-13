@@ -13,7 +13,7 @@ import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { ambience } from './ambience.ts';
 import { recording } from './recording.ts';
-import { audio, unlockSound } from './sound.ts';
+import { audio, claimSpeaker, unlockSound } from './sound.ts';
 
 /**
  * Plays the soundboard's recordings (plan U6) and the sounds tied to the Storyteller's
@@ -187,6 +187,7 @@ class Soundboard {
 		else for (const { id } of sounds) this.#stopHere(id);
 		const known = sounds.filter(({ id }) => boardSound(id));
 		if (!known.length || !ctx || (busLevel() <= 0 && this.#heard)) return;
+		if (this.#heard) claimSpeaker();
 		unlockSound();
 		if (!this.#keptOffline) {
 			// Every sound, so a game later on with no signal can still play them all.
@@ -280,6 +281,7 @@ class Soundboard {
 		const ctx = audio();
 		this.#endPause();
 		if (!held.length || !ctx) return;
+		if (this.#heard) claimSpeaker();
 		unlockSound();
 		void tone(ctx).then((Tone) => {
 			if (!Tone || this.paused) return;

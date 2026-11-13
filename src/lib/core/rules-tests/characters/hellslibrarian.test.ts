@@ -115,7 +115,7 @@ describe("Hell's Librarian", () => {
 				.rule('hellslibrarian')
 				.reminder('chef', 'hellslibrarian', 'Something Bad');
 			const token = s.game.seats[s.seat('chef')].reminders[0];
-			expect(pickedEffectOf(token, s.characters)?.effects).toEqual(
+			expect(pickedEffectOf(s.game, token, s.characters)?.effects).toEqual(
 				expect.arrayContaining(['poisoned', 'mad', 'no-vote-today'])
 			);
 		});

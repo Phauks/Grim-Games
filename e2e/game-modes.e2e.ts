@@ -1925,6 +1925,37 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	);
 });
 
+test('+1 with May be none needs no character from off the script', async ({ page }) => {
+	// Trevor (2026-10-22): +1 always deals its extra; a game where it may or may not be in play
+	// "would be beneficial to be built". Asked to build on 2026-11-12.
+	await page.goto('/new');
+	const panel = modesPanel(page);
+	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, '+1');
+	await page.getByTestId('setup-special-rules').tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const plusOne = dialog
+		.getByTestId('special-rules')
+		.locator(':scope > li')
+		.filter({ hasText: '+1' })
+		.first();
+	const none = plusOne.getByRole('checkbox', { name: 'May be none', includeHidden: true });
+	await expect(none).toBeEnabled();
+	await plusOne.getByText('May be none', { exact: true }).tap();
+	await expect(none).toBeChecked();
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	const extras = page.getByTestId('extras').locator('li');
+	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
+		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
+		if (await clear.isEnabled()) await clear.tap();
+	}
+	// Without the switch this shows "1 needed" (the test below); with it, none is enough.
+	await expect(page.getByTestId('extras-needed')).toBeHidden();
+	await noSidewaysScroll(page);
+});
+
 test('+1 adds exactly one character from off the script', async ({ page }) => {
 	// Trevor (2026-10-22): the chosen script plus exactly one off-script character in play.
 	await page.goto('/new');

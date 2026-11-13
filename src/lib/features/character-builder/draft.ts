@@ -4,6 +4,7 @@
  */
 import { CHARACTER_TYPES, type CharacterType } from '#lib/core/data/index.ts';
 import { emptyCharacterFields, type CharacterFields } from '#lib/core/rules/character-builder.ts';
+import { isGivenName, randomCharacterName } from '#lib/core/rules/new-character-name.ts';
 
 export const CHARACTER_DRAFT_VERSION = 1;
 
@@ -14,8 +15,15 @@ export interface CharacterDraft {
 	editing?: string;
 }
 
-export function emptyCharacterDraft(): CharacterDraft {
-	return { version: CHARACTER_DRAFT_VERSION, fields: emptyCharacterFields() };
+/**
+ * A new character: empty but for a random name of its own, so new characters never share a
+ * name or an id (Trevor, 2026-11-12). `taken`: names already used, such as saved characters'.
+ */
+export function emptyCharacterDraft(taken: Iterable<string> = []): CharacterDraft {
+	return {
+		version: CHARACTER_DRAFT_VERSION,
+		fields: { ...emptyCharacterFields(), name: randomCharacterName(taken) }
+	};
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -63,7 +71,7 @@ export function parseCharacterDraft(raw: unknown): CharacterDraft {
 export function isEmptyCharacterDraft(draft: CharacterDraft): boolean {
 	const f = draft.fields;
 	return (
-		!f.name.trim() &&
+		(!f.name.trim() || isGivenName(f.name)) &&
 		!f.ability.trim() &&
 		!f.flavor.trim() &&
 		!f.image.trim() &&

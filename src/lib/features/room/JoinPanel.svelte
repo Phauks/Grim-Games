@@ -526,6 +526,7 @@
 		winner={view && !view.choosing ? view.ended?.winner : undefined}
 		seatNumber={mySeat}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
+		characterUntil={view?.roleUntil}
 	>
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->

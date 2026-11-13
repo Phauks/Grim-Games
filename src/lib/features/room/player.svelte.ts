@@ -28,7 +28,7 @@ import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 import { putRoomImage } from './room-images.ts';
 import { callTownPush } from './call-town-push.svelte.ts';
 import { dealtSeats } from '#lib/features/modes/players-line.ts';
-import { RoomSounds } from '#lib/features/sound/room-sounds.ts';
+import { RoomSounds } from '#lib/features/sound/room-sounds.svelte.ts';
 import { hearCallTown } from '#lib/features/sound/sound.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';

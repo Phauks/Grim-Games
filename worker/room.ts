@@ -636,7 +636,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = closeScriptVote(room);
 				break;
 			case 'roles':
-				room = setRoles(room, message.gameId, message.show, message.roles, message.open);
+				room = setRoles(room, message);
 				break;
 			case 'call-town': {
 				// Not kept: only phones here now hear it (plan U2).
