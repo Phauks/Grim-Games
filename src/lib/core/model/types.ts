@@ -403,6 +403,8 @@ export interface CharacterGuess {
  *   whether it worked abnormally (for the Mathematician).
  * - `spoke`: the Storyteller spoke for a seat no one plays (`Seat.noPlayer`), privately or
  *   publicly when the rule tells the two apart (The Ballad of Seat 7's A Terrifying Whisper).
+ * - `seat-vote`: the Storyteller added the vote of a seat no one plays to a nomination (The
+ *   Ballad of Seat 7's Seats Rise Up), spending its ghost vote while it is dead.
  * - `wish`: a wish a character's player made (its `wish` rule: the Wizard's,
  *   https://wiki.bloodontheclocktower.com/Wizard), granted or declined, with the price and the
  *   clue the Storyteller set, and a standard `effect` the app knows, when they chose one.
@@ -517,6 +519,7 @@ export type DayEntry =
 			abnormal?: AbnormalCause[];
 	  }
 	| { kind: 'spoke'; entryId: DayEntryId; seatId: SeatId; how?: SpokeHow }
+	| { kind: 'seat-vote'; entryId: DayEntryId; seatId: SeatId; ghostVote?: true }
 	| {
 			kind: 'wish';
 			entryId: DayEntryId;

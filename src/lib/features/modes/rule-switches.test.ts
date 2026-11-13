@@ -6,6 +6,8 @@ import {
 	INFINITE_NAMED,
 	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED,
+	SEAT_7_AT_HOME,
+	SEAT_7_RISE_UP,
 	SEAT_7_WHISPER,
 	choicesOf,
 	switched
@@ -74,6 +76,25 @@ describe('rule switches', () => {
 			instructions: SEAT_7_WHISPER
 		});
 		expect(parseSpecialRule(whisper).ok).toBe(true);
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, Seats Rise Up: "Once per day,
+	// if the seat still has a vote, the storyteller may choose one nomination and a vote to it's
+	// total." Amnesiac at Home: "If a new player sits in seat 7 during the game the storyteller
+	// can choose to let them stay and speak for the seat."
+	it('add Seats Rise Up and Amnesiac at Home to Seat 7 as instructions of their own', () => {
+		const rule = specialRuleById('seat-7')!;
+		const both = switched(rule, { 'seat-7:seats-rise-up': true, 'seat-7:amnesiac-at-home': true });
+		expect(both.setup.seats).toMatchObject({ votes: 'once-per-day' });
+		expect(both.setup.ruleChanges).toEqual([
+			{ instructions: SEAT_7_RISE_UP },
+			{ instructions: SEAT_7_AT_HOME }
+		]);
+		expect(parseSpecialRule(both).ok).toBe(true);
+		expect(choicesOf([both], (id) => specialRuleById(id))).toEqual({
+			'seat-7:seats-rise-up': true,
+			'seat-7:amnesiac-at-home': true
+		});
 	});
 
 	// Trevor (2026-10-24): "allow duplicate demons could be a setting".

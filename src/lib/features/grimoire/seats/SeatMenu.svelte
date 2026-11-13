@@ -37,6 +37,10 @@
 		speakLeft: ('once' | SpokeHow)[];
 		onNoPlayer: (on: boolean) => void;
 		onSpeak: (how: 'once' | SpokeHow) => void;
+		/** The rule lets the seat vote once a day (Seats Rise Up), and it still may today. */
+		votes: boolean;
+		mayVote: boolean;
+		onVote: () => void;
 		/** The seat has a character history to show. */
 		hasChanges: boolean;
 		onChangeCharacter: () => void;
@@ -69,6 +73,9 @@
 		speakLeft,
 		onNoPlayer,
 		onSpeak,
+		votes,
+		mayVote,
+		onVote,
 		hasChanges,
 		onChangeCharacter,
 		onGain,
@@ -161,6 +168,11 @@
 					{SPEAK_LABELS[how]}
 				</Button>
 			{/each}
+			{#if votes}
+				<Button variant="quiet" icon="vote" disabled={!mayVote} onclick={() => fromMenu(onVote)}>
+					Voted with this seat today
+				</Button>
+			{/if}
 		{/if}
 		<!-- The same notes as in ⋯ Notes on the board (Trevor, 2026-10-19). -->
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>

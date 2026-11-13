@@ -418,6 +418,8 @@ export type Command =
 	 */
 	/** The Storyteller spoke for a seat no one plays (`spoke`), privately or publicly. */
 	| { type: 'SpeakForSeat'; seatId: SeatId; how?: SpokeHow }
+	/** The Storyteller added a seat's vote to today's nomination (`seat-vote`, Seats Rise Up). */
+	| { type: 'VoteForSeat'; seatId: SeatId }
 	| {
 			type: 'DayNote';
 			characterId: CharacterId;

@@ -5,7 +5,7 @@
 	import CharacterHistoryDialog from '#lib/features/grimoire/CharacterHistoryDialog.svelte';
 	import GainAbilityDialog from '#lib/features/grimoire/GainAbilityDialog.svelte';
 	import { allowedOffScriptIn, playedRules } from '#lib/features/modes/game-mode.ts';
-	import { noPlayerSeats, speakingLeft } from '#lib/core/modes/index.ts';
+	import { noPlayerSeats, seatMayVote, speakingLeft } from '#lib/core/modes/index.ts';
 	import type { SpokeHow } from '#lib/core/model/index.ts';
 	import NominationChooser from '#lib/features/grimoire/NominationChooser.svelte';
 	import { seatCharacterLine, seatName } from '#lib/features/game/seat-label.ts';
@@ -121,6 +121,11 @@
 				if (other !== seatId && game.seats[other]?.noPlayer)
 					grimoire.run({ type: 'SetNoPlayer', seatId: other, noPlayer: false });
 		grimoire.run({ type: 'SetNoPlayer', seatId, noPlayer: on });
+	}
+	const votes = $derived(seatsRule?.votes === 'once-per-day');
+	const mayVote = $derived(!!seatId && noPlayer && seatMayVote(game, seatId, seatsRule));
+	function voteFor() {
+		if (seatId) grimoire.run({ type: 'VoteForSeat', seatId });
 	}
 	function speak(how: 'once' | SpokeHow) {
 		if (seatId) grimoire.run({ type: 'SpeakForSeat', seatId, ...(how === 'once' ? {} : { how }) });
@@ -327,12 +332,13 @@
 		>
 	{/snippet}
 	{#snippet actions()}
-		<!-- Show to player sits beside ⋯ (Trevor, 2026-10-16); disabled until the seat has a character. -->
+		<!-- Show to player sits beside ⋯ (Trevor, 2026-10-16); disabled until the seat has a character,
+		     and for a seat no one plays (The Ballad of Seat 7: no one is told its character). -->
 		<span class="ink"
 			><IconButton
 				icon="showToPlayer"
 				label="Show to player"
-				disabled={!character}
+				disabled={!character || noPlayer}
 				onclick={() => {
 					// The player view opens over the sheet, which stays open under it (Trevor,
 					// 2026-10-17); the view is opaque, so the sheet never shows through.
@@ -575,6 +581,9 @@
 	{speakLeft}
 	onNoPlayer={setNoPlayer}
 	onSpeak={speak}
+	{votes}
+	{mayVote}
+	onVote={voteFor}
 	hasChanges={changes.length > 0}
 	onChangeCharacter={() => flow?.choose()}
 	onGain={() => flow?.chooseGain()}

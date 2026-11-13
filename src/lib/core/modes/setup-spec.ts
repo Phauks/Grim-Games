@@ -351,6 +351,12 @@ const SEATS = about(
 			speaks: about(
 				'Whether the Storyteller may speak for the seat: once a game, or once privately and once publicly.',
 				oneOf(['never', 'once-per-game', 'private-and-public'])
+			),
+			votes: opt(
+				about(
+					'Whether the Storyteller may add the seat’s vote to one nomination a day, while it still has a vote.',
+					oneOf(['once-per-day'])
+				)
 			)
 		})
 	)

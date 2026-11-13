@@ -217,6 +217,8 @@ export const modes = {
 	'modes.switch.threeAlive': '3-player limit',
 	'modes.switch.duplicateDemons': 'Duplicate Demons',
 	'modes.switch.terrifyingWhisper': 'A Terrifying Whisper',
+	'modes.switch.seatsRiseUp': 'Seats Rise Up',
+	'modes.switch.amnesiacAtHome': 'Amnesiac at Home',
 	'modes.optionalRules': 'Optional rules',
 	'modes.optionalRuleOf': 'Optional rule of {name}',
 	'modes.optionalRule': 'Optional rule',

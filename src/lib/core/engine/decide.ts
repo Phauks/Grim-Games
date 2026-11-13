@@ -126,6 +126,7 @@ export type WarningCode =
 	| 'traveller-executed'
 	| 'not-traveller'
 	| 'has-player'
+	| 'no-vote'
 	| 'already-dead'
 	| 'survives-execution'
 	| 'survives-exile'

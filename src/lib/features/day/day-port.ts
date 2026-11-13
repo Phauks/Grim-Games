@@ -114,6 +114,8 @@ export function describeEntry(
 			return t(entry.how ? `day.logSpoke.${entry.how}` : 'day.logSpoke', {
 				seat: seatName(entry.seatId)
 			});
+		case 'seat-vote':
+			return t('day.logSeatVote', { seat: seatName(entry.seatId) });
 		case 'info':
 			return t('day.logInfo', {
 				character: characterName(entry.characterId),

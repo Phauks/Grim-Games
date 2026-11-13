@@ -290,6 +290,7 @@ export const day = {
 	'day.logSpoke': 'The Storyteller spoke for {seat}',
 	'day.logSpoke.private': 'The Storyteller spoke privately for {seat}',
 	'day.logSpoke.public': 'The Storyteller spoke publicly for {seat}',
+	'day.logSeatVote': '{seat} voted',
 	'day.logWishGranted': '{character} ({seat}) wished: {text} · granted',
 	'day.logWishDeclined': '{character} ({seat}) wished: {text} · declined',
 	'day.wishUnwritten': 'not written down',
