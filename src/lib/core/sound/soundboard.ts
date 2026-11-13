@@ -274,6 +274,16 @@ export function hearsSound(output: SoundOutput, listener: SoundListener): boolea
 }
 
 /**
+ * Whether a listener plays the day or night recording. Every phone playing the same recording
+ * a moment apart from the others smears it into an echo across the table (audio audit,
+ * 2026-11-12), so it plays on the Town Square when Play on includes it, and on phones only
+ * when Play on is phones alone.
+ */
+export function hearsAmbience(output: SoundOutput, listener: SoundListener): boolean {
+	return output === 'phones' ? listener === 'phones' : listener === 'town';
+}
+
+/**
  * A saved or sent Play on. Builds before 2026-10-30 also offered "This device" (now the
  * default, everywhere) and "This device and Town Square" (now Town Square alone).
  */
