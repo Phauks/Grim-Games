@@ -14,6 +14,7 @@
  */
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import type { GameLog } from './log.ts';
+import { appliedEntries } from './applied-entries.ts';
 
 export interface RecentDeath {
 	seatId: SeatId;
@@ -51,7 +52,7 @@ export function recentDeaths(log: GameLog, game: Game): RecentDeath[] {
 
 /** The log entries of the night just ended, with the boundaries described above. */
 function lastNight(log: GameLog): GameLog['entries'] {
-	const entries = log.entries.slice(0, log.cursor);
+	const entries = appliedEntries(log);
 	const dayStarts = entries.flatMap((e, i) =>
 		e.events.some((ev) => ev.type === 'DayStarted') ? [i] : []
 	);

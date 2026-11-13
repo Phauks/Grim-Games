@@ -5215,6 +5215,55 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(shown).toContainText('Fortune Teller');
 });
 
+// Sushi Buffet and Whale Buffet give the Demon no bluffs (Trevor, 2026-10-18): Demon info
+// offers none to choose, and the board menu's Demon bluffs stays in place, turned off.
+test('a mode without Demon bluffs offers none to choose', async ({ page }) => {
+	await startGame(page);
+	const gameId = page.url().split('/').pop()!;
+	await page.evaluate(
+		(id) =>
+			localStorage.setItem(
+				`grim-games:game-mode:v2:${id}`,
+				JSON.stringify({
+					modeId: 'sushi-buffet',
+					rules: [],
+					restrictions: { banned: [], allowed: [] }
+				})
+			),
+		gameId
+	);
+	await page.reload();
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Spy'],
+		[4, 'Empath'],
+		[5, 'Chef'],
+		[6, 'Monk'],
+		[7, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const demonInfo = await openStep(page, 'Demon info');
+	await expect(demonInfo.getByTestId('evil-info-card').nth(0)).toContainText(
+		'These are your Minions'
+	);
+	await expect(demonInfo.getByRole('button', { name: 'Choose bluffs' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Demon bluffs', exact: true })
+	).toBeDisabled();
+});
+
 test('an information step suggests every valid number, and the roles it could show', async ({
 	page
 }) => {

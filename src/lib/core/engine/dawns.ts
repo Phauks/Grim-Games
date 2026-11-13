@@ -6,11 +6,12 @@
 import type { Game } from '#lib/core/model/types.ts';
 import type { GameLog } from './log.ts';
 import { applyEvents } from './reducer.ts';
+import { appliedEntries } from './applied-entries.ts';
 
 export function dawnGames(log: GameLog): Game[] {
 	const out: Game[] = [];
 	let game: Game | undefined;
-	for (const entry of log.entries.slice(0, log.cursor)) {
+	for (const entry of appliedEntries(log)) {
 		game = applyEvents(game, entry.events);
 		if (game && entry.events.some((e) => e.type === 'DayStarted')) out.push(game);
 	}

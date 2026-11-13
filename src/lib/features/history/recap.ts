@@ -21,6 +21,7 @@ import type { GameRecap, RecapCharacter } from './recap-html.ts';
 import { causeLabel } from '#lib/features/grimoire/board.ts';
 import { endReasonLabel } from '#lib/features/game/end-reason-label.ts';
 import { historyItems, type HistoryPart } from '#lib/features/grimoire/history.ts';
+import { appliedEntries } from '#lib/core/engine/applied-entries.ts';
 
 export interface RecapSource {
 	game: Game;
@@ -72,7 +73,7 @@ function characterAt(game: Game, seatId: SeatId, characters: CharacterLookup) {
 /** The game after the first `cursor` log entries: an ended game as it was when ended. */
 export function gameAt(entries: readonly LogEntry[], cursor: number): Game | undefined {
 	let game: Game | undefined;
-	for (const entry of entries.slice(0, cursor))
+	for (const entry of appliedEntries({ entries, cursor }))
 		for (const e of entry.events) game = applyEvent(game, e);
 	return game;
 }
@@ -90,7 +91,7 @@ export function buildRecap(source: RecapSource): GameRecap {
 	let start: Game | undefined;
 	{
 		let g: Game | undefined;
-		for (const entry of source.entries.slice(0, source.cursor)) {
+		for (const entry of appliedEntries(source)) {
 			if (entry.events.some((e) => e.type === 'DayStarted') && g && !start) start = g;
 			for (const e of entry.events) g = applyEvent(g, e);
 		}

@@ -46,6 +46,7 @@
 	} from '#lib/core/rules/day/nominations.ts';
 	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
+	import { gameHasDemonBluffs } from '#lib/features/modes/bluffs.ts';
 	import {
 		deadKeepRule,
 		nominationPrompts,
@@ -980,7 +981,7 @@
 	gameInfo={cornerHidden}
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
-	onBluffs={() => (bluffsOpen = true)}
+	onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
 	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !setUp && !watching

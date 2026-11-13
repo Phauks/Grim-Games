@@ -6,13 +6,13 @@ import {
 	canRedo,
 	canUndo,
 	dispatch,
-	history,
 	openSession,
 	redo,
 	replay,
 	undo,
 	type GameSession
 } from './log.ts';
+import { appliedEntries } from './applied-entries.ts';
 import { applyEvent, applyEvents } from './reducer.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -130,12 +130,12 @@ describe('the log', () => {
 	it('records the command, time and warnings of each entry', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, { type: 'SpendGhostVote', seatId: seats[0] });
-		const last = history(s).at(-1)!;
+		const last = appliedEntries(s.log).at(-1)!;
 		expect(last.command).toBe('SpendGhostVote');
 		expect(last.at).toBeGreaterThan(s.game.createdAt);
 		expect(last.warnings?.map((w) => w.code)).toEqual(['ghost-vote-while-alive']);
-		expect(history(undo(s))).toHaveLength(history(s).length - 1);
-		expect(history(s)[0].command).toBe('CreateGame');
+		expect(appliedEntries(undo(s).log)).toHaveLength(appliedEntries(s.log).length - 1);
+		expect(appliedEntries(s.log)[0].command).toBe('CreateGame');
 	});
 
 	it('refuses to replay a log without a game', () => {

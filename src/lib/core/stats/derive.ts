@@ -25,6 +25,7 @@ import {
 	type RecordDay,
 	type RecordRole
 } from './record.ts';
+import { appliedEntries } from '#lib/core/engine/applied-entries.ts';
 
 /** What ending the game recorded on this device (`endedGames` in the grimoire). */
 export interface GameEnding {
@@ -93,7 +94,7 @@ export function deriveGameRecord(
 			lookup = { script: g.script, characters: characterLookup(data, g.script) };
 		return lookup.characters;
 	};
-	for (const entry of saved.log.entries.slice(0, saved.log.cursor)) {
+	for (const entry of appliedEntries(saved.log)) {
 		for (const event of entry.events) {
 			if (event.type === 'DayStarted' && game && !start) {
 				start = snapshot(game, characterLookup(data, game.script));
