@@ -2622,14 +2622,14 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await expect(noteRows(row)).toHaveCount(3);
 	// On this phone only, and kept after a reload.
 	await phone.reload();
-	await openNotes(phone);
+	const notesAgain = await openNotes(phone);
 	await expectNotes(phone.locator('[data-seat-note]').nth(2), [
 		'Claim: Claims Chef: 0',
 		'Untitled: Quiet all day',
 		'Untitled: Voted for Ana'
 	]);
 	// Closed, the header counts the notes written on players, not the seats (Trevor, 2026-10-27).
-	const players = phone.getByRole('button', { name: 'Players' });
+	const players = notesAgain.getByRole('button', { name: 'Players' });
 	await players.tap();
 	await expect(players.getByTestId('section-count')).toHaveText('3');
 	await players.tap();
