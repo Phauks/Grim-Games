@@ -110,6 +110,10 @@ export function describeEntry(
 				seat: seatName(entry.seatId),
 				text: entry.text || t('day.wishUnwritten')
 			});
+		case 'spoke':
+			return t(entry.how ? `day.logSpoke.${entry.how}` : 'day.logSpoke', {
+				seat: seatName(entry.seatId)
+			});
 		case 'info':
 			return t('day.logInfo', {
 				character: characterName(entry.characterId),

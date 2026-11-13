@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Character, PlayerName } from '#lib/core/data/index.ts';
-	import type { Seat } from '#lib/core/model/index.ts';
+	import type { Seat, SpokeHow } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -28,6 +28,15 @@
 		savant: boolean;
 		/** The player's claim in town, as on their day row. */
 		claim: NoteClaim | undefined;
+		/** A rule deals a seat that no one plays (The Ballad of Seat 7). */
+		noPlayerRule: boolean;
+		/** This is that seat. */
+		noPlayer: boolean;
+		/** The ways the rule lets the Storyteller speak for it, and those not used yet. */
+		speakWays: ('once' | SpokeHow)[];
+		speakLeft: ('once' | SpokeHow)[];
+		onNoPlayer: (on: boolean) => void;
+		onSpeak: (how: 'once' | SpokeHow) => void;
 		/** The seat has a character history to show. */
 		hasChanges: boolean;
 		onChangeCharacter: () => void;
@@ -54,6 +63,12 @@
 		holdsAbility,
 		savant,
 		claim,
+		noPlayerRule,
+		noPlayer,
+		speakWays,
+		speakLeft,
+		onNoPlayer,
+		onSpeak,
 		hasChanges,
 		onChangeCharacter,
 		onGain,
@@ -66,6 +81,12 @@
 		onHistory,
 		onRemove
 	}: Props = $props();
+
+	const SPEAK_LABELS: Record<'once' | SpokeHow, string> = {
+		once: 'Spoke for this seat',
+		private: 'Spoke privately for this seat',
+		public: 'Spoke publicly for this seat'
+	};
 
 	/** Runs a menu action after closing the menu. */
 	function fromMenu(action: () => void) {
@@ -119,6 +140,28 @@
 		>
 			Change alignment
 		</Button>
+		{#if noPlayerRule}
+			<!-- Any seat may be the one no one plays (Trevor, 2026-11-12). -->
+			<Button
+				variant="quiet"
+				icon="swap"
+				data-testid="seat-no-player"
+				onclick={() => fromMenu(() => onNoPlayer(!noPlayer))}
+			>
+				{noPlayer ? 'Give this seat a player' : 'No player for this seat'}
+			</Button>
+			<!-- Always drawn under the rule, so the menu doesn't change shape; used ones disable. -->
+			{#each speakWays as how (how)}
+				<Button
+					variant="quiet"
+					icon="notes"
+					disabled={!noPlayer || !speakLeft.includes(how)}
+					onclick={() => fromMenu(() => onSpeak(how))}
+				>
+					{SPEAK_LABELS[how]}
+				</Button>
+			{/each}
+		{/if}
 		<!-- The same notes as in ⋯ Notes on the board (Trevor, 2026-10-19). -->
 		<Button variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}>Notes</Button>
 		<!-- Rarely needed, so in here rather than a row of its own (Trevor, 2026-10-18). -->

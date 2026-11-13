@@ -6,6 +6,7 @@ import {
 	INFINITE_NAMED,
 	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED,
+	SEAT_7_WHISPER,
 	choicesOf,
 	switched
 } from './rule-switches.ts';
@@ -60,6 +61,19 @@ describe('rule switches', () => {
 		);
 		expect(limited.rules?.onNominated).toEqual({ effect: 'nominator-may-die', minAlive: 4 });
 		expect(parseSpecialRule(limited).ok).toBe(true);
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, A Terrifying Whisper: "The Seat
+	// may speak twice per game. Once privately and once publicly."
+	it('let Seat 7 speak once privately and once publicly under A Terrifying Whisper', () => {
+		const rule = specialRuleById('seat-7')!;
+		expect(switched(rule, {})).toEqual(rule);
+		const whisper = switched(rule, { 'seat-7:terrifying-whisper': true });
+		expect(whisper.setup.seats).toMatchObject({
+			speaks: 'private-and-public',
+			instructions: SEAT_7_WHISPER
+		});
+		expect(parseSpecialRule(whisper).ok).toBe(true);
 	});
 
 	// Trevor (2026-10-24): "allow duplicate demons could be a setting".

@@ -6704,6 +6704,54 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 	);
 });
 
+// Trevor (2026-11-12): "Can be any seat. Ballad of seat 7 could be used in any player count."
+// The author's page: "Once per game the storyteller may speak on its behalf."
+test('with The Ballad of Seat 7, any seat can be the one no one plays, spoken for once', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, 'The Ballad of Seat 7');
+	await toBoard(page);
+	for (const [number, name] of [
+		[2, 'Washerwoman'],
+		[7, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const two = await openSeat(page, 2);
+	await two.getByRole('button', { name: 'Seat actions' }).tap();
+	const menu = page.getByRole('dialog');
+	// Not that seat yet, so it can't be spoken for.
+	await expect(menu.getByRole('button', { name: 'Spoke for this seat' })).toBeDisabled();
+	await menu.getByRole('button', { name: 'No player for this seat' }).tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Washerwoman');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
+		'No player: make its choices (The Ballad of Seat 7)'
+	);
+	await walkTo(page, 'Empath');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveCount(0);
+
+	const again = await openSeat(page, 2);
+	await seatMenu(page, again, 'Spoke for this seat');
+	await again.getByRole('button', { name: 'Seat actions' }).tap();
+	await expect(
+		page.getByRole('dialog').getByRole('button', { name: 'Spoke for this seat' })
+	).toBeDisabled();
+	await expect(
+		page.getByRole('dialog').getByRole('button', { name: 'Give this seat a player' })
+	).toBeVisible();
+});
+
 test('a Dead reminder put on a living player asks whether to mark them dead', async ({ page }) => {
 	// Trevor (2026-10-19): placing a death reminder offers to mark the player dead; a help
 	// switch turns the question off. The Imp's "Dead" (https://wiki.bloodontheclocktower.com/Imp).

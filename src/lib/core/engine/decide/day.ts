@@ -1,6 +1,7 @@
 import {
 	ABNORMAL_REASONS,
 	GUESS_ANSWERS,
+	SPOKE_HOWS,
 	getSeat,
 	isTraveller,
 	trueCharacter,
@@ -110,6 +111,7 @@ export const DAY_DECIDERS: Deciders<
 	| 'ExecuteStoryteller'
 	| 'Exile'
 	| 'UseAbility'
+	| 'SpeakForSeat'
 	| 'DayNote'
 	| 'EditDayNote'
 	| 'RecordNightInfo'
@@ -400,6 +402,21 @@ export const DAY_DECIDERS: Deciders<
 			},
 			{ type: 'DayEntryAdded', entry: { ...entry, reminderId } }
 		];
+	},
+
+	SpeakForSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.noPlayer) warn('has-player', 'the seat has a player');
+		const entry: Extract<DayEntry, { kind: 'spoke' }> = {
+			kind: 'spoke',
+			entryId: ctx.newId(),
+			seatId: seat.seatId
+		};
+		if (command.how !== undefined) {
+			if (!SPOKE_HOWS.includes(command.how)) refuse('invalid-spoke', 'unknown way of speaking');
+			entry.how = command.how;
+		}
+		return [{ type: 'DayEntryAdded', entry }];
 	},
 
 	DayNote(game, command, ctx, warn) {

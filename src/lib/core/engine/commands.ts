@@ -25,6 +25,7 @@ import type {
 	ReminderId,
 	SeatId,
 	SeatOverride,
+	SpokeHow,
 	SymbolColour,
 	TileId,
 	WishEffect
@@ -56,6 +57,8 @@ export type Command =
 	| { type: 'AddSeat'; playerName?: PlayerName; position?: number; notInPlay?: true }
 	/** Puts seats in play, or takes them out (`Seat.notInPlay`), as one change. */
 	| { type: 'SetInPlay'; seatIds: SeatId[]; inPlay: boolean }
+	/** Marks a seat as dealt a character no one plays (`Seat.noPlayer`), or played again. */
+	| { type: 'SetNoPlayer'; seatId: SeatId; noPlayer: boolean }
 	| { type: 'RemoveSeat'; seatId: SeatId }
 	/** An empty or missing name clears it. */
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: PlayerName }
@@ -413,6 +416,8 @@ export type Command =
 	 * marks a statement true or false (L58); `answer` answers a guess at the player's own
 	 * ability (the Amnesiac's), or `customAnswer` in the Storyteller's own words.
 	 */
+	/** The Storyteller spoke for a seat no one plays (`spoke`), privately or publicly. */
+	| { type: 'SpeakForSeat'; seatId: SeatId; how?: SpokeHow }
 	| {
 			type: 'DayNote';
 			characterId: CharacterId;

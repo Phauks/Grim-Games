@@ -349,8 +349,8 @@ const SEATS = about(
 		kind('storyteller-seat', 'The Storyteller holds the seat.', {
 			count: about('How many such seats.', COUNT),
 			speaks: about(
-				'Whether the Storyteller may speak for the seat.',
-				oneOf(['never', 'once-per-game'])
+				'Whether the Storyteller may speak for the seat: once a game, or once privately and once publicly.',
+				oneOf(['never', 'once-per-game', 'private-and-public'])
 			)
 		})
 	)

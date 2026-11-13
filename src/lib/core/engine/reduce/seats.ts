@@ -28,6 +28,7 @@ export const SEATS_REDUCERS: Reducers<
 	| 'ScriptChanged'
 	| 'SeatAdded'
 	| 'SeatInPlaySet'
+	| 'NoPlayerSet'
 	| 'SeatRemoved'
 	| 'SeatRenamed'
 	| 'SeatNoteSaved'
@@ -58,6 +59,11 @@ export const SEATS_REDUCERS: Reducers<
 	SeatInPlaySet(game, event) {
 		return updateSeat(game, event.seatId, (seat) =>
 			event.inPlay ? omit(seat, 'notInPlay') : { ...seat, notInPlay: true }
+		);
+	},
+	NoPlayerSet(game, event) {
+		return updateSeat(game, event.seatId, (seat) =>
+			event.noPlayer ? { ...seat, noPlayer: true } : omit(seat, 'noPlayer')
 		);
 	},
 	SeatRemoved(game, event) {

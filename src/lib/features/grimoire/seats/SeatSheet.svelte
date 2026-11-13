@@ -4,7 +4,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from '#lib/features/grimoire/CharacterHistoryDialog.svelte';
 	import GainAbilityDialog from '#lib/features/grimoire/GainAbilityDialog.svelte';
-	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
+	import { allowedOffScriptIn, playedRules } from '#lib/features/modes/game-mode.ts';
+	import { noPlayerSeats, speakingLeft } from '#lib/core/modes/index.ts';
+	import type { SpokeHow } from '#lib/core/model/index.ts';
 	import NominationChooser from '#lib/features/grimoire/NominationChooser.svelte';
 	import { seatCharacterLine, seatName } from '#lib/features/game/seat-label.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -93,6 +95,36 @@
 	const game = $derived(grimoire.game);
 	/** Characters a special rule put in play from off the script, not flagged (+1). */
 	const offScriptOk = $derived(allowedOffScriptIn(game.gameId));
+	/**
+	 * A rule's seat no one plays (The Ballad of Seat 7): any seat may be it (Trevor,
+	 * 2026-11-12), marked from its ⋯, and the Storyteller notes when they speak for it.
+	 */
+	const seatsRule = $derived(
+		playedRules(game.gameId).find((r) => r.setup.seats?.kind === 'storyteller-seat')?.setup.seats
+	);
+	const noPlayer = $derived(
+		!!seatId && !!seatsRule && noPlayerSeats(game, seatsRule).includes(seatId)
+	);
+	const speakWays = $derived<('once' | SpokeHow)[]>(
+		seatsRule?.speaks === 'private-and-public'
+			? ['private', 'public']
+			: seatsRule?.speaks === 'once-per-game'
+				? ['once']
+				: []
+	);
+	const speakLeft = $derived(seatId && noPlayer ? speakingLeft(game, seatId, seatsRule) : []);
+	function setNoPlayer(on: boolean) {
+		if (!seatId) return;
+		// One seat at a time (the rule's count): marking this one unmarks the rest.
+		if (on && seatsRule?.count === 1)
+			for (const other of noPlayerSeats(game, seatsRule))
+				if (other !== seatId && game.seats[other]?.noPlayer)
+					grimoire.run({ type: 'SetNoPlayer', seatId: other, noPlayer: false });
+		grimoire.run({ type: 'SetNoPlayer', seatId, noPlayer: on });
+	}
+	function speak(how: 'once' | SpokeHow) {
+		if (seatId) grimoire.run({ type: 'SpeakForSeat', seatId, ...(how === 'once' ? {} : { how }) });
+	}
 	const characters = $derived(grimoire.open.characters);
 	const seat = $derived(seatId === undefined ? undefined : game.seats[seatId]);
 	const number = $derived(seatId === undefined ? 0 : game.seating.indexOf(seatId) + 1);
@@ -537,6 +569,12 @@
 	{holdsAbility}
 	{savant}
 	{claim}
+	noPlayerRule={!!seatsRule}
+	{noPlayer}
+	{speakWays}
+	{speakLeft}
+	onNoPlayer={setNoPlayer}
+	onSpeak={speak}
 	hasChanges={changes.length > 0}
 	onChangeCharacter={() => flow?.choose()}
 	onGain={() => flow?.chooseGain()}

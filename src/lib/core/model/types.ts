@@ -256,6 +256,12 @@ export interface Seat {
 	 * night starts. Absent once in play.
 	 */
 	notInPlay?: true;
+	/**
+	 * Dealt a character that no one plays (a rule's `seats`: The Ballad of Seat 7,
+	 * https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/): the Storyteller makes its
+	 * choices. Any seat, at any player count (Trevor, 2026-11-12). Absent for a played seat.
+	 */
+	noPlayer?: true;
 	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
 	deathCause?: DeathCause;
 	/**
@@ -395,6 +401,8 @@ export interface CharacterGuess {
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
  * - `info`: what a waking character was shown, with the reminder tokens it placed, and
  *   whether it worked abnormally (for the Mathematician).
+ * - `spoke`: the Storyteller spoke for a seat no one plays (`Seat.noPlayer`), privately or
+ *   publicly when the rule tells the two apart (The Ballad of Seat 7's A Terrifying Whisper).
  * - `wish`: a wish a character's player made (its `wish` rule: the Wizard's,
  *   https://wiki.bloodontheclocktower.com/Wizard), granted or declined, with the price and the
  *   clue the Storyteller set, and a standard `effect` the app knows, when they chose one.
@@ -508,6 +516,7 @@ export type DayEntry =
 			/** Set when the info or ability worked abnormally because of another character. */
 			abnormal?: AbnormalCause[];
 	  }
+	| { kind: 'spoke'; entryId: DayEntryId; seatId: SeatId; how?: SpokeHow }
 	| {
 			kind: 'wish';
 			entryId: DayEntryId;
@@ -519,6 +528,10 @@ export type DayEntry =
 			clue?: string;
 			effect?: WishEffect;
 	  };
+
+/** How the Storyteller spoke for a seat no one plays, when the rule tells them apart. */
+export const SPOKE_HOWS = ['private', 'public'] as const;
+export type SpokeHow = (typeof SPOKE_HOWS)[number];
 
 /**
  * A granted wish's effect the app knows and acts on, the Storyteller's pick (they decide what

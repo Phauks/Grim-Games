@@ -20,7 +20,8 @@ export type SwitchLabel =
 	| 'modes.switch.namedMany'
 	| 'modes.switch.mayBeNone'
 	| 'modes.switch.threeAlive'
-	| 'modes.switch.duplicateDemons';
+	| 'modes.switch.duplicateDemons'
+	| 'modes.switch.terrifyingWhisper';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
@@ -158,7 +159,37 @@ const DUPLICATES: readonly RuleSwitch[] = [
 	}
 ];
 
+/** Seat 7 under A Terrifying Whisper; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_WHISPER =
+	'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. You may speak for it twice: once privately and once publicly.';
+
+/**
+ * The Ballad of Seat 7's optional rules from its page
+ * (https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/), each a switch, off by default
+ * (Trevor, 2026-10-22: "leave seat 7 optional rules in to do"; built 2026-11-12). A Terrifying
+ * Whisper: "The Seat may speak twice per game. Once privately and once publicly."
+ */
+const SEAT_7: readonly RuleSwitch[] = [
+	{
+		id: 'terrifying-whisper',
+		label: () => 'modes.switch.terrifyingWhisper',
+		default: false,
+		apply: (rule, on) => {
+			const seats = rule.setup.seats;
+			if (!on || seats?.kind !== 'storyteller-seat') return rule;
+			return {
+				...rule,
+				setup: {
+					...rule.setup,
+					seats: { ...seats, speaks: 'private-and-public', instructions: SEAT_7_WHISPER }
+				}
+			};
+		}
+	}
+];
+
 export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
+	'seat-7': SEAT_7,
 	'plus-one': EXTRAS,
 	'infinite-possibilities': EXTRAS,
 	'djinns-bargain': DJINN,
