@@ -41,7 +41,13 @@ async function setSizes(page: Page, size: (typeof SIZES)[number]) {
 async function expectFits(dialog: Locator) {
 	// A section slides in over a moment on phones; measure where it comes to rest.
 	await dialog.evaluate((el) =>
-		Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
+		Promise.all(
+			el
+				.getAnimations({ subtree: true })
+				// Endless loops (the Dawn and Dusk glow) never finish.
+				.filter((a) => a.effect?.getTiming().iterations !== Infinity)
+				.map((a) => a.finished)
+		)
 	);
 	const result = await dialog.evaluate((el) => {
 		const box = el.getBoundingClientRect();

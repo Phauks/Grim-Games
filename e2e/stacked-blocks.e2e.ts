@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { animationsSettled } from './settled.ts';
 
 // Trevor (2026-10-22): pieces of information stacked one under another with nothing between
 // them (special rule toggles over their descriptions) read as one block. Where things sit is
@@ -32,9 +33,7 @@ const key = (found: string) => found.replace(/ \(gap.*$/, '');
 
 async function undelineated(page: Page, screen: string, scope = 'body'): Promise<string[]> {
 	// Measured once sheets have finished sliding in.
-	await page.waitForFunction(() =>
-		document.getAnimations().every((a) => a.playState !== 'running')
-	);
+	await animationsSettled(page);
 	const found = await page.evaluate((scope) => {
 		const opaque = (css: string) => {
 			const n = css.match(/[\d.]+/g)?.map(Number);
