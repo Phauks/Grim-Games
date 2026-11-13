@@ -6,18 +6,19 @@
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { ReminderMovementRules } from '#lib/core/data/parts/reminder-movement.ts';
-import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, Reminder, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { charactersInPlay } from '#lib/core/model/selectors.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import { neighbourSeats } from './reminder-targets.ts';
 
-/** A character's `reminderMovement` rule, from the rules block it carries. */
+/** A character's `reminderMovement` rule in `game`. */
 export function reminderMovementOf(
+	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): ReminderMovementRules | undefined {
-	return rulesOf(characterId, characters)?.reminderMovement;
+	return rulesFor(game, characterId, characters)?.reminderMovement;
 }
 
 /** Why a reminder stays put, when its character gives no reason of its own. */
@@ -25,31 +26,33 @@ export const FIXED_REMINDER = 'It stays where it was first placed.';
 
 /** Why this reminder should stay where it was first placed, or undefined if it may move. */
 export function fixedReminderReason(
+	game: Game,
 	reminder: Pick<Reminder, 'characterId' | 'label'>,
 	characters: CharacterLookup
 ): string | undefined {
-	const rule = reminderMovementOf(reminder.characterId, characters);
+	const rule = reminderMovementOf(game, reminder.characterId, characters);
 	// A custom character gives no reason of its own (M84): the plain one stands in.
 	return rule?.fixed?.includes(reminder.label) ? (rule.why ?? FIXED_REMINDER) : undefined;
 }
 
 export function isFixedReminder(
+	game: Game,
 	reminder: Pick<Reminder, 'characterId' | 'label'>,
 	characters: CharacterLookup
 ): boolean {
-	return fixedReminderReason(reminder, characters) !== undefined;
+	return fixedReminderReason(game, reminder, characters) !== undefined;
 }
 
 /**
  * Whether a token with these words, from this character, stays where it is first put: what
- * every reminder token drawn anywhere (`BoardReminder`) reads for its stay-put mark. The
- * character carries its own rules block when it is a custom one.
+ * every reminder token drawn anywhere (`BoardReminder`), in a game or not, reads for its
+ * stay-put mark, so it reads the rules block the character carries.
  */
 export function isFixedLabel(
 	character: { id: CharacterId; edition?: string; rules?: CharacterRules },
 	label: ReminderLabel
 ): boolean {
-	const rule = rulesOfCharacter(character)?.reminderMovement;
+	const rule = character.rules?.reminderMovement;
 	return rule?.fixed?.includes(label) ?? false;
 }
 
@@ -83,10 +86,10 @@ export function fixedReminderMove(
 		const reminder = game.seats[seatId].reminders.find((r) => r.reminderId === reminderId);
 		if (!reminder) continue;
 		if (seatId === toSeatId) return undefined;
-		const why = fixedReminderReason(reminder, characters);
+		const why = fixedReminderReason(game, reminder, characters);
 		if (why === undefined) return undefined;
 		const relocators = [...new Set(charactersInPlay(game))].flatMap((characterId) => {
-			const does = reminderMovementOf(characterId, characters)?.relocates;
+			const does = reminderMovementOf(game, characterId, characters)?.relocates;
 			return does === undefined ? [] : [{ characterId, does }];
 		});
 		return {
@@ -127,7 +130,9 @@ export function neighbourFollows(
 	const groups = new Map<string, { reminder: Reminder; held: [SeatId, ReminderId][] }>();
 	for (const seatId of before.seating) {
 		for (const r of before.seats[seatId].reminders) {
-			if (!reminderMovementOf(r.characterId, characters)?.followsNeighbours?.includes(r.label))
+			if (
+				!reminderMovementOf(before, r.characterId, characters)?.followsNeighbours?.includes(r.label)
+			)
 				continue;
 			const key = JSON.stringify([r.characterId, r.label, r.ownerSeatId ?? null]);
 			const group = groups.get(key) ?? {

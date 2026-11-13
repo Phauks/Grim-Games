@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
@@ -186,7 +187,7 @@ describe('Savant', () => {
 			const s = scenario(cast, { script }).newDay();
 			expect(mayVisit(s)).toBe(true);
 			expect(mayVisit(s.newDay())).toBe(true);
-			expect(dayClaim('savant', committedCharacters())).toBe('statements');
+			expect(dayClaim(plainGame(), 'savant', committedCharacters())).toBe('statements');
 		});
 
 		it('suggests two statements from the grimoire, one true and one false', () => {

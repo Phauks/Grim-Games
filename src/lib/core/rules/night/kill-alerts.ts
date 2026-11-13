@@ -84,7 +84,7 @@ export function deathAlerts(
 		if (safe) alert('protected', safe, wikiOf(safe));
 	}
 
-	const trigger = own ? onDeathTrigger(own, characters) : undefined;
+	const trigger = own ? onDeathTrigger(game, own, characters) : undefined;
 	if (own && trigger && (trigger.by === 'any' || trigger.by === killer.by)) {
 		const character = characters.get(own);
 		alert('on-death', { characterId: own, seatId }, character && wikiUrl(character));
@@ -93,7 +93,7 @@ export function deathAlerts(
 	// ate the Ravenkeeper keeps it when they die, https://wiki.bloodontheclocktower.com/Cannibal).
 	for (const ability of abilitiesOfSeat(game, seatId, characters)) {
 		if (ability.how === 'own') continue;
-		const borrowed = onDeathTrigger(ability.characterId, characters);
+		const borrowed = onDeathTrigger(game, ability.characterId, characters);
 		if (!borrowed || (borrowed.by !== 'any' && borrowed.by !== killer.by)) continue;
 		const character = characters.get(ability.characterId);
 		alert(

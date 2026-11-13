@@ -122,7 +122,7 @@ describe('Imp', () => {
 				.dies('imp', 'imp')
 				.becomes('poisoner', 'imp');
 			const changes = changedCharacters(s.session.log, s.game);
-			const steps = withCharacterChangeSteps([], changes, s.characters);
+			const steps = withCharacterChangeSteps(s.game, [], changes, s.characters);
 			expect(steps).toMatchObject([
 				{ changed: { seatId: s.seat('poisoner'), characterId: 'imp' } }
 			]);

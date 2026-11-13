@@ -26,13 +26,15 @@ function fields(over: Partial<CharacterFields> = {}): CharacterFields {
 const LIT = ['Lit'] as ReminderLabel[];
 
 describe('BUILDER_RULES', () => {
-	it('lists every part but the two set elsewhere and our own words, by label', () => {
+	it('lists every part but the three set elsewhere and our own words, by label', () => {
 		const keys = BUILDER_RULES.map((r) => r.key);
 		expect(keys).not.toContain('nightOrder');
 		expect(keys).not.toContain('nightText');
+		// A setup change is the ability's [setup] text, so it does what it says.
+		expect(keys).not.toContain('setupModifier');
 		// Our own wording of an official optional rule is never typed in (M84).
 		expect(keys).not.toContain('optionalRuleText');
-		expect(keys).toHaveLength(Object.keys(PARTS).length - 3);
+		expect(keys).toHaveLength(Object.keys(PARTS).length - 4);
 		const labels = BUILDER_RULES.map((r) => r.label);
 		expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
 	});
@@ -178,9 +180,6 @@ const TYPED_TODO = [
 	'jinxes.*.cannotCreate<With who and when>.when.*<Marked>.marked',
 	'jinxes.*.patch<With who and when>.parts',
 	'reminderTargets.*.neighbour.of',
-	'setupModifier.summary',
-	'setupModifier.requires',
-	'setupModifier.notes',
 	'setupPrep.notes.*.value.key',
 	'setupPrep.notes.*.value.label'
 ];

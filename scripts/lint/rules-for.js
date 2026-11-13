@@ -6,8 +6,7 @@
  * reader happened to be game-aware (refactor review D1, 2026-11-11).
  *
  * Code that reads rules before or outside a game (setup, the night sheet, Reference, the
- * jinx readers `rulesFor` itself is built on) is the rule's ignores in eslint.config.js;
- * files not moved yet are RULES_OF_TODO there, which only shrinks.
+ * jinx readers `rulesFor` itself is built on) is the rule's ignores in eslint.config.js.
  */
 
 const STATIC_READERS = new Set(['rulesOf', 'rulesIn', 'rulesOfCharacter']);

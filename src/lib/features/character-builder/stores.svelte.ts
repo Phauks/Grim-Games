@@ -55,12 +55,20 @@ export class CharacterBuilderDraft {
 		this.#set(draft);
 	}
 
-	clear(): void {
-		this.#set(emptyCharacterDraft());
+	/** Starts a new character, its name not one of `taken`. */
+	clear(taken: Iterable<string> = []): void {
+		this.#set(emptyCharacterDraft(taken));
 	}
 }
 
 export const characterBuilderDraft = new CharacterBuilderDraft(CHARACTER_DRAFT_KEY);
+
+/** The names of this device's saved characters, which a new character's name avoids. */
+export function savedCharacterNames(): string[] {
+	return savedCharacters.list.flatMap((c) =>
+		typeof c.entry.name === 'string' ? [c.entry.name] : []
+	);
+}
 
 function newSavedId(): string {
 	return (

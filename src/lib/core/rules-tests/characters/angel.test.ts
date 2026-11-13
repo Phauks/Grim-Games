@@ -81,7 +81,7 @@ describe('Angel', () => {
 			const token = after.game.seats[s.seat('imp')].reminders.find(
 				(r) => r.label === 'Something Bad'
 			)!;
-			expect(pickedEffectOf(token, after.characters)?.effects).toContain('no-kill');
+			expect(pickedEffectOf(after.game, token, after.characters)?.effects).toContain('no-kill');
 			const night = effectNight(after.game, false);
 			expect(night).toBe(2);
 			const punished = after.do({

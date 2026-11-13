@@ -56,8 +56,6 @@ export const TESTS_ONLY_TODO: readonly string[] = [
 	'src/lib/core/rules/game-end/end-reason.ts: alwaysWinners',
 	'src/lib/core/rules/jinxes/jinxes.ts: jinxedWith',
 	'src/lib/core/rules/night/info-token-characters.ts: filledInfoToken',
-	'src/lib/core/rules/night/night-killers.ts: NIGHT_KILLERS',
-	'src/lib/core/rules/night/night-killers.ts: ON_DEATH',
 	'src/lib/core/rules/night/night-text.ts: SHOW_DIFFERS_FROM_SOURCE',
 	'src/lib/core/rules/night/night-text.ts: nightTextPlain',
 	'src/lib/core/rules/night/night-text.ts: placeholderProblems',

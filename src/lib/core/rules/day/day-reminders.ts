@@ -12,6 +12,7 @@
  * any generated reminder (hide or reword it) and add their own (`DayReminderOverride`).
  */
 import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts';
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, Reminder, ReminderEffect, SeatId } from '#lib/core/model/types.ts';
 import type { DayReminderOverride } from '#lib/core/model/overrides.ts';
@@ -31,11 +32,11 @@ import {
 	type DayReminderSpec,
 	type DeathCauseMatch
 } from '#lib/core/data/parts/day-reminders.ts';
-import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { effectDayLines, type DayLineEffect } from '#lib/core/rules/reminders/reminder-effects.ts';
 import { grantedWishSeats } from '#lib/core/rules/abilities/wishes.ts';
 import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** Defined with the model's `Seat`; re-exported here for existing imports. */
 
@@ -75,8 +76,11 @@ export interface DayState {
 	nominationChoices?: readonly { nominee: SeatId; chosen: SeatId }[];
 	/** Values the Storyteller entered during prep (`Game.prepValues`). */
 	prepValues?: Readonly<Record<string, string>>;
-	/** Characters whose optional rule this game turned on (`Game.optionalRules`). */
-	optionalRules?: readonly CharacterId[];
+	/**
+	 * A character's rules in this game (`rulesFor`: its optional rule and jinx patches in
+	 * effect). Without it, the rules block the character carries.
+	 */
+	rules?: (id: CharacterId) => CharacterRules | undefined;
 	/** Seats whose player has had a wish granted (`wishes.ts`), for `when.noWish`. */
 	grantedWishes?: readonly SeatId[];
 	/** The days begun (`game.pastDays.length`), for effects that last a day. */
@@ -160,25 +164,17 @@ export function daySentence(segments: readonly ReminderSegment[]): {
 	return { segments: out, stop: false };
 }
 
-/**
- * A character's `dayReminders` rules, from the rules block it carries; its optional rule's when
- * the game turned that on (`optionalRules`).
- */
-function rulesFor(
-	characterId: CharacterId,
-	character: Character | undefined,
-	optionalRules: readonly CharacterId[] = []
-): DayReminderRules | undefined {
-	if (!character) return undefined;
-	return rulesIn({ optionalRules }, characterId, new Map([[characterId, character]]))?.dayReminders;
+/** A character's rules block in the day's state (`DayState.rules`). */
+function ruleBlock(state: DayState, id: CharacterId): CharacterRules | undefined {
+	return state.rules ? state.rules(id) : state.character(id)?.rules;
 }
 
-/** A character's `dayReminders` rules, as `rulesFor` reads them. */
+/** A character's `dayReminders` rules from the block it carries, outside a game (Reference). */
 export function dayRulesOf(
 	characterId: CharacterId,
 	lookup: CharacterLookup
 ): DayReminderRules | undefined {
-	return rulesFor(characterId, lookup?.get(characterId));
+	return lookup.get(characterId)?.rules?.dayReminders;
 }
 
 /** One character's day reminders, with the wiki page to link. */
@@ -189,12 +185,8 @@ interface DayReminderEntry {
 	reminders: readonly DayReminderSpec[];
 }
 
-function entryOf(
-	characterId: CharacterId,
-	character: Character | undefined,
-	optionalRules?: readonly CharacterId[]
-) {
-	const rules = rulesFor(characterId, character, optionalRules);
+function entryOf(state: DayState, characterId: CharacterId, character: Character | undefined) {
+	const rules = ruleBlock(state, characterId)?.dayReminders;
 	if (!rules?.reminders?.length && !rules?.impairable) return { rules };
 	const entry: DayReminderEntry = {
 		id: characterId,
@@ -252,7 +244,7 @@ export function dayStateFromGame(
 			e.kind === 'nomination' && e.chosen ? [{ nominee: e.nominee, chosen: e.chosen }] : []
 		),
 		...(game.prepValues ? { prepValues: game.prepValues } : {}),
-		...(game.optionalRules ? { optionalRules: game.optionalRules } : {}),
+		rules: (id) => rulesFor(game, id, characters),
 		grantedWishes: grantedWishSeats(game),
 		days: game.pastDays.length,
 		notDeclared: [...new Set(game.seating.flatMap((s) => game.seats[s]?.characterId ?? []))].filter(
@@ -261,11 +253,6 @@ export function dayStateFromGame(
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
-}
-
-/** A character's rules block, a homebrew one's own included. */
-function ruleBlock(state: DayState, id: CharacterId) {
-	return state.character(id)?.rules;
 }
 
 /** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
@@ -630,7 +617,7 @@ function interactions(state: DayState): DayReminder[] {
 	const registrants = new Set(state.seats.flatMap((s) => (s.characterId ? [s.characterId] : [])));
 	for (const id of registrants) {
 		const character = state.character(id);
-		rulesFor(id, character, state.optionalRules)?.interactions?.forEach((rule, index) => {
+		ruleBlock(state, id)?.dayReminders?.interactions?.forEach((rule, index) => {
 			const others = living(rule.other);
 			if (others.length === 0) return;
 			if (rule.otherNoReminder && carriers(state, rule.other, rule.otherNoReminder).length > 0) {
@@ -664,7 +651,7 @@ export function dayReminders(state: DayState): DayReminders {
 	const all: DayReminder[] = [];
 	const visit = (characterId: CharacterId, seat: DaySeat | undefined) => {
 		const character = state.character(characterId);
-		const { rules, entry } = entryOf(characterId, character, state.optionalRules);
+		const { rules, entry } = entryOf(state, characterId, character);
 		// A character with no ability at all (a Minion the Preacher chose) is always worth a
 		// line, even when its entry is not impairable or it has nothing to watch by day.
 		if (seat && !entry?.impairable) {

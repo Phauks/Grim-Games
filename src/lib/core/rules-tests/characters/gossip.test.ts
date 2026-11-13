@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
@@ -140,7 +141,7 @@ describe('Gossip', () => {
 			// Wiki: "Each day, if the Gossip makes a definite, true public statement, put the Gossip’s
 			// DEAD reminder in the center of the left side of the Grimoire as a reminder to yourself to
 			// place it tonight."
-			expect(dayClaim('gossip', committedCharacters())).toBe('statement');
+			expect(dayClaim(plainGame(), 'gossip', committedCharacters())).toBe('statement');
 			const s = says(scenario(cast).newDay(), true);
 			expect(s.game.today.entries).toContainEqual(
 				expect.objectContaining({ characterId: 'gossip', seatId: s.seat('gossip'), holds: true })

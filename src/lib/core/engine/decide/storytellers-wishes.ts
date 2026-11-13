@@ -38,7 +38,7 @@ export const STORYTELLERS_WISHES_DECIDERS: Deciders<
 		if (command.effect !== undefined && !WISH_EFFECTS.includes(command.effect)) {
 			refuse('invalid-wish', `no wish effect ${String(command.effect)}`);
 		}
-		if (!makesWish(characterId, ctx.characters)) {
+		if (!makesWish(game, characterId, ctx.characters)) {
 			warn('no-wish-rule', 'this character makes no wish');
 		}
 		const before = command.entryId ? entryOfKind(game, command.entryId, 'wish') : undefined;

@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -66,9 +67,15 @@ describe('Zenomancer', () => {
 	// (Trevor, 2026-10-31).
 	describe('goals', () => {
 		it('each Goal reminder carries the Storyteller’s words; other reminders don’t', () => {
-			expect(takesNote({ characterId: 'zenomancer', label: 'Goal' }, characters)).toBe(true);
-			expect(takesNote({ characterId: 'zenomancer', label: 'Other' }, characters)).toBe(false);
-			expect(takesNote({ characterId: 'chef', label: 'Goal' }, characters)).toBe(false);
+			expect(takesNote(plainGame(), { characterId: 'zenomancer', label: 'Goal' }, characters)).toBe(
+				true
+			);
+			expect(
+				takesNote(plainGame(), { characterId: 'zenomancer', label: 'Other' }, characters)
+			).toBe(false);
+			expect(takesNote(plainGame(), { characterId: 'chef', label: 'Goal' }, characters)).toBe(
+				false
+			);
 		});
 
 		it('shows the goal on its own card', () => {
@@ -89,7 +96,7 @@ describe('Zenomancer', () => {
 			}));
 		const goalOf = (s: ReturnType<typeof scenario>, seat: string) =>
 			s.game.seats[s.seat(seat)].reminders.find(
-				(r) => r.characterId === 'zenomancer' && takesNote(r, s.characters)
+				(r) => r.characterId === 'zenomancer' && takesNote(s.game, r, s.characters)
 			)?.note;
 
 		it('Example 1: Pit-Hag converts Witch, learns drunk Sage', () => {

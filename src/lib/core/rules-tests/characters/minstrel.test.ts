@@ -112,7 +112,7 @@ describe('Minstrel', () => {
 				.do((at) => ({ type: 'Exile', seatId: at.seat('apprentice') }));
 			expect(isTraveller(day3.game, day3.seat('apprentice'), day3.characters)).toBe(true);
 			expect(
-				isExecution(day3.game.seats[day3.seat('apprentice')].deathCause, day3.characters)
+				isExecution(day3.game, day3.game.seats[day3.seat('apprentice')].deathCause, day3.characters)
 			).toBe(false);
 			expect(drunkTokens(day3)).toEqual([]);
 			expect(works(day3, 'imp')).toBe(true);

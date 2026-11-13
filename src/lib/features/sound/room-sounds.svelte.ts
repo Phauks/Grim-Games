@@ -1,7 +1,8 @@
+import { untrack } from 'svelte';
 import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 import { ambienceMix } from '#lib/core/sound/ambience.ts';
-import { hearsSound, type SoundListener } from '#lib/core/sound/soundboard.ts';
+import { hearsAmbience, hearsSound, type SoundListener } from '#lib/core/sound/soundboard.ts';
 import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
 import {
 	parsePublicSound,
@@ -59,10 +60,22 @@ export class RoomSounds {
 	/** The running timer the bell is set for, so a copy of the same one doesn't move it. */
 	#bellFor: string | undefined;
 	#bell: ReturnType<typeof setTimeout> | undefined;
+	readonly #stopFollowingVolume: () => void;
 
 	constructor(listener: SoundListener) {
 		this.#listener = listener;
 		unlockOnFirstTap();
+		// This device's Volume and soundboard level change what plays now, not at the next copy.
+		this.#stopFollowingVolume = $effect.root(() => {
+			$effect(() => {
+				void preferences.current.soundVolume;
+				void preferences.current.soundboardLevel;
+				untrack(() => {
+					ambience.refresh();
+					soundboard.applyMix();
+				});
+			});
+		});
 	}
 
 	/** A soundboard command from the Storyteller. */
@@ -75,7 +88,7 @@ export class RoomSounds {
 	follow(table: PublicGameState | undefined): void {
 		const sound = parsePublicSound(table?.sound);
 		const heard = !!sound && hearsSound(sound.on, this.#listener);
-		const cue = heard ? sound.ambience : undefined;
+		const cue = sound && hearsAmbience(sound.on, this.#listener) ? sound.ambience : undefined;
 		if (cue) this.#askForTap();
 		ambience.follow(cue);
 		this.#setBell(heard ? dayTimers.parsePublicTimer(table?.timer) : undefined, sound?.timerSound);
@@ -83,6 +96,7 @@ export class RoomSounds {
 
 	/** Leaving the room: everything it started stops. */
 	stop(): void {
+		this.#stopFollowingVolume();
 		ambience.follow(undefined);
 		soundboard.fromStoryteller({ command: 'stop' });
 		this.#setBell(undefined, undefined);

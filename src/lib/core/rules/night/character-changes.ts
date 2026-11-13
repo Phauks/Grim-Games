@@ -13,11 +13,11 @@
  * new character's `evilInfo.lateNote` is a note on its step (a Snitch made tonight: each
  * Minion learns 3 bluffs, https://wiki.bloodontheclocktower.com/Snitch).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/parts/info-token-characters.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import type { SeatId } from '#lib/core/model/types.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { NightStep } from './night-order.ts';
 import { infoTokensNamedIn } from '#lib/core/data/info-tokens.ts';
 
@@ -37,6 +37,7 @@ const CHANGED_STEP = 'changed';
  * wake at the end of the night).
  */
 export function withCharacterChangeSteps<T extends NightStep>(
+	game: Game,
 	steps: readonly T[],
 	changes: readonly { seatId: SeatId; characterId: CharacterId; by?: CharacterId }[],
 	characters: CharacterLookup
@@ -50,7 +51,7 @@ export function withCharacterChangeSteps<T extends NightStep>(
 		const told =
 			cause >= 0 && infoTokensNamedIn(out[cause].reminder).some((t) => t.id === 'you-are');
 		if (told) continue;
-		const late = rulesOf(characterId, characters)?.evilInfo?.lateNote;
+		const late = rulesFor(game, characterId, characters, { seatId })?.evilInfo?.lateNote;
 		const step: NightStep = {
 			id: `${CHANGED_STEP}@${seatId}`,
 			kind: 'custom',

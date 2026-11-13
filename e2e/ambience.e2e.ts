@@ -6,6 +6,9 @@ import { pickScript, toBoard } from './new-game.ts';
 // the first night begins does the night's recording play. Never on the Storyteller's own
 // device (Trevor, 2026-10-30: "Do not play audio from storytellers device ... Only play remote
 // on other devices"): the phones in the room fetch and play it, and the board fetches nothing.
+// Phones play it only when Play on is phones alone (audio audit, 2026-11-12): many phones
+// playing one recording a moment apart smear it into an echo, so with the Town Square in Play
+// on, only the town plays it.
 
 test('day and night sound plays on phones in the room once the night begins, never the board', async ({
 	page,
@@ -87,6 +90,24 @@ test('day and night sound plays on phones in the room once the night begins, nev
 	const strip = page.getByTestId('night-strip');
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+
+	// Play on includes the Town Square by default, so the phone stays quiet.
+	await page.waitForTimeout(1000);
+	expect(fetched).toEqual([]);
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Sound' })
+		.tap();
+	await settings.getByRole('combobox', { name: 'Play on' }).tap();
+	await page.getByRole('option', { name: 'Players’ phones', exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
 
 	// The night's recording starts at once on the phone, the Evening meadow by default, and it
 	// is the only one playing.

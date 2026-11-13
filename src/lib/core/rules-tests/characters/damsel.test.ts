@@ -81,7 +81,7 @@ describe('Damsel', () => {
 			const s = scenario(['damsel', 'witch', 'imp', 'chef', 'monk']);
 			const guess = { seatId: s.seat('damsel'), characterId: 'damsel' };
 			expect(correctGuesses(s.game, [guess], s.characters)).toEqual([guess]);
-			expect(dayUseOf('damsel', s.characters)).toMatchObject({ who: 'guesser' });
+			expect(dayUseOf(s.game, 'damsel', s.characters)).toMatchObject({ who: 'guesser' });
 			expect(endCharacters(s.game, s.characters)).toContain('damsel');
 			// The Witch's guess is logged as the Damsel's ability used, about its guesser.
 			const guessed = s.do((at) => ({
@@ -102,7 +102,7 @@ describe('Damsel', () => {
 			const s = scenario(['damsel', 'boomdandy', 'goblin', 'imp', 'chef']);
 			const wrong = { seatId: s.seat('chef'), characterId: 'damsel' };
 			expect(correctGuesses(s.game, [wrong], s.characters)).toEqual([]);
-			expect(dayUseOf('damsel', s.characters)?.spentToken).toBe('Guess Used');
+			expect(dayUseOf(s.game, 'damsel', s.characters)?.spentToken).toBe('Guess Used');
 			const spent = s.reminder('damsel', 'damsel', 'Guess Used');
 			expect(gameEnds(spent.game, spent.characters)).toEqual([]);
 			const goblin = spent.do((at) => ({

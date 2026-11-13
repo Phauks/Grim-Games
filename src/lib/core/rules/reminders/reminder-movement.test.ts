@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/commands.ts';
-import { newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, plainGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { undo } from '#lib/core/engine/log.ts';
 import { committedGameData, committedCharacter } from '#lib/core/testing/committed-data.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
@@ -68,60 +68,92 @@ describe('coverage', () => {
 describe('isFixedReminder', () => {
 	it('keeps start-knowing tokens in place (https://wiki.bloodontheclocktower.com/Washerwoman)', () => {
 		expect(
-			isFixedReminder({ characterId: 'washerwoman', label: 'Townsfolk' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'washerwoman', label: 'Townsfolk' },
+				testCharacters
+			)
 		).toBe(true);
-		expect(isFixedReminder({ characterId: 'washerwoman', label: 'Wrong' }, testCharacters)).toBe(
-			true
-		);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'washerwoman', label: 'Wrong' }, testCharacters)
+		).toBe(true);
 	});
 
 	it('keeps the red herring in place (https://wiki.bloodontheclocktower.com/Fortune_Teller)', () => {
 		expect(
-			isFixedReminder({ characterId: 'fortuneteller', label: 'Red Herring' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'fortuneteller', label: 'Red Herring' },
+				testCharacters
+			)
 		).toBe(true);
 	});
 
 	it('lets each-night choices move (https://wiki.bloodontheclocktower.com/Poisoner, /Monk, /Butler)', () => {
-		expect(isFixedReminder({ characterId: 'poisoner', label: 'Poisoned' }, testCharacters)).toBe(
-			false
-		);
-		expect(isFixedReminder({ characterId: 'monk', label: 'Safe' }, testCharacters)).toBe(false);
-		expect(isFixedReminder({ characterId: 'butler', label: 'Master' }, testCharacters)).toBe(false);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'poisoner', label: 'Poisoned' }, testCharacters)
+		).toBe(false);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'monk', label: 'Safe' }, testCharacters)
+		).toBe(false);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'butler', label: 'Master' }, testCharacters)
+		).toBe(false);
 	});
 
 	it('lets the Town Crier’s daily tokens move (https://wiki.bloodontheclocktower.com/Town_Crier)', () => {
 		// Wiki: "Each dawn, mark the Town Crier with the MINIONS NOT NOMINATED reminder, and remove the MINION NOMINATED reminder, if any."
 		expect(
-			isFixedReminder({ characterId: 'towncrier', label: 'Minions Not Nominated' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'towncrier', label: 'Minions Not Nominated' },
+				testCharacters
+			)
 		).toBe(false);
 		expect(
-			isFixedReminder({ characterId: 'towncrier', label: 'Minion Nominated' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'towncrier', label: 'Minion Nominated' },
+				testCharacters
+			)
 		).toBe(false);
 	});
 
 	it('lets the Flowergirl’s daily tokens move (https://wiki.bloodontheclocktower.com/Flowergirl)', () => {
 		// Wiki: "Each dawn, mark the Flowergirl with the DEMON NOT VOTED reminder, and remove the DEMON VOTED reminder, if any."
 		expect(
-			isFixedReminder({ characterId: 'flowergirl', label: 'Demon Not Voted' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'flowergirl', label: 'Demon Not Voted' },
+				testCharacters
+			)
 		).toBe(false);
 		expect(
-			isFixedReminder({ characterId: 'flowergirl', label: 'Demon Voted' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'flowergirl', label: 'Demon Voted' },
+				testCharacters
+			)
 		).toBe(false);
 	});
 
 	it('lets a character’s other tokens move (https://wiki.bloodontheclocktower.com/Grandmother)', () => {
 		expect(
-			isFixedReminder({ characterId: 'grandmother', label: 'Grandchild' }, testCharacters)
+			isFixedReminder(
+				plainGame(),
+				{ characterId: 'grandmother', label: 'Grandchild' },
+				testCharacters
+			)
 		).toBe(true);
-		expect(isFixedReminder({ characterId: 'grandmother', label: 'Dead' }, testCharacters)).toBe(
-			false
-		);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'grandmother', label: 'Dead' }, testCharacters)
+		).toBe(false);
 	});
 
 	it('never fixes homebrew tokens without a rule', () => {
-		expect(isFixedReminder({ characterId: 'my-homebrew', label: 'Know' }, testCharacters)).toBe(
-			false
-		);
+		expect(
+			isFixedReminder(plainGame(), { characterId: 'my-homebrew', label: 'Know' }, testCharacters)
+		).toBe(false);
 	});
 
 	// A custom character's own `reminderMovement` works as an official one's: the Fortune
@@ -140,8 +172,12 @@ describe('isFixedReminder', () => {
 			)
 		};
 		const lookup = new Map([['seer', seer]]);
-		expect(isFixedReminder({ characterId: 'seer', label: 'Decoy' }, lookup)).toBe(true);
-		expect(isFixedReminder({ characterId: 'seer', label: 'Seen' }, lookup)).toBe(false);
+		expect(isFixedReminder(plainGame(), { characterId: 'seer', label: 'Decoy' }, lookup)).toBe(
+			true
+		);
+		expect(isFixedReminder(plainGame(), { characterId: 'seer', label: 'Seen' }, lookup)).toBe(
+			false
+		);
 	});
 
 	it('reports a malformed reminderMovement rule', () => {
@@ -175,7 +211,7 @@ describe('isFixedReminder', () => {
 			])
 		};
 		const lookup = new Map([['seer', seer]]);
-		expect(fixedReminderReason({ characterId: 'seer', label: 'Decoy' }, lookup)).toBe(
+		expect(fixedReminderReason(plainGame(), { characterId: 'seer', label: 'Decoy' }, lookup)).toBe(
 			FIXED_REMINDER
 		);
 	});

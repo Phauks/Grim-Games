@@ -9,7 +9,7 @@ import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
-import { gameSound } from '#lib/features/sound/room-sounds.ts';
+import { gameSound } from '#lib/features/sound/room-sounds.svelte.ts';
 import type { RoomHost } from './host.svelte.ts';
 import { storytellerLook } from './storyteller-look.svelte.ts';
 

@@ -24,9 +24,12 @@ export interface BuilderRule {
 /**
  * Parts set elsewhere, so never listed: the night position has its own field in Night (M59),
  * and night text replaces an official character's text only (P8: a custom character writes its
- * own in the Night section).
+ * own in the Night section). A custom character's setup change is its ability's [setup] text,
+ * built with Add a setup change and read by the app, so what it says is what it does (Trevor,
+ * 2026-11-12: "if it says +2 outsiders it actually is"); a setup change rule beside it could
+ * say one thing and do another.
  */
-const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText']);
+const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText', 'setupModifier']);
 
 /** Whether the Rules section offers part `key`: not set elsewhere, nor our own words (M84). */
 const offered = (key: string) =>
