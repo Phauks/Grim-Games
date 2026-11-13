@@ -1,3 +1,4 @@
+import { openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -26,12 +27,11 @@ test("the board's Script sheet has the players' tabs, and its Share matches /pla
 	await startGame(page);
 	const sheet = await openScript(page);
 	// The same screens a player has (Trevor, 2026-10-23: "grim, notes, etc").
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(sheet)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Grim' }).tap();
 	// The town as the phones see it: eight seats, no characters.
 	await expect(sheet.getByTestId('grim-seat')).toHaveCount(8);
-	await sheet.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(sheet.getByRole('tabpanel', { name: 'Notes' })).toBeVisible();
+	await expect(await openNotes(sheet)).toBeVisible();
 
 	// Out of a room, Share is the script's link, as on /play.
 	await sheet.getByRole('button', { name: 'Share script' }).tap();

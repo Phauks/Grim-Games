@@ -1,3 +1,4 @@
+import { openNotes } from './tabs.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { expectNotes, leaveNote, newNoteRow, noteText, noteTitle } from './notes.ts';
 
@@ -12,7 +13,7 @@ const lines = (box: Locator) => () => box.evaluate((el) => (el as HTMLElement).i
 test.beforeEach(async ({ page }) => {
 	await page.goto('/play');
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap({ timeout: 15_000 });
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await page.getByRole('button', { name: 'New note' }).tap();
 });
 
