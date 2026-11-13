@@ -129,10 +129,14 @@ describe('saving', () => {
 	});
 
 	it('reads back what it saved and drops anything malformed', () => {
-		const layout = withPlaced(withGap({ ...DEFAULT_SEAT_LAYOUT, shape: 'circle' as const }, 'a', 2), 'b', {
-			x: 20,
-			y: 30
-		});
+		const layout = withPlaced(
+			withGap({ ...DEFAULT_SEAT_LAYOUT, shape: 'circle' as const }, 'a', 2),
+			'b',
+			{
+				x: 20,
+				y: 30
+			}
+		);
 		expect(parseSeatLayout(JSON.parse(JSON.stringify(layout)))).toEqual(layout);
 		expect(
 			parseSeatLayout({ shape: 'hexagon', gaps: { a: 'x', b: 9 }, placed: { c: { x: 1 } } })
