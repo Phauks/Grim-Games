@@ -791,6 +791,8 @@
 	}
 	.line-reminders {
 		display: grid;
+		/* Never wider than the step: a row's seat name shortens instead (Trevor, 2026-11-12). */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		padding-top: var(--space-2);
 	}
