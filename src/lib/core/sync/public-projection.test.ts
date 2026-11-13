@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
-import { NoopSyncProvider, parsePublicLook, publicProjection } from './public-projection.ts';
+import { parsePublicLook, publicProjection } from './public-projection.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
 
@@ -390,16 +390,6 @@ describe('the shared look', () => {
 			image: 'a'.repeat(64)
 		});
 		expect(parsePublicLook({ image: 'blob:secret' })).toEqual({});
-	});
-});
-
-describe('NoopSyncProvider', () => {
-	it('accepts public state and publishes nothing', async () => {
-		const provider = new NoopSyncProvider();
-		await expect(
-			provider.publish({ seats: [], today: { nominations: [], executions: [] } })
-		).resolves.toBeUndefined();
-		await expect(provider.close()).resolves.toBeUndefined();
 	});
 });
 

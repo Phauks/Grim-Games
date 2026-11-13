@@ -9,8 +9,3 @@ export function timestampName(when: Date = new Date()): string {
 		`${two(when.getHours())}:${two(when.getMinutes())}`
 	);
 }
-
-/** The name as given, or a timestamp name when it is blank. */
-export function nameOrTimestamp(name: string | undefined, when: Date = new Date()): string {
-	return name?.trim() || timestampName(when);
-}

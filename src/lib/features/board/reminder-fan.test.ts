@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { nameBox } from './name-placement.ts';
-import { fitReminders, reminderFan, reminderLayout } from './reminder-fan.ts';
+import { fitReminders, type FanInput } from './reminder-fan.ts';
+
+/** One seat's reminders laid out alone. */
+const reminderFan = (input: FanInput) => fitReminders([input]).at[0];
 
 const middle = { x: 300, y: 300 };
 const seat = { x: 300, y: 60 };
@@ -39,7 +42,7 @@ describe('reminderFan', () => {
 	});
 });
 
-describe('reminderLayout', () => {
+describe('fitReminders', () => {
 	const box = (p: { x: number; y: number }, w: number) => ({ ...p, w, h: w });
 
 	it("keeps one seat's reminders off a crowded neighbour's (Trevor, 2026-10-16)", () => {
@@ -74,11 +77,6 @@ describe('reminderLayout', () => {
 							Math.abs(b.x - t.x) < (b.w + t.w) / 2 && Math.abs(b.y - t.y) < (b.h + t.h) / 2
 						).toBe(false);
 					}
-	});
-
-	it('lays out one seat as reminderFan does', () => {
-		const one = { seat, middle, count: 4, size, chip };
-		expect(reminderLayout([one])[0]).toEqual(reminderFan(one));
 	});
 
 	it('says when a very crowded board has no clear room left', () => {

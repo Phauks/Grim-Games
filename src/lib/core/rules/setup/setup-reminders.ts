@@ -517,21 +517,6 @@ export function setupPrep(
 	return steps;
 }
 
-/**
- * The reminder tokens a character's pre-game prep places (`timing: 'setup'`), so the
- * first night can show them as already done. Tokens placed at the start of the first
- * day are not included.
- */
-export function prepTokens(characterId: CharacterId, lookup: CharacterLookup): string[] {
-	const prep = setupPrepOf(characterId, lookup);
-	const out = new Set<string>();
-	for (const spec of prep?.reminders ?? []) {
-		if ((spec.timing ?? 'setup') === 'setup') out.add(spec.label);
-	}
-	for (const note of prep?.notes ?? []) for (const t of note.tokens ?? []) out.add(t);
-	return [...out];
-}
-
 export type PrepSegment =
 	| { kind: 'text'; text: string }
 	| { kind: 'character'; id: CharacterId }

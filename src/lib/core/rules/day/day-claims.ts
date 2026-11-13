@@ -51,14 +51,6 @@ export function dayUseOf(
 	return rulesFor(game, characterId, characters)?.dayUse;
 }
 
-/**
- * The characters no player holds whose day ability any living player may use, once each per
- * game (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer).
- */
-export function anyoneDayUses(game: Game, characters: CharacterLookup): CharacterId[] {
-	return game.ruleCharacters.filter((id) => rulesFor(game, id, characters)?.dayUse?.anyone);
-}
-
 /** The players who have used `characterId`'s day ability this game, today included. */
 export function dayUseUsers(game: Game, characterId: CharacterId): SeatId[] {
 	const out: SeatId[] = [];

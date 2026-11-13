@@ -328,10 +328,9 @@
 			void goto(`${resolve('/play')}${offlineHash(frame.bytes)}${room}`);
 			return true;
 		}
-		const read = frame?.kind === 'done' ? frame.text : text;
-		const room = scannedRoom(read);
+		const room = scannedRoom(text);
 		if (!room) {
-			if (openScannedScript(read)) return true;
+			if (openScannedScript(text)) return true;
 			scanProblem = t('room.scanNotRoom');
 			return false;
 		}

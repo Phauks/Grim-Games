@@ -57,8 +57,6 @@ function sliceParts(parts: WikiTextPart[], offset: number): WikiTextPart[] {
 	return out.filter((p) => p.text);
 }
 
-export const entryText = (entry: WikiEntry) => entry.parts.map((p) => p.text).join('');
-
 /**
  * Reads entries out of the rendered wiki Glossary page. Each entry is a block that starts
  * with its name and a colon ("Term: what it means"), or a dt/dd pair. Links in the text are

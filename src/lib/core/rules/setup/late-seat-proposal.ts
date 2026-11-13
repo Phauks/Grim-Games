@@ -173,18 +173,3 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 	];
 	return { before, after, tileTarget, changes, bag: nextBag, outOfPlay: freed };
 }
-
-/** Tile counts once the Storyteller's choices are made, to check against `tileTarget`. */
-export function lateSeatCounts(
-	game: Game,
-	lookup: (id: CharacterId) => Character | undefined,
-	changes: readonly { seatId: SeatId; to: CharacterId }[],
-	bag: readonly CharacterId[]
-): TypeCounts {
-	const { seen, typeOf } = drawState(game, lookup);
-	const to = new Map(changes.map((c) => [c.seatId, c.to]));
-	return countByType([
-		...seen.map((s) => typeOf(to.get(s.seatId) ?? s.characterId)),
-		...bag.map(typeOf)
-	]);
-}
