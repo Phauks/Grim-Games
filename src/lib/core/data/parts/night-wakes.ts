@@ -1,4 +1,15 @@
-import { anyOf, COUNT, list, obj, oneOf, opt, STR, STRS, T, type SpecValue } from '../field-spec.ts';
+import {
+	anyOf,
+	COUNT,
+	list,
+	obj,
+	oneOf,
+	opt,
+	STR,
+	STRS,
+	T,
+	type SpecValue
+} from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
 import { specPart } from './part.ts';
 

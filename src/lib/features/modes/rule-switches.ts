@@ -33,7 +33,7 @@ export type SwitchChoices = Readonly<Record<string, boolean>>;
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
 /** Infinite Possibilities' named setting, our wording (approved 2026-10-23). */
 export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
-/** +1 with no extra promised, our wording (drafted 2026-11-12, waiting on Trevor). */
+/** +1 with no extra promised, our wording (approved by Trevor 2026-11-13). */
 export const PLUS_ONE_MAY_BE =
 	'Tell the table that one character from off the script may be in play.';
 
