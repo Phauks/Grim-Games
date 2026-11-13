@@ -48,7 +48,7 @@
 			<li>
 				<div class="text">
 					<span class="label">{row.rule.label}</span>
-					<span class="value">{summaryOf(row.value)}</span>
+					<span class="value">{summaryOf(row.value, row.rule.field)}</span>
 				</div>
 				<Menu
 					label={t('character-builder.ruleMenu', { rule: row.rule.label })}

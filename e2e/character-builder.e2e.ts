@@ -5,14 +5,27 @@ import { openTab } from './tabs.ts';
 // The Character builder in Prepare (Trevor, 2026-10-17): make a homebrew character, save it on
 // the device, find it in the Library, and put it on a script with the Script builder.
 
+/** A name a new character is given (Trevor, 2026-11-12): two word parts, such as Mothbinder. */
+const GIVEN_NAME = /^[A-Z][a-z]+$/;
+
 test('makes a character, saves it, and puts it on a script', async ({ page }) => {
 	await page.goto('/build-character');
 	await expect(page.getByRole('heading', { name: 'Character builder', level: 1 })).toBeVisible();
 	const save = page.getByRole('button', { name: 'Save', exact: true });
 	await expect(save).toBeDisabled();
-	await expect(page.getByRole('status', { name: 'To save' })).toContainText('It needs a name.');
+	// A new character starts with a name of its own, so new ones never share a name or an id.
+	await expect(page.getByTestId('character-name')).toHaveValue(GIVEN_NAME);
+	await expect(page.getByRole('status', { name: 'To save' })).toHaveText('It needs an ability.');
 
 	await page.getByTestId('character-name').fill('Lamp Lighter');
+	// Setup text the app can't apply can't be saved: a setup change does what it says.
+	await page
+		.getByTestId('character-ability')
+		.fill('Each night, learn something. [Swap two players]');
+	await expect(page.getByRole('status', { name: 'To save' })).toHaveText(
+		'The setup text “Swap two players” is not one the app can apply. Build it with Add a setup change.'
+	);
+	await expect(save).toBeDisabled();
 	await page.getByTestId('character-ability').fill('Each night, learn something. [+1 Outsider]');
 	await page.getByRole('combobox', { name: 'Character type' }).tap();
 	await page.getByRole('option', { name: 'Minion', exact: true }).tap();
@@ -132,7 +145,8 @@ test('one trash button clears a new character and deletes a saved one', async ({
 
 	await header.getByRole('button', { name: 'Clear the character' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('character-name')).toHaveValue('');
+	await expect(page.getByTestId('character-name')).toHaveValue(GIVEN_NAME);
+	await expect(header.getByRole('button', { name: 'Clear the character' })).toBeDisabled();
 });
 
 // The clauses official abilities use most, after the opening (Trevor, 2026-10-18): who is
@@ -196,6 +210,7 @@ test('the Script builder builds and edits a character without leaving', async ({
 	expect(box.y + box.height).toBeLessThanOrEqual(name.y);
 	await newCharacter.tap();
 	let builder = page.getByRole('dialog', { name: 'New character' });
+	await expect(builder.getByTestId('character-name')).toHaveValue(GIVEN_NAME);
 	await builder.getByTestId('character-name').fill('Moth Keeper');
 	await builder.getByTestId('character-ability').fill('You start knowing a moth.');
 	await builder.getByRole('button', { name: 'Confirm' }).tap();
@@ -223,7 +238,7 @@ test('the Script builder builds and edits a character without leaving', async ({
 
 	// The page's own draft is untouched.
 	await page.goto('/build-character');
-	await expect(page.getByTestId('character-name')).toHaveValue('');
+	await expect(page.getByTestId('character-name')).toHaveValue(GIVEN_NAME);
 });
 
 // Like the Script builder (Trevor, 2026-10-18): Save sits in the header, and Download shows

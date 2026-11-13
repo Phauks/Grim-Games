@@ -2608,6 +2608,37 @@ test("a step's Valid Information sits on its first line", async ({ page }) => {
 	await expect(guide.getByTestId('night-yes-no')).toHaveCount(1);
 });
 
+// Trevor (2026-11-12, a phone screenshot): a placed reminder's delete button was cut off at the
+// step's right edge, and the step's text listed its reminder tokens inline though the rows under
+// it already show them ("No longer list reminder tokens in line in night order").
+test("a placed reminder's row fits the step, and the text lists no reminder tokens", async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Fortune Teller']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const guide = await openStep(page, 'Poisoner');
+	await expect(guide.getByTestId('night-lines')).toBeVisible();
+	await expect(guide.getByTestId('night-lines').getByTestId('reminder-token')).toHaveCount(0);
+	await placeFromStep(page, guide, 2);
+	const remove = guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' });
+	await expect(remove).toBeEnabled();
+	const box = (await remove.boundingBox())!;
+	const lines = (await guide.getByTestId('night-lines').boundingBox())!;
+	expect(box.x + box.width).toBeLessThanOrEqual(lines.x + lines.width + 1);
+	expect(await guide.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+});
+
 // Trevor (2026-11-12): "Need to invoke separate wake ups ... if duplicate characters"; he
 // picked one step per player, each showing that seat in its alignment (2026-11-13).
 test('a character in play twice wakes once for each player, each step showing its seat', async ({

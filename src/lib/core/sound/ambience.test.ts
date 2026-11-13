@@ -6,6 +6,7 @@ import {
 	ambienceMix,
 	ambienceOptions,
 	ambienceUrl,
+	loopOffset,
 	parseAmbience
 } from './ambience.ts';
 
@@ -49,5 +50,17 @@ describe('parseAmbience', () => {
 		expect(parseAmbience('night', 'day-forest')).toBe(DEFAULT_AMBIENCE.night);
 		expect(parseAmbience('day', 'gone')).toBe(DEFAULT_AMBIENCE.day);
 		expect(parseAmbience('day', undefined)).toBe(DEFAULT_AMBIENCE.day);
+	});
+});
+
+describe('where a looped recording is', () => {
+	it('follows the wall clock, so devices joining later play the same point', () => {
+		expect(loopOffset(130_000, 120)).toBe(10);
+		expect(loopOffset(250_500, 120)).toBeCloseTo(10.5);
+	});
+
+	it('starts at the beginning when the length is unknown', () => {
+		expect(loopOffset(130_000, 0)).toBe(0);
+		expect(loopOffset(Number.NaN, 120)).toBe(0);
 	});
 });

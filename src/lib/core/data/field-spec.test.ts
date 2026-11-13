@@ -1,6 +1,7 @@
 /** The Character builder's field descriptions (M62): labels, empty values and coverage. */
 import { describe, expect, it } from 'vitest';
 import {
+	anyOf,
 	byCharacter,
 	CHARACTER,
 	COUNT,
@@ -19,6 +20,7 @@ import {
 	uncovered,
 	variantOf,
 	variants,
+	worded,
 	type FieldSpec
 } from './field-spec.ts';
 
@@ -35,6 +37,20 @@ describe('labels', () => {
 			'Who marked · Reminder Lit · Night'
 		);
 		expect(summaryOf(['Lit', 'Out'])).toBe('Lit, Out');
+	});
+
+	it('uses a setting’s plain words when it has them (M81)', () => {
+		const spec = obj({
+			who: worded(
+				{ label: 'Protects', names: { marked: 'The marked player' } },
+				oneOf(['self', 'marked'])
+			),
+			kinds: anyOf(['townsfolk', 'not-demon'])
+		});
+		expect(summaryOf({ who: 'marked', kinds: ['townsfolk', 'not-demon'] }, spec)).toBe(
+			'Protects The marked player · Kinds Townsfolk, not demon'
+		);
+		expect(optionLabel('evil')).toBe('Evil');
 	});
 });
 

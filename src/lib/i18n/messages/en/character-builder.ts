@@ -84,6 +84,7 @@ export const characterBuilder = {
 	'character-builder.ruleShape': '{label} kind',
 	'character-builder.ruleReminder': '{label} reminder',
 	'character-builder.ruleKey': '{label} name',
+	'character-builder.optionalHelp': 'Optional. {help}',
 	'character-builder.addSetting': 'Add to {label}',
 	'character-builder.removeSetting': 'Remove {label} {number}',
 	'character-builder.changeCharacter': 'Change {name}',
@@ -93,6 +94,8 @@ export const characterBuilder = {
 	'character-builder.problems': 'To save',
 	'character-builder.problem.name-missing': 'It needs a name.',
 	'character-builder.problem.ability-missing': 'It needs an ability.',
+	'character-builder.problem.setup-unread':
+		'The setup text “{clause}” is not one the app can apply. Build it with Add a setup change.',
 	'character-builder.problem.id-invalid': 'Its id needs letters or digits.',
 	'character-builder.problem.id-official':
 		'Its id is an official character’s, so scripts with it use this one instead.',

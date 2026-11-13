@@ -15,7 +15,7 @@ import {
 	type SharedGrimoire,
 	type TownView
 } from '#lib/core/sync/room.ts';
-import { RoomSounds } from '#lib/features/sound/room-sounds.ts';
+import { RoomSounds } from '#lib/features/sound/room-sounds.svelte.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 export class RoomTown {
