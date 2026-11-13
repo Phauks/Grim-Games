@@ -102,7 +102,14 @@ export class RoomHost {
 	/** Players' messages and reported pictures, for the Storyteller's Messages. */
 	readonly inbox = new RoomInbox((m) => this.#socket?.send(m) ?? false);
 	#roles:
-		{ gameId: string; show: boolean; roles: Record<SeatId, SeatRole>; open: SeatId[] } | undefined;
+		| {
+				gameId: string;
+				show: boolean;
+				roles: Record<SeatId, SeatRole>;
+				open: SeatId[];
+				until?: number;
+		  }
+		| undefined;
 	readonly seatLooks = new SeatLooks(); // A seat given to a spectator: its own character.
 	/**
 	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
@@ -325,7 +332,7 @@ export class RoomHost {
 				const roles = show
 					? all
 					: Object.fromEntries(open.flatMap((id) => (all[id] ? [[id, all[id]]] : [])));
-				const next = { gameId, show, roles, open };
+				const next = { gameId, show, roles, open, until: show ? this.rolesShown.until : undefined };
 				if (JSON.stringify(next) === JSON.stringify(this.#roles)) return;
 				this.#roles = next;
 				this.#sendRoles();
@@ -427,7 +434,8 @@ export class RoomHost {
 			gameId: roles.gameId,
 			show: roles.show,
 			...(roles.show || roles.open.length ? { roles: roles.roles } : {}),
-			...(roles.open.length ? { open: roles.open } : {})
+			...(roles.open.length ? { open: roles.open } : {}),
+			...(roles.until !== undefined ? { until: roles.until } : {})
 		});
 	}
 

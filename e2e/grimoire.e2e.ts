@@ -3740,6 +3740,10 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	// https://wiki.bloodontheclocktower.com/Sentinel).
 	const counts = script.getByTestId('game-counts');
 	await expect(counts.getByTestId('count-players')).toHaveText('9');
+	// Everyone's box is ringed as the type boxes are (Trevor, 2026-11-12).
+	const ring = (id: string) =>
+		counts.getByTestId(id).evaluate((el) => getComputedStyle(el).boxShadow);
+	expect(await ring('count-info-players')).toBe(await ring('count-info-townsfolk'));
 	await expect(counts.getByTestId('count-traveller')).toHaveText('1');
 	await expect(counts.getByTestId('count-outsider')).toHaveText('1');
 	// Tapping everyone's count pops up the whole setup sheet, this table's column marked

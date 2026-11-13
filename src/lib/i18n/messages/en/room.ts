@@ -290,6 +290,7 @@ export const room = {
 	'room.roles.withheld': 'Show on this device',
 	'room.roles.noAlignment': 'No alignment yet',
 	'room.role.open': 'Your character',
+	'room.role.openTime': 'Your character · {time}',
 	'room.role.good': 'You are Good',
 	'room.role.evil': 'You are Evil',
 	// The view-only grimoire link (Specters)
