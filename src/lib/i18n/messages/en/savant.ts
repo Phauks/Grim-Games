@@ -29,6 +29,10 @@ export const savant = {
 	'savant.use': 'Use these',
 	'savant.earlier': 'Earlier days',
 	'savant.today': 'Today',
+	'savant.giveToday': 'Give today',
+	'savant.showHeld': 'Show yesterday’s statements to player',
+	'savant.heldImpaired': 'Drunk or poisoned now: may be false',
+	'savant.keptForTomorrow': 'Today’s statements are kept for tomorrow.',
 	'savant.noteTrue': 'True: {statement}',
 	'savant.noteFalse': 'False: {statement}'
 } as const;

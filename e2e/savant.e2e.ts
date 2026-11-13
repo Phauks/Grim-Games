@@ -1,7 +1,7 @@
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { tapStartGame } from './start-game.ts';
-import { pickScript, toBoard } from './new-game.ts';
+import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 
 // The Savant information sheet (L2): one true and one false statement from the grimoire,
 // from the Savant seat's ⋯ menu (https://wiki.bloodontheclocktower.com/Savant).
@@ -299,4 +299,64 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 	const wide = (page.viewportSize()?.width ?? 0) >= 700;
 	if (wide) expect(left!.x + left!.width).toBeLessThanOrEqual(today!.x);
 	else expect(left!.y + left!.height).toBeLessThanOrEqual(today!.y);
+});
+
+// One Day More's Signal Failure (https://beardytas.com/garden-of-djinn/one-day-more/): "There
+// is a 24 hour delay impacting all characters with abilities that know or learn information."
+test('with One Day More, the Savant is given yesterday’s statements today', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Sects & Violets');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, 'One Day More');
+	await toBoard(page);
+	for (const [i, name] of CAST.entries()) {
+		const sheet = await openSeat(page, i + 1);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${i + 1}` });
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await expect(picker).toBeHidden();
+		await closeSheet(page);
+	}
+	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
+	const endNight = async () => {
+		await bank.getByRole('button', { name: 'End night', exact: true }).tap();
+		await page
+			.getByRole('alertdialog', { name: 'End the night?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+		await page
+			.getByRole('alertdialog', { name: 'Set the Savant’s information for today?' })
+			.getByRole('button', { name: 'Confirm' })
+			.tap();
+	};
+	const savant = page.getByRole('dialog', { name: /^Savant information/ });
+	const earlier = savant.getByRole('region', { name: 'Earlier days' });
+	await tapStartGame(page, bank.getByRole('button', { name: 'Start game', exact: true }));
+	await endNight();
+	// Day 1: nothing held yet; today's pair is kept for tomorrow.
+	await expect(savant.getByTestId('savant-kept')).toHaveText(
+		'Today’s statements are kept for tomorrow.'
+	);
+	await expect(earlier.getByTestId('savant-held')).toHaveCount(0);
+	await savant.getByRole('button', { name: 'Write statement 1 yourself' }).tap();
+	await savant.getByRole('textbox', { name: 'Statement 1, your words' }).fill('Seat 4 is good.');
+	await savant.getByRole('button', { name: 'Write statement 2 yourself' }).tap();
+	await savant.getByRole('textbox', { name: 'Statement 2, your words' }).fill('Seat 6 is good.');
+	await savant.getByRole('button', { name: 'Use these' }).tap();
+	await expect(savant).toBeHidden();
+
+	await page.keyboard.press('Escape');
+	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await chooseExecution(page);
+	await endNight();
+
+	// Day 2: Day 1's pair is the one to give today, shown without True or False.
+	const held = earlier.getByTestId('savant-held');
+	await expect(held).toContainText('Day 1');
+	await expect(held).toContainText('Give today');
+	await held.getByRole('button', { name: 'Show yesterday’s statements to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Seat 4 is good.');
+	await expect(shown).toContainText('Seat 6 is good.');
+	await expect(shown).not.toContainText('True');
 });

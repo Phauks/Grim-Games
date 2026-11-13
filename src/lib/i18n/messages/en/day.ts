@@ -140,6 +140,8 @@ export const day = {
 	'day.useAnswerWrong': 'Wrong, so anyone but the Demon:',
 	'day.useAnswerAny': 'Any player: the ability is drunk or poisoned',
 	'day.useAnswerDead': 'Nothing: the dead may not guess',
+	'day.useAnswerWhen': 'When',
+	'day.useAnswerTomorrow': 'Tomorrow, as it is now; drunk or poisoned then may make it false',
 	'day.useDies': 'Dies',
 	'day.useDiesLabel': '{name} dies',
 	'day.useOnNone': 'None',

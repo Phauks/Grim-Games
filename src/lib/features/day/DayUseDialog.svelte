@@ -20,6 +20,9 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { DayPort } from './day-port.ts';
+	import { ruleSources } from '#lib/core/rules/rule-sources.ts';
+	import { delaysDayInfo, infoDelayOf } from '#lib/core/rules/night/info/held-info.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
 
 	/**
 	 * Marking a day ability used asks who it was used on (Trevor, 2026-10-30): the player the
@@ -124,6 +127,17 @@
 			? dayUseAnswer(game.game, use.seatId, use.characterId, on, game.characters)
 			: undefined
 	);
+	/**
+	 * One Day More's Signal Failure (`infoDelay`): the answer is worked out now and given
+	 * tomorrow, so the confirm says when to tell it.
+	 */
+	const kept = $derived.by(() => {
+		if (!use || !answer) return false;
+		const delay = infoDelayOf(
+			ruleSources(game.game, game.characters, playedRules(game.game.gameId))
+		);
+		return delaysDayInfo(game.game, use.characterId, game.characters, delay);
+	});
 	const token = $derived(
 		use ? game.characters.get(use.characterId)?.reminders.includes(spent) : false
 	);
@@ -223,6 +237,10 @@
 						{t(answer.kind === 'any' ? 'day.useAnswerAny' : 'day.useAnswerDead')}
 					{/if}
 				</dd>
+				{#if kept}
+					<dt>{t('day.useAnswerWhen')}</dt>
+					<dd data-testid="day-use-kept">{t('day.useAnswerTomorrow')}</dd>
+				{/if}
 			{/if}
 			{#if use.rule.kills && on}
 				<dt>{t('day.useDies')}</dt>

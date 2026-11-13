@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { heldInfo } from '#lib/core/rules/night/info/held-info.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
@@ -16,12 +17,10 @@
 		grimoire: Grimoire;
 		characterId: CharacterId;
 		seats: readonly SeatId[];
-		/** The rule's name, for the note on tonight's information. */
-		by: string;
 		onShowAnswer: (answer: string) => void;
 	}
 
-	let { grimoire, characterId, seats, by, onShowAnswer }: Props = $props();
+	let { grimoire, characterId, seats, onShowAnswer }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const held = $derived(
@@ -35,7 +34,7 @@
 <section class="held" data-testid="held-info" aria-label="Held from last night">
 	<h4>Held from last night</h4>
 	{#each held as { seatId, items } (seatId)}
-		{#if seats.length > 1}<p class="who">{seatName(game, seatId)}</p>{/if}
+		{#if seats.length > 1}<p class="who"><PlayerBadge name={seatName(game, seatId)} /></p>{/if}
 		{#if items.length === 0}
 			<p class="muted">None</p>
 		{:else}
@@ -52,9 +51,7 @@
 			</ul>
 		{/if}
 	{/each}
-	<p class="note" data-testid="held-note">
-		Tonight’s information is kept for tomorrow night ({by}).
-	</p>
+	<p class="note" data-testid="held-note">Tonight’s information is kept for tomorrow night.</p>
 </section>
 
 <style>

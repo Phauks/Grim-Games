@@ -144,7 +144,7 @@ export function boardNightSteps(
 			),
 			game,
 			characters,
-			night === 'first' ? undefined : infoDelayOf(sources)?.rule
+			night === 'first' ? undefined : infoDelayOf(sources)
 		)
 	]);
 }

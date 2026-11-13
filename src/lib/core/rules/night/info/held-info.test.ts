@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import type { NightStep } from '#lib/core/rules/night/night-order.ts';
-import { delaysInfo, heldInfo, withHeldInfoSteps } from './held-info.ts';
+import { delaysDayInfo, delaysInfo, heldInfo, withHeldInfoSteps } from './held-info.ts';
 
 const RULE = { except: ['artist'] };
 
@@ -21,6 +21,18 @@ describe('One Day More', () => {
 		expect(delays('artist')).toBe(false);
 		expect(delays('fanggu')).toBe(false);
 		expect(delaysInfo(base.game, 'chef', base.characters, undefined)).toBe(false);
+	});
+
+	// "There is a 24 hour delay impacting all characters with abilities that know or learn
+	// information." The Savant learns things in the day, the Puzzlemaster learns from a guess.
+	it('delays day information too: the Savant and the Puzzlemaster', () => {
+		const day = scenario(['savant', 'puzzlemaster', 'artist', 'chef', 'poisoner', 'imp']);
+		const delays = (id: string) => delaysDayInfo(day.game, id, day.characters, RULE);
+		expect(delays('savant')).toBe(true);
+		expect(delays('puzzlemaster')).toBe(true);
+		expect(delays('artist')).toBe(false);
+		expect(delays('chef')).toBe(false);
+		expect(delaysDayInfo(day.game, 'savant', day.characters, undefined)).toBe(false);
 	});
 
 	// "Information is backwards looking to when the ability was used." "a Fortune Teller who picks

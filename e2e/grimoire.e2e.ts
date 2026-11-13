@@ -7721,7 +7721,7 @@ test('with One Day More, the Chef’s first-night number is kept and given the n
 	await expect(held).toContainText('Held from last night');
 	await expect(held).toContainText('None');
 	await expect(held.getByTestId('held-note')).toHaveText(
-		'Tonight’s information is kept for tomorrow night (One Day More).'
+		'Tonight’s information is kept for tomorrow night.'
 	);
 	await chef
 		.getByRole('list', { name: 'Valid information' })

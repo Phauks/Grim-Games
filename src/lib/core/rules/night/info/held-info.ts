@@ -16,12 +16,9 @@ import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 type Info = Extract<DayEntry, { kind: 'info' }>;
 
-/** The first rule source's `infoDelay` and its name, if any. */
-export function infoDelayOf(
-	sources: readonly RuleSource[]
-): { rule: InfoDelay; by: string } | undefined {
-	const source = sources.find((s) => s.rules.infoDelay);
-	return source?.rules.infoDelay ? { rule: source.rules.infoDelay, by: source.name } : undefined;
+/** The first rule source's `infoDelay`, if any. */
+export function infoDelayOf(sources: readonly RuleSource[]): InfoDelay | undefined {
+	return sources.find((s) => s.rules.infoDelay)?.rules.infoDelay;
 }
 
 /**
@@ -37,6 +34,23 @@ export function delaysInfo(
 	if (!rule || rule.except?.includes(characterId)) return false;
 	const rules = rulesFor(game, characterId, characters);
 	return !!(rules?.answers || rules?.learns);
+}
+
+/**
+ * Whether the delay holds back this character's day information: statements it is given in the
+ * day (`dayClaim: 'statements'`, the Savant) or an answer its day ability gets (`dayUse.answer`,
+ * the Puzzlemaster's guess). These are given the day after, as night information is given the
+ * night after.
+ */
+export function delaysDayInfo(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: InfoDelay | undefined
+): boolean {
+	if (!rule || rule.except?.includes(characterId)) return false;
+	const rules = rulesFor(game, characterId, characters);
+	return rules?.dayClaim === 'statements' || !!rules?.dayUse?.answer;
 }
 
 /** One piece of information a player receives tonight, worked out last night. */

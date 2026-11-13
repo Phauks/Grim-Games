@@ -149,7 +149,7 @@
 	 */
 	const delay = $derived(infoDelayOf(ruleSources(game, characters, playedRules(game.gameId))));
 	const delayed = $derived(
-		!!delay && !!step?.character && delaysInfo(game, step.character.id, characters, delay.rule)
+		!!delay && !!step?.character && delaysInfo(game, step.character.id, characters, delay)
 	);
 	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
 	/**
@@ -486,11 +486,10 @@
 			     info's cards are its next lines, each with the same eye. -->
 			<!-- Valid Information: on the first line (Trevor, 2026-11-09), else after the Steps. -->
 			{#snippet validInfo()}
-				{#if delayed && delay && step.character}<HeldInfo
+				{#if delayed && step.character}<HeldInfo
 						{grimoire}
 						characterId={step.character.id}
 						seats={holders}
-						by={delay.by}
 						onShowAnswer={showAnswer}
 					/>{/if}
 				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
