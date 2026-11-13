@@ -94,6 +94,9 @@
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 	character={roleSeats.some((s) => s.role) ? () => yourCharacter?.show() : undefined}
+	characterUntil={roomHost().rolesShown.gameId === game.gameId
+		? roomHost().rolesShown.until
+		: undefined}
 />
 <!-- Opened from the status line, as on /play. -->
 <YourCharacter bind:this={yourCharacter} characters={script.characters} seats={roleSeats} />

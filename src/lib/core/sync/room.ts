@@ -17,7 +17,7 @@ import { feedbackView, type MemberFeedback } from './room-feedback.ts';
 import type { ScriptVote } from './script-vote.ts';
 import type { ClientMessage, HostView, PlayerView, TownView, VoteTally } from './room-protocol.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
-import { memberRole, seatsSeen, seatTaken, type RoomRoles } from './room-roles.ts';
+import { memberRole, memberRoleUntil, seatsSeen, seatTaken, type RoomRoles } from './room-roles.ts';
 import { lookOf, seatWords } from './room-look.ts';
 import {
 	pictureReports,
@@ -331,6 +331,8 @@ export function playerView(
 	if (travellers) view.travellerPick = travellers;
 	const role = memberRole(room, memberId);
 	if (role) view.role = role;
+	const roleUntil = memberRoleUntil(room, memberId);
+	if (roleUntil !== undefined) view.roleUntil = roleUntil;
 	if (room.scriptVote) {
 		const { voteId, kind, subject, options, ballots, endsAt } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
