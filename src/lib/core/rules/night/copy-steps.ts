@@ -29,7 +29,7 @@ export function withCopySteps<T extends NightStep>(
 			step.gained ||
 			step.storytellerAbility ||
 			rulesFor(game, character.id, characters)?.oneNightStep ||
-			wakesMarked(character.id, characters)
+			wakesMarked(game, character.id, characters)
 		)
 			return [step];
 		const seats = characterStepSeats(game, character.id, characters);
