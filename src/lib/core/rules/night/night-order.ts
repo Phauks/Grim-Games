@@ -147,6 +147,11 @@ export interface NightStep {
 	 */
 	pretend?: true;
 	/**
+	 * On a step added only so a player receives last night's information, under a rule that
+	 * delays it (One Day More's Signal Failure, `withHeldInfoSteps`): nothing new is worked out.
+	 */
+	heldInfo?: true;
+	/**
 	 * On one copy of a character more than one seat holds: that seat, which wakes on its own
 	 * step (`withCopySteps` in `copy-steps.ts`).
 	 */

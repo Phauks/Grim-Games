@@ -10,6 +10,8 @@
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import GainedAbilityStep from './GainedAbilityStep.svelte';
 	import MadAsStep from './MadAsStep.svelte';
+	import InfoNumberToken from './InfoNumberToken.svelte';
+	import HeldInfo, { recordHeldNumber } from './HeldInfo.svelte';
 	import JinxChoiceStep from './JinxChoiceStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
 	import ChosenKillStep from './ChosenKillStep.svelte';
@@ -60,7 +62,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { seatMisfits } from '#lib/features/grimoire/board.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { givesNumber, seatName, stepName } from './night-steps.ts';
@@ -352,6 +353,7 @@
 		showOpen = true;
 	}
 	function showNumber(n: number) {
+		recordHeldNumber(grimoire, step, holders, n); // Kept for tomorrow under One Day More.
 		// Over the open step, as with a suggestion's Show to player.
 		shownId = undefined;
 		shownCard = { title: numberCard, detail: String(n) };
@@ -463,6 +465,7 @@
 			     info's cards are its next lines, each with the same eye. -->
 			<!-- Valid Information: on the first line (Trevor, 2026-11-09), else after the Steps. -->
 			{#snippet validInfo()}
+				<HeldInfo {grimoire} {step} seats={holders} onShowAnswer={showAnswer} />
 				<!-- The Cerenovus's chosen character, marked ! by the mad player (madAs, M36). -->
 				<MadAsStep {grimoire} {step} />
 				<NightSuggested
@@ -645,18 +648,12 @@
 				<NoAttackStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
-				<h3>Info token</h3>
-				<div class="number" data-testid="step-number">
-					<span class="card-text" aria-hidden="true">{numberCard}</span>
-					<NumberSelect
-						bind:value={number}
-						label={numberCard}
-						hideLabel
-						min={0}
-						max={Math.max(game.seating.length, 1)}
-					/>
-					<ShowToPlayerButton onclick={() => showNumber(number)} />
-				</div>
+				<InfoNumberToken
+					bind:number
+					card={numberCard}
+					max={Math.max(game.seating.length, 1)}
+					onShow={showNumber}
+				/>
 			{/if}
 			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18), in its Steps;
 			     on its own only when the step has no text. -->
@@ -736,16 +733,6 @@
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-	}
-	.number {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-		margin-bottom: var(--space-2);
-	}
-	.card-text {
-		font-weight: 600;
 	}
 	.who {
 		margin: 0;

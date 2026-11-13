@@ -43,6 +43,7 @@ import {
 } from '#lib/core/rules/rule-sources.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
+import { infoDelayOf, withHeldInfoSteps } from '#lib/core/rules/night/info/held-info.ts';
 
 export function boardNightSteps(
 	game: Game,
@@ -122,23 +123,31 @@ export function boardNightSteps(
 	const woken = withCopySteps(changedWoken, game, characters);
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	// A player whose ability works twice tonight wakes again straight after each of their steps.
+	const sources = ruleSources(game, characters, rules);
 	return duskToDawn([
-		...ruleNightSteps(ruleSources(game, characters, rules), number),
-		...withActsTwiceSteps(
-			withNightInfo(
-				woken,
-				game,
-				characters,
-				night,
-				{ died: today.died ?? [], revived: today.revived ?? [] },
-				sheetWithOwnPlaces(
-					data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'],
+		...ruleNightSteps(sources, number),
+		// Under a rule that delays information (One Day More), a player wakes to receive last
+		// night's even when their character doesn't wake tonight.
+		...withHeldInfoSteps(
+			withActsTwiceSteps(
+				withNightInfo(
+					woken,
+					game,
+					characters,
 					night,
-					[...data.byId.values(), ...characters.values()]
-				)
+					{ died: today.died ?? [], revived: today.revived ?? [] },
+					sheetWithOwnPlaces(
+						data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'],
+						night,
+						[...data.byId.values(), ...characters.values()]
+					)
+				),
+				game,
+				characters
 			),
 			game,
-			characters
+			characters,
+			night === 'first' ? undefined : infoDelayOf(sources)
 		)
 	]);
 }

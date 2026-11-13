@@ -34,6 +34,9 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { noteText, savedStatements, statementText, TYPE_NAMES } from './statement-text.ts';
+	import { ruleSources } from '#lib/core/rules/rule-sources.ts';
+	import { delaysDayInfo, infoDelayOf } from '#lib/core/rules/night/info/held-info.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
 
 	/**
 	 * Savant information (L2, Trevor 2026-10-22): one true and one false statement worked out
@@ -191,6 +194,24 @@
 					.filter((d) => d.statements.length > 0 || d.rest !== '')
 					.reverse()
 	);
+
+	/**
+	 * One Day More's Signal Failure (`infoDelay`, https://beardytas.com/garden-of-djinn/one-day-more/):
+	 * the statements saved today are given tomorrow, so today the Savant is given yesterday's,
+	 * marked in Earlier days with their own Show to player. Drunk or poisoned is read now, when
+	 * they are given ("Droisoning only affects the receiving of information").
+	 */
+	const delay = $derived(
+		infoDelayOf(ruleSources(game, characters, playedRules(grimoire.game.gameId)))
+	);
+	const delayed = $derived(
+		!!delay && holder !== undefined && delaysDayInfo(game, holder, characters, delay)
+	);
+	const yesterday = $derived(game.pastDays.length - 1);
+	const heldCards = $derived(
+		(earlier.find((d) => d.day === yesterday)?.statements ?? []).map((s) => ({ title: s.words }))
+	);
+	let heldOpen = $state(false);
 
 	/** Records whom the Savant went to, then deals in the mode that now applies. */
 	function visit(command: Command) {
@@ -387,11 +408,13 @@
 			{:else}
 				<ol class="earlier" data-testid="savant-earlier">
 					{#each earlier as given, k (k)}
-						<li>
+						{@const giveToday = delayed && given.day === yesterday}
+						<li data-testid={giveToday ? 'savant-held' : undefined}>
 							<h4>
 								{given.day === 0
 									? t('day.nightNumber', { number: 1 })
 									: t('day.titleNumber', { number: given.day })}
+								{#if giveToday}<span class="give">{t('savant.giveToday')}</span>{/if}
 							</h4>
 							{#each given.statements as statement, j (j)}
 								<p class="given">
@@ -402,6 +425,19 @@
 								</p>
 							{/each}
 							{#if given.rest}<p class="rest">{given.rest}</p>{/if}
+							{#if giveToday}
+								<p class="held-show">
+									{#if situation?.impaired}<span class="rest" data-testid="savant-held-impaired"
+											>{t('savant.heldImpaired')}</span
+										>{/if}
+									<IconButton
+										icon="showToPlayer"
+										label={t('savant.showHeld')}
+										disabled={heldCards.length === 0}
+										onclick={() => (heldOpen = true)}
+									/>
+								</p>
+							{/if}
 						</li>
 					{/each}
 				</ol>
@@ -409,6 +445,9 @@
 		</section>{/snippet}
 	<div class="savant">
 		<h3 class="pane-title">{t('savant.today')}</h3>
+		{#if delayed}<p class="why" data-testid="savant-kept">
+				{t('savant.keptForTomorrow')}
+			</p>{/if}
 		<!-- Two Storytellers (the Knaves): whom the Savant went to sets the mode. Before Dawn they
 		     haven't been yet. -->
 		{#if seatId !== undefined && !ahead}
@@ -532,6 +571,7 @@
 		/>
 	{/snippet}
 	<ShowToPlayer bind:open={showOpen} cards={shown} />
+	<ShowToPlayer bind:open={heldOpen} cards={heldCards} />
 </Dialog>
 
 {#snippet parts(
@@ -582,6 +622,18 @@
 	.given-truth {
 		margin-right: var(--space-1);
 		font-weight: 600;
+	}
+	.give {
+		margin-left: var(--space-2);
+		font-weight: 600;
+		color: var(--heading);
+	}
+	.held-show {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin: 0;
 	}
 	.rest {
 		white-space: pre-line;

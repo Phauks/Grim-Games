@@ -43,6 +43,7 @@ export { guessLimit } from './guess-limit.ts';
 export { hidesRoles } from './hides-roles.ts';
 export { impairs } from './impairs.ts';
 export { infoCard } from './info-card.ts';
+export { infoDelay } from './info-delay.ts';
 export { infoKind } from './info-kind.ts';
 export { infoTokenCharacters } from './info-token-characters.ts';
 export { jinxes } from './jinxes.ts';
