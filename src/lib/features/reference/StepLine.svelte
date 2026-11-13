@@ -32,6 +32,8 @@
 	}
 	.line {
 		grid-column: 2;
+		/* Its rows (a placed reminder's Move and delete) shrink to the step's width. */
+		min-width: 0;
 	}
 	.end {
 		grid-column: 3;

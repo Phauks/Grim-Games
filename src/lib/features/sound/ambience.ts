@@ -1,8 +1,13 @@
-import { ambienceMix, ambienceUrl, type AmbienceMix } from '#lib/core/sound/ambience.ts';
+import {
+	ambienceMix,
+	ambienceUrl,
+	loopOffset,
+	type AmbienceMix
+} from '#lib/core/sound/ambience.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { recording } from './recording.ts';
-import { audio, unlockOnFirstTap } from './sound.ts';
+import { audio, claimSpeaker, unlockOnFirstTap } from './sound.ts';
 
 /**
  * Plays day and night sound (plan U3, Trevor 2026-10-26): the recording the Storyteller chose
@@ -55,6 +60,11 @@ class Ambience {
 		this.follow(this.#cue);
 	}
 
+	/** Follows a change of this device's Volume at once, not at the next copy of the table. */
+	refresh(): void {
+		if (this.#cue) this.follow(this.#cue);
+	}
+
 	/**
 	 * Plays the recording the Storyteller's game names, at their level under this device's
 	 * volume, fading out the one before; undefined stops it.
@@ -87,6 +97,7 @@ class Ambience {
 	}
 
 	#start(ctx: AudioContext, bus: GainNode, mix: AmbienceMix): void {
+		claimSpeaker();
 		const gain = ctx.createGain();
 		gain.connect(bus);
 		const playing: Playing = { id: mix.id, gain };
@@ -99,8 +110,8 @@ class Ambience {
 			source.buffer = data;
 			source.loop = true;
 			source.connect(gain);
-			// From a random point, so the same recording never starts the same way.
-			source.start(0, Math.random() * data.duration);
+			// From where the wall clock says, so phones playing it together play the same point.
+			source.start(0, loopOffset(Date.now(), data.duration));
 			playing.source = source;
 		});
 	}
@@ -132,6 +143,7 @@ export async function previewAmbience(id: string): Promise<void> {
 	const mix = ambienceMix(id);
 	const ctx = audio();
 	if (!mix || !ctx) return;
+	claimSpeaker();
 	if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
 	const data = await buffer(ctx, mix);
 	if (!data) return;

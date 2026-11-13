@@ -494,7 +494,7 @@ function tallyDeath(
 	ctx: EngineContext,
 	warn: Warn
 ): GameEvent[] {
-	const characterId = tallyKiller(cause, ctx.characters);
+	const characterId = tallyKiller(game, cause, ctx.characters);
 	if (!characterId) return [];
 	const kills = tallyKills(game, characterId, ctx.characters);
 	const died = kills?.died.filter((s) => s !== seatId).length ?? 0;

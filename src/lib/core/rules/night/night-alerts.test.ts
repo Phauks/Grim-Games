@@ -6,15 +6,17 @@ import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
 	castWith,
-	testCharacters as characters,
-	testCharacters
+	plainGame,
+	testCharacters,
+	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { nightStepAlerts } from './night-alerts.ts';
-import { NIGHT_KILLERS, ON_DEATH, nightKiller } from './night-killers.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { nightKiller } from './night-killers.ts';
 import { type NightAlert } from './night-alert.ts';
 
 const add =
@@ -37,8 +39,8 @@ describe('data', () => {
 	it('names only real characters', () => {
 		const data = committedGameData();
 		// Night killers and on-death triggers come from the rules files.
-		for (const id of Object.keys(NIGHT_KILLERS)) expect(data.byId.has(id), id).toBe(true);
-		for (const id of Object.keys(ON_DEATH)) expect(data.byId.has(id), id).toBe(true);
+		for (const [id, rules] of OFFICIAL_RULES)
+			if (rules.kills || rules.onDeath) expect(data.byId.has(id), id).toBe(true);
 	});
 
 	it('lists every Demon that kills at night (all but the Riot and the Leviathan)', () => {
@@ -46,7 +48,7 @@ describe('data', () => {
 			.characters.filter((c) => c.type === 'demon')
 			.map((c) => c.id)
 			.filter((id) => id !== 'riot' && id !== 'leviathan');
-		expect(demons.filter((id) => NIGHT_KILLERS[id]?.by !== 'demon')).toEqual([]);
+		expect(demons.filter((id) => OFFICIAL_RULES.get(id)?.kills?.by !== 'demon')).toEqual([]);
 	});
 });
 
@@ -207,12 +209,12 @@ describe('custom characters', () => {
 		);
 		expect(issues.list).toEqual([]);
 		const all = new Map([...characters, [crow!.id, crow!]]);
-		expect(nightKiller('nightcrow', all)).toEqual({
+		expect(nightKiller(plainGame(), 'nightcrow', all)).toEqual({
 			by: 'demon',
 			targets: 'any',
 			ignoresProtection: false
 		});
-		expect(nightKiller('nightcrow', testCharacters)).toBeUndefined();
+		expect(nightKiller(plainGame(), 'nightcrow', testCharacters)).toBeUndefined();
 		const { game: g, seats } = castGame(['soldier', 'chef']);
 		expect(short(nightStepAlerts(g, 'nightcrow', all), seats)).toEqual(['protected soldier→0']);
 	});
@@ -236,7 +238,7 @@ describe('Moonchild (https://wiki.bloodontheclocktower.com/Moonchild)', () => {
 			// The Moonchild died today; tonight its chosen good player dies.
 			(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' })
 		);
-		expect(nightKiller('moonchild', testCharacters)).toEqual({
+		expect(nightKiller(plainGame(), 'moonchild', testCharacters)).toEqual({
 			by: 'other',
 			targets: 'any',
 			ignoresProtection: false

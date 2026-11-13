@@ -291,7 +291,8 @@ function extraDay(
 		executedOn(log).some((id) => end.seats.includes(id))
 	);
 	const byExecution =
-		demonDay !== -1 || end.seats.some((id) => isExecution(game.seats[id].deathCause, characters));
+		demonDay !== -1 ||
+		end.seats.some((id) => isExecution(game, game.seats[id].deathCause, characters));
 	if (!byExecution) return undefined;
 	const extra = demonDay === -1 ? undefined : demonDay + 1;
 	const executed = extra === undefined ? [] : executedOn(logs[extra] ?? { entries: [] });
@@ -361,7 +362,7 @@ function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 			const executed = pair.find(
 				(id) =>
 					game.seats[id].dead &&
-					isExecution(game.seats[id].deathCause, characters) &&
+					isExecution(game, game.seats[id].deathCause, characters) &&
 					(!rule.alignment || alignmentOf(game, id) === rule.alignment)
 			);
 			if (executed === undefined) continue;
@@ -469,7 +470,7 @@ function inverter(game: Game, characters: CharacterLookup): AbilitySource | unde
 function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string): GameEnd[] {
 	// Dead by execution, as for the Saint.
 	const seats = demonSeats(game, characters).filter(
-		(id) => game.seats[id].dead && isExecution(game.seats[id].deathCause, characters)
+		(id) => game.seats[id].dead && isExecution(game, game.seats[id].deathCause, characters)
 	);
 	if (seats.length === 0) return [];
 	// The rule's page lets an ability such as the Mastermind's keep the game going.

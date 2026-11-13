@@ -43,38 +43,6 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
  */
 const CHARACTER_DISPLAY_TODO = [];
 /**
- * Game rules and engine files that still read a character's rules with a static reader
- * (`rulesOf`, `rulesIn`, `rulesOfCharacter`) instead of `rulesFor` (grim/rules-for). Only
- * shrinks: most read through a small helper that takes no game yet.
- */
-const RULES_OF_TODO = [
-	'src/lib/core/rules/abilities/ability.ts',
-	'src/lib/core/rules/night/character-changes.ts',
-	'src/lib/core/rules/night/chosen-kills.ts',
-	'src/lib/core/rules/game-end/contest.ts',
-	'src/lib/core/rules/day/day-claims.ts',
-	'src/lib/core/rules/day/day-reminders.ts',
-	'src/lib/core/rules/day/day-tally.ts',
-	'src/lib/core/rules/abilities/dead-characters.ts',
-	'src/lib/core/rules/abilities/death-causes.ts',
-	'src/lib/core/rules/game-end/end-reason.ts',
-	'src/lib/core/rules/night/info-token-characters.ts',
-	'src/lib/core/rules/jinxes/jinx-effects.ts',
-	'src/lib/core/rules/night/night-killers.ts',
-	'src/lib/core/rules/night/info/steps.ts',
-	'src/lib/core/rules/reminders/reminder-effects.ts',
-	'src/lib/core/rules/reminders/reminder-movement.ts',
-	'src/lib/core/rules/reminders/reminder-prompts.ts',
-	'src/lib/core/rules/reminders/reminder-targets.ts',
-	'src/lib/core/rules/savant/savant-facts.ts',
-	'src/lib/core/rules/savant/savant-log-templates.ts',
-	'src/lib/core/rules/savant/savant-templates.ts',
-	'src/lib/core/rules/night/shown-to.ts',
-	'src/lib/core/rules/day/voting-table.ts',
-	'src/lib/core/rules/abilities/wishes.ts'
-];
-
-/**
  * A character is drawn with CharacterPiece and a template (Trevor, 2026-11-02: one component,
  * parts turned on or off); CharacterRow and CharacterBadge are its parts, imported only by it.
  */
@@ -395,7 +363,7 @@ export default defineConfig(
 	},
 	{
 		// Game rules and the engine read a character's rules through rulesFor, so jinx patches
-		// and optional rules apply everywhere (refactor review D1). RULES_OF_TODO only shrinks.
+		// and optional rules apply everywhere (refactor review D1).
 		files: ['src/lib/core/rules/**/*.ts', 'src/lib/core/engine/**/*.ts'],
 		ignores: [
 			'src/**/*.test.ts',
@@ -409,8 +377,7 @@ export default defineConfig(
 			'src/lib/core/rules/setup/setup-reminders.ts',
 			'src/lib/core/rules/setup/teensyville.ts',
 			'src/lib/core/rules/night/night-order.ts',
-			'src/lib/core/rules/night/night-text.ts',
-			...RULES_OF_TODO
+			'src/lib/core/rules/night/night-text.ts'
 		],
 		plugins: { grim },
 		rules: { 'grim/rules-for': 'error' }

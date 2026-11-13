@@ -107,7 +107,7 @@ describe('Golem', () => {
 			// Wiki: "Mark the Golem with the MAY NOT NOMINATE reminder."
 			const s = scenario(cast).newDay().nominate('golem', 'imp');
 			const spent = { characterId: 'golem', label: 'May Not Nominate' };
-			expect(dayUseOf('golem', s.characters)?.spentToken).toBe('May Not Nominate');
+			expect(dayUseOf(s.game, 'golem', s.characters)?.spentToken).toBe('May Not Nominate');
 			expect(reminderTargetMisses(s.game, spent, s.seat('golem'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
 				'not-self'

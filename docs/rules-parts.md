@@ -354,7 +354,7 @@ Every key a character's rules block may have, 99 in all. Each is one file in
 **Mad as.** The character a player is mad as, found by its token.
 
 - Part: `src/lib/core/data/parts/mad-as.ts`
-- Read by: `core/engine/decide/reminders.ts`, `core/rules/abilities/mad-as.ts`, `core/rules/jinxes/jinx-effects.ts`, `core/rules/night/info-token-characters.ts`
+- Read by: `core/engine/decide/reminders.ts`, `core/rules/abilities/mad-as.ts`, `core/rules/jinxes/jinxes.ts`, `core/rules/night/info-token-characters.ts`
 
 ### madness
 

@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -118,7 +119,12 @@ describe('Undertaker', () => {
 		it('asks to mark the player dead when Died Today goes on a living seat', () => {
 			// Wiki: "If a player dies by execution, put the Undertaker's DIED TODAY reminder token by
 			// the dead player's character token."
-			const prompt = reminderPrompt('Died Today', 'undertaker', scenario(cast).characters);
+			const prompt = reminderPrompt(
+				plainGame(),
+				'Died Today',
+				'undertaker',
+				scenario(cast).characters
+			);
 			expect(prompt).toBe('markDead');
 			expect(promptApplies(prompt!, false)).toBe(true);
 		});

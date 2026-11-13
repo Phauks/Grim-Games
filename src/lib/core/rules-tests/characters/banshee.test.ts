@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -138,9 +139,9 @@ describe('Banshee', () => {
 			// Wiki: "If the Banshee is killed by the Demon, place the HAS ABILITY reminder token next to
 			// the Banshee and say “The Banshee has awoken” or something similarly dramatic."
 			const { characters } = scenario(cast);
-			const trigger = onDeathTrigger('banshee', characters)!;
-			expect(onDeathApplies(trigger, 'imp', characters)).toBe(true);
-			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+			const trigger = onDeathTrigger(plainGame(), 'banshee', characters)!;
+			expect(onDeathApplies(plainGame(), trigger, 'imp', characters)).toBe(true);
+			expect(onDeathApplies(plainGame(), trigger, 'execution', characters)).toBe(false);
 		});
 
 		it('the Has Ability reminder goes on the dead Banshee only', () => {

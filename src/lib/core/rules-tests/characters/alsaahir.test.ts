@@ -17,7 +17,11 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	castGame,
+	plainGame,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
 import {
 	dayReminders,
 	dayStateFromGame,
@@ -129,7 +133,7 @@ describe('Alsaahir', () => {
 		it('logs the guess in the day as a claim of the Demon and Minions', () => {
 			// Wiki: "Each day, once only, if the Alsaahir declares that they wish to use their ability,
 			// prompt them to guess which player is the Demon, and which player(s) are Minions."
-			expect(dayClaim('alsaahir', characters)).toBe('guesses');
+			expect(dayClaim(plainGame(), 'alsaahir', characters)).toBe('guesses');
 		});
 
 		it('warns of a second guess on the same day', () => {

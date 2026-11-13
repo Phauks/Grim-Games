@@ -71,7 +71,7 @@ describe('Lunatic', () => {
 				s.seat('empath')
 			]);
 			// The Lunatic's choice kills nobody.
-			expect(nightKiller('lunatic', s.characters)).toBeUndefined();
+			expect(nightKiller(s.game, 'lunatic', s.characters)).toBeUndefined();
 			expect(preventedDeaths(s.game, s.characters)).toEqual([]);
 		});
 		it("Example 2: Real Zombuul mirrors the Lunatic's fake kills", () => {

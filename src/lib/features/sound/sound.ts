@@ -54,6 +54,23 @@ export function vibrate(): void {
 	if (canVibrate()) navigator.vibrate(VIBRATION);
 }
 
+/**
+ * Asks for the speaker as media playback, right before a sound plays. An iPhone or iPad
+ * otherwise treats the page's sound as background sound, which the ring/silent switch mutes
+ * (WebKit bug 237322; the Audio Session API, Safari on iOS 17 and later). Not done on the first
+ * tap, because playback pauses the device's other audio, such as a player's music.
+ */
+export function claimSpeaker(): void {
+	if (typeof navigator === 'undefined') return;
+	const session = (navigator as { audioSession?: { type: string } }).audioSession;
+	if (!session || session.type === 'playback') return;
+	try {
+		session.type = 'playback';
+	} catch {
+		// An older Safari that knows the API but not this type.
+	}
+}
+
 /** Call from a tap, so a later sound is allowed. */
 export function unlockSound(): void {
 	const ctx = audio();
@@ -141,6 +158,7 @@ export function playSound(sound: TimerSound, volume = preferences.current.soundV
 	if (sound === 'none' || volume <= 0) return;
 	const ctx = audio();
 	if (!ctx) return;
+	claimSpeaker();
 	unlockSound();
 	const output = ctx.createGain();
 	output.gain.value = volume;

@@ -3,7 +3,7 @@
  * approved by Trevor; none is copied from another generator or the wiki.
  */
 import { aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/setup/distribution.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '#lib/core/rules/abilities/registration.ts';
@@ -690,7 +690,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 			[...f.inPlay]
 				.filter(
 					(id) =>
-						rulesOf(id, f.characters)?.dayClaim !== 'statements' &&
+						rulesFor(f.game, id, f.characters)?.dayClaim !== 'statements' &&
 						f.characters.get(id)?.type !== 'demon'
 				)
 				.map((id) => ({
@@ -750,7 +750,8 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		(f) =>
 			f.seats.filter((s) => {
 				const id = trueCharacter(f.game, s, f.characters);
-				const believes = id !== undefined && rulesOf(id, f.characters)?.believesOtherCharacter;
+				const believes =
+					id !== undefined && rulesFor(f.game, id, f.characters)?.believesOtherCharacter;
 				return believes || id !== f.game.seats[s].characterId;
 			}).length,
 		(n) => [

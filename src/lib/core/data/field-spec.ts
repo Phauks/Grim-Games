@@ -27,8 +27,15 @@ export interface Variant {
 }
 
 export type FieldSpec = Shape & {
-	/** What the value means, for a written guide (the game mode format guide). */
+	/**
+	 * What the value means: for a written guide (the game mode format guide), and the help line
+	 * under a setting in the Character builder (M81).
+	 */
 	readonly about?: string;
+	/** The setting's name in plain words, in place of one made from its key (M81). */
+	readonly label?: string;
+	/** Plain words for a drop-down's choices, by value; others read as `optionLabel` says. */
+	readonly names?: Readonly<Record<string, string>>;
 };
 
 type Shape =
@@ -139,6 +146,15 @@ export const variants = <const V extends readonly Variant[]>(
 /** `spec`, with what its value means for a written guide. */
 export const about = <S extends FieldSpec>(text: string, spec: S): S => ({ ...spec, about: text });
 
+/**
+ * `spec`, with its name, help line and choices in plain words for the Character builder (M81,
+ * Trevor 2026-11-12: "do it all"). Our own words, never wiki prose.
+ */
+export const worded = <S extends FieldSpec>(
+	words: { label?: string; about?: string; names?: Readonly<Record<string, string>> },
+	spec: S
+): S => ({ ...spec, ...words });
+
 /** A setting that may be left out. */
 export const opt = <S extends FieldSpec>(spec: S): Optional<S> => ({ [OPTIONAL]: true, spec });
 
@@ -185,9 +201,25 @@ export function fieldLabel(key: string): string {
 	return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** A choice as the builder shows it: hyphens read as spaces. */
-export function optionLabel(value: string): string {
-	return value.replace(/-/g, ' ');
+/** Choices that read the same wherever they are offered: the game's own names. */
+const CHOICE_NAMES: Readonly<Record<string, string>> = {
+	townsfolk: 'Townsfolk',
+	outsider: 'Outsider',
+	minion: 'Minion',
+	demon: 'Demon',
+	traveller: 'Traveller',
+	fabled: 'Fabled',
+	loric: 'Loric',
+	good: 'Good',
+	evil: 'Evil'
+};
+
+/**
+ * A choice as the builder shows it: its plain words from `names` (the setting's own) or the
+ * game's name for it, else the value with hyphens read as spaces.
+ */
+export function optionLabel(value: string, names?: Readonly<Record<string, string>>): string {
+	return names?.[value] ?? CHOICE_NAMES[value] ?? value.replace(/-/g, ' ');
 }
 
 /** The value a new, empty setting of `spec` starts with. */
@@ -323,17 +355,38 @@ export function uncovered(spec: FieldSpec, value: unknown, path = ''): string[] 
 	}
 }
 
-/** A value on one line, for a rule's row: settings by name, lists by commas. */
-export function summaryOf(value: unknown): string {
+/**
+ * A value on one line, for a rule's row: settings by name, lists by commas. With its `spec`,
+ * settings and choices read in their plain words (M81).
+ */
+export function summaryOf(value: unknown, spec?: FieldSpec): string {
+	if (spec?.kind === 'variants') {
+		const i = variantOf(spec, value);
+		return summaryOf(value, i < 0 ? undefined : spec.variants[i]!.spec);
+	}
 	if (value === true) return 'On';
 	if (value === false) return 'Off';
-	if (typeof value === 'string') return optionLabel(value);
+	if (typeof value === 'string') return optionLabel(value, spec?.names);
 	if (typeof value === 'number') return String(value);
-	if (Array.isArray(value)) return value.map(summaryOf).join(', ');
+	if (Array.isArray(value)) {
+		const of = spec?.kind === 'list' ? spec.of : spec?.kind === 'enums' ? spec : undefined;
+		return value.map((v) => summaryOf(v, of)).join(', ');
+	}
 	if (isRecord(value)) {
+		const of = spec && 'of' in spec ? spec.of : undefined;
 		return Object.entries(value)
-			.map(([k, v]) => (v === true ? fieldLabel(k) : `${fieldLabel(k)} ${summaryOf(v)}`))
+			.map(([k, v]) => {
+				const field = spec?.kind === 'object' ? spec.fields.find((f) => f.key === k) : undefined;
+				const name = field ? settingLabel(field) : fieldLabel(k);
+				const sub = field?.spec ?? of;
+				return v === true ? name : `${name} ${summaryOf(v, sub)}`;
+			})
 			.join(' · ');
 	}
 	return '';
+}
+
+/** A setting's name: its plain words, else one made from its key. */
+export function settingLabel(field: ObjectField): string {
+	return field.spec.label ?? fieldLabel(field.key);
 }

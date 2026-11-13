@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { emptyCharacterDraft, parseCharacterDraft } from './draft.ts';
+import { emptyCharacterDraft, isEmptyCharacterDraft, parseCharacterDraft } from './draft.ts';
 import { parseSavedCharacters } from './saved-characters.ts';
 
 describe('parseCharacterDraft', () => {
 	it('starts empty when missing, damaged or from a newer build', () => {
-		expect(parseCharacterDraft(null)).toEqual(emptyCharacterDraft());
-		expect(parseCharacterDraft({ version: 99, fields: {} })).toEqual(emptyCharacterDraft());
+		const fresh = { ...emptyCharacterDraft().fields, name: expect.any(String) };
+		expect(parseCharacterDraft(null).fields).toEqual(fresh);
+		expect(parseCharacterDraft({ version: 99, fields: {} }).fields).toEqual(fresh);
+	});
+
+	it('starts a new character with a name of its own, still counted as empty', () => {
+		const draft = emptyCharacterDraft();
+		expect(draft.fields.name).not.toBe('');
+		expect(isEmptyCharacterDraft(draft)).toBe(true);
+		expect(isEmptyCharacterDraft({ ...draft, fields: { ...draft.fields, name: 'Lamp' } })).toBe(
+			false
+		);
 	});
 
 	it('keeps what it can read and drops the rest', () => {

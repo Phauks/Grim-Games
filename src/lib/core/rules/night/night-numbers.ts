@@ -39,7 +39,7 @@ export function sheetNightNumbers(ids: readonly string[]): Map<CharacterId, numb
 
 /**
  * The seats that died since the last "New day" (the events applied so far, oldest first):
- * tonight is the night of their death, when an ability set off by dying (`ON_DEATH`, such as
+ * tonight is the night of their death, when an ability set off by dying (`onDeathTrigger`, such as
  * the Ravenkeeper's) still wakes them.
  */
 export function diedSinceNewDay(

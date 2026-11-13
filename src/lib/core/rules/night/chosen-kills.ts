@@ -13,17 +13,18 @@
  * The night step offers these; the Storyteller decides, so nothing here happens on its own.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { inPlay, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** What `characterId`'s night kill chooses instead of a player, if anything. */
 export function killChoice(
+	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): 'character' | 'live-or-die' | undefined {
-	return rulesOf(characterId, characters)?.kills?.chooses;
+	return rulesFor(game, characterId, characters)?.kills?.chooses;
 }
 
 /**

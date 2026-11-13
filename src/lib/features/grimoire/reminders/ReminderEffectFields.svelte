@@ -28,7 +28,7 @@
 
 	const NONE = 'none';
 	type Choice = ReminderEffectKind | typeof NONE;
-	const rule = $derived(pickedEffectOf(reminder, grimoire.open.characters));
+	const rule = $derived(pickedEffectOf(grimoire.game, reminder, grimoire.open.characters));
 	const options = $derived([
 		{ value: NONE as Choice, label: t('characters.effectNone') },
 		...[...new Set<ReminderEffectKind>([...(rule?.effects ?? []), 'other'])].map((kind) => ({

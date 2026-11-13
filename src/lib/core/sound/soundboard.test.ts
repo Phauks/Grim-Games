@@ -5,6 +5,7 @@ import {
 	DEFAULT_ACTION_SOUNDS,
 	SOUND_ACTIONS,
 	SOUND_OUTPUTS,
+	hearsAmbience,
 	hearsSound,
 	parseSoundOutput,
 	actionTaken,
@@ -161,6 +162,15 @@ describe('Play on', () => {
 		expect(hearsSound('all', 'phones')).toBe(true);
 		expect(hearsSound('town', 'phones')).toBe(false);
 		expect(hearsSound('phones', 'town')).toBe(false);
+	});
+
+	it('plays day and night sound on one kind of device, so phones never echo each other', () => {
+		expect(hearsAmbience('all', 'town')).toBe(true);
+		expect(hearsAmbience('all', 'phones')).toBe(false);
+		expect(hearsAmbience('town', 'town')).toBe(true);
+		expect(hearsAmbience('town', 'phones')).toBe(false);
+		expect(hearsAmbience('phones', 'phones')).toBe(true);
+		expect(hearsAmbience('phones', 'town')).toBe(false);
 	});
 
 	it('moves an older build’s choice off the Storyteller’s device', () => {
