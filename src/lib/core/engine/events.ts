@@ -45,6 +45,7 @@ export type GameEvent =
 			notInPlay?: true;
 	  }
 	| { type: 'SeatInPlaySet'; seatId: SeatId; inPlay: boolean }
+	| { type: 'NoPlayerSet'; seatId: SeatId; noPlayer: boolean }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: PlayerName }
 	/** Adds or replaces the seat's note with `note.noteId`. */

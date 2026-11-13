@@ -20,7 +20,11 @@ export type SwitchLabel =
 	| 'modes.switch.namedMany'
 	| 'modes.switch.mayBeNone'
 	| 'modes.switch.threeAlive'
-	| 'modes.switch.duplicateDemons';
+	| 'modes.switch.duplicateDemons'
+	| 'modes.switch.terrifyingWhisper'
+	| 'modes.switch.seatsRiseUp'
+	| 'modes.switch.amnesiacAtHome'
+	| 'modes.switch.grandmotherPrinciple';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
@@ -29,7 +33,7 @@ export type SwitchChoices = Readonly<Record<string, boolean>>;
 export const PLUS_ONE_NAMED = 'Tell the table which character from off the script is in play.';
 /** Infinite Possibilities' named setting, our wording (approved 2026-10-23). */
 export const INFINITE_NAMED = 'Tell the table which characters from off the script are in play.';
-/** +1 with no extra promised, our wording (drafted 2026-11-12, waiting on Trevor). */
+/** +1 with no extra promised, our wording (approved by Trevor 2026-11-13). */
 export const PLUS_ONE_MAY_BE =
 	'Tell the table that one character from off the script may be in play.';
 
@@ -158,7 +162,105 @@ const DUPLICATES: readonly RuleSwitch[] = [
 	}
 ];
 
+/** Seat 7 under A Terrifying Whisper; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_WHISPER =
+	'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. You may speak for it twice: once privately and once publicly.';
+
+/** Seat 7 under Seats Rise Up; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_RISE_UP =
+	'Once per day, while the seat still has a vote, you may add its vote to one nomination, before the next nomination is made. Announce it before the players vote.';
+/** Seat 7 under Amnesiac at Home; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_AT_HOME =
+	'If a new player sits in the seat during the game, you may let them stay and speak for it. Don’t tell them its character or anything it learned.';
+
+/** Seat 7 under The Grandmother Principle; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_PROTECTOR =
+	'Wake one player and tell them they have been chosen to protect the seat no one plays. If that seat is executed, you may have them die too.';
+
+/** The rule with one more Storyteller instruction after its own. */
+function withInstruction(rule: SpecialRule, instructions: string): SpecialRule {
+	return {
+		...rule,
+		setup: { ...rule.setup, ruleChanges: [...(rule.setup.ruleChanges ?? []), { instructions }] }
+	};
+}
+
+/**
+ * The Ballad of Seat 7's optional rules from its page
+ * (https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/), each a switch, off by default
+ * (Trevor, 2026-10-22: "leave seat 7 optional rules in to do"; built 2026-11-12). A Terrifying
+ * Whisper: "The Seat may speak twice per game. Once privately and once publicly."
+ */
+const SEAT_7: readonly RuleSwitch[] = [
+	{
+		id: 'terrifying-whisper',
+		label: () => 'modes.switch.terrifyingWhisper',
+		default: false,
+		apply: (rule, on) => {
+			const seats = rule.setup.seats;
+			if (!on || seats?.kind !== 'storyteller-seat') return rule;
+			return {
+				...rule,
+				setup: {
+					...rule.setup,
+					seats: { ...seats, speaks: 'private-and-public', instructions: SEAT_7_WHISPER }
+				}
+			};
+		}
+	},
+	{
+		// "Once per day, if the seat still has a vote, the storyteller may choose one nomination
+		// and a vote to it's total." "This must be done before another nomination is made."
+		id: 'seats-rise-up',
+		label: () => 'modes.switch.seatsRiseUp',
+		default: false,
+		apply: (rule, on) => {
+			const seats = rule.setup.seats;
+			if (!on || seats?.kind !== 'storyteller-seat') return rule;
+			const voting = {
+				...rule,
+				setup: { ...rule.setup, seats: { ...seats, votes: 'once-per-day' as const } }
+			};
+			return withInstruction(voting, SEAT_7_RISE_UP);
+		}
+	},
+	{
+		// "If a new player sits in seat 7 during the game the storyteller can choose to let them
+		// stay and speak for the seat." "However they are not told the role nor any of it's prior
+		// information." The app never sends a seat no one plays its character (seatRoles).
+		id: 'amnesiac-at-home',
+		label: () => 'modes.switch.amnesiacAtHome',
+		default: false,
+		apply: (rule, on) => (on ? withInstruction(rule, SEAT_7_AT_HOME) : rule)
+	},
+	{
+		// "At the start of night 1, one player is woken to learn that they have been chose to
+		// protect the seat." "If seat 7 is executed they might die as well." The first night gets
+		// a step of its own after Dusk (`nightWakes`); the death is the Storyteller's call.
+		id: 'grandmother-principle',
+		label: () => 'modes.switch.grandmotherPrinciple',
+		default: false,
+		apply: (rule, on) => {
+			if (!on) return rule;
+			const wake = {
+				when: 'one-night' as const,
+				night: 1,
+				chosen: true as const,
+				text: SEAT_7_PROTECTOR
+			};
+			return withInstruction(
+				{
+					...rule,
+					rules: { ...rule.rules, nightWakes: [...(rule.rules?.nightWakes ?? []), wake] }
+				},
+				SEAT_7_PROTECTOR
+			);
+		}
+	}
+];
+
 export const RULE_SWITCHES: Readonly<Record<string, readonly RuleSwitch[]>> = {
+	'seat-7': SEAT_7,
 	'plus-one': EXTRAS,
 	'infinite-possibilities': EXTRAS,
 	'djinns-bargain': DJINN,
@@ -190,11 +292,17 @@ export function choicesOf(
 	const out: Record<string, boolean> = {};
 	for (const rule of rules) {
 		const base = find(rule.id);
-		if (!base) continue;
-		for (const sw of RULE_SWITCHES[rule.id] ?? []) {
-			const flipped = switched(base, { [`${rule.id}:${sw.id}`]: !sw.default });
-			if (JSON.stringify(flipped) === JSON.stringify(rule))
-				out[`${rule.id}:${sw.id}`] = !sw.default;
+		const switches = RULE_SWITCHES[rule.id] ?? [];
+		if (!base || switches.length === 0) continue;
+		// Every mix of the rule's switches, few enough to try them all (Seat 7 has three).
+		for (let mask = 1; mask < 1 << switches.length; mask++) {
+			const choices = Object.fromEntries(
+				switches.map((sw, i) => [`${rule.id}:${sw.id}`, mask & (1 << i) ? !sw.default : sw.default])
+			);
+			if (JSON.stringify(switched(base, choices)) !== JSON.stringify(rule)) continue;
+			for (const [key, on] of Object.entries(choices))
+				if (on !== switches.find((sw) => key === `${rule.id}:${sw.id}`)?.default) out[key] = on;
+			break;
 		}
 	}
 	return out;

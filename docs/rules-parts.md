@@ -396,7 +396,7 @@ Every key a character's rules block may have, 99 in all. Each is one file in
 **Night wakes.** Players it wakes at night, on top of the night order.
 
 - Part: `src/lib/core/data/parts/night-wakes.ts`
-- Read by: `core/rules/rule-sources.ts`
+- Read by: `core/rules/rule-sources.ts`, `features/modes/rule-switches.ts`
 
 ### nominating
 

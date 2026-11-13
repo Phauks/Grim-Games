@@ -3,6 +3,7 @@ import {
 	DJINN_THREE_ALIVE,
 	DUPLICATE_DEMONS,
 	INFINITE_NAMED,
+	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED
 } from './rule-switches.ts';
 
@@ -113,10 +114,12 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 		'Living Townsfolk don’t wake and have no ability; setup effects still happen. A Townsfolk who dies gains its ability and wakes at its usual place. Other dead players keep waking, except a dead Demon.',
 	'council-of-the-dead:setup.ruleChanges[0]':
 		'At the start of night 4, wake the dead together for 2 minutes. Then each secretly votes for a living player. If no player has a majority, you choose. Give the chosen player a helpful effect of your choice.',
-	// Trevor's own two wordings (2026-10-22), one per setting of +1's switch (rule-switches.ts).
+	// Trevor's own two wordings (2026-10-22), one per setting of +1's switch (rule-switches.ts),
+	// and the line with May be none on, approved 2026-11-13 (decision card).
 	'plus-one:setup.information[0]': [
 		'Tell the table that one character from off the script is in play.',
-		PLUS_ONE_NAMED
+		PLUS_ONE_NAMED,
+		PLUS_ONE_MAY_BE
 	],
 	// Approved 2026-10-23 (decision card): the same switch's text for Infinite Possibilities.
 	'infinite-possibilities:setup.information[0]': INFINITE_NAMED,

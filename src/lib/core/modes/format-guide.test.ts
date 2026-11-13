@@ -40,7 +40,8 @@ const FORMAT_HASH: Record<number, string> = {
 	17: '9ccdc45d8f63d9eb',
 	18: '97512b9d41fe8cef',
 	19: 'dd15466db036c24f',
-	20: '62689fecf9c85f32'
+	20: '62689fecf9c85f32',
+	21: '8fbd37d06422081f'
 };
 
 function formatHash(): string {

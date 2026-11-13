@@ -111,6 +111,7 @@ export const SEATS_DECIDERS: Deciders<
 	| 'ChangeScript'
 	| 'AddSeat'
 	| 'SetInPlay'
+	| 'SetNoPlayer'
 	| 'RemoveSeat'
 	| 'RenameSeat'
 	| 'SetStorytellerName'
@@ -169,6 +170,15 @@ export const SEATS_DECIDERS: Deciders<
 		}
 		if (events.length === 0) warn('no-change', 'nothing changes');
 		return events;
+	},
+
+	SetNoPlayer(game, command, _ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!!seat.noPlayer === command.noPlayer) {
+			warn('no-change', 'nothing changes');
+			return [];
+		}
+		return [{ type: 'NoPlayerSet', seatId: seat.seatId, noPlayer: command.noPlayer }];
 	},
 
 	RemoveSeat(game, command, ctx, warn) {

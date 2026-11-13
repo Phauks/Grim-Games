@@ -53,6 +53,8 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		const seat = game.seats[seatId];
 		const truth = seat?.characterId && characters.get(seat.characterId);
 		if (!seat || !truth) continue;
+		// No one plays it (The Ballad of Seat 7), so whoever sits there is never shown it.
+		if (seat.noPlayer) continue;
 		if (hidden && !seat.dead) continue;
 		if (truth.type === 'traveller') {
 			// Nothing to tell until the Storyteller has chosen it.

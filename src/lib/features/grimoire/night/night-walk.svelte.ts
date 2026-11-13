@@ -7,14 +7,13 @@
  */
 import type { CharacterId, GameData } from '#lib/core/data/index.ts';
 import {
-	seatNumber,
 	type CharacterLookup,
 	type Game,
 	type Reminder,
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { type SpecialRule } from '#lib/core/modes/index.ts';
+import { noPlayerSeats, type SpecialRule } from '#lib/core/modes/index.ts';
 import {
 	nextScriptOrderTarget,
 	ruleSources,
@@ -196,11 +195,12 @@ export class NightWalk {
 		const { game, characters, rules } = this.#context();
 		const rule = rules.find(
 			(r) => r.setup.seats?.kind === 'storyteller-seat' && r.setup.seats.count > 0
-		)?.name;
+		);
 		const step = this.step;
 		if (!rule || !step) return undefined;
-		return stepHolders(game, step, characters).some((seatId) => seatNumber(game, seatId) === 7)
-			? rule
+		const empty = noPlayerSeats(game, rule.setup.seats);
+		return stepHolders(game, step, characters).some((seatId) => empty.includes(seatId))
+			? rule.name
 			: undefined;
 	});
 

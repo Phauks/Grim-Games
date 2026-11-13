@@ -127,14 +127,17 @@ export function nextScriptOrderTarget(game: Game, characters: CharacterLookup): 
 	return (living.find((s) => s.at > furthest) ?? living[0])?.seatId;
 }
 
-/** Each rule source's night wakes for the dead on night `number` (Council of the Dead). */
-export function deadWakesOn(
+/**
+ * Each rule source's one-night wakes on night `number`: the dead together (Council of the Dead),
+ * or one player the Storyteller picks (the Grandmother Principle).
+ */
+export function oneNightWakesOn(
 	sources: readonly RuleSource[],
 	number: number
 ): { source: RuleSource; wake: NightWake; index: number }[] {
 	return sources.flatMap((source) =>
 		(source.rules.nightWakes ?? []).flatMap((wake, index) =>
-			wake.when === 'one-night' && wake.night === number && wake.dead
+			wake.when === 'one-night' && wake.night === number && (wake.dead || wake.chosen)
 				? [{ source, wake, index }]
 				: []
 		)

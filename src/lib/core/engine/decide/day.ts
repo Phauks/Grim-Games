@@ -1,6 +1,7 @@
 import {
 	ABNORMAL_REASONS,
 	GUESS_ANSWERS,
+	SPOKE_HOWS,
 	getSeat,
 	isTraveller,
 	trueCharacter,
@@ -110,6 +111,8 @@ export const DAY_DECIDERS: Deciders<
 	| 'ExecuteStoryteller'
 	| 'Exile'
 	| 'UseAbility'
+	| 'SpeakForSeat'
+	| 'VoteForSeat'
 	| 'DayNote'
 	| 'EditDayNote'
 	| 'RecordNightInfo'
@@ -402,6 +405,40 @@ export const DAY_DECIDERS: Deciders<
 		];
 	},
 
+	SpeakForSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.noPlayer) warn('has-player', 'the seat has a player');
+		const entry: Extract<DayEntry, { kind: 'spoke' }> = {
+			kind: 'spoke',
+			entryId: ctx.newId(),
+			seatId: seat.seatId
+		};
+		if (command.how !== undefined) {
+			if (!SPOKE_HOWS.includes(command.how)) refuse('invalid-spoke', 'unknown way of speaking');
+			entry.how = command.how;
+		}
+		return [{ type: 'DayEntryAdded', entry }];
+	},
+
+	VoteForSeat(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (!seat.noPlayer) warn('has-player', 'the seat has a player');
+		if (game.today.entries.some((e) => e.kind === 'seat-vote' && e.seatId === seat.seatId))
+			warn('already-used', 'the seat has already voted today');
+		const entry: Extract<DayEntry, { kind: 'seat-vote' }> = {
+			kind: 'seat-vote',
+			entryId: ctx.newId(),
+			seatId: seat.seatId
+		};
+		// A dead seat votes with its ghost vote, as any dead player does.
+		if (seat.dead && seat.ghostVoteUsed) warn('no-vote', 'the seat has no vote left');
+		if (seat.dead && !seat.ghostVoteUsed) entry.ghostVote = true;
+		return [
+			{ type: 'DayEntryAdded', entry },
+			...(entry.ghostVote ? [{ type: 'GhostVoteSpent' as const, seatId: seat.seatId }] : [])
+		];
+	},
+
 	DayNote(game, command, ctx, warn) {
 		const characterId = characterOf(ctx, command.characterId).id;
 		const guesses = guessesOf(game, ctx, command.guesses);
@@ -505,6 +542,8 @@ export const DAY_DECIDERS: Deciders<
 				if (seat.ghostVoteUsed) events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
 			}
 		}
+		if (entry.kind === 'seat-vote' && entry.ghostVote && getSeat(game, entry.seatId)?.ghostVoteUsed)
+			events.push({ type: 'GhostVoteRestored', seatId: entry.seatId });
 		// What the nomination's recorded votes spent comes back with it.
 		if (entry.kind === 'nomination') events.push(...releaseVotes(game, entry.votes));
 		const placed =

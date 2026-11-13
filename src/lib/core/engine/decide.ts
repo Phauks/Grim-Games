@@ -83,6 +83,7 @@ export type ErrorCode =
 	| 'invalid-day-tally'
 	| 'invalid-effect'
 	| 'invalid-wish'
+	| 'invalid-spoke'
 	| 'invalid-ability';
 
 export type WarningCode =
@@ -124,6 +125,8 @@ export type WarningCode =
 	| 'already-executed'
 	| 'traveller-executed'
 	| 'not-traveller'
+	| 'has-player'
+	| 'no-vote'
 	| 'already-dead'
 	| 'survives-execution'
 	| 'survives-exile'

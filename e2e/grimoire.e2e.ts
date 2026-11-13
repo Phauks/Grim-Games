@@ -6750,12 +6750,120 @@ test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', as
 		await closeSheet(page);
 	}
 
+	// The Storyteller marks which seat no one plays (Trevor, 2026-11-12: any seat).
+	await seatMenu(page, await openSeat(page, 7), 'No player for this seat');
+	await closeSheet(page);
 	const strip = await walkTo(page, 'Washerwoman');
 	await expect(strip.getByTestId('step-empty-seat')).toHaveCount(0);
 	await walkTo(page, 'Empath');
 	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
 		'No player: make its choices (The Ballad of Seat 7)'
 	);
+});
+
+// Trevor (2026-11-12): "Can be any seat. Ballad of seat 7 could be used in any player count."
+// The author's page: "Once per game the storyteller may speak on its behalf."
+test('with The Ballad of Seat 7, any seat can be the one no one plays, spoken for once', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, 'The Ballad of Seat 7');
+	await toBoard(page);
+	for (const [number, name] of [
+		[2, 'Washerwoman'],
+		[7, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const two = await openSeat(page, 2);
+	await two.getByRole('button', { name: 'Seat actions' }).tap();
+	const menu = page.getByRole('dialog');
+	// Not that seat yet, so it can't be spoken for.
+	await expect(menu.getByRole('button', { name: 'Spoke for this seat' })).toBeDisabled();
+	await menu.getByRole('button', { name: 'No player for this seat' }).tap();
+	await closeSheet(page);
+
+	const strip = await walkTo(page, 'Washerwoman');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveText(
+		'No player: make its choices (The Ballad of Seat 7)'
+	);
+	await walkTo(page, 'Empath');
+	await expect(strip.getByTestId('step-empty-seat')).toHaveCount(0);
+
+	const again = await openSeat(page, 2);
+	await seatMenu(page, again, 'Spoke for this seat');
+	await again.getByRole('button', { name: 'Seat actions' }).tap();
+	await expect(
+		page.getByRole('dialog').getByRole('button', { name: 'Spoke for this seat' })
+	).toBeDisabled();
+	await expect(
+		page.getByRole('dialog').getByRole('button', { name: 'Give this seat a player' })
+	).toBeVisible();
+});
+
+// The author's optional rules (https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/),
+// switches on the rule. A Terrifying Whisper: "The Seat may speak twice per game. Once privately
+// and once publicly." Seats Rise Up: "Once per day, if the seat still has a vote, the storyteller
+// may choose one nomination and a vote to it's total." Amnesiac at Home: whoever sits there is
+// "not told the role". The Grandmother Principle: "At the start of night 1, one player is woken
+// to learn that they have been chose to protect the seat."
+test('Seat 7’s optional rules: speaking twice, voting once a day, never shown its character', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, 'The Ballad of Seat 7');
+	await page.getByTestId('setup-special-rules').tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	const seven = rules
+		.getByTestId('special-rules')
+		.locator(':scope > li')
+		.filter({ hasText: 'The Ballad of Seat 7' })
+		.first();
+	for (const name of [
+		'A Terrifying Whisper',
+		'Seats Rise Up',
+		'Amnesiac at Home',
+		'The Grandmother Principle'
+	]) {
+		await seven.getByText(name, { exact: true }).tap();
+		await expect(seven.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
+	}
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await toBoard(page);
+	const sheet = await openSeat(page, 7);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 7' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await seatMenu(page, sheet, 'No player for this seat');
+	await expect(sheet.getByRole('button', { name: 'Show to player' })).toBeDisabled();
+	await seatMenu(page, sheet, 'Spoke privately for this seat');
+	await seatMenu(page, sheet, 'Voted with this seat today');
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	const menu = page.getByRole('dialog');
+	await expect(menu.getByRole('button', { name: 'Spoke privately for this seat' })).toBeDisabled();
+	await expect(menu.getByRole('button', { name: 'Spoke publicly for this seat' })).toBeEnabled();
+	await expect(menu.getByRole('button', { name: 'Voted with this seat today' })).toBeDisabled();
+	await expect(menu.getByRole('button', { name: 'Spoke for this seat' })).toHaveCount(0);
+	await menu.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	// The protector wakes on the first night, in a step of the rule's own after Dusk.
+	await walkTo(page, 'Dusk');
+	const strip = page.getByTestId('night-strip');
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('The Ballad of Seat 7');
+	await expect(strip).toContainText('chosen to protect the seat no one plays');
 });
 
 test('a Dead reminder put on a living player asks whether to mark them dead', async ({ page }) => {

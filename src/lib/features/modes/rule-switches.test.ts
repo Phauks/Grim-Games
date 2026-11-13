@@ -6,6 +6,10 @@ import {
 	INFINITE_NAMED,
 	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED,
+	SEAT_7_AT_HOME,
+	SEAT_7_PROTECTOR,
+	SEAT_7_RISE_UP,
+	SEAT_7_WHISPER,
 	choicesOf,
 	switched
 } from './rule-switches.ts';
@@ -60,6 +64,51 @@ describe('rule switches', () => {
 		);
 		expect(limited.rules?.onNominated).toEqual({ effect: 'nominator-may-die', minAlive: 4 });
 		expect(parseSpecialRule(limited).ok).toBe(true);
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, A Terrifying Whisper: "The Seat
+	// may speak twice per game. Once privately and once publicly."
+	it('let Seat 7 speak once privately and once publicly under A Terrifying Whisper', () => {
+		const rule = specialRuleById('seat-7')!;
+		expect(switched(rule, {})).toEqual(rule);
+		const whisper = switched(rule, { 'seat-7:terrifying-whisper': true });
+		expect(whisper.setup.seats).toMatchObject({
+			speaks: 'private-and-public',
+			instructions: SEAT_7_WHISPER
+		});
+		expect(parseSpecialRule(whisper).ok).toBe(true);
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, Seats Rise Up: "Once per day,
+	// if the seat still has a vote, the storyteller may choose one nomination and a vote to it's
+	// total." Amnesiac at Home: "If a new player sits in seat 7 during the game the storyteller
+	// can choose to let them stay and speak for the seat."
+	it('add Seats Rise Up and Amnesiac at Home to Seat 7 as instructions of their own', () => {
+		const rule = specialRuleById('seat-7')!;
+		const both = switched(rule, { 'seat-7:seats-rise-up': true, 'seat-7:amnesiac-at-home': true });
+		expect(both.setup.seats).toMatchObject({ votes: 'once-per-day' });
+		expect(both.setup.ruleChanges).toEqual([
+			{ instructions: SEAT_7_RISE_UP },
+			{ instructions: SEAT_7_AT_HOME }
+		]);
+		expect(parseSpecialRule(both).ok).toBe(true);
+		expect(choicesOf([both], (id) => specialRuleById(id))).toEqual({
+			'seat-7:seats-rise-up': true,
+			'seat-7:amnesiac-at-home': true
+		});
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, The Grandmother Principle: "At
+	// the start of night 1, one player is woken to learn that they have been chose to protect the
+	// seat."
+	it('wake a protector on the first night under The Grandmother Principle', () => {
+		const rule = specialRuleById('seat-7')!;
+		const protector = switched(rule, { 'seat-7:grandmother-principle': true });
+		expect(protector.rules?.nightWakes).toEqual([
+			{ when: 'one-night', night: 1, chosen: true, text: SEAT_7_PROTECTOR }
+		]);
+		expect(protector.setup.ruleChanges).toEqual([{ instructions: SEAT_7_PROTECTOR }]);
+		expect(parseSpecialRule(protector).ok).toBe(true);
 	});
 
 	// Trevor (2026-10-24): "allow duplicate demons could be a setting".

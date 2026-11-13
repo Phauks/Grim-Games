@@ -123,6 +123,11 @@ function describeEvent(
 				seatName(after, event.seatId),
 				text(event.inPlay ? ' came into play' : ' taken out of play')
 			];
+		case 'NoPlayerSet':
+			return [
+				seatName(after, event.seatId),
+				text(event.noPlayer ? ' has no player' : ' has a player again')
+			];
 		case 'SeatRemoved':
 			return [text('Removed '), seatPart(before, event.seatId)];
 		case 'StorytellerNameSet':

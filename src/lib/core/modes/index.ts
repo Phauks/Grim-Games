@@ -13,3 +13,4 @@ export * from './combine.ts';
 export * from './rules/index.ts';
 export * from './rule-script.ts';
 export * from './builder.ts';
+export * from './no-player.ts';
