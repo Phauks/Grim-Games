@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import type { Character, CharacterName } from '#lib/core/data/types.ts';
 import { gameData } from '#lib/core/model/fixtures.test-support.ts';
 import {
-	abilityAction,
 	readAction,
 	withChoice,
 	withResult,
@@ -23,6 +22,12 @@ import {
 import { modifierFromText } from '#lib/core/rules/setup/setup-modifiers.ts';
 
 const King = 'King' as CharacterName;
+
+/** The ability's action, read from its whole text. */
+const abilityAction = (ability: string, self: string) => {
+	const parts = readAbility(ability, self);
+	return readAction(parts.rest, !!parts.opening);
+};
 const king = { id: 'king', name: King };
 const findByName = (name: string) => (name.trim().toLowerCase() === 'king' ? king : undefined);
 

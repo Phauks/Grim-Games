@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { animationsSettled } from './settled.ts';
 
 // Trevor (2026-10-27): "There should always be a delineator between anything that has a carrot
 // menu, lint for this", and on the player's tabs, "All these seem to use different indents and
@@ -26,9 +27,7 @@ const ROUTES = [
 
 /** Carets with nothing between them and what is above, by screen and caret label. */
 async function unlined(page: Page, screen: string): Promise<string[]> {
-	await page.waitForFunction(() =>
-		document.getAnimations().every((a) => a.playState !== 'running')
-	);
+	await animationsSettled(page);
 	const found = await page.evaluate(() => {
 		const opaque = (css: string) => {
 			const n = css.match(/[\d.]+/g)?.map(Number);

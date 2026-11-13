@@ -1,4 +1,4 @@
-import { anyOf, obj, oneOf, opt, STRS, TOKEN } from '../field-spec.ts';
+import { anyOf, CHARACTERS, obj, oneOf, opt, TOKEN } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
 import { specPart, type PartValue } from './part.ts';
 
@@ -28,7 +28,7 @@ export const madAs = specPart(
 		token: TOKEN,
 		mad: oneOf(MAD_AS_WHO),
 		choose: opt(anyOf(SEATED_TYPES)),
-		characters: opt(STRS)
+		characters: opt(CHARACTERS)
 	}),
 	(value, path, issues) => {
 		const before = issues.list.length;

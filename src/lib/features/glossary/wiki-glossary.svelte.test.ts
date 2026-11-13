@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { entryText, glossaryKey, linkTarget, parseGlossaryHtml } from './wiki-glossary.ts';
+import { glossaryKey, linkTarget, parseGlossaryHtml, type WikiEntry } from './wiki-glossary.ts';
+
+const entryText = (entry: WikiEntry) => entry.parts.map((p) => p.text).join('');
 
 // A made-up page in the wiki's shapes; no wiki text is copied here.
 const PAGE = `

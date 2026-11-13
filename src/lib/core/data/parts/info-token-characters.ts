@@ -8,7 +8,9 @@ import {
 	STR,
 	STRS,
 	T,
+	TOKEN,
 	variants,
+	worded,
 	type SpecValue
 } from '../field-spec.ts';
 import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from '../info-tokens.ts';
@@ -35,8 +37,13 @@ const CARD = obj({
 	offer: opt(T),
 	omit: opt(T),
 	value: opt(STR),
-	token: opt(STR),
-	after: opt(STR)
+	token: opt(TOKEN),
+	after: opt(
+		worded(
+			{ names: Object.fromEntries(STANDARD_INFO_TOKENS.map((t) => [t.id, t.text])) },
+			oneOf(STANDARD_INFO_TOKENS.map((t) => t.id))
+		)
+	)
 });
 
 const SPEC = byKey(
@@ -66,7 +73,7 @@ function cardProblem(
 	card: SpecValue<typeof CARD>,
 	count: number
 ): [key: string, problem: string] | undefined {
-	const { characters, upTo, others, value, token, after, order, shuffle } = card;
+	const { characters, upTo, others, value, token, order, shuffle } = card;
 	const most = upTo ?? count;
 	const chosen = characters.filter((c) => c === 'chosen').length;
 	const usesValue = characters.includes('value');
@@ -83,8 +90,6 @@ function cardProblem(
 		return ['value', 'a "value" character and the value key go together'];
 	if (usesMarked !== (token !== undefined))
 		return ['token', 'a "marked" or "mad" character and the token key go together'];
-	if (after !== undefined && !STANDARD_INFO_TOKENS.some((t) => t.id === after))
-		return ['after', 'not an info token'];
 	if (order && shuffle) return ['order', 'a card shuffles or has an order, not both'];
 	return undefined;
 }

@@ -68,7 +68,10 @@
 				For a live room, its code, your device's key for it and the name you joined with
 				(localStorage).
 			</li>
-			<li>For a game recap you shared, its link and the key to stop sharing it (localStorage).</li>
+			<li>
+				For a game recap you shared, or a game result your room shared, its link and the key to
+				delete it (localStorage).
+			</li>
 			<li>Copies of wiki pages you have opened, and of script lists you have browsed.</li>
 			<li>A copy of the app itself, so it works offline, plus images from homebrew scripts.</li>
 		</ul>
@@ -112,8 +115,14 @@
 	<PageSection title="Shared game recaps">
 		<p>
 			When a game has ended and the Storyteller taps Share in Export game, the app uploads a recap
-			of that game to our server and stores it under a long random code in its link. Nothing is
-			uploaded unless the Storyteller shares it.
+			of that game to our server and stores it under a long random code in its link. Nothing else
+			about the game is uploaded unless the Storyteller shares it, apart from the game result below.
+		</p>
+		<p>
+			When a game played in a live room ends, the Storyteller's app also uploads its game result the
+			same way, so players can share it from Game over: the script's name, who won and each seat's
+			characters and whether they died. It holds no names at all, not the players' and not the
+			Storyteller's. It is kept and deleted like a recap.
 		</p>
 		<ul>
 			<li>

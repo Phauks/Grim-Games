@@ -748,7 +748,9 @@
 		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
 		   that the seats crowd together. */
 		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
-		--tall: calc(75dvh + var(--foot-room, 0rem)); /* + the reminder tray (tray-ring.ts) */
+		/* + the reminder tray (tray-ring.ts); with Notes under the tabs, the room left above
+		   them (Tabs `aside`, --panel-room), tray included. */
+		--tall: var(--panel-room, calc(75dvh + var(--foot-room, 0rem)));
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {

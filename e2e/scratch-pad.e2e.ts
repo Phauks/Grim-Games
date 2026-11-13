@@ -1,3 +1,4 @@
+import { openNotes } from './tabs.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { touchDrag } from './touch.ts';
 
@@ -51,7 +52,7 @@ async function ready(page: Page) {
 }
 
 async function notesTab(page: Page) {
-	await page.getByRole('tab', { name: 'Notes', exact: true }).tap();
+	await openNotes(page);
 	await expect(page.getByRole('heading', { name: 'Scratch pads' })).toBeVisible();
 }
 

@@ -101,15 +101,3 @@ export function scriptChanges(
 	changes.otherDetails = rest(before.meta) !== rest(after.meta);
 	return changes;
 }
-
-/** Whether the variation differs from the original at all. */
-export function hasChanges(changes: ScriptChanges): boolean {
-	return (
-		!!changes.name ||
-		!!changes.author ||
-		changes.otherDetails ||
-		changes.added.length > 0 ||
-		changes.removed.length > 0 ||
-		changes.edited.length > 0
-	);
-}

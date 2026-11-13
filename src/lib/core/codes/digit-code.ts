@@ -9,11 +9,6 @@ export type RandomUint32 = (values: Uint32Array<ArrayBuffer>) => Uint32Array<Arr
 
 const cryptoUint32: RandomUint32 = (values) => crypto.getRandomValues(values);
 
-/** Bits of randomness in a code of `length` digits (about 3.3 per digit). */
-export function digitCodeBits(length: number): number {
-	return length * Math.log2(10);
-}
-
 /**
  * Makes a random code of `length` digits (at most 9) from the platform's CSPRNG. Values
  * that would favour low codes are drawn again, so every code is equally likely.
@@ -34,9 +29,4 @@ export function makeDigitCode(length: number, random: RandomUint32 = cryptoUint3
 export function normaliseDigitCode(input: string, length: number): string | null {
 	const digits = input.replace(/[\s.-]/g, '');
 	return new RegExp(`^\\d{${length}}$`).test(digits) ? digits : null;
-}
-
-/** For reading aloud and showing: "482 913". */
-export function formatDigitCode(code: string): string {
-	return code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code;
 }

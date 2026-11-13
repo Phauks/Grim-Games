@@ -18,7 +18,21 @@ import {
 	hasAbilityOf,
 	withGainedSteps
 } from './gained-abilities.ts';
-import { nightOrder } from '#lib/core/rules/night/night-order.ts';
+import { nightOrder, type NightStep } from '#lib/core/rules/night/night-order.ts';
+import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
+import { gainedPartnerJinx } from '#lib/core/rules/jinxes/jinx-effects.ts';
+
+const BASE_IDS = [
+	'boffin',
+	'imp',
+	'huntsman',
+	'damsel',
+	'chef',
+	'alchemist',
+	'poisoner',
+	'pixie',
+	'drunk'
+];
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Holders' },
@@ -98,6 +112,56 @@ describe('abilityHolders', () => {
 			{ characterId: 'poisoner', how: 'token', via: 'alchemist' }
 		]);
 		expect(abilityHolders(s.game, 'poisoner', s.characters)).toEqual([s.seat(0)]);
+	});
+
+	it('gives the Alchemist a Minion ability from Gain ability, keeping their own token', () => {
+		// Wiki: "They are still a good Townsfolk. They win when good wins, and lose when good loses. They register as good and as the Alchemist."
+		const s = scenario(['alchemist', 'chef', 'imp', 'poisoner'], {
+			script: scriptOf([...BASE_IDS, 'witch', 'spy'])
+		})
+			.reminder('alchemist', 'alchemist', 'Is The Alchemist')
+			.do((at) => ({
+				type: 'GiveAbility',
+				seatId: at.seat('alchemist'),
+				ability: { characterId: 'witch', via: 'alchemist' }
+			}));
+		const seat = s.seat('alchemist');
+		expect(s.game.seats[seat].characterId).toBe('alchemist');
+		expect(s.game.seats[seat].alignment).toBe('good');
+		expect(s.game.seats[seat].reminders.map((r) => r.label)).toContain('Is The Alchemist');
+		expect(abilitiesOfSeat(s.game, seat, s.characters)).toEqual([
+			{ characterId: 'alchemist', how: 'own' },
+			{ characterId: 'witch', how: 'held', via: 'alchemist' }
+		]);
+		expect(hasAbilityOf(s.game, seat, 'witch', s.characters)).toBe(true);
+	});
+
+	it('never wakes the Alchemist with the Minions', () => {
+		// Wiki: "The Alchemist does not wake to learn who the other Minions are or who the Demon is, like Minions do."
+		const s = scenario(['alchemist', 'chef', 'imp', 'poisoner'], {
+			script: scriptOf([...BASE_IDS, 'witch'])
+		}).do((at) => ({
+			type: 'GiveAbility',
+			seatId: at.seat('alchemist'),
+			ability: { characterId: 'witch', via: 'alchemist' }
+		}));
+		const minionInfo = { id: 'minioninfo', kind: 'marker' } as NightStep;
+		expect(stepHolders(s.game, minionInfo, s.characters)).toEqual([s.seat('poisoner')]);
+	});
+
+	it("reads the Alchemist's jinx with the Minion ability they were given", () => {
+		// Wiki: "An Alchemist-Spy has no Spy ability & a Spy is in play."
+		const s = scenario(['alchemist', 'chef', 'imp', 'poisoner'], {
+			script: scriptOf([...BASE_IDS, 'spy'])
+		}).do((at) => ({
+			type: 'GiveAbility',
+			seatId: at.seat('alchemist'),
+			ability: { characterId: 'spy', via: 'alchemist' }
+		}));
+		expect(gainedPartnerJinx(s.game, s.seat('alchemist'), s.characters)).toMatchObject({
+			owner: 'alchemist',
+			partner: 'spy'
+		});
 	});
 
 	it('never lists a Drunk who thinks they have the token', () => {

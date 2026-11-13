@@ -1,6 +1,5 @@
 <script lang="ts">
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
-	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from '#lib/features/grimoire/CharacterHistoryDialog.svelte';
 	import GainAbilityDialog from '#lib/features/grimoire/GainAbilityDialog.svelte';
@@ -9,7 +8,6 @@
 	import { seatCharacterLine, seatName } from '#lib/features/game/seat-label.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import { characterJinxes } from '#lib/features/game/game-jinxes.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -178,12 +176,6 @@
 	let changesOpen = $state(false);
 	let giveOpen = $state(false);
 
-	// A character that gains an ability by a swap (the Apprentice) does so from ⋯
-	// (SeatCharacterFlow), by its rules block's `swapsForAbility`.
-	const gainsAbility = $derived(
-		seatId !== undefined &&
-			!!rulesOf(trueCharacter(game, seatId, characters) ?? '', characters)?.swapsForAbility
-	);
 	// One held without a token (the Boffin's on the Demon), by another's `givesAbility`.
 	const holdsAbility = $derived(
 		seatId !== undefined && abilityGivers(game, seatId, characters).length > 0
@@ -533,13 +525,11 @@
 	{number}
 	{seat}
 	{character}
-	{gainsAbility}
 	{holdsAbility}
 	{savant}
 	{claim}
 	hasChanges={changes.length > 0}
 	onChangeCharacter={() => flow?.choose()}
-	onGain={() => flow?.chooseGain()}
 	onHeld={() => flow?.chooseHeld()}
 	onGive={() => (giveOpen = true)}
 	onSavant={() => (savantOpen = true)}

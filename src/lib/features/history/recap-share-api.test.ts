@@ -5,6 +5,7 @@ import {
 	readCreatedRecap,
 	readSharedRecap,
 	recapPagePath,
+	resultRecap,
 	sharedRecap
 } from './recap-share-api.ts';
 
@@ -12,6 +13,7 @@ const recap: GameRecap = {
 	title: 'Trouble Brewing',
 	played: '19 Oct 2026',
 	result: 'Evil won',
+	storyteller: 'Sam',
 	days: 2,
 	seats: [
 		{ seatId: 'a', number: 1, name: 'Ana', end: { name: 'Imp', alignment: 'evil' }, dead: false }
@@ -44,6 +46,29 @@ describe('sharedRecap', () => {
 	});
 });
 
+describe('resultRecap', () => {
+	it('names nobody and keeps who played what', () => {
+		const withId: GameRecap = {
+			...recap,
+			seats: [{ ...recap.seats[0], end: { name: 'Imp', id: 'imp', alignment: 'evil' } }]
+		};
+		const result = resultRecap(withId);
+		const json = JSON.stringify(result);
+		for (const words of ['Ana', 'Sam', 'Bluffed', 'nominated']) expect(json).not.toContain(words);
+		expect(result.recap.seats).toEqual([
+			{
+				seatId: 'a',
+				number: 1,
+				name: '',
+				end: { name: 'Imp', id: 'imp', alignment: 'evil' },
+				dead: false
+			}
+		]);
+		expect(result.parts).toEqual({ log: false, image: false, notes: false });
+		expect(readSharedRecap(JSON.parse(json))).toEqual(result);
+	});
+});
+
 describe('readSharedRecap', () => {
 	const good = sharedRecap(recap, { log: true, image: true, notes: false });
 
@@ -61,6 +86,8 @@ describe('readSharedRecap', () => {
 		).toBeUndefined();
 		expect(readSharedRecap({ ...good, image: 'javascript:alert(1)' })).toBeUndefined();
 		expect(readSharedRecap({ ...good, parts: { log: true } })).toBeUndefined();
+		const badId = { ...recap.seats[0], end: { name: 'Imp', id: 5 } };
+		expect(readSharedRecap({ ...good, recap: { ...recap, seats: [badId] } })).toBeUndefined();
 	});
 });
 

@@ -20,8 +20,6 @@
 		number: number;
 		seat: Seat | undefined;
 		character: Character | undefined;
-		/** The seat's character gains an ability by a swap (the Apprentice, `swapsForAbility`). */
-		gainsAbility: boolean;
 		/** Another character gives this player an ability without a token (the Boffin, `givesAbility`). */
 		holdsAbility: boolean;
 		/** The Savant's information generator is offered for this seat. */
@@ -31,7 +29,6 @@
 		/** The seat has a character history to show. */
 		hasChanges: boolean;
 		onChangeCharacter: () => void;
-		onGain: () => void;
 		onHeld: () => void;
 		/** Gain ability: an ability besides their character's, for any player (M34). */
 		onGive: () => void;
@@ -50,13 +47,11 @@
 		number,
 		seat,
 		character,
-		gainsAbility,
 		holdsAbility,
 		savant,
 		claim,
 		hasChanges,
 		onChangeCharacter,
-		onGain,
 		onHeld,
 		onGive,
 		onSavant,
@@ -91,9 +86,6 @@
 		<Button variant="quiet" icon="swap" onclick={() => fromMenu(onChangeCharacter)}>
 			{character ? 'Change character' : 'Choose character'}
 		</Button>
-		{#if gainsAbility}
-			<Button variant="quiet" icon="swap" onclick={() => fromMenu(onGain)}>Gained ability…</Button>
-		{/if}
 		{#if holdsAbility}
 			<Button variant="quiet" icon="swap" onclick={() => fromMenu(onHeld)}>Held ability…</Button>
 		{/if}

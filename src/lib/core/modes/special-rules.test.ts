@@ -10,12 +10,18 @@ import { canDuplicate, type AnyDuplicates } from '#lib/core/rules/setup/bag-char
 import { combineRules } from './combine.ts';
 import { GAME_MODES, STANDARD, gameModeById } from './registry.ts';
 import { SPECIAL_RULES } from './rules/index.ts';
-import { SCRIPT_RULE_ID, scriptSpecialRule } from './script-rule.ts';
+import { bootleggerWithRules } from '#lib/core/data/script-rules.ts';
+import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 import { parseGameMode, parseModeOrRule, parseSpecialRule } from './validate.ts';
 import { fileKind, wholeGamePartsOf } from './file-kind.ts';
 
 const known = new Set(committedGameData().characters.map((c) => c.id));
+
+/** The count changes a script's Bootlegger lines make, as setup reads them. */
+const bootlegger = committedGameData().characters.find((c) => c.id === 'bootlegger')!;
+const linesChange = (lines: readonly string[]) =>
+	setupModifierFor(bootleggerWithRules(bootlegger, { name: 'Any', bootlegger: [...lines] }))?.ops;
 
 const rule = (id: string, setup: SpecialRule['setup'], extra: Partial<SpecialRule> = {}) =>
 	({
@@ -213,8 +219,8 @@ describe('reading a special rule file', () => {
 		]);
 	});
 
-	it('keeps rule ids apart from mode ids and the script rule', () => {
-		const ids = [...GAME_MODES.map((m) => m.id), ...SPECIAL_RULES.map((r) => r.id), SCRIPT_RULE_ID];
+	it('keeps rule ids apart from mode ids', () => {
+		const ids = [...GAME_MODES.map((m) => m.id), ...SPECIAL_RULES.map((r) => r.id)];
 		expect(new Set(ids).size).toBe(ids.length);
 	});
 });
@@ -286,28 +292,6 @@ describe('combining a mode with special rules', () => {
 	});
 });
 
-describe("a script's own rule", () => {
-	// https://beardytas.com/garden-of-djinn/binary-supernovae/
-	it('reads brackets in its lines into count changes', () => {
-		const r = scriptSpecialRule({
-			name: 'Binary Supernovae',
-			bootlegger: [
-				'If a Demon dies by execution, good wins. Summoner only removes 1 Demon. [+1 Demon]'
-			]
-		});
-		expect(r?.id).toBe(SCRIPT_RULE_ID);
-		expect(r?.setup.text).toHaveLength(1);
-		expect(r?.rules?.setupModifier?.ops).toEqual([{ kind: 'delta', type: 'demon', values: [1] }]);
-	});
-
-	it('is plain text without brackets, and absent without lines', () => {
-		const r = scriptSpecialRule({ name: 'Seat 7', bootlegger: ['Seat 7 remains empty.'] });
-		expect(r?.setup).toEqual({ text: ['Seat 7 remains empty.'] });
-		expect(scriptSpecialRule({ name: 'x' })).toBeUndefined();
-		expect(scriptSpecialRule({ name: 'x', bootlegger: [' '] })).toBeUndefined();
-	});
-});
-
 // Trevor (2026-10-22): "<script> +1", the script plus exactly one off-script character.
 describe('+1', () => {
 	const rule = (id: string) => SPECIAL_RULES.find((r) => r.id === id)!;
@@ -370,11 +354,7 @@ describe('Binary Supernovae', () => {
 	const supernovae = SPECIAL_RULES.find((r) => r.id === 'binary-supernovae')!;
 
 	it("adds a Demon through its line's bracket, as the game's Bootlegger reads it", () => {
-		const onBootlegger = scriptSpecialRule({
-			name: 'Any',
-			bootlegger: [...(supernovae.setup.text ?? [])]
-		});
-		expect(onBootlegger?.rules?.setupModifier?.ops).toEqual([
+		expect(linesChange(supernovae.setup.text ?? [])).toEqual([
 			{ kind: 'delta', type: 'demon', values: [1] }
 		]);
 	});
@@ -396,10 +376,6 @@ describe.each([
 	it('acts on a nomination and changes no counts', () => {
 		expect(found.rules?.onNominated).toEqual(onNominated);
 		expect(found.setup.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
-		const onBootlegger = scriptSpecialRule({
-			name: 'Any',
-			bootlegger: [...(found.setup.text ?? [])]
-		});
-		expect(onBootlegger?.rules).toBeUndefined();
+		expect(linesChange(found.setup.text ?? [])).toEqual([]);
 	});
 });

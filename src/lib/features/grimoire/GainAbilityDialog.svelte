@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { trueCharacter, type GivenAbility, type SeatId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -16,7 +17,10 @@
 	 * without changing their character or character type. A character's ability, which wakes them
 	 * when that character would, or the Storyteller's own words, shown only (M34,
 	 * `GiveAbility`). Abilities another character gave (the Boffin's, the Philosopher's) are
-	 * listed too, and can be taken away here.
+	 * listed too, and can be taken away here. A character that gains an ability of its own
+	 * (the Alchemist's Minion, the Apprentice's, `swapsForAbility`) picks it here too, of the
+	 * types its rule gives for the player's alignment, and keeps its own token (Trevor,
+	 * 2026-11-12: one Gain ability, not a second item that swapped the token).
 	 */
 	interface Props {
 		open: boolean;
@@ -37,7 +41,23 @@
 		new Set(game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []))
 	);
 
+	// Their own character's ability (the Alchemist's Minion): one, recorded as given by it.
+	const own = $derived(seatId === undefined ? undefined : trueCharacter(game, seatId, characters));
+	const ownRule = $derived(
+		own === undefined ? undefined : rulesOf(own, characters)?.swapsForAbility
+	);
+	const ownTypes = $derived.by(() => {
+		if (!ownRule) return [];
+		if (seat?.alignment === 'good') return ownRule.good;
+		if (seat?.alignment === 'evil') return ownRule.evil;
+		return [...new Set([...ownRule.good, ...ownRule.evil])];
+	});
+	const ownGained = $derived(
+		own === undefined ? undefined : held.find((a) => a.via === own)?.characterId
+	);
+
 	let pickerOpen = $state(false);
+	let ownOpen = $state(false);
 	let textOpen = $state(false);
 	let text = $state('');
 
@@ -50,6 +70,12 @@
 	function pick(characterId: CharacterId) {
 		pickerOpen = false;
 		give({ characterId });
+	}
+	function pickOwn(characterId: CharacterId) {
+		ownOpen = false;
+		if (!own || characterId === ownGained) return;
+		if (ownGained) remove({ characterId: ownGained, via: own });
+		give({ characterId, via: own });
 	}
 	function openText() {
 		text = '';
@@ -98,6 +124,11 @@
 		{/if}
 	</ul>
 	<div class="add">
+		{#if own && ownRule}
+			<Button variant="quiet" icon="add" onclick={() => (ownOpen = true)}
+				>{nameOf(own)} ability</Button
+			>
+		{/if}
 		<Button variant="quiet" icon="add" onclick={() => (pickerOpen = true)}>Character ability</Button
 		>
 		<Button variant="quiet" icon="add" onclick={openText}>Custom</Button>
@@ -113,6 +144,17 @@
 	exclude={held.filter((a) => a.via === undefined).map((a) => a.characterId)}
 	faded={(c) => (inPlay.has(c.id) ? 'In play' : undefined)}
 	onPick={pick}
+/>
+
+<CharacterPicker
+	bind:open={ownOpen}
+	title={`Ability ${title} gains`}
+	{characters}
+	script={game.script}
+	types={ownTypes}
+	current={ownGained}
+	faded={(c) => (inPlay.has(c.id) ? 'In play' : undefined)}
+	onPick={pickOwn}
 />
 
 <Dialog bind:open={textOpen} title="Custom ability" description={title}>

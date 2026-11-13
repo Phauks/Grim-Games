@@ -66,10 +66,14 @@ export function describeTarget(rule: TargetRule, nameOf: (id: CharacterId) => st
 		}
 		if (near.alive) qualifiers.push(t('reference.target.livingOnly'));
 	}
+	// The reference's Where column is one line of words; these labels were plain text before
+	// M84 made them picked reminders, and stay so until that column shows badges.
+	/* eslint-disable grim/names-as-badges */
 	if (rule.withLabel) qualifiers.push(t('reference.target.with', { label: rule.withLabel }));
 	if (rule.notWithLabel) {
 		qualifiers.push(t('reference.target.notWith', { label: rule.notWithLabel }));
 	}
+	/* eslint-enable grim/names-as-badges */
 
 	const head =
 		adjectives.length === 0 && noun === undefined

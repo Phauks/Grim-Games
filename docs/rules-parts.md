@@ -627,7 +627,7 @@ Every key a character's rules block may have, 99 in all. Each is one file in
 **Swaps for an ability.** Its player’s token is swapped for a character whose ability they gain.
 
 - Part: `src/lib/core/data/parts/swaps-for-ability.ts`
-- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/seats/SeatCharacterFlow.svelte`, `features/grimoire/seats/SeatSheet.svelte`
+- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/GainAbilityDialog.svelte`
 
 ### takesNeighbourAlignment
 
@@ -656,6 +656,13 @@ Every key a character's rules block may have, 99 in all. Each is one file in
 
 - Part: `src/lib/core/data/parts/two-storytellers.ts`
 - Read by: `core/rules/abilities/storytellers.ts`
+
+### unlimitedReminders
+
+**Unlimited reminders.** Its reminder tokens never run out: each stays in the ∞ part of the reminder bank however many are placed.
+
+- Part: `src/lib/core/data/parts/unlimited-reminders.ts`
+- Read by: `features/board/reminders.ts`
 
 ### voter
 

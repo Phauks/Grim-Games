@@ -23,7 +23,14 @@ import {
 	reminderHolders
 } from '#lib/core/rules/abilities/borrowed-abilities.ts';
 import { deadCharacters } from '#lib/core/rules/abilities/dead-characters.ts';
-import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
+import {
+	bankOwners,
+	bankReminders,
+	byLabel,
+	hasUnlimitedReminders,
+	isGeneric,
+	type StepReminders
+} from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';
 
@@ -156,7 +163,11 @@ export function playerBankItems(
 	const lookup: CharacterLookup = new Map(characters.map((c) => [c.id, c]));
 	const reminders = characters.flatMap((character) => {
 		const labels = [...new Set([...character.reminders, ...character.remindersGlobal])];
-		const group: BankGroup = guessed.includes(character.id) ? 'guesses' : 'reminders';
+		const group: BankGroup = hasUnlimitedReminders(character.id, lookup)
+			? 'generic'
+			: guessed.includes(character.id)
+				? 'guesses'
+				: 'reminders';
 		return labels.sort(byLabel).map((label): BankItem => ({
 			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 			key: `bank:${character.id}:${label}`,
@@ -171,6 +182,7 @@ export function playerBankItems(
 		[
 			...stacked.filter((i) => i.group === 'guesses'),
 			...stacked.filter((i) => i.group === 'reminders'),
+			...stacked.filter((i) => i.group === 'generic'),
 			...genericStretch(tokens)
 		],
 		lookup,
@@ -308,6 +320,19 @@ export function bankItems(
 		bankCopies
 	).flatMap(({ characterId, label, left, extra, now }) => {
 		const key = `${characterId}:${label}`;
+		// A token that never runs out (the Bootlegger's): one, in the ∞ stretch (Trevor,
+		// 2026-11-12), however many are placed.
+		if (hasUnlimitedReminders(characterId, characters))
+			return [
+				{
+					key: `bank:${key}`,
+					characterId,
+					label,
+					count: 1,
+					now,
+					group: 'generic'
+				} satisfies BankItem
+			];
 		const n = left - (pending[key] ?? 0);
 		if (n <= 0) return [];
 		const group: BankGroup = dead.has(characterId) ? 'dead' : 'reminders';
@@ -339,6 +364,7 @@ export function bankItems(
 	const all = [
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
+		...rest.filter((i) => i.group === 'generic'),
 		...genericStretch(game.genericTokens),
 		...rest.filter((i) => i.group === 'dead')
 	];

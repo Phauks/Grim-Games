@@ -32,25 +32,36 @@ export interface GainedPartnerJinx {
  * The jinx between `seatId`'s true character and the character whose ability they have from
  * the token on their seat: one their own `gainsAbilityOf` lets them have (the Alchemist's
  * Minion, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), or one their
- * `gainedFrom` swapped in (the Philosopher's good character). Undefined when they have no such
- * ability, or no jinx with it is on the script.
+ * `gainedFrom` swapped in (the Philosopher's good character), or one their own character gave
+ * them on their own token (`Seat.abilities` with `via` their character). Undefined when they
+ * have no such ability, or no jinx with it is on the script.
  */
 export function gainedPartnerJinx(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
 ): GainedPartnerJinx | undefined {
-	const shown = game.seats[seatId]?.characterId;
+	const seat = game.seats[seatId];
+	const shown = seat?.characterId;
 	const owner = trueCharacter(game, seatId, characters);
-	if (owner === undefined || shown === undefined || owner === shown) return undefined;
+	if (owner === undefined || !seat) return undefined;
 	const rules = rulesFor(game, owner, characters);
-	const type = characters.get(shown)?.type;
-	const gains =
-		(rules?.gainsAbilityOf !== undefined && rules.gainsAbilityOf === type) ||
-		rules?.gainedFrom?.swapped === true;
-	if (!gains) return undefined;
-	const rule = ownJinxRules(game, owner, shown, characters);
-	return rule ? { owner, partner: shown, rule } : undefined;
+	const partners: CharacterId[] = [];
+	if (shown !== undefined && owner !== shown) {
+		const type = characters.get(shown)?.type;
+		if (
+			(rules?.gainsAbilityOf !== undefined && rules.gainsAbilityOf === type) ||
+			rules?.gainedFrom?.swapped === true
+		)
+			partners.push(shown);
+	}
+	// Or an ability their own character gave them, kept on their own token (Gain ability).
+	for (const held of seat.abilities ?? []) if (held.via === owner) partners.push(held.characterId);
+	for (const partner of partners) {
+		const rule = ownJinxRules(game, owner, partner, characters);
+		if (rule) return { owner, partner, rule };
+	}
+	return undefined;
 }
 
 /**

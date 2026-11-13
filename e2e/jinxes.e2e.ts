@@ -956,20 +956,33 @@ test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the p
 	await choose(page, 2, 'Poisoner');
 	await choose(page, 3, 'Chef');
 	await choose(page, 4, 'Empath');
-	// The Alchemist's Minion ability: its token swapped for the Summoner's, still good.
+	// The Alchemist's Minion ability, from Gain ability: still the good Alchemist.
 	const alchemist = await openSeat(page, 1);
 	await alchemist.getByRole('button', { name: 'Seat actions' }).tap();
-	await page.getByRole('dialog').getByRole('button', { name: 'Gained ability…' }).last().tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Gain ability…' }).last().tap();
+	await page
+		.getByRole('dialog', { name: 'Gain ability' })
+		.getByRole('button', { name: 'Alchemist ability' })
+		.tap();
 	await page
 		.getByRole('dialog', { name: 'Ability Seat 1 gains' })
 		.getByRole('button', { name: 'Summoner', exact: true })
 		.tap();
-	await expect(alchemist).toContainText(/Minion · Good · Seat 1[\s\S]*Summoner/);
+	await page.keyboard.press('Escape');
+	await expect(alchemist).toContainText(/Townsfolk · Good · Seat 1[\s\S]*Alchemist/);
 	await closeSheet(page);
 	await putRunReminder(page, 'Night 3', 1);
 	await closeBin(page);
 
-	const step = await openStep(page, 'Summoner');
+	// The Alchemist's own step first, then the step for the Summoner ability they hold.
+	const strip = await walkTo(page, 'Alchemist');
+	const name = strip.locator('.step .name strong');
+	const next = strip.getByRole('button', { name: 'Next step' });
+	await next.tap();
+	for (let i = 0; i < 30 && (await name.textContent()) !== 'Alchemist'; i++) await next.tap();
+	await expect(name).toHaveText('Alchemist');
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	const step = nightStep(page, 'Alchemist');
 	await expect(step.getByTestId('picks-character-only')).toContainText(
 		/Alchemist\s+has\s+this\s+ability:\s+they\s+choose\s+only\s+the\s+character,\s+the\s+Storyteller\s+chooses\s+which\s+player\./
 	);

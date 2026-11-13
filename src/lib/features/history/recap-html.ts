@@ -19,6 +19,8 @@ import { IMAGE_DATA } from './recap-share-api.ts';
 
 export interface RecapCharacter {
 	name: string;
+	/** The character's id, so a phone can draw its token (the game result, plan R4). */
+	id?: string;
 	alignment?: Alignment;
 }
 

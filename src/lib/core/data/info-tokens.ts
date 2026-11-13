@@ -138,14 +138,6 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	}
 ];
 
-/** The standard list with the Storyteller's hidden ones removed and custom ones added. */
-export function infoTokens(
-	custom: readonly InfoToken[] = [],
-	hidden: readonly string[] = []
-): InfoToken[] {
-	return [...STANDARD_INFO_TOKENS.filter((t) => !hidden.includes(t.id)), ...custom];
-}
-
 /** A card's words for matching: case, spaces and a closing "?" or "." don't count. */
 export const cardWords = (text: string) =>
 	text

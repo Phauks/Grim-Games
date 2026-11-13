@@ -5,9 +5,11 @@ import {
 	parseStill,
 	stillCss,
 	stillDefaults,
-	stillPreset,
-	stillPresetOf
+	type StillId
 } from './still.ts';
+import { matchingPreset, paramPreset } from './params.ts';
+
+const stillPreset = (id: StillId, name: string) => paramPreset(STILL_BACKGROUNDS[id], name);
 
 describe('still backgrounds (M72)', () => {
 	it('has the four Trevor kept: Felt, Parchment, Stone and Velvet', () => {
@@ -22,7 +24,7 @@ describe('still backgrounds (M72)', () => {
 				for (const key of Object.keys(preset)) expect(ids, `${id} ${name} ${key}`).toContain(key);
 				const full = stillPreset(id, name);
 				expect(parseStill({ id, params: full })?.params, `${id} ${name}`).toEqual(full);
-				expect(stillPresetOf(id, full)).toBe(name);
+				expect(matchingPreset(STILL_BACKGROUNDS[id], full)).toBe(name);
 			}
 		}
 	});

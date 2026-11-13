@@ -1,3 +1,4 @@
+import { openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { addNote, leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
@@ -130,11 +131,11 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	const view = page.getByTestId('cover-player-view');
 	const viewDialog = page.getByRole('dialog', { name: 'Trouble Brewing' });
 	await expect(viewDialog.getByRole('button', { name: 'Share script' })).toBeVisible();
-	await expect(view.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(view)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await view.getByRole('tab', { name: 'Grim' }).tap();
 	await expect(view.getByTestId('grim-seat')).toHaveCount(8);
 	// A player's note, kept apart from the Storyteller's and gone when the view closes.
-	await view.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(view);
 	await view.getByTestId('new-note').first().tap();
 	await noteTitle(newNoteRow(view)).fill('Sam is lying');
 	await leaveNote(page);
@@ -142,7 +143,7 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	await viewDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(view).toBeHidden();
 	await cover.getByRole('button', { name: 'Player view' }).tap();
-	await view.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(view);
 	await expect(view.getByTestId('new-note').first()).toBeVisible();
 	await expect.poll(noteSummaries(view)).not.toContain('Sam is lying');
 	await viewDialog.getByRole('button', { name: 'Close' }).tap();

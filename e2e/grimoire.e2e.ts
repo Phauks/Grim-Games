@@ -1,3 +1,4 @@
+import { tabNames } from './tabs.ts';
 import { chooseExecution } from './execution.ts';
 import { readFileSync } from 'node:fs';
 import { tapStartGame } from './start-game.ts';
@@ -2807,7 +2808,9 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 	await expect(seatLabelled(page, 'Seat 3: no name, Drunk, 1 reminder')).toBeAttached();
 });
 
-test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"', async ({
+// https://wiki.bloodontheclocktower.com/Apprentice: a good Apprentice gains a Townsfolk ability.
+// One Gain ability for every player (Trevor, 2026-11-12): the Apprentice keeps their own token.
+test('the Apprentice gains a Townsfolk ability from Gain ability and keeps their token', async ({
 	page
 }) => {
 	await startGame(page);
@@ -2819,35 +2822,46 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Apprentice', exact: true }).tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
-	await seatMenu(page, sheet, 'Gained ability…');
+	await seatMenu(page, sheet, 'Gain ability…');
+	const dialog = page.getByRole('dialog', { name: 'Gain ability' });
+	await dialog.getByRole('button', { name: 'Apprentice ability' }).tap();
 	const gains = page.getByRole('dialog', { name: 'Ability Seat 9 gains' });
 	// Good, so only Townsfolk are offered.
 	await expect(gains.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
 	await gains.getByRole('button', { name: 'Monk', exact: true }).tap();
-	// The big token shows who they really are, the Apprentice, believing they are the Monk.
-	await expect(
-		seatLabelled(page, 'Seat 9: no name, Apprentice, good, believes they are the Monk')
-	).toBeAttached();
-	await expect(sheet.getByRole('button', { name: 'Actions for Is The Apprentice' })).toBeVisible();
+	await expect(dialog.getByTestId('gained-abilities')).toContainText(/Monk[\s\S]*From the/);
+	await expect(dialog.getByTestId('gained-abilities')).toContainText('Apprentice');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toContainText(/Traveller · Good · Seat 9[\s\S]*Apprentice/);
 });
 
-// https://wiki.bloodontheclocktower.com/Alchemist: the Alchemist has a Minion's ability; its token is
-// swapped for that Minion's, marked "Is The Alchemist", and it stays good.
-test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', async ({ page }) => {
+// https://wiki.bloodontheclocktower.com/Alchemist: the Alchemist has a Minion ability and is still
+// a good Townsfolk. One Gain ability (Trevor, 2026-11-12): their token, and Is The Alchemist, stay.
+test('the Alchemist gains a Minion ability from Gain ability and stays the Alchemist', async ({
+	page
+}) => {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Alchemist', exact: true }).tap();
-	await seatMenu(page, sheet, 'Gained ability…');
+	await seatMenu(page, sheet, 'Gain ability…');
+	const dialog = page.getByRole('dialog', { name: 'Gain ability' });
+	await dialog.getByRole('button', { name: 'Alchemist ability' }).tap();
 	const gains = page.getByRole('dialog', { name: 'Ability Seat 1 gains' });
 	// Only Minions are offered.
 	await expect(gains.getByRole('button', { name: 'Monk', exact: true })).toHaveCount(0);
 	await gains.getByRole('button', { name: 'Poisoner', exact: true }).tap();
-	// The seat shows the Minion, still good, marked as the Alchemist.
-	await expect(sheet).toContainText(/Minion · Good · Seat 1[\s\S]*Poisoner/);
-	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
+	await expect(dialog.getByTestId('gained-abilities')).toContainText(/Poisoner[\s\S]*From the/);
+	// Choosing again replaces it: the Alchemist has one Minion ability.
+	await dialog.getByRole('button', { name: 'Alchemist ability' }).tap();
+	await gains.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(dialog.getByTestId('gained-abilities')).toContainText('Spy');
+	await expect(dialog.getByTestId('gained-abilities')).not.toContainText('Poisoner');
+	await page.keyboard.press('Escape');
+	// Still the good Townsfolk Alchemist.
+	await expect(sheet).toContainText(/Townsfolk · Good · Seat 1[\s\S]*Alchemist/);
 });
 
 // https://wiki.bloodontheclocktower.com/Amnesiac: the Storyteller decides the ability, and
@@ -3766,7 +3780,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	// Every tab players' /play has, Grim and Notes too (Trevor, 2026-10-23: "feature parity").
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(sheet)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -4789,8 +4803,10 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
 	await focusMode(page, 'Only this character');
-	// Paid, then the plain ∞, the # token (plan M35) and "+ New token".
-	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(4);
+	// Paid, then the ∞ stretch: the Bootlegger's ? (its tokens never run out, and a script
+	// with homebrew characters puts it in play), the plain ∞, the # token (plan M35) and
+	// "+ New token".
+	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(5);
 	await expect(tokens.first()).toContainText('Paid');
 });
 
@@ -5060,6 +5076,13 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 			face: !!el.querySelector('.face')
 		}))
 	).toEqual({ fills: true, face: false });
+	// Trevor, 2026-11-13 (style B): the Dusk sun swells and its stars twinkle, and both hold
+	// still when the device asks for less motion.
+	const moving = () => art.evaluate((el) => el.getAnimations({ subtree: true }).length);
+	expect(await moving()).toBeGreaterThan(0);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	expect(await moving()).toBe(0);
+	await page.emulateMedia({ reducedMotion: 'no-preference' });
 	const parts = () =>
 		step.evaluate((dialog) => ({
 			row: !!dialog.querySelector('.row-head .ring-row'),

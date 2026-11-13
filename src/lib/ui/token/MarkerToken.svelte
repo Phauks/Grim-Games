@@ -22,7 +22,9 @@
 	// Our own art (Trevor, 2026-10-16): the same parchment face as a character token, with a
 	// simple glyph. Dusk: the sun sinking under the horizon below the first stars. Dawn: the sun
 	// rising with its rays. Minion info and Demon info: a red M and a red D (Trevor, 2026-10-28).
-	const RAYS = [-150, -120, -90, -60, -30].map((a) => (a * Math.PI) / 180);
+	// Dawn and Dusk glow (Trevor, 2026-11-13, style B "although the sun will need more rays"): a
+	// whole wheel of rays turns slowly behind the ground, the sun swells and the stars twinkle.
+	const RAYS = Array.from({ length: 16 }, (_, i) => ((i * 22.5 + 11.25) * Math.PI) / 180);
 	// The face (r 47) above and below the horizon at y 62: half-width √(47² − 12²) ≈ 45.4.
 	const SKY = 'M4.6 62 A47 47 0 1 1 95.4 62 Z';
 	const GROUND = 'M4.6 62 A47 47 0 0 0 95.4 62 Z';
@@ -43,20 +45,24 @@
 			<path class="night-sky" d={SKY} />
 			<path class="star" d="M30 24 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2 Z" />
 			<path
-				class="star"
+				class="star second"
 				d="M70 18 l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5 Z"
 			/>
 			<circle class="sun" cx="50" cy="70" r="17" />
 		{:else if marker === 'dawn'}
-			{#each RAYS as a (a)}
-				<line
-					class="ray"
-					x1={50 + 23 * Math.cos(a)}
-					y1={62 + 23 * Math.sin(a)}
-					x2={50 + 35 * Math.cos(a)}
-					y2={62 + 35 * Math.sin(a)}
-				/>
-			{/each}
+			<g class="rays">
+				<!-- Sets the wheel's box, so it turns about the sun's centre. -->
+				<circle class="wheel" cx="50" cy="62" r="36" />
+				{#each RAYS as a (a)}
+					<line
+						class="ray"
+						x1={50 + 23 * Math.cos(a)}
+						y1={62 + 23 * Math.sin(a)}
+						x2={50 + 35 * Math.cos(a)}
+						y2={62 + 35 * Math.sin(a)}
+					/>
+				{/each}
+			</g>
 			<circle class="sun" cx="50" cy="62" r="17" />
 		{:else}
 			<text
@@ -114,6 +120,47 @@
 		stroke: var(--token-flower-centre);
 		stroke-width: 4;
 		stroke-linecap: round;
+	}
+	.wheel {
+		fill: none;
+	}
+	.rays,
+	.sun,
+	.star {
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	/* Still when the device asks for less motion, and on paper. */
+	@media (prefers-reduced-motion: no-preference) {
+		.rays {
+			animation: turn 24s linear infinite;
+		}
+		/* The day sun's slow swell (PlayersDayStatus). */
+		.sun {
+			animation: swell 4s ease-in-out infinite;
+		}
+		.star {
+			animation: twinkle 2.6s ease-in-out infinite;
+		}
+		.star.second {
+			animation-delay: -1.3s;
+		}
+	}
+	@keyframes turn {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@keyframes swell {
+		50% {
+			transform: scale(1.08);
+		}
+	}
+	@keyframes twinkle {
+		50% {
+			opacity: 0.35;
+			transform: scale(0.7);
+		}
 	}
 	.ground {
 		fill: var(--token-face-shade, var(--border));

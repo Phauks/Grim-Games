@@ -86,36 +86,19 @@ function around(input: FanInput): { x: number; y: number }[] {
 	return spots.sort((p, q) => p.score - q.score);
 }
 
-export function reminderFan(input: FanInput): { x: number; y: number }[] {
-	return reminderLayout([input])[0];
-}
-
 /**
  * Every seat's reminders at once (Trevor, 2026-10-16): one seat's reminders never cover
  * another seat's reminders, token or name. Seats are laid out in order; a place taken by an
  * earlier seat is skipped, so a crowded seat's line goes on further or starts another line
  * beside it. Only if every line is full does a reminder go on the first place left.
- */
-export function reminderLayout(seats: readonly FanInput[]): { x: number; y: number }[][] {
-	return layout(seats).at;
-}
-
-/**
- * `reminderLayout` on the board, kept clear of `blocked` and inside `board`. Reminders keep
- * their size, since a finger needs the whole tap target: when a seat has no clear room left
- * they go over the edge of its own token first, and only then over something else, always
- * nearer their own seat than any other (Trevor, 2026-10-17).
+ *
+ * On the board they also keep clear of `blocked` (places no reminder may cover, such as the
+ * controls in the middle of the table) and inside `board`. Reminders keep their size, since a
+ * finger needs the whole tap target: when a seat has no clear room left they go over the edge
+ * of its own token first, and only then over something else, always nearer their own seat
+ * than any other (Trevor, 2026-10-17).
  */
 export function fitReminders(
-	seats: readonly FanInput[],
-	blocked: readonly Box[] = [],
-	board?: { width: number; height: number }
-): { at: { x: number; y: number }[][]; fits: boolean } {
-	return layout(seats, blocked, board);
-}
-
-/** `blocked`: places no reminder may cover, such as the controls in the middle of the table. */
-function layout(
 	seats: readonly FanInput[],
 	blocked: readonly Box[] = [],
 	board?: { width: number; height: number }

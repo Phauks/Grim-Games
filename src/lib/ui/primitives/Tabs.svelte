@@ -37,6 +37,19 @@
 		 * move into ⋯ (the token editor's four on a phone). The tabs still share the row.
 		 */
 		dense?: boolean;
+		/**
+		 * Bottom bar only: a button at the end of the bar, drawn as a tab is and filled while
+		 * on, that shows `aside` beside whichever tab is chosen (the player screen's Notes
+		 * beside its Script or Grim, plan E3).
+		 */
+		toggle?: { label: string; icon: IconSlot; pressed: boolean; onToggle: () => void };
+		/**
+		 * Shown with every panel while `toggle` is on: `side` is a column on the right, `under`
+		 * splits the room above the bar between the panel and it. Each scrolls on its own and
+		 * ends above the bar, so nothing goes under it. Shown once, so it keeps its scroll and
+		 * what is being typed in it when the tab changes.
+		 */
+		aside?: { content: Snippet; placement: 'side' | 'under' };
 	}
 
 	let {
@@ -46,8 +59,12 @@
 		label,
 		steady = false,
 		placement = 'top',
-		dense = false
+		dense = false,
+		toggle,
+		aside
 	}: Props = $props();
+	/** The bar's height, so `aside` ends above it. */
+	let barHeight = $state(0);
 	const bottom = $derived(placement === 'bottom');
 
 	const selected = $derived(value ?? tabs[0]?.value);
@@ -69,9 +86,12 @@
 			const faces = [...sizes.querySelectorAll<HTMLElement>('[data-face]')];
 			const more = sizes.querySelector<HTMLElement>('[data-more]');
 			const gap = parseFloat(getComputedStyle(sizes).columnGap) || 0;
+			// The toggle keeps its place at the end of the bar.
+			const button = sizes.querySelector<HTMLElement>('[data-toggle]');
+			const toggleRoom = button ? button.getBoundingClientRect().width + gap : 0;
 			shown = fitTabs(
 				faces.map((face) => face.getBoundingClientRect().width),
-				row.clientWidth,
+				row.clientWidth - toggleRoom,
 				gap,
 				more?.getBoundingClientRect().width ?? 0
 			);
@@ -101,10 +121,29 @@
 	let moreButton = $state<HTMLButtonElement>();
 </script>
 
-{#snippet contents()}
+{#snippet panels()}
 	{#each tabs as tab (tab.value)}
 		<Tabs.Content value={tab.value}>{@render panel(tab.value)}</Tabs.Content>
 	{/each}
+{/snippet}
+
+{#snippet contents()}
+	{#if aside}
+		<!-- The panels stay where they are as the aside comes and goes, so a tab keeps its
+		     scroll and what it holds. -->
+		<div
+			class="with-aside"
+			data-aside={toggle?.pressed ? aside.placement : undefined}
+			style:--bar-height="{barHeight}px"
+		>
+			<div class="panels">{@render panels()}</div>
+			{#if toggle?.pressed}
+				<aside class="aside" aria-label={toggle.label}>{@render aside.content()}</aside>
+			{/if}
+		</div>
+	{:else}
+		{@render panels()}
+	{/if}
 {/snippet}
 
 <Tabs.Root
@@ -113,8 +152,17 @@
 	onValueChange={(details) => (value = details.value as T)}
 	lazyMount={!steady}
 >
-	<div class="bar" bind:this={bar} data-bottom-bar={bottom ? '' : undefined}>
-		<Tabs.List aria-label={label}>
+	<div
+		class="bar"
+		bind:this={bar}
+		bind:offsetHeight={barHeight}
+		data-bottom-bar={bottom ? '' : undefined}
+	>
+		<!-- With a toggle, the tabs and it share the bar equally. -->
+		<Tabs.List
+			aria-label={label}
+			style={toggle && bottom ? `flex-grow: ${onRow.length}` : undefined}
+		>
 			{#each onRow as tab (tab.value)}
 				<Tabs.Trigger value={tab.value} data-icon-only={(!bottom && tab.iconOnly) || undefined}>
 					{#if bottom && tab.icon}
@@ -128,6 +176,13 @@
 			{/each}
 			{#if !bottom}<Tabs.Indicator />{/if}
 		</Tabs.List>
+		{#if toggle && bottom}
+			<button type="button" class="toggle" aria-pressed={toggle.pressed} onclick={toggle.onToggle}>
+				<span class="tab-icon">
+					<Icon name={toggle.icon} weight={toggle.pressed ? 'fill' : undefined} />
+				</span><span>{toggle.label}</span>
+			</button>
+		{/if}
 		{#if inMenu.length}
 			<IconButton
 				icon="more"
@@ -150,6 +205,9 @@
 								name={tab.icon}
 							/>{:else}{tab.label}{/if}</span
 					>{/each}
+				{#if toggle && bottom}<span class="face" data-toggle
+						><span class="tab-icon"><Icon name={toggle.icon} /></span>{toggle.label}</span
+					>{/if}
 				<span class="more" data-more></span>
 			</div>
 		</div>
@@ -208,13 +266,15 @@
 	/* The tabs share the row equally, so four tabs are 25% each (Trevor, 2026-10-28: "Would
 	   look more balanced"). A label wider than its share keeps its width, and tabs that don't
 	   fit move into the ⋯ menu as before. */
-	:global([data-scope='tabs'][data-part='trigger']) {
+	:global([data-scope='tabs'][data-part='trigger']),
+	.toggle {
 		flex: 1 1 0;
 		min-width: max-content;
 		justify-content: center;
 		text-align: center;
 	}
 	:global([data-scope='tabs'][data-part='trigger']),
+	.toggle,
 	.face {
 		min-height: var(--tap-target);
 		padding: 0 var(--space-3);
@@ -241,7 +301,8 @@
 		flex: none;
 		width: var(--tap-target);
 	}
-	:global([data-scope='tabs'][data-part='trigger'][data-selected]) {
+	:global([data-scope='tabs'][data-part='trigger'][data-selected]),
+	.toggle[aria-pressed='true'] {
 		color: var(--heading);
 	}
 	:global([data-scope='tabs'][data-part='indicator']) {
@@ -300,6 +361,7 @@
 		padding-top: 0;
 	}
 	:global(.bottom) :global([data-scope='tabs'][data-part='trigger']),
+	.toggle,
 	:global(.bottom) .face {
 		display: inline-flex;
 		flex-direction: column;
@@ -313,10 +375,59 @@
 		font-size: 1.5em;
 		transition: transform var(--duration-fast) var(--ease-out);
 	}
-	:global(.bottom) :global([data-scope='tabs'][data-part='trigger']:not([data-selected])) {
+	:global(.bottom) :global([data-scope='tabs'][data-part='trigger']:not([data-selected])),
+	.toggle:not([aria-pressed='true']) {
 		opacity: 0.75;
 	}
-	:global(.bottom) :global([data-scope='tabs'][data-part='trigger'][data-selected] .tab-icon) {
+	:global(.bottom) :global([data-scope='tabs'][data-part='trigger'][data-selected] .tab-icon),
+	.toggle[aria-pressed='true'] .tab-icon {
 		transform: scale(1.2);
+	}
+	.toggle {
+		cursor: pointer;
+	}
+
+	/* The aside beside the panels. Its room, and the panels' when it sits under them, runs
+	   from the top of the tabs to the top of the bar (--fill-room, from fillToBottom), so
+	   neither reaches under the bar. */
+	.with-aside {
+		--aside-room: calc(var(--fill-room, 100dvh) - var(--bar-height));
+	}
+	.with-aside[data-aside] {
+		display: grid;
+		gap: var(--space-4);
+	}
+	.with-aside[data-aside='side'] {
+		grid-template-columns: minmax(0, 1fr) minmax(18rem, 30%);
+		align-items: start;
+	}
+	.with-aside[data-aside='side'] .aside {
+		position: sticky;
+		top: 0;
+		max-height: var(--aside-room);
+		overflow-y: auto;
+		--pin-top: 0rem;
+		padding-inline-start: var(--space-3);
+		border-inline-start: 1px solid var(--border); /* px-ok: a hairline, as the bar's */
+	}
+	/* Under: the panel takes the top three fifths and scrolls inside; a board drawn there
+	   fits that room (--panel-room). */
+	.with-aside[data-aside='under'] {
+		gap: 0;
+		height: var(--aside-room);
+		grid-template-rows: 3fr 2fr;
+	}
+	.with-aside[data-aside='under'] .panels {
+		--panel-room: calc(0.6 * var(--aside-room) - var(--space-2));
+		/* Headings pin to the top of this box, which scrolls itself, not under a page header. */
+		--pin-top: 0rem;
+		min-height: 0;
+		overflow-y: auto;
+	}
+	.with-aside[data-aside='under'] .aside {
+		--pin-top: 0rem;
+		min-height: 0;
+		overflow-y: auto;
+		border-top: 1px solid var(--border); /* px-ok: a hairline, as the bar's */
 	}
 </style>

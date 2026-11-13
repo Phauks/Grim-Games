@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { digitCodeBits, formatDigitCode, makeDigitCode, normaliseDigitCode } from './digit-code.ts';
+import { makeDigitCode, normaliseDigitCode } from './digit-code.ts';
 
 describe('digit codes', () => {
 	it('keeps leading zeros, so every code has the full length', () => {
@@ -18,10 +18,6 @@ describe('digit codes', () => {
 		for (const code of codes) expect(code).toMatch(/^\d{6}$/);
 	});
 
-	it('has about 20 bits in six digits', () => {
-		expect(digitCodeBits(6)).toBeCloseTo(19.93, 2);
-	});
-
 	it('accepts spaces, hyphens and dots, and nothing else', () => {
 		expect(normaliseDigitCode(' 482 913 ', 6)).toBe('482913');
 		expect(normaliseDigitCode('482-913', 6)).toBe('482913');
@@ -29,9 +25,5 @@ describe('digit codes', () => {
 		expect(normaliseDigitCode('4829130', 6)).toBeNull();
 		expect(normaliseDigitCode('48291a', 6)).toBeNull();
 		expect(normaliseDigitCode('', 6)).toBeNull();
-	});
-
-	it('shows six digits as two groups of three', () => {
-		expect(formatDigitCode('482913')).toBe('482 913');
 	});
 });

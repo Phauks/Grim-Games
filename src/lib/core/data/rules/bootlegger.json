@@ -1,5 +1,6 @@
 {
 	"carriesScriptRules": true,
+	"unlimitedReminders": true,
 	"reminderTargets": {
 		"?": {
 			"seat": "any",

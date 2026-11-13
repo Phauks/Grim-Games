@@ -203,11 +203,6 @@ export function redo(history: ScratchHistory): ScratchHistory {
 	return { strokes: [...history.strokes, next], undone: history.undone.slice(0, -1) };
 }
 
-/** True when the pad shows nothing: no strokes, or only eraser strokes. */
-export function isBlank(strokes: readonly ScratchStroke[]): boolean {
-	return !strokes.some((s) => s.tool === 'pen');
-}
-
 function isStroke(value: unknown): value is ScratchStroke {
 	if (!value || typeof value !== 'object') return false;
 	const s = value as Record<string, unknown>;

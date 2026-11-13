@@ -151,7 +151,9 @@ test('About, Credits and Support are as wide as Roadmap and Changelog', async ({
 
 // Trevor (2026-11-10, C2): the head (buttons, title, byline) sits on a raised band with a line
 // along its foot, as the bottom tab bar does, ending in the gap above the content.
-test('the page head sits on a raised band that ends above the content', async ({ page }) => {
+test('the page head sits on a raised band that ends above the content', async ({
+	page
+}, testInfo) => {
 	await page.goto('/spikes/page');
 	const main = page.getByRole('main');
 	const band = main.locator('.head-band');
@@ -171,4 +173,24 @@ test('the page head sits on a raised band that ends above the content', async ({
 	const search = (await main.getByRole('searchbox', { name: 'Search' }).boundingBox())!;
 	expect(subtitle.y + subtitle.height).toBeLessThanOrEqual(head.y + head.height + 1);
 	expect(search.y).toBeGreaterThan(head.y + head.height);
+	// Trevor (2026-11-12, B): a phone's row of text buttons sits under the line, not in the band.
+	const action = (await main.getByRole('button', { name: 'Action' }).boundingBox())!;
+	if (testInfo.project.name === 'phone') expect(action.y).toBeGreaterThan(head.y + head.height);
+	else expect(action.y + action.height).toBeLessThanOrEqual(head.y + head.height);
+});
+
+// Trevor (2026-11-12): "header is not always same on every screen, it sometimes is bigger,
+// like on the join screen". The band holds the title, and a byline only once it has words, so
+// Join's free byline line and the Library's buttons stay under it (B).
+test('the band is as tall on Join and the Library as on a page with only a title', async ({
+	page
+}) => {
+	const bandHeight = async (path: string, title: string) => {
+		await page.goto(path);
+		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+		return (await page.getByRole('main').locator('.head-band').boundingBox())!.height;
+	};
+	const about = await bandHeight('/about', 'About');
+	expect(await bandHeight('/join', 'Join game')).toBeCloseTo(about, 0);
+	expect(await bandHeight('/library', 'Library')).toBeCloseTo(about, 0);
 });

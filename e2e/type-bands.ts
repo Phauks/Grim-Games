@@ -1,13 +1,12 @@
 import type { Page } from '@playwright/test';
+import { animationsSettled } from './settled.ts';
 
 // A character type's heading is a band that reaches out into the gutter (Collapsible), so a
 // box that clips sideways with no room round it cuts the band's ends off.
 
 /** Bands drawn wider than the boxes around them show, by heading. */
 export async function clippedBands(page: Page): Promise<string[]> {
-	await page.waitForFunction(() =>
-		document.getAnimations().every((a) => a.playState !== 'running')
-	);
+	await animationsSettled(page);
 	return page.evaluate(() => {
 		const out: string[] = [];
 		for (const band of document.querySelectorAll('[data-type-band]')) {

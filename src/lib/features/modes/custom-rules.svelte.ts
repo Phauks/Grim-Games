@@ -7,7 +7,6 @@ import type { CharacterId } from '#lib/core/data/index.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import {
 	parseSpecialRule,
-	SCRIPT_RULE_ID,
 	SPECIAL_RULES,
 	specialRuleById,
 	type SpecialRule
@@ -40,7 +39,7 @@ export const customRules = {
 	add(value: unknown, known?: ReadonlySet<CharacterId>) {
 		const parsed = parseSpecialRule(value, known);
 		if (!parsed.ok) return parsed;
-		if (specialRuleById(parsed.rule.id) || parsed.rule.id === SCRIPT_RULE_ID)
+		if (specialRuleById(parsed.rule.id))
 			return { ok: false as const, issues: ['id: is a built-in rule; give your rule its own id'] };
 		write([...list.filter((r) => r.id !== parsed.rule.id), parsed.rule]);
 		return parsed;

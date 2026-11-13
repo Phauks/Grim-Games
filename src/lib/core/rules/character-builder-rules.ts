@@ -31,9 +31,14 @@ export interface BuilderRule {
  */
 const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText', 'setupModifier']);
 
+/** Whether the Rules section offers part `key`: not set elsewhere, nor our own words (M84). */
+const offered = (key: string) =>
+	!ELSEWHERE.has(key) &&
+	!(PARTS as Record<string, { field?: { official?: true } }>)[key]?.field?.official;
+
 /** Every part the Rules section can add, by label. */
 export const BUILDER_RULES: readonly BuilderRule[] = Object.entries(PARTS)
-	.filter(([key]) => !ELSEWHERE.has(key))
+	.filter(([key]) => offered(key))
 	.map(([key, part]): BuilderRule => ({
 		key,
 		group: part.group,
@@ -69,7 +74,7 @@ export interface RuleRow {
 /** The block's rules in the order written, leaving out those set elsewhere. */
 export function ruleRows(fields: CharacterFields): RuleRow[] {
 	return Object.entries(fields.rules ?? {})
-		.filter(([key, value]) => !ELSEWHERE.has(key) && value !== undefined)
+		.filter(([key, value]) => offered(key) && value !== undefined)
 		.map(([key, value]) => ({ rule: builderRule(key), value }));
 }
 

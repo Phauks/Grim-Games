@@ -326,6 +326,16 @@ describe('the end of a game', () => {
 		});
 	});
 
+	it("passes on the game's shared result page, and nothing that isn't one", () => {
+		const id = 'AbC_-123456789abcdefgh';
+		const room = gameOver(roomWith('alex'), 'g1', 'good', undefined, id);
+		expect(playerView(room, 'alex').ended).toEqual({ winner: 'good', result: id });
+		for (const bad of ['../x', 'short', 7, `${id}x`])
+			expect(playerView(gameOver(room, 'g1', 'good', undefined, bad), 'alex').ended).toEqual({
+				winner: 'good'
+			});
+	});
+
 	it('ends when the game is reopened, or a new game starts', () => {
 		const over = gameOver(roomWith('alex'), 'g1', 'good');
 		expect(reopenGame(over, 'g2')).toBe(over);
