@@ -11,6 +11,7 @@ import type { CharacterLookup, DeathCause, Game, SeatId } from '#lib/core/model/
 import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts';
 import { slot, splitSlots } from '#lib/features/characters/slots.ts';
 import { causeCharacter, causeLabel } from './board.ts';
+import { appliedEntries } from '#lib/core/engine/applied-entries.ts';
 
 export type HistoryPart =
 	/** Words; `seats` are the seats they name (History's filter, Trevor 2026-10-19). */
@@ -549,7 +550,7 @@ export function seatChanges(
 			out.push({ kind: 'alignment', at, from: alignment, to });
 		if (to !== undefined) alignment = to;
 	};
-	for (const entry of entries.slice(0, cursor)) {
+	for (const entry of appliedEntries({ entries, cursor })) {
 		for (const event of entry.events) {
 			if (!('seatId' in event) || event.seatId !== seatId) continue;
 			if (event.type === 'CharacterAssigned') {

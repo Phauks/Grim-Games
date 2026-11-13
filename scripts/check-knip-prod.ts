@@ -22,7 +22,6 @@ export const TESTS_ONLY_TODO: readonly string[] = [
 	'src/lib/core/backgrounds/moving.ts: formatParam',
 	'src/lib/core/data/game-data.ts: checkScriptSchema',
 	'src/lib/core/data/jinx-rules.ts: JINX_FLAGS',
-	'src/lib/core/engine/log.ts: history',
 	'src/lib/core/modes/builder.ts: issuesAt',
 	'src/lib/core/modes/builder.ts: knownType',
 	'src/lib/core/modes/format-guide.ts: documentedFields',

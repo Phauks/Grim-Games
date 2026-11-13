@@ -110,8 +110,3 @@ export function redo(session: GameSession): GameSession {
 		game: next.events.reduce((g, e) => applyEvent(g, e), session.game)
 	};
 }
-
-/** The applied entries, oldest first, for a game history view. */
-export function history(session: GameSession): readonly LogEntry[] {
-	return session.log.entries.slice(0, session.log.cursor);
-}
