@@ -72,6 +72,7 @@ export type RegistersAs = Extract<VictimRule, { who: 'registers' }>['as'];
  * The kinds are our reading of TPI's ability text and the character's wiki page.
  */
 export const deathCause = specPart(
+	'deaths',
 	'Death cause',
 	'Whether and how its ability can cause a death.',
 	variants(

@@ -28,6 +28,7 @@ export type ExecuteNow = SpecValue<typeof EXECUTE_NOW>;
 
 /** How the ability fails, forces or hurries an execution (`rules/day/execution-outcome.ts`). */
 export const executionOutcome = specPart(
+	'day',
 	'Execution outcome',
 	'Makes an execution fail, or lets its player force one to pass or fail.',
 	optObj({ failsIf: FAILS_IF, force: FORCES, executeNow: EXECUTE_NOW }),

@@ -8,7 +8,7 @@ import {
 	type LiveGame
 } from './live-games.ts';
 import type { PublicGameState } from './public-projection.ts';
-import { join, newRoom, publish, seat, setName } from './room.ts';
+import { gameOver, join, newRoom, publish, seat, setName } from './room.ts';
 
 const table: PublicGameState = {
 	storytellerName: 'Sam',
@@ -21,10 +21,14 @@ describe('live games', () => {
 	it('sums up a room from what the room already holds', () => {
 		let room = publish(newRoom('hash'), 'g1', table);
 		room = seat(setName(join(room, 'm1')!, 'm1', { name: 'Ana' }), 'm1', 'a' as SeatId);
-		const game = liveGame('482913', room, { meta: { name: 'Tiny' }, entries: [] }, 1, 5);
+		const facts = { phones: 1, storyteller: true, games: 2, active: 5, opened: 3 };
+		const game = liveGame('482913', room, { meta: { name: 'Tiny' }, entries: [] }, facts);
 		expect(game).toEqual({
 			code: '482913',
 			active: 5,
+			opened: 3,
+			storyteller: true,
+			games: 2,
 			preview: {
 				open: true,
 				script: { name: 'Tiny', official: true },
@@ -37,8 +41,21 @@ describe('live games', () => {
 		});
 	});
 
+	const facts = { phones: 0, storyteller: false, games: 0, active: 1 };
+
 	it('leaves the phase out until the board is open', () => {
-		expect(liveGame('482913', newRoom('hash'), undefined, 0, 1).phase).toBeUndefined();
+		expect(liveGame('482913', newRoom('hash'), undefined, facts).phase).toBeUndefined();
+	});
+
+	it('says the game in play is over, and who won how', () => {
+		const room = gameOver(publish(newRoom('hash'), 'g1', table), 'g1', 'evil', 'two-alive');
+		expect(liveGame('482913', room, undefined, facts).ended).toEqual({
+			winner: 'evil',
+			reason: 'two-alive'
+		});
+		// The next game is not over.
+		const next = publish(room, 'g2', table);
+		expect(liveGame('482913', next, undefined, facts).ended).toBeUndefined();
 	});
 
 	it('lists the most recently active room first', () => {

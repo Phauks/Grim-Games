@@ -11,6 +11,7 @@ import { specPart } from './part.ts';
  * to become drunk").
  */
 export const onDeath = specPart(
+	'deaths',
 	'On death',
 	'The ability is set off by its player’s death.',
 	obj({

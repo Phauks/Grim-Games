@@ -33,6 +33,7 @@ import { specPart, type PartValue } from './part.ts';
  *   on the first night Minion info shows them, https://wiki.bloodontheclocktower.com/Damsel).
  */
 export const wakesWhen = specPart(
+	'night',
 	'Wakes when',
 	'A condition its player needs before waking for it.',
 	optObj({

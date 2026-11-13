@@ -8,6 +8,7 @@ import { specPart } from './part.ts';
  * line shows.
  */
 export const optionalRuleText = specPart(
+	'setup',
 	'Optional rule text',
 	'Our own short wording of the optional rule, shown beside its switch.',
 	ownWords(STR)

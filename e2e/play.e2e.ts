@@ -1,3 +1,4 @@
+import { openTab } from './tabs.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
 	addNote,
@@ -59,17 +60,6 @@ async function openSettings(page: Page) {
 		.getByRole('dialog', { name: APP_NAME })
 		.getByRole('button', { name: 'Settings' })
 		.tap();
-}
-
-/** Opens a tab, from the ⋯ menu when it is not on the row (a phone has no room for all). */
-async function openTab(page: Page, name: string) {
-	const tab = page.getByRole('tab', { name, exact: true });
-	await expect(page.getByRole('tab').first()).toBeVisible();
-	if (!(await tab.count())) {
-		await page.getByRole('button', { name: 'More tabs' }).tap();
-		await page.getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name }).tap();
-	}
-	await tab.tap();
 }
 
 test.beforeEach(async ({ page }) => {

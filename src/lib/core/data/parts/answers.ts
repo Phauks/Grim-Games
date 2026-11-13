@@ -151,6 +151,7 @@ function asked(
 
 /** A night answer worked out from the grimoire and today's log (the Town Crier). */
 export const answers = specPart(
+	'night',
 	'Night answer',
 	'A night answer worked out from the grimoire and today’s log.',
 	obj({

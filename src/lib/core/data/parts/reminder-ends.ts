@@ -37,6 +37,7 @@ export type ReminderEndRule = SpecValue<typeof END>;
  * (`rules/reminders/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
  */
 export const reminderEnds = specPart(
+	'tokens',
 	'Reminders that come off',
 	'Its reminders that come off by themselves at dawn, at dusk, at a nomination or when its player dies.',
 	byToken(END),

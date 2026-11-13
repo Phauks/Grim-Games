@@ -9,6 +9,7 @@ export type QuietPlayers = (typeof QUIET_PLAYERS)[number];
  * (`rules/day/quiet-start.ts`; counted down on the day timer by `features/day/DayTimer.svelte`).
  */
 export const quietStart = specPart(
+	'setup',
 	'Quiet start',
 	'While in play, some players may not talk for the first part of each day.',
 	// `seconds`: how long the quiet lasts from the start of each day; `players`: who stays

@@ -14,6 +14,7 @@ export type NominatingEffect = (typeof NOMINATING_EFFECTS)[number];
  * the character (the Witch's Cursed), that sets off `effect`.
  */
 export const onNominating = specPart(
+	'day',
 	'On nominating',
 	'When its player, or the player with one of its reminders, nominates, something happens.',
 	obj({ carrier: opt(TOKEN), effect: oneOf(NOMINATING_EFFECTS) })

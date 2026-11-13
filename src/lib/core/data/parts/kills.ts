@@ -16,6 +16,7 @@ import { specPart, type PartValue } from './part.ts';
  *   die, and all die if all live (the Al-Hadikhia).
  */
 export const kills = specPart(
+	'deaths',
 	'Kills',
 	'The ability kills at night.',
 	obj({

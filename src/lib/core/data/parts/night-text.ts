@@ -23,6 +23,7 @@ export type NightTextOverride = SpecValue<typeof OVERRIDE>;
  * line why ours differs.
  */
 export const nightText = specPart(
+	'night',
 	'Night text',
 	'Our own night text in place of the original.',
 	optObj({ first: NIGHT, other: NIGHT }),

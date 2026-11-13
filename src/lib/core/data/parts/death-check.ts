@@ -14,6 +14,7 @@ export type DeathCheckKind = SpecValue<typeof KIND>;
 
 /** A night death its own ability decides (`rules/night/night-deaths.ts`). */
 export const deathCheck = specPart(
+	'deaths',
 	'Death check',
 	'A night death its own ability decides.',
 	obj({ kind: KIND, token: opt(TOKEN) }),

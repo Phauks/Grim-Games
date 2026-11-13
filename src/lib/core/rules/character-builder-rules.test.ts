@@ -6,10 +6,12 @@ import { describe, expect, it } from 'vitest';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
 import type { FieldSpec } from '#lib/core/data/field-spec.ts';
 import * as PARTS from '#lib/core/data/parts/index.ts';
+import { RULE_GROUPS } from '#lib/core/data/parts/part.ts';
 import { characterEntry, emptyCharacterFields, type CharacterFields } from './character-builder.ts';
 import {
 	BUILDER_RULES,
 	builderRule,
+	findRules,
 	fitsFields,
 	readRuleText,
 	ruleProblems,
@@ -48,6 +50,23 @@ describe('BUILDER_RULES', () => {
 			description: '',
 			field: { kind: 'text' }
 		});
+	});
+
+	it('puts every rule in one of the groups Add a rule has a tab for (M80)', () => {
+		for (const rule of BUILDER_RULES) expect(RULE_GROUPS).toContain(rule.group);
+		for (const group of RULE_GROUPS) {
+			expect(BUILDER_RULES.some((r) => r.group === group)).toBe(true);
+		}
+		expect(builderRule('curses').group).toBe('abilities');
+		expect(builderRule('kills').group).toBe('deaths');
+	});
+
+	it('finds rules by every word typed, in name or description, any case or order', () => {
+		const keys = (query: string) => findRules(BUILDER_RULES, query).map((r) => r.key);
+		expect(keys('')).toEqual([]);
+		expect(keys('KILL')).toEqual(expect.arrayContaining(['kills', 'redirectsKill']));
+		expect(keys('kill redirect')).toEqual(['redirectsKill']);
+		expect(keys('nothing like this')).toEqual([]);
 	});
 
 	it('edits a value with fields only when they hold all of it', () => {

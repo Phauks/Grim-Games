@@ -4,7 +4,7 @@
  * no part has is edited as rules text, and every key the form has no row for is kept.
  */
 import * as PARTS from '#lib/core/data/parts/index.ts';
-import type { PartField, Reminders } from '#lib/core/data/parts/part.ts';
+import type { PartField, Reminders, RuleGroup } from '#lib/core/data/parts/part.ts';
 import { TEXT, uncovered } from '#lib/core/data/field-spec.ts';
 import { Issues, isObject } from '#lib/core/data/validate.ts';
 import type { CharacterFields } from './character-builder.ts';
@@ -13,6 +13,8 @@ import type { CharacterFields } from './character-builder.ts';
 export interface BuilderRule {
 	/** The key in the rules block. */
 	key: string;
+	/** Where it belongs in a game; none for a key no part has. */
+	group?: RuleGroup;
 	label: string;
 	description: string;
 	/** How it is edited: its fields, or rules text. */
@@ -36,11 +38,22 @@ export const BUILDER_RULES: readonly BuilderRule[] = Object.entries(PARTS)
 	.filter(([key]) => offered(key))
 	.map(([key, part]): BuilderRule => ({
 		key,
+		group: part.group,
 		label: part.label,
 		description: part.description,
 		field: part.field
 	}))
 	.sort((a, b) => a.label.localeCompare(b.label));
+
+/** The rules whose name or description has every word of `query`, in any order. */
+export function findRules(rules: readonly BuilderRule[], query: string): BuilderRule[] {
+	const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+	if (!words.length) return [];
+	return rules.filter((rule) => {
+		const text = `${rule.label} ${rule.description}`.toLocaleLowerCase();
+		return words.every((word) => text.includes(word));
+	});
+}
 
 const BY_KEY = new Map(BUILDER_RULES.map((rule) => [rule.key, rule]));
 

@@ -16,6 +16,7 @@ import { specPart, type PartValue } from './part.ts';
  *   https://wiki.bloodontheclocktower.com/Ferryman).
  */
 export const voting = specPart(
+	'day',
 	'How the table votes',
 	'Changes who may vote, whether ghost votes are spent, the votes needed, secrecy or vote tokens, for everyone.',
 	optObj({

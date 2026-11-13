@@ -8,6 +8,7 @@ import { specPart } from './part.ts';
  * (https://grimbits.com/draft-buffet/; `modes/draft.ts`).
  */
 export const orHiddenAs = specPart(
+	'abilities',
 	'Or hidden as',
 	'A hidden character the Storyteller may make its player instead.',
 	CHARACTER

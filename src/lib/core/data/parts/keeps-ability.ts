@@ -3,6 +3,7 @@ import { TOKEN_ON_TYPE } from './stops-waking.ts';
 
 /** Its token on a dead player keeps that player's ability (the same shape as `stopsWaking`). */
 export const keepsAbility = specPart(
+	'abilities',
 	'Keeps ability',
 	'Its token on a dead player keeps that player’s ability.',
 	TOKEN_ON_TYPE

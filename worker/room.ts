@@ -1,6 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
 import { sha256Hex as sha256 } from '../src/lib/core/codes/hash.ts';
-import { makeRoomCode, normaliseRoomCode } from '../src/lib/core/sync/room-code.ts';
 import {
 	canCallTown,
 	canReveal,
@@ -61,11 +60,22 @@ import {
 	type ScriptView
 } from '../src/lib/core/sync/room.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
+import type { LedgerGame } from '../src/lib/core/sync/game-ledger.ts';
 import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
 import { parseRoomImagePath } from '../src/lib/core/sync/room-images.ts';
 import { dropAvatarPicture, roomImage } from './room-image-store.ts';
 import { previewResponse } from './room-preview.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
+import {
+	finishOnLeaving,
+	gamesRun,
+	noteGameOver,
+	notePhones,
+	notePublished,
+	noteRoomOpened,
+	sendFinished,
+	type RoomLedgerEnv
+} from './room-ledger.ts';
 import { setRoomPushAddress, type PushEnv } from './push.ts';
 import { callTown, callTownSound, playTownSound } from './room-town.ts';
 import {
@@ -83,10 +93,8 @@ import {
 	requestAccount,
 	roomPlayers,
 	seatAccount,
-	withAccount,
 	type SeatTarget
 } from './room-accounts.ts';
-import type { AccountEnv } from './account/objects.ts';
 import type { FriendBook } from './friends/book.ts';
 import { recordGame } from './friends/routes.ts';
 import type { DataBinding } from './shared-data.ts';
@@ -98,7 +106,7 @@ import {
 	type TransferRoom
 } from './room-transfer.ts';
 
-export interface RoomEnv extends PushEnv {
+export interface RoomEnv extends PushEnv, RoomLedgerEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
@@ -146,14 +154,27 @@ export class Room extends DurableObject<RoomEnv> {
 
 	async alarm(): Promise<void> {
 		this.broadcastClosed('Room expired');
-		await this.forget();
+		// Its game stopped being played when the room last heard from anyone.
+		await this.forget('expired', Date.now() - ROOM_IDLE_MS);
 	}
 
-	/** Deletes the room and takes it off the admins' list. */
-	private async forget(): Promise<void> {
+	/**
+	 * Deletes the room and takes it off the admins' list; a game still going goes into their
+	 * history as finished this way.
+	 */
+	private async forget(finish: 'closed' | 'expired', ended: number): Promise<void> {
 		const code = await this.ctx.storage.get<string>('code');
+		const last = await finishOnLeaving(
+			this.ctx.storage,
+			this.env,
+			code,
+			await this.load(),
+			finish,
+			ended
+		);
 		await this.ctx.storage.deleteAll();
 		if (code) await liveGameIndex(this.env).remove(code);
+		if (last) await sendFinished(this.env, last);
 	}
 
 	/**
@@ -166,19 +187,42 @@ export class Room extends DurableObject<RoomEnv> {
 		if (code) {
 			await this.ctx.storage.put('code', code);
 			await liveGameIndex(this.env).add(code);
+			this.ctx.waitUntil(noteRoomOpened(this.env, code, Date.now()));
 		}
 		await this.touch();
 		return true;
 	}
 
-	/** What the admins' list shows of this room (plan J31); undefined once it is gone. */
-	async liveGame(code: string): Promise<LiveGame | undefined> {
+	/**
+	 * What the admins' list shows of this room (plan J31), opened at `opened` as their list
+	 * noted it; undefined once it is gone.
+	 */
+	async liveGame(code: string, opened?: number): Promise<LiveGame | undefined> {
 		const room = await this.load();
 		if (!room) return undefined;
 		const script = await this.ctx.storage.get<ScriptView>('script');
 		const expires = await this.ctx.storage.getAlarm();
 		const active = expires === null ? Date.now() : expires - ROOM_IDLE_MS;
-		return liveGame(code, room, script?.script, this.present().size, active);
+		return liveGame(code, room, script?.script, {
+			phones: this.present().size,
+			storyteller: this.storytellerHere(),
+			games: await gamesRun(this.ctx.storage),
+			active,
+			...(opened === undefined ? {} : { opened })
+		});
+	}
+
+	/** A finished game to the admins' history, after this message is answered. */
+	private sendToHistory(game: LedgerGame | undefined): void {
+		if (game) this.ctx.waitUntil(sendFinished(this.env, game));
+	}
+
+	/** Whether the Storyteller's device is connected now. */
+	private storytellerHere(): boolean {
+		return this.ctx.getWebSockets().some((socket) => {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			return who?.role === 'host' && socket.readyState === WebSocket.OPEN;
+		});
 	}
 
 	/** The account in a seat or the Storyteller's, for `requester` to friend (room-accounts.ts). */
@@ -329,6 +373,7 @@ export class Room extends DurableObject<RoomEnv> {
 			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
 			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
 			await this.save(markHere(joined, memberId));
+			await notePhones(this.ctx.storage, this.present().size);
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);
 			// A phone joining after the Storyteller shared the finished grimoire gets it too.
@@ -417,6 +462,16 @@ export class Room extends DurableObject<RoomEnv> {
 				if (typeof message.gameId !== 'string' || !Array.isArray(message.state?.seats)) return;
 				room = publish(room, message.gameId, message.state, this.present());
 				await this.dropReveal(room);
+				this.sendToHistory(
+					await notePublished(
+						this.ctx.storage,
+						this.env,
+						await this.ctx.storage.get<string>('code'),
+						room,
+						this.present().size,
+						Date.now()
+					)
+				);
 				break;
 			case 'reveal': {
 				if (!canReveal(room, message.gameId) || !isSharedGrimoire(message.grimoire)) return;
@@ -542,6 +597,8 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'game-over': {
 				const wasOver = room.ended?.gameId === message.gameId;
 				room = gameOver(room, message.gameId, message.winner, message.reason);
+				const code = await this.ctx.storage.get<string>('code');
+				this.sendToHistory(await noteGameOver(this.ctx.storage, this.env, code, room, Date.now()));
 				// Its signed-in players remember each other (plan F3), once per game.
 				if (!wasOver && room.ended && room.gameId) {
 					const game = room.gameId;
@@ -594,7 +651,7 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			case 'close':
 				this.broadcastClosed('Room closed');
-				await this.forget();
+				await this.forget('closed', Date.now());
 				return;
 			default:
 				return;
@@ -735,58 +792,4 @@ export class Room extends DurableObject<RoomEnv> {
 			closeSocket(socket, 1000, reason);
 		}
 	}
-}
-
-const clientAddress = (request: Request) => request.headers.get('CF-Connecting-IP') ?? 'local';
-
-/**
- * `POST /api/rooms` opens a room (body: the host key's hash) and returns its code;
- * `GET /api/room/<code>` says whether it is open and what game it holds (`RoomPreview`), or
- * upgrades to the room's WebSocket; `/api/room/<code>/image/<hash>` uploads (PUT) or loads
- * (GET) one of its pictures.
- * Returns undefined for other paths.
- */
-export async function handleRoom(
-	request: Request,
-	env: RoomEnv & AccountEnv,
-	url: URL
-): Promise<Response | undefined> {
-	if (url.pathname === '/api/rooms') {
-		if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-		const limit = await env.ROOM_CREATES.limit({ key: clientAddress(request) });
-		if (!limit.success) return new Response('Too many rooms', { status: 429 });
-		const body = (await request.json().catch(() => null)) as { hostKeyHash?: unknown } | null;
-		const hash = body?.hostKeyHash;
-		if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) {
-			return new Response('Bad request', { status: 400 });
-		}
-		// 10^6 codes and rooms last a day, so a free one is found within a few tries.
-		for (let attempt = 0; attempt < 8; attempt++) {
-			const code = makeRoomCode(() => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32);
-			if (await env.ROOMS.get(env.ROOMS.idFromName(code)).open(hash, code)) {
-				return Response.json({ code });
-			}
-		}
-		return new Response('No free room code', { status: 503 });
-	}
-	const image = parseRoomImagePath(url.pathname);
-	if (image) {
-		const code = normaliseRoomCode(image.code);
-		if (!code) return new Response('Invalid room code', { status: 400 });
-		// Uploads count as opening rooms; loading needs the picture's hash, which can't be guessed.
-		if (request.method === 'PUT') {
-			const limit = await env.ROOM_CREATES.limit({ key: clientAddress(request) });
-			if (!limit.success) return new Response('Too many pictures', { status: 429 });
-		}
-		return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);
-	}
-	const match = url.pathname.match(/^\/api\/room\/([^/]+)$/);
-	if (!match) return undefined;
-	const code = normaliseRoomCode(match[1]);
-	if (!code) return new Response('Invalid room code', { status: 400 });
-	if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-	// Limits guessing codes: a room shows only names and seats, but strangers shouldn't browse.
-	const limit = await env.ROOM_JOINS.limit({ key: clientAddress(request) });
-	if (!limit.success) return new Response('Too many tries', { status: 429 });
-	return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(await withAccount(request, env));
 }

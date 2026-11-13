@@ -9,6 +9,7 @@ export const INFO_CARDS = ['secret-word', 'secret-phrase', 'goal'] as const;
  * https://wiki.bloodontheclocktower.com/Yaggababble). `features/info-tokens/character-cards.ts`.
  */
 export const infoCard = specPart(
+	'night',
 	'Info card',
 	'Its info card, filled in before it is shown.',
 	oneOf(INFO_CARDS)

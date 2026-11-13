@@ -119,6 +119,7 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  * Text here is our own summary, never wiki prose.
  */
 export const dayReminders = specPart(
+	'day',
 	'Day reminders',
 	'What to watch for during the day because of it.',
 	obj({

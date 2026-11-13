@@ -16,6 +16,7 @@
 		ACCOUNTS_ITEM,
 		APP_ITEMS,
 		FRIENDS_ITEM,
+		GAME_HISTORY_ITEM,
 		HISTORY_ITEM,
 		HOME_ITEM,
 		isCurrent,
@@ -119,10 +120,10 @@
 		{#if account.admin}
 			{#snippet adminItems()}
 				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}{@render link(
-					TEST_ROOM_ITEM
-				)}{@render link(ACCOUNTS_ITEM)}
+					GAME_HISTORY_ITEM
+				)}{@render link(TEST_ROOM_ITEM)}{@render link(ACCOUNTS_ITEM)}
 			{/snippet}
-			{@render section('admin', t('shell.navSectionAdmin'), 4, adminItems)}
+			{@render section('admin', t('shell.navSectionAdmin'), 5, adminItems)}
 		{/if}
 		<!-- Account, Friends and History, last in the sidebar and the drawer alike (2026-10-22). -->
 		{#snippet youItems()}

@@ -9,13 +9,7 @@ import type { FieldSpec, SpecValue } from '../field-spec.ts';
 import { readSpec } from '../read-spec.ts';
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
-import {
-	readBoolean,
-	readEnum,
-	readNumber,
-	type Issues,
-	type Json
-} from '../validate.ts';
+import { readBoolean, readEnum, readNumber, type Issues, type Json } from '../validate.ts';
 
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
@@ -23,7 +17,16 @@ export type Reminders = readonly ReminderLabel[] | undefined;
 /** How the Character builder edits a part's value (`field-spec.ts`). */
 export type PartField = FieldSpec;
 
+/**
+ * Where a part belongs in a game, for finding it in the Character builder's Add a rule (M80):
+ * setting up, the night, the day, deaths, abilities, or tokens.
+ */
+export const RULE_GROUPS = ['setup', 'night', 'day', 'deaths', 'abilities', 'tokens'] as const;
+export type RuleGroup = (typeof RULE_GROUPS)[number];
+
 export interface Part<T> {
+	/** Where it belongs in a game. */
+	group: RuleGroup;
 	/** A short name for the part. */
 	label: string;
 	/** What the part does, in our own words. */
@@ -54,6 +57,7 @@ export type PartValue<P> = P extends Part<infer T> ? T : never;
  * looser than the rule (a setting that only one kind of change takes).
  */
 export function specPart<S extends FieldSpec, R = SpecValue<S>>(
+	group: RuleGroup,
 	label: string,
 	description: string,
 	spec: S,
@@ -65,6 +69,7 @@ export function specPart<S extends FieldSpec, R = SpecValue<S>>(
 	) => R | undefined
 ): Part<R> {
 	return {
+		group,
 		label,
 		description,
 		field: spec,
@@ -78,8 +83,9 @@ export function specPart<S extends FieldSpec, R = SpecValue<S>>(
 }
 
 /** A true or false part. */
-export function booleanPart(label: string, description: string): Part<boolean> {
+export function booleanPart(group: RuleGroup, label: string, description: string): Part<boolean> {
 	return {
+		group,
 		label,
 		description,
 		field: { kind: 'boolean' },
@@ -88,8 +94,9 @@ export function booleanPart(label: string, description: string): Part<boolean> {
 }
 
 /** A part that is on when true; false is the same as leaving it out. */
-export function truePart(label: string, description: string): Part<true> {
+export function truePart(group: RuleGroup, label: string, description: string): Part<true> {
 	return {
+		group,
 		label,
 		description,
 		field: { kind: 'true' },
@@ -99,11 +106,13 @@ export function truePart(label: string, description: string): Part<true> {
 
 /** A part that is one of `values`. */
 export function enumPart<T extends string>(
+	group: RuleGroup,
 	label: string,
 	description: string,
 	values: readonly T[]
 ): Part<T> {
 	return {
+		group,
 		label,
 		description,
 		field: { kind: 'enum', values },
@@ -112,8 +121,9 @@ export function enumPart<T extends string>(
 }
 
 /** A whole number above 0: a count, such as how many times a day. */
-export function countPart(label: string, description: string): Part<number> {
+export function countPart(group: RuleGroup, label: string, description: string): Part<number> {
 	return {
+		group,
 		label,
 		description,
 		field: { kind: 'count' },
@@ -128,8 +138,13 @@ export function countPart(label: string, description: string): Part<number> {
 }
 
 /** A part naming one of the character's own reminders. */
-export function tokenPart(label: string, description: string): Part<ReminderLabel> {
+export function tokenPart(
+	group: RuleGroup,
+	label: string,
+	description: string
+): Part<ReminderLabel> {
 	return {
+		group,
 		label,
 		description,
 		field: { kind: 'token' },

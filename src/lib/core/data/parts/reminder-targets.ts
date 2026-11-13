@@ -109,6 +109,7 @@ export type TargetRule = SpecValue<typeof TARGET>;
  * any token anywhere.
  */
 export const reminderTargets = specPart(
+	'tokens',
 	'Where its reminders go',
 	'Where each of its reminder tokens may go, by label.',
 	byToken(TARGET)

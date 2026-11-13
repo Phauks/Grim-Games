@@ -170,6 +170,7 @@ export function readInfoTokenCharacters(
  * The Storyteller can still change them: a card with room left opens with these picked.
  */
 export const infoTokenCharacters = specPart(
+	'night',
 	'Info token characters',
 	'The characters its night step’s info tokens show, filled in.',
 	SPEC,

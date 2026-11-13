@@ -21,6 +21,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
+	import StatCards from '#lib/ui/layout/StatCards.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
 	import { loadGameRecords } from './records.ts';
@@ -46,6 +47,37 @@
 		const rate = winRate(wins, decided);
 		return rate === undefined ? t('common.none') : intl.number(rate, { style: 'percent' });
 	};
+	const summaryCards = $derived.by(() => {
+		const { summary } = stats;
+		const { wins, finalThree } = summary;
+		return [
+			{ label: t('history.games'), value: count(summary.games) },
+			{ label: t('history.goodWins'), value: count(wins.good), share: percent(wins.good, decided) },
+			{ label: t('history.evilWins'), value: count(wins.evil), share: percent(wins.evil, decided) },
+			{
+				label: t('history.alternateWins'),
+				value: count(summary.alternateWins),
+				share: percent(summary.alternateWins, decided)
+			},
+			{
+				label: t('history.finalThree'),
+				value: count(finalThree.games),
+				share: percent(finalThree.games, summary.games)
+			},
+			{
+				label: t('history.finalThreeGood'),
+				value: count(finalThree.wins.good),
+				share: percent(finalThree.wins.good, finalThreeDecided)
+			},
+			{
+				label: t('history.finalThreeEvil'),
+				value: count(finalThree.wins.evil),
+				share: percent(finalThree.wins.evil, finalThreeDecided)
+			},
+			{ label: t('history.averageDays'), value: decimal(summary.averageDays) },
+			{ label: t('history.averagePlayers'), value: decimal(summary.averagePlayers) }
+		];
+	});
 	const width = (u: number) => `calc(${u} * var(--u))`;
 	/** A win rate as a whole percentage, for the column's filter. */
 	const percentOf = (wins: number, decided: number) => {
@@ -318,64 +350,7 @@
 {/snippet}
 
 <PageSection title={t('history.summary')}>
-	<dl>
-		<div>
-			<dt>{t('history.games')}</dt>
-			<dd>{count(stats.summary.games)}</dd>
-		</div>
-		<div>
-			<dt>{t('history.goodWins')}</dt>
-			<dd>
-				{count(stats.summary.wins.good)}
-				<span class="share">({percent(stats.summary.wins.good, decided)})</span>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.evilWins')}</dt>
-			<dd>
-				{count(stats.summary.wins.evil)}
-				<span class="share">({percent(stats.summary.wins.evil, decided)})</span>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.alternateWins')}</dt>
-			<dd>
-				{count(stats.summary.alternateWins)}
-				<span class="share">({percent(stats.summary.alternateWins, decided)})</span>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.finalThree')}</dt>
-			<dd>
-				{count(stats.summary.finalThree.games)}
-				<span class="share">({percent(stats.summary.finalThree.games, stats.summary.games)})</span>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.finalThreeGood')}</dt>
-			<dd>
-				{count(stats.summary.finalThree.wins.good)}
-				<span class="share">({percent(stats.summary.finalThree.wins.good, finalThreeDecided)})</span
-				>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.finalThreeEvil')}</dt>
-			<dd>
-				{count(stats.summary.finalThree.wins.evil)}
-				<span class="share">({percent(stats.summary.finalThree.wins.evil, finalThreeDecided)})</span
-				>
-			</dd>
-		</div>
-		<div>
-			<dt>{t('history.averageDays')}</dt>
-			<dd>{decimal(stats.summary.averageDays)}</dd>
-		</div>
-		<div>
-			<dt>{t('history.averagePlayers')}</dt>
-			<dd>{decimal(stats.summary.averagePlayers)}</dd>
-		</div>
-	</dl>
+	<StatCards stats={summaryCards} />
 </PageSection>
 
 <PageSection title={t('history.scripts')} collapsible storageKey="history.scripts">
@@ -497,32 +472,6 @@
 </PageSection>
 
 <style>
-	dl {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(7 * var(--u)), 1fr));
-		gap: var(--space-2);
-		margin: 0;
-	}
-	dl div {
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-	}
-	dt {
-		font-size: 0.85rem;
-		color: var(--on-surface-muted);
-	}
-	dd {
-		margin: 0;
-		white-space: nowrap;
-		font-family: var(--font-heading);
-		font-size: 1.3rem;
-		color: var(--heading);
-	}
-	.share {
-		font-size: 0.7em;
-		color: var(--on-surface-muted);
-	}
 	.script {
 		display: block;
 	}
