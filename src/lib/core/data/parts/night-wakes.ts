@@ -1,4 +1,4 @@
-import { anyOf, COUNT, list, obj, oneOf, opt, STRS, T, type SpecValue } from '../field-spec.ts';
+import { anyOf, COUNT, list, obj, oneOf, opt, STR, STRS, T, type SpecValue } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
 import { specPart } from './part.ts';
 
@@ -6,7 +6,10 @@ import { specPart } from './part.ts';
  * Players a rule source wakes at night, on top of the night order: these `characters` or
  * `types`, or with `dead` every dead player together (Council of the Dead,
  * https://beardytas.com/garden-of-djinn/council-of-the-dead/), on the nights `when` says
- * (`night` for `one-night`, 1 being the first), for `minutes` when given.
+ * (`night` for `one-night`, 1 being the first), for `minutes` when given. With `chosen`, one
+ * player the Storyteller picks (The Ballad of Seat 7's Grandmother Principle,
+ * https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/). `text` is the step's own line,
+ * else the rule's.
  */
 const WAKE = obj({
 	when: oneOf(['each-night', 'each-night-except-first', 'one-night']),
@@ -14,7 +17,9 @@ const WAKE = obj({
 	characters: opt(STRS),
 	types: opt(anyOf(SEATED_TYPES)),
 	dead: opt(T),
-	minutes: opt(COUNT)
+	chosen: opt(T),
+	minutes: opt(COUNT),
+	text: opt(STR)
 });
 export type NightWake = SpecValue<typeof WAKE>;
 

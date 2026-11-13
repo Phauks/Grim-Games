@@ -7,6 +7,7 @@ import {
 	PLUS_ONE_MAY_BE,
 	PLUS_ONE_NAMED,
 	SEAT_7_AT_HOME,
+	SEAT_7_PROTECTOR,
 	SEAT_7_RISE_UP,
 	SEAT_7_WHISPER,
 	choicesOf,
@@ -95,6 +96,19 @@ describe('rule switches', () => {
 			'seat-7:seats-rise-up': true,
 			'seat-7:amnesiac-at-home': true
 		});
+	});
+
+	// https://beardytas.com/garden-of-djinn/the-ballad-of-seat-7/, The Grandmother Principle: "At
+	// the start of night 1, one player is woken to learn that they have been chose to protect the
+	// seat."
+	it('wake a protector on the first night under The Grandmother Principle', () => {
+		const rule = specialRuleById('seat-7')!;
+		const protector = switched(rule, { 'seat-7:grandmother-principle': true });
+		expect(protector.rules?.nightWakes).toEqual([
+			{ when: 'one-night', night: 1, chosen: true, text: SEAT_7_PROTECTOR }
+		]);
+		expect(protector.setup.ruleChanges).toEqual([{ instructions: SEAT_7_PROTECTOR }]);
+		expect(parseSpecialRule(protector).ok).toBe(true);
 	});
 
 	// Trevor (2026-10-24): "allow duplicate demons could be a setting".

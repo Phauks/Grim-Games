@@ -6759,7 +6759,8 @@ test('with The Ballad of Seat 7, any seat can be the one no one plays, spoken fo
 // switches on the rule. A Terrifying Whisper: "The Seat may speak twice per game. Once privately
 // and once publicly." Seats Rise Up: "Once per day, if the seat still has a vote, the storyteller
 // may choose one nomination and a vote to it's total." Amnesiac at Home: whoever sits there is
-// "not told the role".
+// "not told the role". The Grandmother Principle: "At the start of night 1, one player is woken
+// to learn that they have been chose to protect the seat."
 test('Seat 7’s optional rules: speaking twice, voting once a day, never shown its character', async ({
 	page
 }) => {
@@ -6774,7 +6775,12 @@ test('Seat 7’s optional rules: speaking twice, voting once a day, never shown 
 		.locator(':scope > li')
 		.filter({ hasText: 'The Ballad of Seat 7' })
 		.first();
-	for (const name of ['A Terrifying Whisper', 'Seats Rise Up', 'Amnesiac at Home']) {
+	for (const name of [
+		'A Terrifying Whisper',
+		'Seats Rise Up',
+		'Amnesiac at Home',
+		'The Grandmother Principle'
+	]) {
 		await seven.getByText(name, { exact: true }).tap();
 		await expect(seven.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
 	}
@@ -6796,6 +6802,14 @@ test('Seat 7’s optional rules: speaking twice, voting once a day, never shown 
 	await expect(menu.getByRole('button', { name: 'Spoke publicly for this seat' })).toBeEnabled();
 	await expect(menu.getByRole('button', { name: 'Voted with this seat today' })).toBeDisabled();
 	await expect(menu.getByRole('button', { name: 'Spoke for this seat' })).toHaveCount(0);
+	await menu.getByRole('button', { name: 'Close' }).tap();
+	await closeSheet(page);
+	// The protector wakes on the first night, in a step of the rule's own after Dusk.
+	await walkTo(page, 'Dusk');
+	const strip = page.getByTestId('night-strip');
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('The Ballad of Seat 7');
+	await expect(strip).toContainText('chosen to protect the seat no one plays');
 });
 
 test('a Dead reminder put on a living player asks whether to mark them dead', async ({ page }) => {

@@ -34,7 +34,7 @@ import {
 import { pretendSeatsOf, pretendTeam } from '#lib/core/rules/abilities/pretend.ts';
 import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
 import {
-	deadWakesOn,
+	oneNightWakesOn,
 	ruleSources,
 	seatHasAbility,
 	type RuleFile,
@@ -140,16 +140,17 @@ export function boardNightSteps(
 
 /**
  * The steps rule sources add to night `number`, right after Dusk: a one-night wake for the dead
- * (`nightWakes`, Council of the Dead, https://beardytas.com/garden-of-djinn/council-of-the-dead/),
- * headed by the source's name, with a rule's own lines as its text. A Fabled or Loric with one
+ * (`nightWakes`, Council of the Dead, https://beardytas.com/garden-of-djinn/council-of-the-dead/)
+ * or for a player the Storyteller picks (The Ballad of Seat 7's Grandmother Principle), headed by
+ * the source's name, with the wake's own line or the rule's lines as its text. A Fabled or Loric with one
  * adds it the same way.
  */
 export function ruleNightSteps(sources: readonly RuleSource[], number: number): NightStep[] {
-	return deadWakesOn(sources, number).map(({ source, index }) => ({
+	return oneNightWakesOn(sources, number).map(({ source, wake, index }) => ({
 		id: `rule:${source.id}:${index}`,
 		kind: 'custom' as const,
 		title: source.name,
-		reminder: (source.text ?? []).join(' ') || undefined,
+		reminder: wake.text || (source.text ?? []).join(' ') || undefined,
 		afterDawn: false,
 		placement: 'marker' as const,
 		notes: []

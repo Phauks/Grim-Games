@@ -23,7 +23,8 @@ export type SwitchLabel =
 	| 'modes.switch.duplicateDemons'
 	| 'modes.switch.terrifyingWhisper'
 	| 'modes.switch.seatsRiseUp'
-	| 'modes.switch.amnesiacAtHome';
+	| 'modes.switch.amnesiacAtHome'
+	| 'modes.switch.grandmotherPrinciple';
 
 /** The Storyteller's switch choices, by `ruleId:switchId`; a missing one is its default. */
 export type SwitchChoices = Readonly<Record<string, boolean>>;
@@ -172,6 +173,10 @@ export const SEAT_7_RISE_UP =
 export const SEAT_7_AT_HOME =
 	'If a new player sits in the seat during the game, you may let them stay and speak for it. Don’t tell them its character or anything it learned.';
 
+/** Seat 7 under The Grandmother Principle; our wording (drafted 2026-11-12, waiting on Trevor). */
+export const SEAT_7_PROTECTOR =
+	'Wake one player and tell them they have been chosen to protect the seat no one plays. If that seat is executed, you may have them die too.';
+
 /** The rule with one more Storyteller instruction after its own. */
 function withInstruction(rule: SpecialRule, instructions: string): SpecialRule {
 	return {
@@ -227,6 +232,30 @@ const SEAT_7: readonly RuleSwitch[] = [
 		label: () => 'modes.switch.amnesiacAtHome',
 		default: false,
 		apply: (rule, on) => (on ? withInstruction(rule, SEAT_7_AT_HOME) : rule)
+	},
+	{
+		// "At the start of night 1, one player is woken to learn that they have been chose to
+		// protect the seat." "If seat 7 is executed they might die as well." The first night gets
+		// a step of its own after Dusk (`nightWakes`); the death is the Storyteller's call.
+		id: 'grandmother-principle',
+		label: () => 'modes.switch.grandmotherPrinciple',
+		default: false,
+		apply: (rule, on) => {
+			if (!on) return rule;
+			const wake = {
+				when: 'one-night' as const,
+				night: 1,
+				chosen: true as const,
+				text: SEAT_7_PROTECTOR
+			};
+			return withInstruction(
+				{
+					...rule,
+					rules: { ...rule.rules, nightWakes: [...(rule.rules?.nightWakes ?? []), wake] }
+				},
+				SEAT_7_PROTECTOR
+			);
+		}
 	}
 ];
 
