@@ -4991,6 +4991,13 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 			face: !!el.querySelector('.face')
 		}))
 	).toEqual({ fills: true, face: false });
+	// Trevor, 2026-11-13 (style B): the Dusk sun swells and its stars twinkle, and both hold
+	// still when the device asks for less motion.
+	const moving = () => art.evaluate((el) => el.getAnimations({ subtree: true }).length);
+	expect(await moving()).toBeGreaterThan(0);
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	expect(await moving()).toBe(0);
+	await page.emulateMedia({ reducedMotion: 'no-preference' });
 	const parts = () =>
 		step.evaluate((dialog) => ({
 			row: !!dialog.querySelector('.row-head .ring-row'),
