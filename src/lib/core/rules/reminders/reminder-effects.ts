@@ -13,18 +13,19 @@
  * Any other punishment is the Storyteller's own words on the token.
  */
 import { type PickedEffect, type ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { ImpairmentReason } from '#lib/core/data/character-rules.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { Game, Reminder, ReminderEffect, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 /** The effects this reminder may carry, when its character's rules let the Storyteller pick. */
 export function pickedEffectOf(
+	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup
 ): PickedEffect | undefined {
-	const rule = rulesOf(reminder.characterId, characters)?.pickedEffect;
+	const rule = rulesFor(game, reminder.characterId, characters)?.pickedEffect;
 	return rule && rule.token.toLowerCase() === reminder.label.toLowerCase() ? rule : undefined;
 }
 

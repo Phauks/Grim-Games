@@ -304,32 +304,6 @@ export function reminderTokenSize(tokenSize: number, scale = 1): number {
 	return Math.round(Math.max(30, Math.min(48, tokenSize * 0.5)) * scale);
 }
 
-/**
- * Points from a seat towards the middle of the board, at each distance (px) from the seat's
- * centre: where its reminder tokens go, as in front of a token in the physical grimoire.
- * A seat at the very middle sends them downwards.
- */
-export function towardsMiddle(
-	seat: SeatPoint,
-	board: BoardSize,
-	distances: readonly number[]
-): SeatPoint[] {
-	const { width, height } = board;
-	if (width <= 0 || height <= 0) return distances.map(() => seat);
-	const dx = ((50 - seat.x) / 100) * width;
-	const dy = ((50 - seat.y) / 100) * height;
-	const length = Math.hypot(dx, dy);
-	const [ux, uy] = length < 1 ? [0, 1] : [dx / length, dy / length];
-	return distances.map((d) => ({
-		x: seat.x + ((ux * d) / width) * 100,
-		y: seat.y + ((uy * d) / height) * 100
-	}));
-}
-
-export function withShape(layout: SeatLayout, shape: SeatShape): SeatLayout {
-	return { ...layout, shape };
-}
-
 /** Sets the empty places after a seat, from 0 to `MAX_GAP`. */
 export function withGap(layout: SeatLayout, seatId: string, gap: number): SeatLayout {
 	const gaps = { ...layout.gaps };
@@ -367,13 +341,6 @@ export function swapPlaces(layout: SeatLayout, a: string, b: string): SeatLayout
 		return out;
 	};
 	return { ...layout, placed: swap(layout.placed), gaps: swap(layout.gaps) };
-}
-
-/** Puts a hand-placed seat back on the ring. */
-export function withoutPlaced(layout: SeatLayout, seatId: string): SeatLayout {
-	const placed = { ...layout.placed };
-	delete placed[seatId];
-	return { ...layout, placed };
 }
 
 /**
@@ -439,14 +406,6 @@ export function orderAround(
 /** Everyone back on the ring, evenly spaced in seating order: no gaps, nobody hand-placed. */
 export function spreadEvenly(layout: SeatLayout): SeatLayout {
 	return { ...layout, gaps: {}, placed: {} };
-}
-
-/** Forgets gaps and placements of seats that are no longer at the table. */
-export function pruneLayout(layout: SeatLayout, seatIds: readonly string[]): SeatLayout {
-	const here = new Set(seatIds);
-	const keep = <T>(record: Readonly<Record<string, T>>) =>
-		Object.fromEntries(Object.entries(record).filter(([id]) => here.has(id)));
-	return { ...layout, gaps: keep(layout.gaps), placed: keep(layout.placed) };
 }
 
 export function isDefaultLayout(layout: SeatLayout): boolean {

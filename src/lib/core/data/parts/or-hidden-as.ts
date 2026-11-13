@@ -1,4 +1,5 @@
-import { stringPart } from './part.ts';
+import { CHARACTER } from '../field-spec.ts';
+import { specPart } from './part.ts';
 
 /**
  * A hidden character (one with no token of its own, such as the Drunk) the Storyteller may
@@ -6,8 +7,9 @@ import { stringPart } from './part.ts';
  * Buffet asks when it is drafted, as Grimbits' draft tool does for the Atheist
  * (https://grimbits.com/draft-buffet/; `modes/draft.ts`).
  */
-export const orHiddenAs = stringPart(
+export const orHiddenAs = specPart(
 	'abilities',
 	'Or hidden as',
-	'A hidden character the Storyteller may make its player instead.'
+	'A hidden character the Storyteller may make its player instead.',
+	CHARACTER
 );

@@ -62,60 +62,113 @@
 		const characters = gameSheetCharacters(script.characters, data.byId, inPlay, travellers);
 		return (['first', 'other'] as const).map((n) => playerNight(script, data, n, characters));
 	});
+
+	/*
+	 * Notes beside the chosen tab (plan E3, Trevor 2026-11-12: "Notes and grim or script at
+	 * the same time"): a column on the right where the screen is wide (a desktop, a tablet on
+	 * its side), under the tab on an upright tablet. A phone has room for neither (the mockups
+	 * in /mnt/project-files/notes-beside/), so there Notes stay a tab of their own.
+	 */
+	let width = $state(0);
+	let height = $state(0);
+	const beside = $derived.by((): 'side' | 'under' | undefined => {
+		if (!notes || !width) return undefined;
+		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+		if (width >= 50 * rem) return 'side';
+		if (width >= 36 * rem && height >= 50 * rem) return 'under';
+		return undefined;
+	});
+	const notesOpen = $derived(!!beside && playerSettings.current.notesBeside);
+	// Notes chosen as a tab, then the screen widens (a tablet turned): they move beside it.
+	$effect(() => {
+		if (beside && tab === 'notes') {
+			tab = 'script';
+			playerSettings.update({ notesBeside: true });
+		}
+	});
+
 	const tabs = $derived([
 		{ value: 'script', label: t('player.tab.script'), icon: 'script' as const },
 		{ value: 'night', label: t('player.tab.night'), icon: 'night' as const },
 		...(grim ? [{ value: 'grim', label: t('player.tab.grim'), icon: 'grimoire' as const }] : []),
-		...(notes ? [{ value: 'notes', label: t('player.tab.notes'), icon: 'notes' as const }] : [])
+		...(notes && !beside
+			? [{ value: 'notes', label: t('player.tab.notes'), icon: 'notes' as const }]
+			: [])
 	]);
 </script>
 
 <!-- A bar along the bottom with an icon over each tab (Trevor, 2026-10-31: "looks better than
      loose text above the sections"). -->
-<Tabs bind:value={tab} label={t('player.title')} {tabs} placement="bottom">
-	{#snippet panel(value)}
-		<div class="panel">
-			<!-- A crash in one tab replaces only that tab. -->
-			<ErrorBoundary area="play">
-				{#if value === 'script'}
-					<div class="bleed">
-						<ScriptCopy
-							{script}
-							{players}
-							{inPlay}
-							{travellers}
-							{rules}
-							{ruleCharacters}
-							byline={false}
-							backgroundChoice={false}
-						/>
-					</div>
-				{:else if value === 'night'}
-					<!-- The night order takes the same light background as the script (Trevor,
+<svelte:window bind:innerHeight={height} />
+
+<div class="tabs" bind:clientWidth={width}>
+	<Tabs
+		bind:value={tab}
+		label={t('player.title')}
+		{tabs}
+		placement="bottom"
+		toggle={beside && notes
+			? {
+					label: t('player.tab.notes'),
+					icon: 'notes',
+					pressed: notesOpen,
+					onToggle: () => playerSettings.update({ notesBeside: !notesOpen })
+				}
+			: undefined}
+		aside={beside && notes ? { content: besideNotes, placement: beside } : undefined}
+	>
+		{#snippet panel(value)}
+			<div class="panel">
+				<!-- A crash in one tab replaces only that tab. -->
+				<ErrorBoundary area="play">
+					{#if value === 'script'}
+						<div class="bleed">
+							<ScriptCopy
+								{script}
+								{players}
+								{inPlay}
+								{travellers}
+								{rules}
+								{ruleCharacters}
+								byline={false}
+								backgroundChoice={false}
+							/>
+						</div>
+					{:else if value === 'night'}
+						<!-- The night order takes the same light background as the script (Trevor,
 					     2026-10-23: "Sun and Moon should affect night order as well"). -->
-					<div
-						class="sheet"
-						class:painted={playerSettings.current.sheetBackground !== 'theme'}
-						style={sheetStyle(playerSettings.current.sheetBackground)}
-						data-testid="night-sheet"
-					>
-						{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
-								{t('player.loading')}
-							</p>{/if}
-					</div>
-				{:else if value === 'grim' && grim}
-					{@render grim()}
-				{:else if value === 'notes' && notes}
-					<!-- The Script and Night tabs' inset, so every tab's sections line up (Trevor,
+						<div
+							class="sheet"
+							class:painted={playerSettings.current.sheetBackground !== 'theme'}
+							style={sheetStyle(playerSettings.current.sheetBackground)}
+							data-testid="night-sheet"
+						>
+							{#if data}<PlayerNightOrder {nights} />{:else}<p class="muted">
+									{t('player.loading')}
+								</p>{/if}
+						</div>
+					{:else if value === 'grim' && grim}
+						{@render grim()}
+					{:else if value === 'notes' && notes}
+						<!-- The Script and Night tabs' inset, so every tab's sections line up (Trevor,
 					     2026-10-27: "All these seem to use different indents"). -->
-					<div class="inset">{@render notes()}</div>
-				{/if}
-			</ErrorBoundary>
-		</div>
-	{/snippet}
-</Tabs>
+						<div class="inset">{@render notes()}</div>
+					{/if}
+				</ErrorBoundary>
+			</div>
+		{/snippet}
+	</Tabs>
+</div>
+
+{#snippet besideNotes()}
+	<div class="inset beside">{@render notes?.()}</div>
+{/snippet}
 
 <style>
+	/* Beside a tab, the notes keep inside their own column. */
+	.inset.beside {
+		margin-inline: 0;
+	}
 	/* The sheet's own padding gives the room under the tabs. */
 	.panel {
 		padding-top: 0;

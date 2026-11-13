@@ -76,6 +76,35 @@ export function sharedRecap(recap: GameRecap, parts: RecapParts, image?: string)
 	};
 }
 
+/** Nothing chosen to share beyond who played what: the game result's parts. */
+const RESULT_PARTS: RecapParts = { log: false, image: false, notes: false };
+
+/**
+ * A finished game's result for the players to share (Trevor, 2026-11-12, plan R4: "I won as
+ * the [character]" with a link): the script, who won and each seat's character, with no
+ * names at all, so any player may pass it on without asking the Storyteller. Seats keep
+ * their number and seat id (a phone finds its own seat by it).
+ */
+export function resultRecap(recap: GameRecap): SharedRecap {
+	const { storyteller: _storyteller, ...rest } = recap;
+	void _storyteller;
+	return {
+		v: SHARED_VERSION,
+		recap: {
+			...rest,
+			seats: recap.seats.map(({ name: _name, accountId: _a, claimedBy: _c, ...seat }) => {
+				void _name;
+				void _a;
+				void _c;
+				return { ...seat, name: '' };
+			}),
+			log: [],
+			notes: []
+		},
+		parts: RESULT_PARTS
+	};
+}
+
 type Fields = Record<string, unknown>;
 const isObject = (v: unknown): v is Fields => typeof v === 'object' && v !== null;
 const text = (v: unknown): v is string => typeof v === 'string' && v.length <= MAX_TEXT;
@@ -87,6 +116,7 @@ function isCharacter(v: unknown): boolean {
 	return (
 		isObject(v) &&
 		text(v.name) &&
+		optionalText(v.id) &&
 		(v.alignment === undefined || v.alignment === 'good' || v.alignment === 'evil')
 	);
 }

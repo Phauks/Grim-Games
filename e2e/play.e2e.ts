@@ -1,4 +1,4 @@
-import { openTab } from './tabs.ts';
+import { notesToggle, openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
 	addNote,
@@ -87,6 +87,8 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 		);
 		await page.keyboard.press('Escape');
 	}
+	// Where Notes show beside the chosen tab (plan E3), their button ends the bar.
+	if (await notesToggle(page).count()) onRow.push('Notes');
 	expect(onRow).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await expect(page.getByTestId('seat-ring')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
@@ -177,7 +179,7 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 
 	// With room again, every tab is back on the row and the ⋯ button goes.
 	await page.setViewportSize({ width: 1000, height: 640 });
-	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(page)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await expect(more).toHaveCount(0);
 });
 
@@ -194,7 +196,7 @@ test('the tabs sit in a bar along the bottom, the chosen one filled', async ({ p
 		expect(Math.abs(strip - screen.height)).toBeLessThanOrEqual(1);
 	};
 	// A short tab still has its bar at the foot of the screen, with nothing to scroll.
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await atBottom();
 	expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
 		true
@@ -214,9 +216,86 @@ test('the tabs sit in a bar along the bottom, the chosen one filled', async ({ p
 				(tab.querySelector('[data-icon]')?.getBoundingClientRect().width ?? 0).toFixed(0)
 			)
 		);
-	expect(widths).toHaveLength(4);
+	expect(await tabNames(page)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	expect(Number(widths[0])).toBeGreaterThan(Number(widths[1]));
 	expect(new Set(widths.slice(1)).size).toBe(1);
+	// Notes showing beside the tab (plan E3): their button is drawn as the chosen tab's.
+	const toggle = notesToggle(page);
+	if (await toggle.count()) {
+		await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+		const width = await toggle.evaluate((el) =>
+			(el.querySelector('[data-icon]')?.getBoundingClientRect().width ?? 0).toFixed(0)
+		);
+		expect(width).toBe(widths[0]);
+	}
+});
+
+test('Notes show beside the chosen tab where there is room, and as a tab on a phone', async ({
+	page
+}) => {
+	// Plan E3 (Trevor, 2026-11-12, option A of the mockups in /mnt/project-files/notes-beside/):
+	// the Notes button opens them on the right on a wide screen and under the tab on an upright
+	// tablet; a phone has room for neither, so there Notes stay a tab of their own.
+	const toggle = notesToggle(page);
+	const bar = page.locator('[data-bottom-bar]');
+	if (test.info().project.name === 'phone') {
+		await expect(toggle).toHaveCount(0);
+		await expect(page.getByRole('tab', { name: 'Notes' })).toBeVisible();
+		return;
+	}
+	// Off at first: the chosen tab alone, and the Notes button not filled.
+	await expect(page.getByRole('tab', { name: 'Notes' })).toHaveCount(0);
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	const notes = page.getByRole('complementary', { name: 'Notes' });
+	await expect(notes).toHaveCount(0);
+
+	// Under the Script tab on an upright tablet, which stays chosen.
+	await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	await expect(page.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
+	await addNote(page, notes, { title: 'Day 1', text: 'Seat 3 claims Chef' });
+	const panel = page.getByRole('tabpanel', { name: 'Script' });
+	const under = async () => {
+		// The tab scrolls in its own box above them.
+		const above = await panel.evaluate((el) => el.parentElement!.getBoundingClientRect().bottom);
+		const box = (await notes.boundingBox())!;
+		expect(box.y).toBeGreaterThanOrEqual(above - 1);
+		// It ends above the bar: nothing of it goes under (Trevor, 2026-11-06: "stuff being
+		// covered up"), and the screen itself does not scroll.
+		expect(box.y + box.height).toBeLessThanOrEqual((await bar.boundingBox())!.y + 1);
+		expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+			true
+		);
+	};
+	await under();
+
+	// Beside the Grim too, the same notes, still written in.
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(page.getByTestId('grim-seat').first()).toBeVisible();
+	await expectNotes(notes, ['Day 1: Seat 3 claims Chef']);
+
+	// On a wide screen they move to the right of the tab, and end above the bar there too.
+	await page.setViewportSize({ width: 1280, height: 800 });
+	await expect
+		.poll(async () => (await notes.boundingBox())!.x)
+		.toBeGreaterThan((await page.getByRole('tabpanel', { name: 'Grim' }).boundingBox())!.x + 400);
+	await page.getByRole('tab', { name: 'Script' }).tap();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	const box = (await notes.boundingBox())!;
+	expect(box.y).toBeGreaterThanOrEqual(-1);
+	expect(box.y + box.height).toBeLessThanOrEqual((await bar.boundingBox())!.y + 1);
+	await expectNotes(notes, ['Day 1: Seat 3 claims Chef']);
+
+	// Off again, and remembered: a reload keeps the choice.
+	await toggle.tap();
+	await expect(notes).toHaveCount(0);
+	await page.reload();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+	await toggle.tap();
+	await page.reload();
+	await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+	await expectNotes(notes, ['Day 1: Seat 3 claims Chef']);
 });
 
 test("the player view's menu is the app's, and leaving it asks first", async ({ page }) => {
@@ -266,7 +345,7 @@ test('a notebook saved in an older format starts fresh', async ({ page }) => {
 	// Stored data is never migrated (Trevor, 2026-11-10): a v4 notebook from when /play had a
 	// seat circle reads as none (notebook.ts readNotebook). The notebook's database opens with
 	// the Notes tab, so open it once first.
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	// A new notebook starts with no notes, only "+ New note" (Trevor, 2026-10-29).
 	await expect(page.locator('[data-note]')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
@@ -296,7 +375,7 @@ test('a notebook saved in an older format starts fresh', async ({ page }) => {
 			})
 	);
 	await page.reload();
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
 	await expect(page.locator('[data-note]')).toHaveCount(0);
 });
@@ -479,7 +558,7 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 });
 
 test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	// A new note left with nothing in it is not kept.
 	await page.getByRole('button', { name: 'New note' }).tap();
 	const fresh = newNoteRow(page);
@@ -508,7 +587,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 		.poll(async () => (await storedNotes(page)).map((n) => n.title))
 		.toEqual(['What I really know', 'My bluff']);
 	await page.reload();
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expectNotes(page, ['What I really know: Sam is the Imp', 'My bluff: Chef: 0']);
 
 	// An edit in place is kept too.
@@ -541,7 +620,7 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 test('a note is written in its row, its formatting tools over its buttons', async ({ page }) => {
 	// Trevor (2026-11-02): notes edited in-line instead of opened; the row keeps its height,
 	// the tools taking the place of the eye and trash while the text is written.
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await addNote(page, page, { title: 'Night 1', text: 'Chef: 0' });
 	const row = noteRows(page).first();
 	const hide = row.getByRole('button', { name: 'Hide contents' });
@@ -564,7 +643,7 @@ test('a note is written in its row, its formatting tools over its buttons', asyn
 });
 
 test('each script keeps its own notebook', async ({ page }) => {
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await addNote(page, page, { title: 'TB' });
 	await expect.poll(async () => (await storedNotes(page)).map((n) => n.title)).toEqual(['TB']);
 
@@ -576,7 +655,7 @@ test('each script keeps its own notebook', async ({ page }) => {
 	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
 	await expect(noteRows(page)).toHaveCount(0);
 	await page.goto('/play#e=tb');
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expectNotes(page, ['TB']);
 });
 
@@ -713,7 +792,7 @@ test('a shared link with problems opens the Script check first', async ({ page }
 });
 
 test('each note can hide its contents', async ({ page }) => {
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await addNote(page, page, { title: 'Evil team', text: 'Sam is the Imp' });
 	const row = noteRows(page);
 	await expectNotes(page, ['Evil team: Sam is the Imp']);
@@ -731,7 +810,7 @@ test('each note can hide its contents', async ({ page }) => {
 	// Kept after a reload.
 	await expect.poll(() => storedNotes(page)).toEqual([{ title: 'Evil team', hidden: true }]);
 	await page.reload();
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await expectNotes(page, ['Evil team: Hidden']);
 	// The eye shows it again.
 	await hide.tap();
@@ -747,7 +826,7 @@ test('each note can hide its contents', async ({ page }) => {
 });
 
 test('Enter in a note title closes the keyboard', async ({ page }) => {
-	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await openNotes(page);
 	await page.getByRole('button', { name: 'New note' }).tap();
 	const title = noteTitle(newNoteRow(page));
 	await title.fill('Bluff');
@@ -922,7 +1001,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await expect(row).toBeHidden();
 
 	// The cog stays at the top of every tab.
-	await openTab(page, 'Notes');
+	await openNotes(page);
 	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 
 	// Share script hands on the room's link and code (plan J20).

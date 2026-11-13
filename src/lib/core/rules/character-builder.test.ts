@@ -108,6 +108,15 @@ describe('characterProblems', () => {
 		expect(blocksSaving(problems)).toBe(false);
 	});
 
+	it('refuses setup text the app cannot apply, so a setup change does what it says', () => {
+		const ability = (text: string) => fields({ ability: `Each night, learn a number. ${text}` });
+		expect(characterProblems(ability('[+2 Outsiders]'), data)).toEqual([]);
+		expect(characterProblems(ability('[+the King]'), data)).toEqual([]);
+		const problems = characterProblems(ability('[+2 Outsiders. Some players swap]'), data);
+		expect(problems).toEqual([{ kind: 'setup-unread', clause: 'Some players swap' }]);
+		expect(blocksSaving(problems)).toBe(true);
+	});
+
 	it('rejects a name with no letters or digits for its id', () => {
 		expect(characterProblems(fields({ name: '???' }), data)).toEqual([
 			{ kind: 'id-invalid', id: '' }

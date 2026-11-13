@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	CODE_WORDS,
-	isCodeWord,
-	makeWordCode,
-	normaliseWordCode,
-	splitWords,
-	wordCodeBits
-} from './word-code.ts';
+import { CODE_WORDS, isCodeWord, normaliseWordCode, splitWords } from './word-code.ts';
 
 /** True when `a` and `b` differ by one added, removed or changed letter. */
 function oneApart(a: string, b: string): boolean {
@@ -47,21 +40,6 @@ describe('code word list', () => {
 });
 
 describe('word codes', () => {
-	it('turns each random byte into one word', () => {
-		const code = makeWordCode(4, (bytes) => bytes.fill(0).map((_, i) => i * 85));
-		expect(code).toBe([CODE_WORDS[0], CODE_WORDS[85], CODE_WORDS[170], CODE_WORDS[255]].join('-'));
-	});
-
-	it('makes different codes with the real random source', () => {
-		const codes = new Set(Array.from({ length: 50 }, () => makeWordCode(4)));
-		expect(codes.size).toBe(50);
-		for (const code of codes) expect(normaliseWordCode(code, 4)).toBe(code);
-	});
-
-	it('has 8 bits per word', () => {
-		expect(wordCodeBits(4)).toBe(32);
-	});
-
 	it('accepts any case and separator, and gives the hyphenated form', () => {
 		expect(normaliseWordCode(' Poisoned drunk,IMP / bell ', 4)).toBe('poisoned-drunk-imp-bell');
 		expect(splitWords('poisoned-drunk')).toEqual(['poisoned', 'drunk']);

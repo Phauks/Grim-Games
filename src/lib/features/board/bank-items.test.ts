@@ -13,6 +13,7 @@ import {
 	playerBankItems,
 	type BankOptions
 } from './bank-items.ts';
+import { extraReminders } from './reminders.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -238,5 +239,47 @@ describe("a player's tray, built as the bank is", () => {
 	it('gives a copy no label for an ∞ or # token', () => {
 		expect(bankLabel({ label: 'Number' as never, number: true })).toBe('');
 		expect(bankLabel({ label: 'Safe' as never })).toBe('Safe');
+	});
+});
+
+// Trevor (2026-11-12): "Bootlegger tokens should be considered infinite. Place them in that
+// area. Do not limit to 2 tokens." The Bootlegger's rules say `unlimitedReminders`.
+describe('tokens that never run out', () => {
+	function withBootlegger(placed: number) {
+		const created = createGame({ type: 'CreateGame', script, playerCount: 5 }, ctx);
+		if (!created.ok) throw new Error();
+		let session = created.session;
+		const run = (command: Parameters<typeof dispatch>[1]) => {
+			const result = dispatch(session, command, ctx);
+			if (!result.ok) throw new Error(result.error.code);
+			session = result.session;
+		};
+		run({ type: 'AddRuleCharacter', characterId: 'bootlegger' });
+		for (let i = 0; i < placed; i++)
+			run({
+				type: 'AddReminder',
+				seatId: session.game.seating[i],
+				reminder: { characterId: 'bootlegger', label: '?' as never }
+			});
+		return session.game;
+	}
+
+	it("keeps one of the Bootlegger's in the ∞ stretch, however many are placed", () => {
+		for (const placed of [0, 3]) {
+			const g = withBootlegger(placed);
+			const items = bankItems(g, characters, options).filter((i) => i.characterId === 'bootlegger');
+			expect(items.map((i) => [i.label, i.group, i.count])).toEqual([['?', 'generic', 1]]);
+		}
+	});
+
+	it('puts them first in the ∞ stretch, before the plain ∞', () => {
+		const items = bankItems(withBootlegger(0), characters, options);
+		const generic = items.filter((i) => i.group === 'generic').map((i) => i.key);
+		expect(generic[0]).toBe('bank:bootlegger:?');
+		expect(generic[1]).toBe('generic');
+	});
+
+	it('never marks a placed copy as an extra', () => {
+		expect(extraReminders(withBootlegger(3), characters).size).toBe(0);
 	});
 });

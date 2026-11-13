@@ -13,9 +13,6 @@ import {
 	type Character,
 	type Jinx,
 	type NightSheet,
-	type Script,
-	type ScriptEntry,
-	type ScriptMeta,
 	type Special
 } from './types.ts';
 import {
@@ -263,72 +260,6 @@ export function parseNightSheet(json: unknown): NightSheet {
 	}
 	issues.throwIfAny('nightsheet.json');
 	return sheet;
-}
-
-function parseMeta(raw: Record<string, unknown>, path: string, issues: Issues): ScriptMeta {
-	const meta: ScriptMeta = { name: readString(raw, 'name', path, issues, false) ?? '' };
-	for (const key of ['author', 'logo', 'background', 'almanac'] as const) {
-		const value = readString(raw, key, path, issues, false);
-		if (value !== undefined) meta[key] = value;
-	}
-	const hideTitle = readBoolean(raw, 'hideTitle', path, issues);
-	if (hideTitle !== undefined) meta.hideTitle = hideTitle;
-	for (const key of ['bootlegger', 'firstNight', 'otherNight'] as const) {
-		const value = readStringArray(raw, key, path, issues);
-		if (value !== undefined) meta[key] = value;
-	}
-	if (raw.bootleggerRules !== undefined) {
-		const rules = parseCharacterRules(raw.bootleggerRules, `${path}.bootleggerRules`, issues);
-		if (rules) meta.bootleggerRules = rules;
-	}
-	return meta;
-}
-
-/**
- * Parses a script in TPI's format (`script-schema.json`): an array of character ids,
- * `{ id }` objects (deprecated), full character objects (homebrew), and an optional
- * `_meta` entry. Unknown fields are ignored so scripts from other tools still load.
- */
-export function parseScript(json: unknown): Script {
-	const issues = new Issues();
-	if (!Array.isArray(json)) {
-		issues.add('', `expected array, got ${describe(json)}`);
-		issues.throwIfAny('script');
-	}
-	const script: Script = { entries: [] };
-	const seen = new Set<string>();
-	const add = (entry: ScriptEntry, path: string) => {
-		const id = entry.kind === 'official' ? entry.id : entry.character.id;
-		if (seen.has(id)) issues.add(path, `${id} is listed twice`);
-		seen.add(id);
-		script.entries.push(entry);
-	};
-	(json as unknown[]).forEach((raw, i) => {
-		const path = `[${i}]`;
-		if (typeof raw === 'string') {
-			// Older tools wrote ids with capitals, underscores or hyphens ("fortune_teller").
-			add({ kind: 'official', id: normaliseCharacterId(raw) }, path);
-			return;
-		}
-		if (!isObject(raw)) {
-			issues.add(path, `expected string or object, got ${describe(raw)}`);
-			return;
-		}
-		if (raw.id === '_meta') {
-			if (script.meta) issues.add(path, 'more than one _meta entry');
-			script.meta = parseMeta(raw, path, issues);
-			return;
-		}
-		const keys = Object.keys(raw);
-		if (keys.length === 1 && typeof raw.id === 'string') {
-			add({ kind: 'official', id: normaliseCharacterId(raw.id) }, path);
-			return;
-		}
-		const character = parseCharacter(raw, path, issues, { strict: false, scriptFields: true });
-		if (character) add({ kind: 'custom', character }, path);
-	});
-	issues.throwIfAny('script');
-	return script;
 }
 
 /**

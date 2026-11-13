@@ -174,15 +174,6 @@ export function sharedRefHash(ref: SharedRef): string {
  */
 export type SharePath = '/play' | '/scripts';
 
-/** A full share link that carries the whole script (`#s=`). */
-export async function shareLink(
-	origin: string,
-	json: unknown,
-	path: SharePath = '/play'
-): Promise<string> {
-	return `${origin}${path}${sharedRefHash({ kind: 'inline', payload: await encodeSharedScript(json) })}`;
-}
-
 /** An offline code's link up to this many bytes is one QR code; a longer one animates. */
 export const OFFLINE_SINGLE_MAX = 1000;
 

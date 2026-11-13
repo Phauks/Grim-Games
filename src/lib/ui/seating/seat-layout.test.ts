@@ -5,18 +5,13 @@ import {
 	clearOfCorner,
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
-	isDefaultLayout,
 	parseSeatLayout,
-	pruneLayout,
 	seatPoints,
 	reminderTokenSize,
 	seatTokenSize,
 	withGap,
 	swapPlaces,
-	withoutPlaced,
 	withPlaced,
-	towardsMiddle,
-	withShape,
 	followSeating,
 	isRotation,
 	spreadEvenly,
@@ -41,7 +36,7 @@ describe('seatPoints', () => {
 	});
 
 	it('keeps a circle round on a wide board', () => {
-		const circle = withShape(DEFAULT_SEAT_LAYOUT, 'circle');
+		const circle = { ...DEFAULT_SEAT_LAYOUT, shape: 'circle' as const };
 		const [, b] = seatPoints(seats, circle, wide);
 		// 41% of the 400px height is 164px, which is 20.5% of the 800px width.
 		expect(b.x).toBeCloseTo(70.5);
@@ -77,9 +72,6 @@ describe('seatPoints', () => {
 		const points = seatPoints(seats, layout, square);
 		expect(points[1]).toEqual({ x: 30, y: 40 });
 		expect(points[2]).toEqual(seatPoints(seats, DEFAULT_SEAT_LAYOUT, square)[2]);
-		expect(seatPoints(seats, withoutPlaced(layout, 'b'), square)).toEqual(
-			seatPoints(seats, DEFAULT_SEAT_LAYOUT, square)
-		);
 	});
 });
 
@@ -136,32 +128,20 @@ describe('saving', () => {
 		});
 	});
 
-	it('forgets seats that left the table', () => {
-		const layout = withPlaced(withGap(DEFAULT_SEAT_LAYOUT, 'gone', 1), 'gone', { x: 10, y: 10 });
-		expect(isDefaultLayout(pruneLayout(layout, seats))).toBe(true);
-	});
-
 	it('reads back what it saved and drops anything malformed', () => {
-		const layout = withPlaced(withGap(withShape(DEFAULT_SEAT_LAYOUT, 'circle'), 'a', 2), 'b', {
-			x: 20,
-			y: 30
-		});
+		const layout = withPlaced(
+			withGap({ ...DEFAULT_SEAT_LAYOUT, shape: 'circle' as const }, 'a', 2),
+			'b',
+			{
+				x: 20,
+				y: 30
+			}
+		);
 		expect(parseSeatLayout(JSON.parse(JSON.stringify(layout)))).toEqual(layout);
 		expect(
 			parseSeatLayout({ shape: 'hexagon', gaps: { a: 'x', b: 9 }, placed: { c: { x: 1 } } })
 		).toEqual({ shape: 'oval', gaps: { b: 3 }, placed: {} });
 		expect(parseSeatLayout(null)).toEqual(DEFAULT_SEAT_LAYOUT);
-	});
-});
-
-describe('towardsMiddle', () => {
-	it('lines reminders up from a seat towards the middle', () => {
-		const [near, far] = towardsMiddle({ x: 50, y: 10 }, square, [40, 80]);
-		// 40px on a 400px board is 10%, straight down from the top seat.
-		expect(near.x).toBeCloseTo(50);
-		expect(near.y).toBeCloseTo(20);
-		expect(far.y).toBeCloseTo(30);
-		expect(towardsMiddle({ x: 50, y: 50 }, square, [40])[0].y).toBeCloseTo(60);
 	});
 });
 
@@ -250,10 +230,10 @@ describe('rotating with a custom layout', () => {
 	});
 
 	it('spreads everyone evenly, keeping the shape', () => {
-		const layout = withShape(
-			withPlaced(withGap(DEFAULT_SEAT_LAYOUT, 'a', 1), 'b', { x: 10, y: 10 }),
-			'circle'
-		);
+		const layout = {
+			...withPlaced(withGap(DEFAULT_SEAT_LAYOUT, 'a', 1), 'b', { x: 10, y: 10 }),
+			shape: 'circle' as const
+		};
 		expect(spreadEvenly(layout)).toEqual({ shape: 'circle', gaps: {}, placed: {} });
 	});
 });
@@ -312,7 +292,7 @@ describe('the Storyteller board shape (Trevor, 2026-10-27)', () => {
 	});
 
 	it('spaces a circle at equal angles whatever the shape', () => {
-		const circle = withShape(DEFAULT_SEAT_LAYOUT, 'circle');
+		const circle = { ...DEFAULT_SEAT_LAYOUT, shape: 'circle' as const };
 		const own = seatPoints(eight, circle, phone);
 		const spaced = seatPoints(eight, circle, phone, boardAspect(laptop));
 		spaced.forEach((p, i) => {

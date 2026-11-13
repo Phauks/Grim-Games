@@ -9,6 +9,7 @@ import {
 	borrowedCopyHolder,
 	reminderHolders
 } from '#lib/core/rules/abilities/borrowed-abilities.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { gainedAbilities } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { reminderOffered } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
@@ -121,7 +122,7 @@ export function reminderCopies(
 	// Copies the Storyteller added to the bank (Duplicate reminder, Trevor 2026-10-20).
 	for (const [key, n] of bank) total.set(key, (total.get(key) ?? 1) + n);
 	const placed = new Map<string, number>();
-	for (const r of counted(game, copies))
+	for (const r of counted(game, copies, characters))
 		placed.set(reminderKey(r), (placed.get(reminderKey(r)) ?? 0) + 1);
 	for (const [key, n] of placed) if (n > (total.get(key) ?? 1)) total.set(key, n);
 	return total;
@@ -164,8 +165,9 @@ export function extraReminders(
 	const seen = new Map<string, number>();
 	const out = new Set<ReminderId>();
 	for (const r of onBoard(game)) {
-		// The generic reminder has no limit, so no copy of it is ever unusual.
-		if (isGeneric(r)) continue;
+		// The generic reminder has no limit, so no copy of it is ever unusual; nor has a
+		// character whose tokens never run out (the Bootlegger's).
+		if (isGeneric(r) || hasUnlimitedReminders(r.characterId, characters)) continue;
 		if (copies.has(r.reminderId)) {
 			out.add(r.reminderId);
 			continue;
@@ -195,7 +197,7 @@ export function reminderCopiesLeft(
 	bank: ReadonlyMap<string, number> = NO_BANK
 ): Map<string, number> {
 	const left = reminderCopies(game, characters, copies, bank);
-	for (const r of counted(game, copies)) {
+	for (const r of counted(game, copies, characters)) {
 		const key = reminderKey(r);
 		left.set(key, (left.get(key) ?? 1) - 1);
 	}
@@ -208,6 +210,15 @@ const NO_BANK: ReadonlyMap<string, number> = new Map();
 /** The generic ∞ reminder (core's GENERIC_REMINDER_ID): any number, belonging to no one. */
 export const isGeneric = (reminder: Pick<Reminder, 'characterId'>): boolean =>
 	reminder.characterId === GENERIC_REMINDER_ID;
+
+/**
+ * Whether a character's reminder tokens never run out (`unlimitedReminders` in its rules: the
+ * Bootlegger's, Trevor 2026-11-12): the bank keeps one of each in its ∞ stretch.
+ */
+export const hasUnlimitedReminders = (
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean => rulesOf(characterId, characters)?.unlimitedReminders === true;
 
 /**
  * The look of a new ∞ token made from a reminder dragged onto "+ New token" (Trevor,
@@ -257,10 +268,19 @@ export const reminderWords = (reminder: ReminderInstance | Reminder): ReminderLa
 /**
  * The reminders on the board that come from the game's tokens: a duplicate made with ⋯ >
  * Duplicate reminder is a new token (Trevor, 2026-10-18), so it never uses up a copy the
- * bank still holds.
+ * bank still holds, and neither does a token that never runs out (`hasUnlimitedReminders`).
  */
-function counted(game: Game, copies: ReadonlySet<ReminderId>): ReminderInstance[] {
-	return onBoard(game).filter((r) => !copies.has(r.reminderId) && !isGeneric(r));
+function counted(
+	game: Game,
+	copies: ReadonlySet<ReminderId>,
+	characters: CharacterLookup
+): ReminderInstance[] {
+	return onBoard(game).filter(
+		(r) =>
+			!copies.has(r.reminderId) &&
+			!isGeneric(r) &&
+			!hasUnlimitedReminders(r.characterId, characters)
+	);
 }
 
 /** Every reminder on the board: on seats, on Fabled and Loric, and loose. */
@@ -275,17 +295,6 @@ export function onBoard(game: Game): ReminderInstance[] {
 /** A reminder as a stable key, for the recent list. */
 export function reminderKey(reminder: Reminder): string {
 	return JSON.stringify([reminder.characterId, reminder.label]);
-}
-
-export function parseReminderKey(key: string): Reminder | undefined {
-	try {
-		const raw: unknown = JSON.parse(key);
-		if (Array.isArray(raw) && typeof raw[0] === 'string' && typeof raw[1] === 'string')
-			return { characterId: raw[0], label: raw[1] };
-	} catch {
-		// An unreadable entry is skipped.
-	}
-	return undefined;
 }
 
 export interface BankReminder {
@@ -425,7 +434,7 @@ export function bankOwners(
 	const quota = new Map(holders.map((s) => [s, Math.max(1, listed)]));
 	const key = reminderKey(reminder);
 	let unowned = 0;
-	for (const r of counted(game, copies)) {
+	for (const r of counted(game, copies, characters)) {
 		if (reminderKey(r) !== key) continue;
 		const owner = r.ownerSeatId;
 		const own = owner === undefined ? undefined : quota.get(owner);

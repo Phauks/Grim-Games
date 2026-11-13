@@ -12,9 +12,7 @@
 import {
 	cleanParams,
 	colour,
-	matchingPreset,
 	paramDefaults,
-	paramPreset,
 	range,
 	toggle,
 	type BackgroundParam,
@@ -212,14 +210,6 @@ export const isMovingId = (id: unknown): id is MovingId =>
 /** A background's settings at their defaults. */
 export const movingDefaults = (id: MovingId): MovingParams => paramDefaults(MOVING_BACKGROUNDS[id]);
 
-/** A preset's settings in full; an unknown preset gives the defaults. */
-export const movingPreset = (id: MovingId, name: string): MovingParams =>
-	paramPreset(MOVING_BACKGROUNDS[id], name);
-
-/** The preset these settings match exactly, if any. */
-export const presetOf = (id: MovingId, params: MovingParams): string | undefined =>
-	matchingPreset(MOVING_BACKGROUNDS[id], params);
-
 export interface MovingChoice {
 	id: MovingId;
 	params: MovingParams;
@@ -251,12 +241,6 @@ export interface MovingMotion {
 	reduceMotion: 'still' | 'gentle' | 'ignore';
 	still: boolean;
 }
-export const DEFAULT_MOVING_MOTION: MovingMotion = {
-	fps: 'screen',
-	reduceMotion: 'still',
-	still: false
-};
-
 export function parseMovingMotion(raw: unknown): MovingMotion {
 	const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	return {

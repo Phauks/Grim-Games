@@ -70,7 +70,7 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 		const seat = game.seats[seatId];
 		if (seat.dead) continue;
 		for (const reminder of seat.reminders) {
-			const killer = nightKiller(reminder.characterId, characters);
+			const killer = nightKiller(game, reminder.characterId, characters);
 			if (!killer || reminder.label !== 'Dead') continue;
 			if (registersAsDeadToken(reminder, characters)) continue;
 

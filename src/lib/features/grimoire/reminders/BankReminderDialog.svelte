@@ -107,10 +107,10 @@
 	{#if placed && isGeneric(placed)}<ReminderNoteField
 			{grimoire}
 			reminder={placed}
-		/>{:else if placed && takesNote(placed, characters)}<NotedReminderFields
+		/>{:else if placed && takesNote(game, placed, characters)}<NotedReminderFields
 			{grimoire}
 			reminder={placed}
-		/>{:else if placed && pickedEffectOf(placed, characters)}<ReminderEffectFields
+		/>{:else if placed && pickedEffectOf(game, placed, characters)}<ReminderEffectFields
 			{grimoire}
 			reminder={placed}
 		/>{/if}

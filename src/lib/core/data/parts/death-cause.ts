@@ -1,4 +1,14 @@
-import { obj, oneOf, opt, STR, STRS, T, variants, type SpecValue } from '../field-spec.ts';
+import {
+	CHARACTERS,
+	obj,
+	oneOf,
+	opt,
+	ownWords,
+	STR,
+	T,
+	variants,
+	type SpecValue
+} from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
 import { specPart, type PartValue } from './part.ts';
 
@@ -66,13 +76,13 @@ export const deathCause = specPart(
 	'Death cause',
 	'Whether and how its ability can cause a death.',
 	variants(
-		{ label: 'None', has: 'none', spec: obj({ none: STR }) },
+		{ label: 'None', has: 'none', spec: obj({ none: ownWords(STR) }) },
 		{
 			label: 'Causes a death',
 			has: 'kind',
 			spec: obj({
 				kind: oneOf(DEATH_KINDS),
-				onlyWith: opt(STRS),
+				onlyWith: opt(CHARACTERS),
 				afterChanging: opt(oneOf(SEATED_TYPES)),
 				victim: opt(VICTIM)
 			})

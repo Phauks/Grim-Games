@@ -162,7 +162,7 @@
 			if (!onExecute?.(seatId)) grimoire.run({ type: 'Execute', seatId });
 		} else if (cause === 'exile') exile(seatId);
 		// A character's execution (the Virgin's nominator) is one too, with it as the cause.
-		else if (isExecution(cause, characters)) grimoire.run({ type: 'Execute', seatId, cause });
+		else if (isExecution(game, cause, characters)) grimoire.run({ type: 'Execute', seatId, cause });
 		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
 	}
 </script>

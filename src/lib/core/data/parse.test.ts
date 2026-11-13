@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkScriptSchema, loadGameData } from './game-data.ts';
-import { parseJinxes, parseNightSheet, parseRoles, parseScript } from './parse.ts';
+import { parseJinxes, parseNightSheet, parseRoles } from './parse.ts';
 import { DataError } from './validate.ts';
 
 const chef = {
@@ -147,49 +147,5 @@ describe('checkScriptSchema', () => {
 			}
 		};
 		expect(() => checkScriptSchema(schema)).toThrow(/properties\.team\.enum/);
-	});
-});
-
-describe('parseScript', () => {
-	it('reads _meta, ids in every form, and homebrew characters', () => {
-		const script = parseScript([
-			{ id: '_meta', name: 'My Script', author: 'Trevor', firstNight: ['dusk', 'chef'] },
-			'washerwoman',
-			'Fortune_Teller',
-			{ id: 'imp' },
-			{ id: 'goblinking', name: 'Goblin King', team: 'demon', ability: 'Rule.', otherNight: 30 }
-		]);
-		expect(script.meta).toEqual({
-			name: 'My Script',
-			author: 'Trevor',
-			firstNight: ['dusk', 'chef']
-		});
-		expect(script.entries).toEqual([
-			{ kind: 'official', id: 'washerwoman' },
-			{ kind: 'official', id: 'fortuneteller' },
-			{ kind: 'official', id: 'imp' },
-			{
-				kind: 'custom',
-				character: {
-					id: 'goblinking',
-					name: 'Goblin King',
-					type: 'demon',
-					ability: 'Rule.',
-					setup: false,
-					reminders: [],
-					remindersGlobal: [],
-					special: [],
-					otherNight: 30
-				}
-			}
-		]);
-	});
-
-	it('rejects repeated characters and a second _meta', () => {
-		expect(
-			issuesOf(() =>
-				parseScript([{ id: '_meta', name: 'a' }, { id: '_meta', name: 'b' }, 'imp', 'imp'])
-			)
-		).toEqual(['[1]: more than one _meta entry', '[3]: imp is listed twice']);
 	});
 });

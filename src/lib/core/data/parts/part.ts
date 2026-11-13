@@ -9,14 +9,7 @@ import type { FieldSpec, SpecValue } from '../field-spec.ts';
 import { readSpec } from '../read-spec.ts';
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
-import {
-	readBoolean,
-	readEnum,
-	readNumber,
-	readString,
-	type Issues,
-	type Json
-} from '../validate.ts';
+import { readBoolean, readEnum, readNumber, type Issues, type Json } from '../validate.ts';
 
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
@@ -141,17 +134,6 @@ export function countPart(group: RuleGroup, label: string, description: string):
 			issues.add(`${path}.${key}`, `expected a whole number above 0, got ${n}`);
 			return undefined;
 		}
-	};
-}
-
-/** A text part. */
-export function stringPart(group: RuleGroup, label: string, description: string): Part<string> {
-	return {
-		group,
-		label,
-		description,
-		field: { kind: 'string' },
-		read: (block, key, path, issues) => readString(block, key, path, issues, false)
 	};
 }
 

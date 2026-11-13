@@ -24,13 +24,21 @@ export interface BuilderRule {
 /**
  * Parts set elsewhere, so never listed: the night position has its own field in Night (M59),
  * and night text replaces an official character's text only (P8: a custom character writes its
- * own in the Night section).
+ * own in the Night section). A custom character's setup change is its ability's [setup] text,
+ * built with Add a setup change and read by the app, so what it says is what it does (Trevor,
+ * 2026-11-12: "if it says +2 outsiders it actually is"); a setup change rule beside it could
+ * say one thing and do another.
  */
-const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText']);
+const ELSEWHERE: ReadonlySet<string> = new Set(['nightOrder', 'nightText', 'setupModifier']);
+
+/** Whether the Rules section offers part `key`: not set elsewhere, nor our own words (M84). */
+const offered = (key: string) =>
+	!ELSEWHERE.has(key) &&
+	!(PARTS as Record<string, { field?: { official?: true } }>)[key]?.field?.official;
 
 /** Every part the Rules section can add, by label. */
 export const BUILDER_RULES: readonly BuilderRule[] = Object.entries(PARTS)
-	.filter(([key]) => !ELSEWHERE.has(key))
+	.filter(([key]) => offered(key))
 	.map(([key, part]): BuilderRule => ({
 		key,
 		group: part.group,
@@ -66,7 +74,7 @@ export interface RuleRow {
 /** The block's rules in the order written, leaving out those set elsewhere. */
 export function ruleRows(fields: CharacterFields): RuleRow[] {
 	return Object.entries(fields.rules ?? {})
-		.filter(([key, value]) => !ELSEWHERE.has(key) && value !== undefined)
+		.filter(([key, value]) => offered(key) && value !== undefined)
 		.map(([key, value]) => ({ rule: builderRule(key), value }));
 }
 

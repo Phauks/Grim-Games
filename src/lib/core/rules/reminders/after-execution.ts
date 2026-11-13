@@ -38,10 +38,10 @@ export function afterExecutionTokens(
 	characters: CharacterLookup
 ): AfterExecutionToken[] {
 	const living = deaths.filter((d) => game.seats[d.seatId]?.dead === false);
-	const executed = living.filter((d) => isExecution(d.cause, characters));
+	const executed = living.filter((d) => isExecution(game, d.cause, characters));
 	// Any death the board marked during the day; never the Demon's kill, which is at night.
 	const byDay = living.filter(
-		(d) => isExecution(d.cause, characters) || (d.day && d.cause !== 'demon')
+		(d) => isExecution(game, d.cause, characters) || (d.day && d.cause !== 'demon')
 	);
 	if (byDay.length === 0) return [];
 	const dying = new Set(deaths.map((d) => d.seatId));

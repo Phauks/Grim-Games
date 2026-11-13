@@ -596,7 +596,7 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'game-over': {
 				const wasOver = room.ended?.gameId === message.gameId;
-				room = gameOver(room, message.gameId, message.winner, message.reason);
+				room = gameOver(room, message.gameId, message.winner, message.reason, message.result);
 				const code = await this.ctx.storage.get<string>('code');
 				this.sendToHistory(await noteGameOver(this.ctx.storage, this.env, code, room, Date.now()));
 				// Its signed-in players remember each other (plan F3), once per game.
@@ -636,7 +636,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = closeScriptVote(room);
 				break;
 			case 'roles':
-				room = setRoles(room, message.gameId, message.show, message.roles, message.open);
+				room = setRoles(room, message);
 				break;
 			case 'call-town': {
 				// Not kept: only phones here now hear it (plan U2).

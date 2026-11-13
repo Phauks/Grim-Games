@@ -17,10 +17,12 @@ import type {
 	SeatFilter,
 	SetupCondition,
 	SetupPrepRules,
+	SetupNote,
 	SetupReminderSpec,
 	SetupTarget,
 	SetupTiming
 } from '#lib/core/data/parts/setup-prep.ts';
+import { SEAT_FILTER_NAMES } from '#lib/core/data/parts/setup-prep.ts';
 import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -50,8 +52,8 @@ export interface SetupReminder extends Reminder {
 	text: string;
 	/** Pre-filled when the grimoire settles who gets it. */
 	seatId?: SeatId;
-	/** Why the token is needed, in our words. */
-	reason: string;
+	/** Why the token is needed, in our words (official characters only). */
+	reason?: string;
 	/** What the Storyteller must pick, when `seatId` is not pre-filled. */
 	choice?: string;
 	/** Players who fit, in seating order (empty for a token on the character's own seat). */
@@ -242,8 +244,8 @@ function suggest(
 		const base = {
 			characterId: entry.id,
 			label: spec.label,
-			text: spec.text,
-			reason: spec.reason,
+			text: setupStepText(spec),
+			...(spec.reason ? { reason: spec.reason } : {}),
 			timing,
 			wiki: entry.wiki
 		};
@@ -261,7 +263,7 @@ function suggest(
 		if (only !== undefined) taken.add(only);
 		out.push({
 			...base,
-			...(only !== undefined ? { seatId: only } : { choice: target.choice }),
+			...(only !== undefined ? { seatId: only } : { choice: choiceOf(target) }),
 			candidates
 		});
 	}
@@ -474,6 +476,30 @@ export function placeableSetupReminders(
 	);
 }
 
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+
+/** Who the Storyteller picks for a token: its own hint, else who may get it in plain words. */
+export function choiceOf(target: Exclude<SetupTarget, { self: true }>): string {
+	return target.choice ?? SEAT_FILTER_NAMES[target.choose];
+}
+
+/**
+ * A token step's line: its own text (official characters), else made from the token and who
+ * gets it (M84: a custom character's setup steps come from the parts picked, never typed).
+ */
+export function setupStepText(spec: SetupReminderSpec): string {
+	if (spec.text) return spec.text;
+	const on = 'self' in spec.target ? 'its own player' : lowerFirst(choiceOf(spec.target));
+	return `Put [${spec.label}] on ${on}`;
+}
+
+/** A note's line: its own text, else what it asks for or the reminders it uses. */
+export function noteText(note: SetupNote): string {
+	if (note.text) return note.text;
+	if (note.value) return `Note down: ${note.value.label}`;
+	return `Prepare ${(note.tokens ?? []).map((t) => `[${t}]`).join(', ')}`;
+}
+
 /** One step of a character's pre-game preparation, for review lists and the setup screen. */
 export interface SetupPrepStep {
 	text: string;
@@ -499,37 +525,23 @@ export function setupPrep(
 	const prep = setupPrepOf(characterId, lookup);
 	const steps: SetupPrepStep[] = [];
 	for (const spec of prep?.reminders ?? []) {
-		const target = 'self' in spec.target ? `the ${name}` : spec.target.choice;
-		const same = steps.find((s) => s.text === spec.text);
+		const target = 'self' in spec.target ? `the ${name}` : choiceOf(spec.target);
+		const text = setupStepText(spec);
+		const same = steps.find((s) => s.text === text);
 		if (same) {
 			same.tokens.push(spec.label);
 			// Different targets (the Noble's 1 evil and 2 good): the text says it.
 			if (same.target !== target) delete same.target;
-		} else steps.push({ text: spec.text, tokens: [spec.label], target });
+		} else steps.push({ text, tokens: [spec.label], target });
 	}
 	for (const note of prep?.notes ?? []) {
 		steps.push({
-			text: note.text,
+			text: noteText(note),
 			tokens: [...(note.tokens ?? [])],
 			...(note.value ? { value: note.value } : {})
 		});
 	}
 	return steps;
-}
-
-/**
- * The reminder tokens a character's pre-game prep places (`timing: 'setup'`), so the
- * first night can show them as already done. Tokens placed at the start of the first
- * day are not included.
- */
-export function prepTokens(characterId: CharacterId, lookup: CharacterLookup): string[] {
-	const prep = setupPrepOf(characterId, lookup);
-	const out = new Set<string>();
-	for (const spec of prep?.reminders ?? []) {
-		if ((spec.timing ?? 'setup') === 'setup') out.add(spec.label);
-	}
-	for (const note of prep?.notes ?? []) for (const t of note.tokens ?? []) out.add(t);
-	return [...out];
 }
 
 export type PrepSegment =

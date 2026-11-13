@@ -107,6 +107,8 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	// open, as before the deal, so the status says where the game is up to).
 	await page.goto(board);
 	await expect(phone.getByTestId('your-character')).toBeVisible();
+	// It counts down the minute the phone may look (Trevor, 2026-11-12).
+	await expect(phone.getByTestId('your-character')).toHaveText(/^Your character · [01]:[0-5]\d$/);
 	await expect(async () => expect(await statusRow.boundingBox()).toEqual(rowBefore)).toPass();
 	// The phone holds to see its character; the name shows only while held.
 	await phone.getByTestId('your-character').tap();
@@ -132,6 +134,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await page.goto(board);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const view = page.getByTestId('script-scroll');
+	await expect(view.getByTestId('your-character')).toHaveText(/^Your character · [01]:[0-5]\d$/);
 	await view.getByTestId('your-character').tap();
 	await page.getByTestId('role-seats').getByRole('button', { name: /Alex/ }).tap();
 	const stCard = page.getByRole('dialog').filter({ has: page.getByTestId('role-card') });

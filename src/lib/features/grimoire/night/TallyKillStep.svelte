@@ -19,7 +19,9 @@
 
 	const characters = $derived(grimoire.open.characters);
 	const character = $derived(step.character);
-	const rule = $derived(character ? dayTallyOf(character.id, characters) : undefined);
+	const rule = $derived(
+		character ? dayTallyOf(grimoire.game, character.id, characters) : undefined
+	);
 	const kills = $derived(
 		character && rule?.kills ? tallyKills(grimoire.game, character.id, characters) : undefined
 	);

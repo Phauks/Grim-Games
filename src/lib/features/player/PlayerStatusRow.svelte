@@ -8,6 +8,7 @@
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { clock, timeLeft } from '#lib/features/room/time-left.svelte.ts';
 
 	/**
 	 * The row over the player screen's tabs: everything the table's public state shows there,
@@ -42,6 +43,11 @@
 		 * status gives its place to it, the same box, so nothing moves.
 		 */
 		character?: () => void;
+		/**
+		 * When players stop seeing theirs (epoch ms): Your character counts down to it
+		 * (Trevor, 2026-11-12). None while it has no end, such as a seat just given.
+		 */
+		characterUntil?: number;
 		after?: Snippet;
 	}
 
@@ -55,8 +61,11 @@
 		winner,
 		seatNumber,
 		character,
+		characterUntil,
 		after
 	}: Props = $props();
+
+	const characterLeft = timeLeft(() => (character ? characterUntil : undefined));
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
 	const timer = $derived(ended ? undefined : dayTimers.parsePublicTimer(table?.timer));
@@ -106,7 +115,10 @@
 						class:over={!!phase}
 						aria-haspopup="dialog"
 						data-testid="your-character"
-						onclick={character}><Icon name="yourCharacter" />{t('room.role.open')}</button
+						onclick={character}
+						><Icon name="yourCharacter" />{characterLeft.ms === undefined
+							? t('room.role.open')
+							: t('room.role.openTime', { time: clock(characterLeft.ms) })}</button
 					>{/if}
 			</div>{/if}
 		{@render after?.()}
@@ -155,6 +167,7 @@
 		color: var(--on-surface);
 		font-family: var(--font-heading);
 		font-size: 1.1rem;
+		font-variant-numeric: tabular-nums;
 		cursor: pointer;
 	}
 	.character.over {

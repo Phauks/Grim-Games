@@ -8,9 +8,12 @@
  * a death; the Professor's and Shabaloth's "Alive" marks a dead player brought back. Ones that
  * only threaten a death ("About To Die") or prevent one ("Cannot Die") never ask.
  */
-import type { CharacterRules, ReminderPrompt } from '#lib/core/data/character-rules.ts';
-import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import type { ReminderPrompt } from '#lib/core/data/character-rules.ts';
+import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import type { Game } from '#lib/core/model/types.ts';
+import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
 export interface ReminderPromptRule {
 	/** The reminder's words, as the character data has them (any case). */
@@ -42,13 +45,14 @@ const BY_LABEL = new Map(REMINDER_PROMPTS.map((rule) => [rule.label.toLowerCase(
  * official reminder with the same words does.
  */
 export function reminderPrompt(
+	game: Game,
 	label: string,
 	characterId: CharacterId | undefined,
-	characters: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
+	characters: CharacterLookup
 ): ReminderPrompt | undefined {
 	const key = label.trim().toLowerCase();
 	if (characterId === undefined) return BY_LABEL.get(key);
-	const own = rulesOf(characterId, characters)?.reminderPrompts;
+	const own = rulesFor(game, characterId, characters)?.reminderPrompts;
 	return own && Object.entries(own).find(([l]) => l.toLowerCase() === key)?.[1];
 }
 

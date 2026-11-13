@@ -1,4 +1,4 @@
-import { optObj, STR, T } from '../field-spec.ts';
+import { optObj, ownWords, STR, T, TOKEN } from '../field-spec.ts';
 import { specPart, type PartValue } from './part.ts';
 
 /**
@@ -26,9 +26,9 @@ export const evilInfo = specPart(
 	'Evil info steps',
 	'How it changes the Minion and Demon info steps.',
 	optObj({
-		notes: optObj({ minioninfo: STR, demoninfo: STR }),
-		lateNote: STR,
-		wakeToken: STR,
+		notes: ownWords(optObj({ minioninfo: STR, demoninfo: STR })),
+		lateNote: ownWords(STR),
+		wakeToken: TOKEN,
 		hidesDemon: T,
 		anyPlayerCount: T,
 		hidesMinions: T,

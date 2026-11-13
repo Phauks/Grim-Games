@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night/info/picker.ts';
@@ -88,10 +89,10 @@ describe('Ravenkeeper', () => {
 		it('wakes after any death at night, but not after an execution', () => {
 			// Wiki: "If the Ravenkeeper died tonight, wake them."
 			const { characters } = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'godfather']);
-			const trigger = onDeathTrigger('ravenkeeper', characters)!;
-			expect(onDeathApplies(trigger, 'demon', characters)).toBe(true);
-			expect(onDeathApplies(trigger, 'godfather', characters)).toBe(true);
-			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+			const trigger = onDeathTrigger(plainGame(), 'ravenkeeper', characters)!;
+			expect(onDeathApplies(plainGame(), trigger, 'demon', characters)).toBe(true);
+			expect(onDeathApplies(plainGame(), trigger, 'godfather', characters)).toBe(true);
+			expect(onDeathApplies(plainGame(), trigger, 'execution', characters)).toBe(false);
 		});
 
 		it('may choose any player, themselves included', () => {

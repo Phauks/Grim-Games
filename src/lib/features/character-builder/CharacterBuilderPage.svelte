@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { GameData } from '#lib/core/data/index.ts';
-	import { timestampName } from '#lib/core/timestamp-name.ts';
+	import { randomCharacterName } from '#lib/core/rules/new-character-name.ts';
 	import {
 		blocksSaving,
 		characterEntry,
@@ -28,7 +28,11 @@
 	import CollectionField from './CollectionField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { isEmptyCharacterDraft } from './draft.ts';
-	import { characterBuilderDraft as draft, savedCharacters } from './stores.svelte.ts';
+	import {
+		characterBuilderDraft as draft,
+		savedCharacterNames,
+		savedCharacters
+	} from './stores.svelte.ts';
 
 	/**
 	 * Make a homebrew character (Trevor, 2026-10-17: "We have a script creator area. Lets build
@@ -58,7 +62,7 @@
 	const id = $derived(fieldsId(f));
 	const problems = $derived(characterProblems(f, data));
 	const canSave = $derived(!blocksSaving(problems));
-	// Saving to the Library is never stopped by a missing name: it gets a timestamp name
+	// Saving to the Library is never stopped by a missing name: it gets a random name
 	// (Trevor, 2026-10-18).
 	const canStore = $derived(!blocksSaving(problems.filter((p) => p.kind !== 'name-missing')));
 	const savedRecord = $derived(d.editing ? savedCharacters.get(d.editing) : undefined);
@@ -78,7 +82,7 @@
 
 	function save(asNew = false) {
 		if (!canStore) return;
-		if (!f.name.trim()) f.name = timestampName();
+		if (!f.name.trim()) f.name = randomCharacterName(savedCharacterNames());
 		const savedId = savedCharacters.save(f, asNew ? undefined : d.editing);
 		draft.setEditing(savedId);
 	}
@@ -184,7 +188,7 @@
 	bind:open={clearOpen}
 	title={t('character-builder.clearTitle')}
 	danger
-	onConfirm={() => draft.clear()}
+	onConfirm={() => draft.clear(savedCharacterNames())}
 >
 	<p>{t('character-builder.clearBody')}</p>
 </ConfirmDialog>

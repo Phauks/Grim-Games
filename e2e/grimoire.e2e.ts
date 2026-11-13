@@ -1,3 +1,4 @@
+import { tabNames } from './tabs.ts';
 import { chooseExecution } from './execution.ts';
 import { readFileSync } from 'node:fs';
 import { tapStartGame } from './start-game.ts';
@@ -2608,6 +2609,37 @@ test("a step's Valid Information sits on its first line", async ({ page }) => {
 	await expect(guide.getByTestId('night-yes-no')).toHaveCount(1);
 });
 
+// Trevor (2026-11-12, a phone screenshot): a placed reminder's delete button was cut off at the
+// step's right edge, and the step's text listed its reminder tokens inline though the rows under
+// it already show them ("No longer list reminder tokens in line in night order").
+test("a placed reminder's row fits the step, and the text lists no reminder tokens", async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Poisoner'],
+		[2, 'Fortune Teller']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const guide = await openStep(page, 'Poisoner');
+	await expect(guide.getByTestId('night-lines')).toBeVisible();
+	await expect(guide.getByTestId('night-lines').getByTestId('reminder-token')).toHaveCount(0);
+	await placeFromStep(page, guide, 2);
+	const remove = guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' });
+	await expect(remove).toBeEnabled();
+	const box = (await remove.boundingBox())!;
+	const lines = (await guide.getByTestId('night-lines').boundingBox())!;
+	expect(box.x + box.width).toBeLessThanOrEqual(lines.x + lines.width + 1);
+	expect(await guide.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+});
+
 test('a night step is filled in with help, and the night can be walked through', async ({
 	page
 }) => {
@@ -3697,7 +3729,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(last).toBeInViewport();
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 	// Every tab players' /play has, Grim and Notes too (Trevor, 2026-10-23: "feature parity").
-	await expect(sheet.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
+	await expect.poll(() => tabNames(sheet)).toEqual(['Script', 'Night', 'Grim', 'Notes']);
 	await sheet.getByRole('tab', { name: 'Night' }).tap();
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -4720,8 +4752,10 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
 	await focusMode(page, 'Only this character');
-	// Paid, then the plain ∞, the # token (plan M35) and "+ New token".
-	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(4);
+	// Paid, then the ∞ stretch: the Bootlegger's ? (its tokens never run out, and a script
+	// with homebrew characters puts it in play), the plain ∞, the # token (plan M35) and
+	// "+ New token".
+	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(5);
 	await expect(tokens.first()).toContainText('Paid');
 });
 

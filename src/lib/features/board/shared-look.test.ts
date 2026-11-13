@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { movingDefaults } from '#lib/core/backgrounds/moving.ts';
-import { stillDefaults, stillPreset } from '#lib/core/backgrounds/still.ts';
+import { paramPreset } from '#lib/core/backgrounds/params.ts';
+import { STILL_BACKGROUNDS, stillDefaults } from '#lib/core/backgrounds/still.ts';
 import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 import { DEFAULT_BOARD_LOOKS } from './board-looks.svelte.ts';
 import { drawnLook, lookOf } from './shared-look.ts';
@@ -31,7 +32,7 @@ describe('the look a board shares', () => {
 	});
 
 	it('draws what was shared, the same on every device', () => {
-		const slate = stillPreset('stone', 'Slate');
+		const slate = paramPreset(STILL_BACKGROUNDS.stone, 'Slate');
 		expect(drawnLook({ background: 'stone', still: { id: 'stone', params: slate } })).toEqual({
 			preset: { id: 'stone', params: slate },
 			script: false
