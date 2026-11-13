@@ -3,7 +3,7 @@
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { playerJinxes, sheetCharacters } from './player-script.ts';
+	import { gameSheetCharacters, playerJinxes, sheetCharacters } from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
@@ -65,21 +65,10 @@
 	const recommended = $derived(
 		new Set(listed.filter((c) => c.type === 'traveller').map((c) => c.id))
 	);
-	// In a game the Travellers are the ones in play, each marked recommended or not, rather
-	// than the recommended list (Trevor, 2026-11-02: a Voudon added though not recommended
-	// showed under Recommended Travellers). Outside a game, the recommended ones.
-	const characters = $derived.by(() => {
-		if (!data) return [];
-		if (inPlay === undefined && travellers === undefined) return listed;
-		const ids = [...(travellers ?? []).map((p) => p.characterId), ...(inPlay ?? [])];
-		const playing = ids
-			.filter((id, i) => ids.indexOf(id) === i)
-			.flatMap((id) => {
-				const c = listed.find((l) => l.id === id) ?? data.byId.get(id);
-				return c?.type === 'traveller' ? [c] : [];
-			});
-		return [...listed.filter((c) => c.type !== 'traveller'), ...playing];
-	});
+	// In a game the Travellers are the ones in play (`gameSheetCharacters`).
+	const characters = $derived(
+		data ? gameSheetCharacters(listed, data.byId, inPlay, travellers) : []
+	);
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 	// A custom Fabled or Loric is found on the script.
 	const ruleCharacters = $derived(
