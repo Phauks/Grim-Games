@@ -26,7 +26,6 @@ export const TESTS_ONLY_TODO: readonly string[] = [
 	'src/lib/core/modes/builder.ts: knownType',
 	'src/lib/core/modes/format-guide.ts: documentedFields',
 	'src/lib/core/modes/format-guide.ts: guideFingerprint',
-	'src/lib/core/modes/pool.ts: demonBluffs',
 	'src/lib/core/modes/rule-guide.ts: RULE_MINIMAL_EXAMPLE',
 	'src/lib/core/rules/abilities/becomes.ts: passOnSeats',
 	'src/lib/core/rules/day/day-reminders.ts: impairment',

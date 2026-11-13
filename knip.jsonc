@@ -10,10 +10,6 @@
 		"scripts/**/*.{ts,js}",
 		"e2e/**/*.ts"
 	],
-	"ignore": [
-		// Waits for the Demon info step to read it (core/modes/pool.ts, demonBluffs).
-		"src/lib/features/modes/bluffs.ts"
-	],
 	// Written by `npm run cf-typegen` when the Worker is checked.
 	"ignoreUnresolved": ["./worker-configuration.d.ts"],
 	// The Worker runtime's own modules (cloudflare:workers).

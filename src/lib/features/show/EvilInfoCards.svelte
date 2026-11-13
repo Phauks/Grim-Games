@@ -23,6 +23,7 @@
 		LUNATIC_SET,
 		showableBluffSets
 	} from '#lib/features/bluffs/bluffs.ts';
+	import { gameHasDemonBluffs } from '#lib/features/modes/bluffs.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/grimoire/night/night-steps.ts';
 	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
@@ -253,9 +254,12 @@
 		return out;
 	});
 
-	/** No bluffs yet: the bluffs' line offers to choose them. */
+	/**
+	 * No bluffs yet: the bluffs' line offers to choose them, unless the mode gives the Demon
+	 * none (Sushi Buffet, Whale Buffet).
+	 */
 	const allRows = $derived<Row[]>(
-		step === 'demoninfo' && bluffSets.length === 0
+		step === 'demoninfo' && bluffSets.length === 0 && gameHasDemonBluffs(game.gameId)
 			? [
 					...rows,
 					{

@@ -37,7 +37,8 @@
 		/** An ended game offers Export and Reopen in place of End game. */
 		ended: boolean;
 		onHistory: () => void;
-		onBluffs: () => void;
+		/** Undefined in a mode where the Demon gets no bluffs (Sushi Buffet, Whale Buffet). */
+		onBluffs?: () => void;
 		/**
 		 * The Soundboard (plan U6), a full row in the game's items (Trevor, 2026-11-01: "a full
 		 * button"); not on a spectator's board. Back to town is on the day timer.
@@ -158,8 +159,11 @@
 					></span
 				>
 				<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
-				<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
-					>Demon bluffs</Button
+				<Button
+					disabled={watching || !onBluffs}
+					variant="quiet"
+					icon="demon"
+					onclick={() => onBluffs && fromMenu(onBluffs)}>Demon bluffs</Button
 				>
 				{#if onSoundboard}
 					<Button variant="quiet" icon="soundboard" onclick={() => fromMenu(onSoundboard)}>
