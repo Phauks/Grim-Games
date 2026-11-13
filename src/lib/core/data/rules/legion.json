@@ -76,6 +76,7 @@
 		"failsIf": "only-evil-voted"
 	},
 	"makesExtraEvil": true,
+	"oneNightStep": true,
 	"gameEnd": {
 		"ends": [
 			{

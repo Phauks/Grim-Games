@@ -15,6 +15,7 @@ import {
 import { type AnswerValue } from '#lib/core/rules/night/info/reliability.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
 import { boardNightSteps, tonight } from '#lib/core/rules/night/board-steps.ts';
+import { sheetStepId } from '#lib/core/rules/night/copy-steps.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
 import type { SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
@@ -67,7 +68,7 @@ export function tonightFromLog(
 	const revived = revivedSinceNewDay(events);
 	const order =
 		data && revived.size > 0
-			? boardNightSteps(game, characters, tonight(game), data, today, rules).map((s) => s.id)
+			? boardNightSteps(game, characters, tonight(game), data, today, rules).map(sheetStepId)
 			: undefined;
 	return {
 		diedTonight: diedSinceNewDay(events),

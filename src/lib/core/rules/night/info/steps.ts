@@ -162,7 +162,9 @@ export function withNightInfo<T extends NightStep>(
 		const gained = step.gained;
 		const seats = gained
 			? [gained.seatId]
-			: characterStepSeats(game, step.character.id, characters);
+			: step.copy
+				? [step.copy.seatId]
+				: characterStepSeats(game, step.character.id, characters);
 		const as = gained ? (characters.get(gained.characterId) ?? step.character) : step.character;
 		// A jinx may have them learn what that ability's own player would have (the
 		// Cannibal's Juggler): the answer reads that player's day.

@@ -63,6 +63,7 @@ export { nominating } from './nominating.ts';
 export { nominationsAfterExecution } from './nominations-after-execution.ts';
 export { nomineesNominate } from './nominees-nominate.ts';
 export { noteOn } from './note-on.ts';
+export { oneNightStep } from './one-night-step.ts';
 export { onDeath } from './on-death.ts';
 export { onNominated } from './on-nominated.ts';
 export { onNominating } from './on-nominating.ts';

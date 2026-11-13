@@ -96,7 +96,9 @@ export function withActsTwiceSteps<T extends NightStep>(
 			continue;
 		const seats = step.gained
 			? [step.gained.seatId]
-			: game.seating.filter((s) => game.seats[s].characterId === character.id);
+			: step.copy
+				? [step.copy.seatId]
+				: game.seating.filter((s) => game.seats[s].characterId === character.id);
 		for (const seatId of seats) {
 			const source = actsTwiceSource(game, seatId, characters);
 			if (!source?.works) continue;

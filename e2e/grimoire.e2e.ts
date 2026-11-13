@@ -2608,6 +2608,44 @@ test("a step's Valid Information sits on its first line", async ({ page }) => {
 	await expect(guide.getByTestId('night-yes-no')).toHaveCount(1);
 });
 
+// Trevor (2026-11-12): "Need to invoke separate wake ups ... if duplicate characters"; he
+// picked one step per player, each showing that seat in its alignment (2026-11-13).
+test('a character in play twice wakes once for each player, each step showing its seat', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Empath'],
+		[2, 'Empath'],
+		[3, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		if (number === 2) {
+			await seatMenu(page, sheet, 'Change alignment');
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Confirm' })
+				.tap();
+		}
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Empath');
+	await expect(strip).toContainText('Seat 1');
+	await expect(strip).not.toContainText('Seat 2');
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('Empath');
+	await expect(strip).toContainText('Seat 2');
+	await expect(strip).not.toContainText('Seat 1,');
+	// Each step's band is its player's alignment: the evil Empath's is red.
+	const guide = await openStep(page, 'Empath');
+	await expect(guide.locator('.ring-row[data-team="evil"]').first()).toBeVisible();
+});
+
 test('a night step is filled in with help, and the night can be walked through', async ({
 	page
 }) => {
