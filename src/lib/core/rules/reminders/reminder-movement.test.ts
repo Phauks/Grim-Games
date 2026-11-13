@@ -13,6 +13,7 @@ import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import {
+	FIXED_REMINDER,
 	fixedReminderMove,
 	fixedReminderReason,
 	isFixedLabel,
@@ -193,11 +194,28 @@ describe('fixedReminderReason', () => {
 			'rules.reminderMovement.moves',
 			'rules.reminderMovement.fixed'
 		]);
+		// A custom character gives no reason of its own (M84).
 		const missing = new Issues();
 		parseCharacterRules({ reminderMovement: { fixed: ['Red Herring'] } }, 'rules', missing, [
 			'Red Herring'
 		]);
-		expect(missing.list).toEqual(['rules.reminderMovement.why: missing']);
+		expect(missing.list).toEqual([]);
+	});
+
+	it('gives a plain reason for a custom character’s fixed reminder, which has none of its own (M84)', () => {
+		const seer: Character = {
+			...data.byId.get('fortuneteller')!,
+			id: 'seer',
+			edition: undefined,
+			reminders: ['Decoy'],
+			rules: parseCharacterRules({ reminderMovement: { fixed: ['Decoy'] } }, 'seer', new Issues(), [
+				'Decoy'
+			])
+		};
+		const lookup = new Map([['seer', seer]]);
+		expect(fixedReminderReason(plainGame(), { characterId: 'seer', label: 'Decoy' }, lookup)).toBe(
+			FIXED_REMINDER
+		);
 	});
 });
 

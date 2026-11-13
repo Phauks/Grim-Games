@@ -413,3 +413,41 @@ test('a jinx is built with its partner and effects as fields (M79)', async ({ pa
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('rules')).toContainText('Empath Grimoire all');
 });
+
+test('a rule naming a character picks it, and asks for no words of ours (M84)', async ({
+	page
+}) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Lamplighter');
+	await page.getByTestId('character-ability').fill('You might register as the Drunk.');
+	await page.getByTestId('reminders').getByRole('button', { name: 'Add a reminder' }).tap();
+	await page.getByRole('textbox', { name: 'Reminder 1' }).first().fill('Lit');
+
+	await page.getByRole('tab', { name: /^Rules/ }).tap();
+
+	// A hidden character is picked with the character picker, never typed as an id.
+	await page.getByTestId('add-rule').tap();
+	let dialog = page.getByRole('dialog', { name: 'Add a rule' });
+	await dialog.getByRole('searchbox', { name: 'Find a rule' }).fill('hidden as');
+	await dialog.getByRole('button', { name: /^Or hidden as/ }).tap();
+	await expect(dialog.getByRole('textbox', { name: 'Or hidden as' })).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Choose a character' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Drunk', exact: true })
+		.tap();
+	await dialog.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('rules')).toContainText('Or hidden as');
+	await expect(page.getByTestId('rules')).toContainText('Drunk');
+
+	// Setup preparation asks for the token and its player; the step's words are made from them.
+	await page.getByTestId('add-rule').tap();
+	dialog = page.getByRole('dialog', { name: 'Add a rule' });
+	await dialog.getByRole('searchbox', { name: 'Find a rule' }).fill('setup preparation');
+	await dialog.getByRole('button', { name: /^Setup preparation/ }).tap();
+	await dialog.getByRole('button', { name: 'Add to Tokens to place' }).tap();
+	await expect(dialog.getByRole('combobox', { name: 'Reminder', exact: true })).toBeVisible();
+	await expect(dialog.getByRole('combobox', { name: 'On whom' })).toBeVisible();
+	for (const words of ['Step text', 'Why', 'Hint'])
+		await expect(dialog.getByRole('textbox', { name: words, exact: true })).toHaveCount(0);
+});

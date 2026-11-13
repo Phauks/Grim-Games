@@ -19,10 +19,13 @@ import { Issues } from '#lib/core/data/validate.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { characterNames } from '#lib/core/rules/character-names.ts';
 import {
+	choiceOf,
+	noteText,
 	placeableSetupReminders,
 	prepTextSegments,
 	setupPrep,
 	setupReminders,
+	setupStepText,
 	type SetupReminderOptions
 } from './setup-reminders.ts';
 
@@ -108,8 +111,8 @@ describe('coverage', () => {
 		for (const entry of SETUP_REMINDER_ENTRIES) {
 			expect(entry.wiki, entry.id).toMatch(/^https:\/\/wiki\.bloodontheclocktower\.com\/\S+$/);
 			for (const spec of entry.reminders) {
-				expect(spec.reason.length, entry.id).toBeGreaterThan(0);
-				if ('choose' in spec.target) expect(spec.target.choice.length, entry.id).toBeGreaterThan(0);
+				expect(spec.reason, entry.id).toBeTruthy();
+				if ('choose' in spec.target) expect(spec.target.choice, entry.id).toBeTruthy();
 			}
 		}
 	});
@@ -552,5 +555,31 @@ describe('ApplySetupReminders', () => {
 			ctx
 		);
 		expect(result.ok && result.warnings.map((w) => w.code)).toEqual(['reminder-not-for-character']);
+	});
+});
+
+describe('a custom character’s setup steps, made from its parts (M84)', () => {
+	it('says to put the token on who may get it, or on its own player', () => {
+		expect(
+			setupStepText({ label: 'Lit', target: { choose: 'good' } } as Parameters<
+				typeof setupStepText
+			>[0])
+		).toBe('Put [Lit] on a good player');
+		expect(
+			setupStepText({ label: 'Lit', target: { self: true } } as Parameters<typeof setupStepText>[0])
+		).toBe('Put [Lit] on its own player');
+		expect(choiceOf({ choose: 'not-demon' })).toBe('Anyone but a Demon');
+	});
+
+	it('keeps an official character’s own words', () => {
+		const spec = OFFICIAL_RULES.get('washerwoman')!.setupPrep!.reminders![0]!;
+		expect(setupStepText(spec)).toBe(spec.text);
+	});
+
+	it('says what a note asks for, or the reminders it uses', () => {
+		expect(noteText({ value: { key: 'phrase', label: 'Secret phrase' } })).toBe(
+			'Note down: Secret phrase'
+		);
+		expect(noteText({ tokens: ['Goal'] })).toBe('Prepare [Goal]');
 	});
 });

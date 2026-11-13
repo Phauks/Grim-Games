@@ -5,6 +5,7 @@ import {
 	oneOf,
 	opt,
 	optObj,
+	ownWords,
 	STR,
 	T,
 	TOKEN,
@@ -26,24 +27,23 @@ import { specPart, type PartValue } from './part.ts';
  * - `nearest-townsfolk-anticlockwise` / `-clockwise`: the nearest Townsfolk that way round
  *   from this character, alive or dead (No Dashii, `nearestOfType`).
  */
+export const SEAT_FILTER_NAMES = {
+	any: 'Any player',
+	good: 'A good player',
+	evil: 'An evil player',
+	townsfolk: 'A Townsfolk',
+	outsider: 'An Outsider',
+	minion: 'A Minion',
+	demon: 'A Demon',
+	'not-demon': 'Anyone but a Demon',
+	'same-alignment': 'A player of its alignment',
+	copies: 'A player with this character',
+	'nearest-townsfolk-anticlockwise': 'Nearest Townsfolk anticlockwise',
+	'nearest-townsfolk-clockwise': 'Nearest Townsfolk clockwise'
+} as const;
+
 const SEAT_FILTER = worded(
-	{
-		label: 'Who may get it',
-		names: {
-			any: 'Any player',
-			good: 'A good player',
-			evil: 'An evil player',
-			townsfolk: 'A Townsfolk',
-			outsider: 'An Outsider',
-			minion: 'A Minion',
-			demon: 'A Demon',
-			'not-demon': 'Anyone but a Demon',
-			'same-alignment': 'A player of its alignment',
-			copies: 'A player with this character',
-			'nearest-townsfolk-anticlockwise': 'Nearest Townsfolk anticlockwise',
-			'nearest-townsfolk-clockwise': 'Nearest Townsfolk clockwise'
-		}
-	},
+	{ label: 'Who may get it', names: SEAT_FILTER_NAMES },
 	oneOf([
 		'any',
 		'good',
@@ -79,10 +79,8 @@ const TARGET = variants(
 		has: 'choose',
 		spec: obj({
 			choose: SEAT_FILTER,
-			choice: worded(
-				{ label: 'Hint', about: 'Shown when the app cannot pick the player itself.' },
-				STR
-			),
+			// Without it the hint is who may get it, in plain words.
+			choice: opt(ownWords(STR)),
 			notSelf: opt(worded({ label: 'Not its own player' }, T))
 		})
 	}
@@ -118,12 +116,10 @@ export type SetupTiming = SpecValue<typeof TIMING>;
  */
 const REMINDER = obj({
 	label: worded({ label: 'Reminder' }, TOKEN),
-	text: worded(
-		{ label: 'Step text', about: 'What the Storyteller does, with the token in [brackets].' },
-		STR
-	),
+	// Without it the step says to put the token on its player (`setupStepText`).
+	text: opt(ownWords(STR)),
 	target: worded({ label: 'On whom' }, TARGET),
-	reason: worded({ label: 'Why', about: 'A short reason, shown with the step.' }, STR),
+	reason: opt(ownWords(STR)),
 	timing: opt(TIMING),
 	when: opt(CONDITION),
 	first: opt(worded({ label: 'First', about: 'Listed before every other setup step.' }, T))
@@ -138,7 +134,8 @@ export type SetupReminderSpec = SpecValue<typeof REMINDER>;
  * play.
  */
 const NOTE = obj({
-	text: worded({ label: 'Step text' }, STR),
+	// Without it the step asks for its value, or to prepare its reminders.
+	text: opt(ownWords(STR)),
 	tokens: opt(worded({ label: 'Reminders it uses' }, TOKENS)),
 	value: opt(
 		worded(
@@ -194,10 +191,7 @@ export const setupPrep = specPart(
 			},
 			list(NOTE)
 		),
-		none: worded(
-			{ label: 'Why no tokens', about: 'Why a character with reminders places none at setup.' },
-			STR
-		)
+		none: ownWords(STR)
 	})
 );
 
