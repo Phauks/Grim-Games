@@ -31,14 +31,6 @@ export function fixedReminderReason(
 	return rule?.fixed?.includes(reminder.label) ? rule.why : undefined;
 }
 
-export function isFixedReminder(
-	game: Game,
-	reminder: Pick<Reminder, 'characterId' | 'label'>,
-	characters: CharacterLookup
-): boolean {
-	return fixedReminderReason(game, reminder, characters) !== undefined;
-}
-
 /**
  * Whether a token with these words, from this character, stays where it is first put: what
  * every reminder token drawn anywhere (`BoardReminder`), in a game or not, reads for its

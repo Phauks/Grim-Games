@@ -21,7 +21,6 @@ import { characterNames } from '#lib/core/rules/character-names.ts';
 import {
 	placeableSetupReminders,
 	prepTextSegments,
-	prepTokens,
 	setupPrep,
 	setupReminders,
 	type SetupReminderOptions
@@ -477,23 +476,6 @@ describe('setupPrep', () => {
 				value: { key: 'phrase', label: 'Secret phrase' }
 			}
 		]);
-	});
-});
-
-describe('prepTokens', () => {
-	// https://wiki.bloodontheclocktower.com/Fortune_Teller and /Village_Idiot
-	it('lists the tokens placed before the first night, not on the first day', () => {
-		expect(prepTokens('fortuneteller', committedCharacters())).toEqual(['Red Herring']);
-		expect(prepTokens('villageidiot', committedCharacters())).toEqual(['Drunk']);
-		expect(prepTokens('chef', committedCharacters())).toEqual([]);
-		for (const entry of SETUP_REMINDER_ENTRIES) {
-			const firstDay = entry.reminders.filter((r) => r.timing === 'first-day').map((r) => r.label);
-			const setup = entry.reminders.filter((r) => r.timing !== 'first-day').map((r) => r.label);
-			for (const label of firstDay) {
-				if (!setup.includes(label))
-					expect(prepTokens(entry.id, committedCharacters()), entry.id).not.toContain(label);
-			}
-		}
 	});
 });
 

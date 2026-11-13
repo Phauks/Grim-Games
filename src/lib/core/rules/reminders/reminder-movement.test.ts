@@ -14,8 +14,8 @@ import type { Character } from '#lib/core/data/types.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import {
 	fixedReminderMove,
+	fixedReminderReason,
 	isFixedLabel,
-	isFixedReminder,
 	neighbourFollows
 } from './reminder-movement.ts';
 
@@ -63,7 +63,10 @@ describe('coverage', () => {
 	});
 });
 
-describe('isFixedReminder', () => {
+describe('fixedReminderReason', () => {
+	const isFixedReminder = (...args: Parameters<typeof fixedReminderReason>) =>
+		fixedReminderReason(...args) !== undefined;
+
 	it('keeps start-knowing tokens in place (https://wiki.bloodontheclocktower.com/Washerwoman)', () => {
 		expect(
 			isFixedReminder(

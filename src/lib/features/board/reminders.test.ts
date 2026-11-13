@@ -16,7 +16,6 @@ import {
 	stepReminders,
 	stepFocusOf,
 	stepTokenCharacter,
-	parseReminderKey,
 	reminderCopiesLeft,
 	reminderGroups,
 	reminderKey,
@@ -271,14 +270,6 @@ describe('byLabel', () => {
 			'Drunk 10',
 			'Wrong'
 		]);
-	});
-});
-
-describe('reminderKey', () => {
-	it('round-trips and ignores junk', () => {
-		const r = { characterId: 'drunk', label: 'Is The Drunk' };
-		expect(parseReminderKey(reminderKey(r))).toEqual(r);
-		expect(parseReminderKey('nope')).toBeUndefined();
 	});
 });
 

@@ -20,10 +20,6 @@ const GRIM_VIEW_PASSWORD_WORDS = 2;
 const NUMBER_MIN = 10;
 const NUMBER_COUNT = 90;
 
-/** Bits of randomness in a made password. */
-export const GRIM_VIEW_PASSWORD_BITS =
-	GRIM_VIEW_PASSWORD_WORDS * Math.log2(CODE_WORDS.length) + Math.log2(NUMBER_COUNT);
-
 const cryptoBytes: RandomBytes = (bytes) => crypto.getRandomValues(bytes);
 
 /** Makes a new password. `random` is injectable so tests are deterministic. */

@@ -270,21 +270,8 @@ export const CODE_WORDS: readonly string[] = Object.freeze([
 
 const WORD_SET = new Set(CODE_WORDS);
 
-/** Bits of randomness in a code of `count` words: 8 per word with 256 words. */
-export function wordCodeBits(count: number): number {
-	return count * Math.log2(CODE_WORDS.length);
-}
-
 /** Fills `bytes` with random values; injectable so tests are deterministic. */
 export type RandomBytes = (bytes: Uint8Array<ArrayBuffer>) => Uint8Array<ArrayBuffer>;
-
-const cryptoBytes: RandomBytes = (bytes) => crypto.getRandomValues(bytes);
-
-/** Makes a random code of `count` words, joined by hyphens. Uses the platform's CSPRNG. */
-export function makeWordCode(count: number, random: RandomBytes = cryptoBytes): string {
-	const bytes = random(new Uint8Array(count));
-	return Array.from(bytes, (b) => CODE_WORDS[b]).join('-');
-}
 
 /** The words of whatever was typed or pasted, lower-cased: any non-letters separate them. */
 export function splitWords(input: string): string[] {

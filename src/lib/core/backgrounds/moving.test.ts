@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
-	DEFAULT_MOVING_MOTION,
 	MOVING_BACKGROUNDS,
 	MOVING_IDS,
 	formatParam,
 	movingDefaults,
-	movingPreset,
 	movingRun,
 	parseMoving,
 	parseMovingMotion,
-	presetOf,
+	type MovingId,
+	type MovingParams,
 	type RangeParam
 } from './moving.ts';
+import { matchingPreset, paramPreset } from './params.ts';
+
+/** How a device moves a background when nothing is saved. */
+const DEFAULT_MOTION = { fps: 'screen', reduceMotion: 'still', still: false } as const;
+const movingPreset = (id: MovingId, name: string) => paramPreset(MOVING_BACKGROUNDS[id], name);
+const presetOf = (id: MovingId, params: MovingParams) =>
+	matchingPreset(MOVING_BACKGROUNDS[id], params);
 
 describe('moving backgrounds', () => {
 	it('has the five backgrounds from the playground', () => {
@@ -57,26 +63,24 @@ describe('moving backgrounds', () => {
 	});
 
 	it('reads motion settings, falling back to drawing every refresh and holding still', () => {
-		expect(parseMovingMotion(undefined)).toEqual(DEFAULT_MOVING_MOTION);
+		expect(parseMovingMotion(undefined)).toEqual(DEFAULT_MOTION);
 		expect(parseMovingMotion({ fps: '30', reduceMotion: 'gentle', still: true })).toEqual({
 			fps: '30',
 			reduceMotion: 'gentle',
 			still: true
 		});
-		expect(parseMovingMotion({ fps: 12, reduceMotion: 'fast' })).toEqual(DEFAULT_MOVING_MOTION);
+		expect(parseMovingMotion({ fps: 12, reduceMotion: 'fast' })).toEqual(DEFAULT_MOTION);
 	});
 
 	it('holds still with Reduce motion on, unless told otherwise', () => {
 		const rain = { id: 'rain' as const, params: movingDefaults('rain') };
-		expect(movingRun(rain, DEFAULT_MOVING_MOTION, true).still).toBe(true);
-		expect(movingRun(rain, DEFAULT_MOVING_MOTION, false)).toMatchObject({ still: false, speed: 1 });
-		expect(movingRun(rain, { ...DEFAULT_MOVING_MOTION, still: true }, false).still).toBe(true);
-		const gentle = movingRun(rain, { ...DEFAULT_MOVING_MOTION, reduceMotion: 'gentle' }, true);
+		expect(movingRun(rain, DEFAULT_MOTION, true).still).toBe(true);
+		expect(movingRun(rain, DEFAULT_MOTION, false)).toMatchObject({ still: false, speed: 1 });
+		expect(movingRun(rain, { ...DEFAULT_MOTION, still: true }, false).still).toBe(true);
+		const gentle = movingRun(rain, { ...DEFAULT_MOTION, reduceMotion: 'gentle' }, true);
 		expect(gentle).toMatchObject({ still: false, speed: 0.35 });
 		expect(gentle.params.lightning).toBe(0);
-		expect(movingRun(rain, { ...DEFAULT_MOVING_MOTION, reduceMotion: 'ignore' }, true).speed).toBe(
-			1
-		);
+		expect(movingRun(rain, { ...DEFAULT_MOTION, reduceMotion: 'ignore' }, true).speed).toBe(1);
 	});
 
 	it('keeps lightning to one flash every few seconds at most', () => {

@@ -297,17 +297,6 @@ export function reminderKey(reminder: Reminder): string {
 	return JSON.stringify([reminder.characterId, reminder.label]);
 }
 
-export function parseReminderKey(key: string): Reminder | undefined {
-	try {
-		const raw: unknown = JSON.parse(key);
-		if (Array.isArray(raw) && typeof raw[0] === 'string' && typeof raw[1] === 'string')
-			return { characterId: raw[0], label: raw[1] };
-	} catch {
-		// An unreadable entry is skipped.
-	}
-	return undefined;
-}
-
 export interface BankReminder {
 	characterId: CharacterId;
 	label: string;
