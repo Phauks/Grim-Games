@@ -7,8 +7,10 @@ import {
 	oneOf,
 	opt,
 	optObj,
+	ownWords,
 	STR,
-	STRS,
+	TOKEN,
+	CHARACTERS,
 	anyOf,
 	type SpecValue
 } from '../field-spec.ts';
@@ -38,21 +40,21 @@ const TARGET = optObj({
 	seat: oneOf(['self', 'other', 'any']),
 	types: TYPES,
 	shown: TYPES,
-	characters: STRS,
+	characters: CHARACTERS,
 	alignment: oneOf([...ALIGNMENTS, 'same', 'opposite']),
-	sameAlignmentAs: STR,
+	sameAlignmentAs: TOKEN,
 	alignmentCounts: optObj({ good: NUM, evil: NUM }),
 	maxPlaced: COUNT,
 	life: oneOf(['alive', 'dead']),
 	neighbour: NEIGHBOUR,
-	withLabel: STR,
-	notWithLabel: STR,
+	withLabel: TOKEN,
+	notWithLabel: TOKEN,
 	global: B,
 	minOwners: NUM,
 	differsFromLastNight: oneOf(['player', 'type']),
 	info: B,
-	note: STR,
-	ambiguous: STR
+	note: ownWords(STR),
+	ambiguous: ownWords(STR)
 });
 export type TargetRule = SpecValue<typeof TARGET>;
 

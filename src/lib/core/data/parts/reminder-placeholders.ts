@@ -1,4 +1,15 @@
-import { list, obj, oneOf, opt, optObj, STR, T, TOKEN, type SpecValue } from '../field-spec.ts';
+import {
+	list,
+	obj,
+	oneOf,
+	opt,
+	optObj,
+	ownWords,
+	STR,
+	T,
+	TOKEN,
+	type SpecValue
+} from '../field-spec.ts';
 import { specPart, type PartValue } from './part.ts';
 
 /** One `:reminder:`: the tokens it handles, or `either` when only one of them applies. */
@@ -31,7 +42,7 @@ export type PlaceholderAction = PlaceholderToken['action'];
 export const reminderPlaceholders = specPart(
 	'Night text reminders',
 	'What each reminder named in its night text means.',
-	optObj({ first: list(PLACEHOLDER), other: list(PLACEHOLDER), note: STR }),
+	optObj({ first: list(PLACEHOLDER), other: list(PLACEHOLDER), note: ownWords(STR) }),
 	(value, path, issues) => {
 		const empty = (['first', 'other'] as const).flatMap((night) =>
 			(value[night] ?? []).flatMap((p, i) =>

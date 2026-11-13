@@ -13,7 +13,6 @@ import {
 	readBoolean,
 	readEnum,
 	readNumber,
-	readString,
 	type Issues,
 	type Json
 } from '../validate.ts';
@@ -125,16 +124,6 @@ export function countPart(label: string, description: string): Part<number> {
 			issues.add(`${path}.${key}`, `expected a whole number above 0, got ${n}`);
 			return undefined;
 		}
-	};
-}
-
-/** A text part. */
-export function stringPart(label: string, description: string): Part<string> {
-	return {
-		label,
-		description,
-		field: { kind: 'string' },
-		read: (block, key, path, issues) => readString(block, key, path, issues, false)
 	};
 }
 

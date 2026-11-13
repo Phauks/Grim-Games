@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
+import type { FieldSpec } from '#lib/core/data/field-spec.ts';
 import * as PARTS from '#lib/core/data/parts/index.ts';
 import { characterEntry, emptyCharacterFields, type CharacterFields } from './character-builder.ts';
 import {
@@ -23,11 +24,13 @@ function fields(over: Partial<CharacterFields> = {}): CharacterFields {
 const LIT = ['Lit'] as ReminderLabel[];
 
 describe('BUILDER_RULES', () => {
-	it('lists every part but the two set elsewhere, by label', () => {
+	it('lists every part but the two set elsewhere and our own words, by label', () => {
 		const keys = BUILDER_RULES.map((r) => r.key);
 		expect(keys).not.toContain('nightOrder');
 		expect(keys).not.toContain('nightText');
-		expect(keys).toHaveLength(Object.keys(PARTS).length - 2);
+		// Our own wording of an official optional rule is never typed in (M84).
+		expect(keys).not.toContain('optionalRuleText');
+		expect(keys).toHaveLength(Object.keys(PARTS).length - 3);
 		const labels = BUILDER_RULES.map((r) => r.label);
 		expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
 	});
@@ -111,5 +114,62 @@ describe('rules text', () => {
 	it('says why text cannot be read', () => {
 		expect(readRuleText('{ who')).toHaveProperty('error');
 		expect(readRuleText('  ')).toEqual({ error: 'empty' });
+	});
+});
+
+/** Each setting the builder shows as typed text, by its path; a spec seen is skipped. */
+function typed(spec: FieldSpec, path: string, seen = new Set<FieldSpec>()): string[] {
+	if (seen.has(spec)) return [];
+	seen.add(spec);
+	switch (spec.kind) {
+		case 'string':
+		case 'strings':
+		case 'text':
+			return [path];
+		case 'object':
+			return spec.fields
+				.filter((f) => !f.spec.official)
+				.flatMap((f) => typed(f.spec, `${path}.${f.key}`, seen));
+		case 'variants':
+			return spec.variants.flatMap((v) => typed(v.spec, `${path}<${v.label}>`, seen));
+		case 'list':
+		case 'byToken':
+		case 'byKey':
+		case 'byCharacter':
+			return typed(spec.of, `${path}.*`, seen);
+		default:
+			return [];
+	}
+}
+
+/**
+ * Settings still typed in (M84, Trevor 2026-11-12: "lean against" free text): names of
+ * existing things are picked, and our own words for official characters are left out. What
+ * is left is words a custom character needs (what a prep step asks for, what a day reminder
+ * says) or a mix of keywords and names the pickers can't offer yet. Only shrinks.
+ */
+const TYPED_TODO = [
+	'afterDeath.cause',
+	'dayReminders.reminders.*.template.*<Text>.text',
+	'dayReminders.reminders.*.when.cause',
+	'dayTally.label',
+	'evilLearns.named',
+	'infoTokenCharacters.*<One step>.characters',
+	'infoTokenCharacters.*<One step>.value',
+	'jinxes.*.cannotCreate<With who and when>.when.*<Marked>.marked',
+	'jinxes.*.patch<With who and when>.parts',
+	'reminderTargets.*.neighbour.of',
+	'setupModifier.summary',
+	'setupModifier.requires',
+	'setupModifier.notes',
+	'setupPrep.notes.*.value.key',
+	'setupPrep.notes.*.value.label'
+];
+
+describe('typed settings', () => {
+	it('picks names from lists and leaves out our own words (M84)', () => {
+		const shown = BUILDER_RULES.flatMap((r) => typed(r.field, r.key));
+		expect(shown.filter((p) => !TYPED_TODO.includes(p))).toEqual([]);
+		expect(TYPED_TODO.filter((p) => !shown.includes(p))).toEqual([]);
 	});
 });

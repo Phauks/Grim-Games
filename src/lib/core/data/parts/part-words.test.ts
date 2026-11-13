@@ -23,14 +23,17 @@ const WORDED: readonly (keyof typeof PARTS)[] = [
 	'twoStorytellers'
 ];
 
-/** Each setting under `spec` with no plain name, by its path. */
+/** Each setting under `spec` the builder shows with no plain name, by its path. */
 function unnamed(spec: FieldSpec, path: string): string[] {
 	switch (spec.kind) {
 		case 'object':
-			return spec.fields.flatMap((f) => [
-				...(f.spec.label ? [] : [`${path}.${f.key}`]),
-				...unnamed(f.spec, `${path}.${f.key}`)
-			]);
+			// Our own words for official characters are never shown in the builder (M84).
+			return spec.fields
+				.filter((f) => !f.spec.official)
+				.flatMap((f) => [
+					...(f.spec.label ? [] : [`${path}.${f.key}`]),
+					...unnamed(f.spec, `${path}.${f.key}`)
+				]);
 		case 'variants':
 			return spec.variants.flatMap((v) => unnamed(v.spec, `${path}<${v.label}>`));
 		case 'list':

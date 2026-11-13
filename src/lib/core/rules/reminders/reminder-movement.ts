@@ -20,13 +20,17 @@ export function reminderMovementOf(
 	return rulesOf(characterId, characters)?.reminderMovement;
 }
 
+/** Why a reminder stays put, when its character gives no reason of its own. */
+export const FIXED_REMINDER = 'It stays where it was first placed.';
+
 /** Why this reminder should stay where it was first placed, or undefined if it may move. */
 export function fixedReminderReason(
 	reminder: Pick<Reminder, 'characterId' | 'label'>,
 	characters: CharacterLookup
 ): string | undefined {
 	const rule = reminderMovementOf(reminder.characterId, characters);
-	return rule?.fixed?.includes(reminder.label) ? rule.why : undefined;
+	// A custom character gives no reason of its own (M84): the plain one stands in.
+	return rule?.fixed?.includes(reminder.label) ? (rule.why ?? FIXED_REMINDER) : undefined;
 }
 
 export function isFixedReminder(

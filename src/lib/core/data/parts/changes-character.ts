@@ -1,4 +1,4 @@
-import { anyOf, COUNT, obj, oneOf, opt, STRS, T, TOKEN } from '../field-spec.ts';
+import { anyOf, CHARACTERS, COUNT, obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
 import { ALIGNMENTS, SEATED_TYPES } from '../types.ts';
 import { specPart } from './part.ts';
 
@@ -52,7 +52,7 @@ export const changesCharacter = specPart(
 		alignment: opt(oneOf(ALIGNMENTS)),
 		token: opt(TOKEN),
 		spent: opt(TOKEN),
-		onlyFrom: opt(STRS),
+		onlyFrom: opt(CHARACTERS),
 		notMarked: opt(TOKEN),
 		sameType: opt(T),
 		anyType: opt(T),

@@ -1,4 +1,4 @@
-import { optObj, STR, TOKENS } from '../field-spec.ts';
+import { optObj, ownWords, STR, TOKENS } from '../field-spec.ts';
 import { specPart, type PartValue } from './part.ts';
 
 /**
@@ -28,10 +28,14 @@ import { specPart, type PartValue } from './part.ts';
 export const reminderMovement = specPart(
 	'Reminders that stay',
 	'Which of its reminder tokens stay where they were placed.',
-	optObj({ fixed: TOKENS, why: STR, relocates: STR, followsNeighbours: TOKENS }),
+	optObj({
+		fixed: TOKENS,
+		why: ownWords(STR),
+		relocates: ownWords(STR),
+		followsNeighbours: TOKENS
+	}),
 	(value, path, issues) => {
 		const before = issues.list.length;
-		if (value.fixed && value.why === undefined) issues.add(`${path}.why`, 'missing');
 		value.followsNeighbours?.forEach((label, i) => {
 			if (value.fixed?.includes(label)) {
 				issues.add(`${path}.followsNeighbours[${i}]`, 'a fixed token cannot follow the neighbours');

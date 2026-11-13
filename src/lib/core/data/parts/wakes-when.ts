@@ -1,4 +1,4 @@
-import { anyOf, COUNT, obj, oneOf, opt, optObj, STRS, T, TOKEN } from '../field-spec.ts';
+import { anyOf, CHARACTERS, COUNT, obj, oneOf, opt, optObj, T, TOKEN } from '../field-spec.ts';
 import { CHARACTER_TYPES } from '../types.ts';
 import { specPart, type PartValue } from './part.ts';
 
@@ -38,7 +38,7 @@ export const wakesWhen = specPart(
 	optObj({
 		deadAtLeastLiving: T,
 		deadAtLeast: COUNT,
-		diedTonight: obj({ characters: STRS, by: opt(oneOf(['demon'])) }),
+		diedTonight: obj({ characters: CHARACTERS, by: opt(oneOf(['demon'])) }),
 		diedToday: obj({ types: anyOf(CHARACTER_TYPES), token: opt(TOKEN) }),
 		nobodyDiedToday: T,
 		untilToken: TOKEN,
