@@ -94,6 +94,7 @@ export { takesNeighbourAlignment } from './takes-neighbour-alignment.ts';
 export { tokenFlow } from './token-flow.ts';
 export { turnsPlayersInto } from './turns-players-into.ts';
 export { twoStorytellers } from './two-storytellers.ts';
+export { unlimitedReminders } from './unlimited-reminders.ts';
 export { voteWeight } from './vote-weight.ts';
 export { voter } from './voter.ts';
 export { voting } from './voting.ts';
