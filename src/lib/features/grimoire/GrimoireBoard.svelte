@@ -709,7 +709,8 @@
 	/** What the grim cover shows: nothing from the grimoire (Trevor, 2026-10-26). */
 	const coverDetails = $derived<CoverDetails>({
 		logo: boardLogo || undefined,
-		name: showTitle ? game.script.meta?.name : undefined,
+		name: game.script.meta?.name || undefined,
+		hideTitle: !showTitle,
 		author: showTitle ? game.script.meta?.author : undefined,
 		storyteller: game.storytellerName?.trim() || undefined,
 		phase

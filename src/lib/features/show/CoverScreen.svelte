@@ -4,6 +4,11 @@
 		/** The script's logo (scriptLogo), when it has one. */
 		logo?: string;
 		name?: string;
+		/**
+		 * The script asks not to write its title (`_meta.hideTitle`, for a logo that carries
+		 * it): the name then shows only in the logo's place, when there is no logo.
+		 */
+		hideTitle?: boolean;
 		author?: string;
 		/** Who runs the game (Trevor, 2026-10-27: "Include storyteller name on grim cover"). */
 		storyteller?: string;
@@ -33,7 +38,16 @@
 		actions?: Snippet;
 	}
 
-	let { logo, name, author, storyteller, phase, timer, actions }: Props = $props();
+	let {
+		logo,
+		name,
+		hideTitle = false,
+		author,
+		storyteller,
+		phase,
+		timer,
+		actions
+	}: Props = $props();
 
 	let logoFailed = $state(false);
 	$effect(() => {
@@ -44,13 +58,15 @@
 
 <div class="cover" data-testid="cover-details">
 	<!-- Without a logo, or if its link fails, the name takes the logo's place, styled like one
-	     (Trevor, 2026-10-28), and is not written out again under it. -->
+	     (Trevor, 2026-10-28), and is not written out again under it. A script that hides its
+	     title still shows it here when it has no logo (Trevor, 2026-11-12: "When no script
+	     logo, grim cover doesn't show name of script"). -->
 	{#if logo && !logoFailed}<ScriptLogo
 			src={logo}
 			{name}
 			class="cover-logo"
 			onfail={() => (logoFailed = true)}
-		/>{#if name}<h2 class="name">{name}</h2>{/if}
+		/>{#if name && !hideTitle}<h2 class="name">{name}</h2>{/if}
 	{:else if name}<h2 class="cover-logo name" data-testid="cover-name">
 			<ScriptNameMark {name} />
 		</h2>{/if}
