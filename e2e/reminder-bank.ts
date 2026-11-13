@@ -131,7 +131,8 @@ export async function putRunReminder(page: Page, label: string, seat: number | s
 	const bin = await openBin(page);
 	const word = label.split(' ')[0];
 	await bin
-		.getByRole('button', { name: new RegExp(`^${word} \\d+ reminder$`) })
+		// A borrowed ability's copy is named for its holder ("Night 1 reminder, Alchemist's copy").
+		.getByRole('button', { name: new RegExp(`^${word} \\d+ reminder(, .+)?$`) })
 		// The stack, after any of the run's tokens still waiting in Setup.
 		.last()
 		.tap();
