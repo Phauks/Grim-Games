@@ -127,7 +127,8 @@
 	body: Snippet,
 	tone?: TypeTone,
 	empty = false,
-	count?: number
+	count?: number,
+	band: 'outline' | 'fill' = 'outline'
 )}
 	{#if flat}
 		<section>
@@ -135,7 +136,7 @@
 			{@render body()}
 		</section>
 	{:else}
-		<Collapsible {title} storageKey={key} {tone} outlined={!tone} {empty} {count}
+		<Collapsible {title} storageKey={key} {tone} band={tone ? undefined : band} {empty} {count}
 			>{@render body()}</Collapsible
 		>
 	{/if}
@@ -204,7 +205,15 @@
 				travellers={(travellers ?? []).flatMap((p) => byId.get(p.characterId) ?? [])}
 				{ruleCharacters}
 			/>{/snippet}
-		{@render section(t('player.breakdown'), 'play:breakdown', breakdown)}
+		{@render section(
+			t('player.breakdown'),
+			'play:breakdown',
+			breakdown,
+			undefined,
+			false,
+			undefined,
+			'fill'
+		)}
 	{/if}
 {/snippet}
 
