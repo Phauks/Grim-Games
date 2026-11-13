@@ -6,6 +6,7 @@ import {
 	obj,
 	oneOf,
 	opt,
+	ownWords,
 	STR,
 	T,
 	type SpecValue
@@ -30,7 +31,7 @@ const WAKE = obj({
 	dead: opt(T),
 	chosen: opt(T),
 	minutes: opt(COUNT),
-	text: opt(STR)
+	text: opt(ownWords(STR))
 });
 export type NightWake = SpecValue<typeof WAKE>;
 
