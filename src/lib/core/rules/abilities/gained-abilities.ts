@@ -151,7 +151,9 @@ export function holdsAbility(
 		if (game.seats[holder]?.characterId !== held.via) return false;
 		return ownGiverWorks(game, holder, held.characterId, characters);
 	}
-	if (!rule && rules?.gainedFrom) {
+	// Their own character gains it (the Philosopher's choice, the Alchemist's Minion or the
+	// Apprentice's ability, Gain ability in the seat's ⋯ menu): kept on their own token.
+	if (!rule && (rules?.gainedFrom || rules?.swapsForAbility)) {
 		if (trueCharacter(game, holder, characters) !== held.via) return false;
 		return ownGiverWorks(game, holder, held.characterId, characters);
 	}

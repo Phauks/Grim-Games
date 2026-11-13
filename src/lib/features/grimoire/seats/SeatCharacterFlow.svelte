@@ -1,7 +1,7 @@
 <!--
 	Choosing who a seat is, for the seat sheet: the character picker and the confirmations a
-	change asks for, a Traveller's alignment, an alignment change from ⋯, an ability gained
-	by a swap (the Apprentice's), and one held without a token (the Boffin's, on the Demon).
+	change asks for, a Traveller's alignment, an alignment change from ⋯, and an ability held
+	without a token (the Boffin's, on the Demon).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -53,16 +53,11 @@
 	let changeTo = $state<CharacterId | undefined>();
 	let changeOpen = $state(false);
 	let clearOpen = $state(false);
-	let gainOpen = $state(false);
 	let heldOpen = $state(false);
 
 	/** Opens the character picker. */
 	export function choose() {
 		pickerOpen = true;
-	}
-	/** Opens the picker for the ability gained by a swap (the Apprentice's). */
-	export function chooseGain() {
-		gainOpen = true;
 	}
 	/** Opens the picker for an ability held without a token (the Boffin's, on the Demon). */
 	export function chooseHeld() {
@@ -145,35 +140,6 @@
 		if (id) onDraw?.(id);
 	}
 
-	// ── An ability gained by a swap ──
-	// The player's token is swapped for a character of the types its rules block's
-	// `swapsForAbility` gives for their alignment, with its token on them (the Apprentice: a
-	// Townsfolk if good, a Minion if evil, with Is The Apprentice,
-	// https://wiki.bloodontheclocktower.com/Apprentice; Trevor, 2026-10-16).
-	const swapper = $derived.by(() => {
-		const id = seatId === undefined ? undefined : trueCharacter(game, seatId, characters);
-		const rule = id ? rulesOf(id, characters)?.swapsForAbility : undefined;
-		return id && rule ? { id, rule } : undefined;
-	});
-	const gainTypes = $derived.by(() => {
-		const rule = swapper?.rule;
-		if (!rule) return [];
-		if (seat?.alignment === 'good') return rule.good;
-		if (seat?.alignment === 'evil') return rule.evil;
-		return [...new Set([...rule.good, ...rule.evil])];
-	});
-	function gain(id: CharacterId) {
-		gainOpen = false;
-		const from = swapper;
-		if (!seatId || !seat || !from) return;
-		const reminder = { characterId: from.id, label: from.rule.token };
-		const marked = seat.reminders.some(
-			(r) => r.characterId === reminder.characterId && r.label === reminder.label
-		);
-		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id, alignment: seat.alignment });
-		if (!marked) grimoire.run({ type: 'AddReminder', seatId, reminder });
-	}
-
 	// ── An ability held without a token ──
 	// Another character's `givesAbility` gives this player an ability: the Boffin's
 	// not-in-play good character on the Demon (https://wiki.bloodontheclocktower.com/Boffin).
@@ -215,15 +181,6 @@
 	exclude={heldExclude}
 	onPick={hold}
 	onNone={held ? () => hold(undefined) : undefined}
-/>
-
-<CharacterPicker
-	bind:open={gainOpen}
-	title={`Ability ${title} gains`}
-	{characters}
-	script={game.script}
-	types={gainTypes}
-	onPick={gain}
 />
 
 <CharacterPicker

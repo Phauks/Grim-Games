@@ -620,7 +620,7 @@ Every key a character's rules block may have, 98 in all. Each is one file in
 **Swaps for an ability.** Its player’s token is swapped for a character whose ability they gain.
 
 - Part: `src/lib/core/data/parts/swaps-for-ability.ts`
-- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/seats/SeatCharacterFlow.svelte`, `features/grimoire/seats/SeatSheet.svelte`
+- Read by: `core/rules/abilities/gained-abilities.ts`, `features/grimoire/GainAbilityDialog.svelte`
 
 ### takesNeighbourAlignment
 
