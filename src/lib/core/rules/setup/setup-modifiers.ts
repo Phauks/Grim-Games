@@ -85,6 +85,24 @@ function fromRules(character: Character, entry: SetupModifierRules): SetupModifi
 	};
 }
 
+/** The note for a clause of [setup] text the app cannot apply. */
+const byHand = (clause: string) => `Check the setup text by hand: “${clause}”.`;
+const BY_HAND = /^Check the setup text by hand: “(.*)”\.$/;
+
+/**
+ * The clauses of a character's [setup] text the app cannot apply, so the Character builder can
+ * refuse them: a custom character's setup text always does what it says (Trevor, 2026-11-12).
+ */
+export function unreadSetupClauses(
+	character: Character,
+	findByName?: (name: string) => CharacterId | undefined
+): string[] {
+	return (modifierFromText(character, findByName)?.notes ?? []).flatMap((note) => {
+		const m = BY_HAND.exec(note);
+		return m ? [m[1]!] : [];
+	});
+}
+
 /** The [bracketed] parts of an ability, joined. */
 export function bracketText(ability: string): string | undefined {
 	const parts = [...ability.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim());
@@ -192,7 +210,7 @@ export function modifierFromText(
 				) {
 					ops.push(delta(character.type as SeatedType, ...values));
 				}
-				if (rest) notes.push(`Check the setup text by hand: “${clause}”.`);
+				if (rest) notes.push(byHand(clause));
 				continue;
 			}
 			const id = findByName?.(m[4]);
@@ -201,7 +219,7 @@ export function modifierFromText(
 				continue;
 			}
 		}
-		notes.push(`Check the setup text by hand: “${clause}”.`);
+		notes.push(byHand(clause));
 	}
 	return {
 		id: character.id,

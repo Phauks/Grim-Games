@@ -15,7 +15,7 @@ import {
 } from '#lib/core/data/index.ts';
 import { parseCharacterRules, readableRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { bracketText } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { bracketText, unreadSetupClauses } from '#lib/core/rules/setup/setup-modifiers.ts';
 import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 import type { Night } from '#lib/core/model/overrides.ts';
@@ -179,6 +179,8 @@ export type CharacterProblem =
 	| { kind: 'name-missing' }
 	| { kind: 'ability-missing' }
 	| { kind: 'id-invalid'; id: string }
+	/** [setup] text the app cannot apply: build it with Add a setup change instead. */
+	| { kind: 'setup-unread'; clause: string }
 	/** Not an error: a script's own version replaces the official character. */
 	| { kind: 'id-official'; id: string };
 
@@ -192,6 +194,11 @@ export function characterProblems(fields: CharacterFields, data?: GameData): Cha
 		problems.push({ kind: 'id-invalid', id });
 	} else if (id && data?.byId.has(id)) {
 		problems.push({ kind: 'id-official', id });
+	}
+	const byName = (name: string) =>
+		data?.characters.find((c) => c.name.toLowerCase() === name.trim().toLowerCase())?.id;
+	for (const clause of unreadSetupClauses(previewCharacter(fields), byName)) {
+		problems.push({ kind: 'setup-unread', clause });
 	}
 	return problems;
 }
