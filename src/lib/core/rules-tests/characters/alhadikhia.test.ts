@@ -61,7 +61,7 @@ describe('Al-Hadikhia', () => {
 				.reminder('chef', 'alhadikhia', '1')
 				.reminder('empath', 'alhadikhia', '2')
 				.reminder('monk', 'alhadikhia', '3');
-			expect(killChoice('alhadikhia', s.characters)).toBe('live-or-die');
+			expect(killChoice(s.game, 'alhadikhia', s.characters)).toBe('live-or-die');
 			const [evin, lachlan, sarah] = liveOrDieChosen(s.game, 'alhadikhia', s.characters);
 			expect([evin, lachlan, sarah]).toEqual([s.seat('chef'), s.seat('empath'), s.seat('monk')]);
 			const out = resolveLiveOrDie(s.game, [

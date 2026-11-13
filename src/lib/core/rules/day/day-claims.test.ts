@@ -16,8 +16,11 @@
 import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	newGame,
+	plainGame,
 	run,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
@@ -31,49 +34,53 @@ import {
 	guessLimit
 } from './day-claims.ts';
 
+/** A lookup holding one custom character with only a rules block. */
+const lookupOf = (id: string, rules: CharacterRules) =>
+	new Map([[id, { rules }]]) as unknown as CharacterLookup;
+
 describe('dayClaim', () => {
 	it('reads each character’s claim from its rules block', () => {
-		expect(dayClaim('juggler', committedCharacters())).toBe('guesses');
-		expect(dayClaim('gossip', committedCharacters())).toBe('statement');
-		expect(dayClaim('savant', committedCharacters())).toBe('statements');
-		expect(dayClaim('washerwoman', committedCharacters())).toBeUndefined();
+		expect(dayClaim(plainGame(), 'juggler', committedCharacters())).toBe('guesses');
+		expect(dayClaim(plainGame(), 'gossip', committedCharacters())).toBe('statement');
+		expect(dayClaim(plainGame(), 'savant', committedCharacters())).toBe('statements');
+		expect(dayClaim(plainGame(), 'washerwoman', committedCharacters())).toBeUndefined();
 	});
 
 	it('reads a custom character’s own block', () => {
-		const custom = new Map([['herald', { rules: { dayClaim: 'statement' as const } }]]);
-		expect(dayClaim('herald', custom)).toBe('statement');
+		const custom = lookupOf('herald', { dayClaim: 'statement' });
+		expect(dayClaim(plainGame(), 'herald', custom)).toBe('statement');
 	});
 });
 
 describe('dayUseWho', () => {
 	it('reads who marking the ability used asks for', () => {
-		expect(dayUseWho('slayer', committedCharacters())).toBe('chosen');
-		expect(dayUseWho('virgin', committedCharacters())).toBe('nominator');
-		expect(dayUseWho('judge', committedCharacters())).toBe('nominee');
+		expect(dayUseWho(plainGame(), 'slayer', committedCharacters())).toBe('chosen');
+		expect(dayUseWho(plainGame(), 'virgin', committedCharacters())).toBe('nominator');
+		expect(dayUseWho(plainGame(), 'judge', committedCharacters())).toBe('nominee');
 		// The Artist's question and the Fisherman's advice are about no player.
-		expect(dayUseWho('artist', committedCharacters())).toBeUndefined();
-		expect(dayUseWho('fisherman', committedCharacters())).toBeUndefined();
+		expect(dayUseWho(plainGame(), 'artist', committedCharacters())).toBeUndefined();
+		expect(dayUseWho(plainGame(), 'fisherman', committedCharacters())).toBeUndefined();
 	});
 
 	it('reads whether the player dies, and the token that marks it used', () => {
 		for (const id of ['slayer', 'psychopath', 'gangster', 'gunslinger', 'golem'])
-			expect(dayUseOf(id, committedCharacters())?.kills, id).toBe(true);
+			expect(dayUseOf(plainGame(), id, committedCharacters())?.kills, id).toBe(true);
 		for (const id of ['klutz', 'moonchild', 'cacklejack', 'damsel', 'virgin'])
-			expect(dayUseOf(id, committedCharacters())?.kills, id).toBeUndefined();
-		expect(dayUseOf('golem', committedCharacters())).toEqual({
+			expect(dayUseOf(plainGame(), id, committedCharacters())?.kills, id).toBeUndefined();
+		expect(dayUseOf(plainGame(), 'golem', committedCharacters())).toEqual({
 			who: 'nominated',
 			kills: true,
 			spentToken: 'May Not Nominate'
 		});
-		expect(dayUseOf('damsel', committedCharacters())).toEqual({
+		expect(dayUseOf(plainGame(), 'damsel', committedCharacters())).toEqual({
 			who: 'guesser',
 			spentToken: 'Guess Used'
 		});
 	});
 
 	it('reads a custom character’s own block', () => {
-		const custom = new Map([['marksman', { rules: { dayUse: { who: 'chosen' as const } } }]]);
-		expect(dayUseWho('marksman', custom)).toBe('chosen');
+		const custom = lookupOf('marksman', { dayUse: { who: 'chosen' } });
+		expect(dayUseWho(plainGame(), 'marksman', custom)).toBe('chosen');
 	});
 });
 
@@ -204,7 +211,7 @@ describe('correctGuesses', () => {
 
 describe('guessLimit', () => {
 	it('is 5 for the Juggler, from its rules block', () => {
-		expect(guessLimit('juggler', committedCharacters())).toBe(5);
-		expect(guessLimit('gossip', committedCharacters())).toBeUndefined();
+		expect(guessLimit(plainGame(), 'juggler', committedCharacters())).toBe(5);
+		expect(guessLimit(plainGame(), 'gossip', committedCharacters())).toBeUndefined();
 	});
 });

@@ -1,5 +1,4 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -74,9 +73,10 @@ export function evilLearns(
  * character's rules block: the Zenomancer's Goal, https://wiki.bloodontheclocktower.com/Zenomancer).
  */
 export function takesNote(
+	game: Game,
 	reminder: { characterId: CharacterId; label: string },
 	characters: CharacterLookup
 ): boolean {
-	const label = rulesOf(reminder.characterId, characters)?.noteOn;
+	const label = rulesFor(game, reminder.characterId, characters)?.noteOn;
 	return label !== undefined && label === reminder.label;
 }

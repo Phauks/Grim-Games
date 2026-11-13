@@ -100,11 +100,11 @@ describe('Sweetheart', () => {
 			const s = scenario(['sweetheart', 'mathematician', 'chef', 'vortox', 'witch']).execute(
 				'sweetheart'
 			);
-			const trigger = onDeathTrigger('sweetheart', s.characters)!;
+			const trigger = onDeathTrigger(s.game, 'sweetheart', s.characters)!;
 			expect(
-				onDeathApplies(trigger, s.game.seats[s.seat('sweetheart')].deathCause, s.characters)
+				onDeathApplies(s.game, trigger, s.game.seats[s.seat('sweetheart')].deathCause, s.characters)
 			).toBe(true);
-			expect(onDeathApplies(trigger, 'vortox', s.characters)).toBe(true);
+			expect(onDeathApplies(s.game, trigger, 'vortox', s.characters)).toBe(true);
 		});
 
 		it('Drunk may go on any one player', () => {

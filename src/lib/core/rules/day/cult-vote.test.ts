@@ -34,7 +34,7 @@ describe('the dayUse vote', () => {
 
 	it('is the Cult Leader’s, in its official rules', () => {
 		const s = scenario(['cultleader']);
-		expect(dayUseOf('cultleader', s.characters)).toEqual({ vote: 'all-good-join' });
+		expect(dayUseOf(s.game, 'cultleader', s.characters)).toEqual({ vote: 'all-good-join' });
 	});
 });
 

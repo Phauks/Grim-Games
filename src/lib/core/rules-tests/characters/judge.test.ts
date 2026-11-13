@@ -62,7 +62,7 @@ describe('Judge', () => {
 				.newDay()
 				.nominate('chef', 'slayer')
 				.nominate('empath', 'po');
-			expect(dayUseWho('judge', s.characters)).toBe('nominee');
+			expect(dayUseWho(s.game, 'judge', s.characters)).toBe('nominee');
 			expect(judged(s)).toBe(s.seat('po'));
 			const used = s.do((at) => ({
 				type: 'UseAbility',
@@ -106,9 +106,9 @@ describe('Judge', () => {
 			expect(judged(goon)).toBe(goon.seat('goon'));
 			const executed = goon.execute('goon');
 			expect(executed.game.seats[executed.seat('goon')].dead).toBe(true);
-			expect(isExecution(executed.game.seats[executed.seat('goon')].deathCause, s.characters)).toBe(
-				true
-			);
+			expect(
+				isExecution(s.game, executed.game.seats[executed.seat('goon')].deathCause, s.characters)
+			).toBe(true);
 		});
 	});
 

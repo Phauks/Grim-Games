@@ -17,7 +17,6 @@
  */
 import { type CharacterId, type ReminderLabel } from '#lib/core/data/types.ts';
 import type { ImpairmentReason, TokenImpairment } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { isOnScript, type CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -264,10 +263,26 @@ function impairmentsOf(
 		});
 	}
 
+	// A jinx impairs this one whatever its own ability's state, while its `when` holds
+	// (`impairs`: with `partner-in-play`, the Spy or the Widow, alive or dead, poisons the
+	// Damsel, https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers
+	// one that has been in play; the game keeps no record of a character that left play, so
+	// only one in play now counts. One about the ability they have from their token is below.
+	const jinxed = characterId ? jinxImpairs(game, characterId, characters) : [];
+	for (const { partner, kind } of jinxed) {
+		const source = seatOfCharacter(game, partner, characters, seatId);
+		const at = source ? { characterId: partner, seatId: source } : { characterId: partner };
+		out.push(sourced(kind, at, characters));
+	}
+
 	// Its own player is impaired: always (the Drunk, whether or not an "Is The Drunk" token
 	// says so: https://wiki.bloodontheclocktower.com/Drunk), or once few enough players live
-	// (the Witch: https://wiki.bloodontheclocktower.com/Witch).
-	const self = characterId ? rulesOf(characterId, characters)?.impairs?.self : undefined;
+	// (the Witch: https://wiki.bloodontheclocktower.com/Witch). A jinx's `impairs` patch in
+	// effect stands in for the character's own and is told above, by its partner.
+	const self =
+		characterId && jinxed.length === 0
+			? rulesFor(game, characterId, characters, { seatId })?.impairs?.self
+			: undefined;
 	if (characterId && self) {
 		const alive = game.seating.filter((s) => !game.seats[s].dead).length;
 		const applies =
@@ -276,19 +291,6 @@ function impairmentsOf(
 				: !out.some((i) => i.source.characterId === characterId);
 		if (applies) {
 			out.push(sourced(self.reason, { characterId, seatId }, characters));
-		}
-	}
-
-	// A jinx impairs this one whatever its own ability's state, while its `when` holds
-	// (`impairs`: with `partner-in-play`, the Spy or the Widow, alive or dead, poisons the
-	// Damsel, https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers
-	// one that has been in play; the game keeps no record of a character that left play, so
-	// only one in play now counts. One about the ability they have from their token is below.
-	if (characterId) {
-		for (const { partner, kind } of jinxImpairs(game, characterId, characters)) {
-			const source = seatOfCharacter(game, partner, characters, seatId);
-			const at = source ? { characterId: partner, seatId: source } : { characterId: partner };
-			out.push(sourced(kind, at, characters));
 		}
 	}
 

@@ -41,7 +41,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const character = $derived(step.character);
-	const choice = $derived(character ? killChoice(character.id, characters) : undefined);
+	const choice = $derived(character ? killChoice(game, character.id, characters) : undefined);
 
 	// The named character (`character`).
 	let named = $state<CharacterId>();

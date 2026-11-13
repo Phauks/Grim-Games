@@ -1,7 +1,6 @@
 /**
  * Night information: the data each night order step carries. Part of `night-info.ts`.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -88,8 +87,11 @@ export function characterStepSeats(
 }
 
 /** Whether a character's step wakes the players it marks rather than a holder. */
-export const wakesMarked = (characterId: CharacterId, characters: CharacterLookup): boolean =>
-	rulesOf(characterId, characters)?.answers?.wakes === 'marked';
+export const wakesMarked = (
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean => rulesFor(game, characterId, characters)?.answers?.wakes === 'marked';
 
 /**
  * Adds what the game says to the steps of a night order (see `nightOrder`): `info`
@@ -171,7 +173,7 @@ export function withNightInfo<T extends NightStep>(
 		const basis = gained?.learns === 'answer' ? gained.fromSeat : undefined;
 		const info = nightStepInfo(game, as, characters, seats, today, night, basis);
 		// The players a rule character marks wake for its ability, not their own.
-		const impaired = (gained || !wakesMarked(step.character.id, characters) ? seats : [])
+		const impaired = (gained || !wakesMarked(game, step.character.id, characters) ? seats : [])
 			.map((s): AbilityState => abilityState(game, s, characters))
 			.filter((a) => a.impairments.length > 0);
 		const killNotes = gained ? [] : nightKillNotes(game, step.character.id, seats, characters);

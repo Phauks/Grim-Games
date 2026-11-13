@@ -4,7 +4,7 @@
  * their new character (https://wiki.bloodontheclocktower.com/Pit-Hag).
  */
 import { describe, expect, it } from 'vitest';
-import { testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { plainGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { withCharacterChangeSteps } from './character-changes.ts';
 import type { NightStep } from './night-order.ts';
 import { nightTextPlain, nightTextSegments } from './night-text.ts';
@@ -21,6 +21,7 @@ describe('withCharacterChangeSteps', () => {
 	it('adds a wake step before Dawn for each changed seat, in the order given', () => {
 		const steps = [marker('dusk'), marker('dawn'), marker('leviathan', true)];
 		const out = withCharacterChangeSteps(
+			plainGame(),
 			steps,
 			[
 				{ seatId: 's1', characterId: 'imp' },
@@ -37,7 +38,12 @@ describe('withCharacterChangeSteps', () => {
 	});
 
 	it('shows the "You are" info token, then the new character', () => {
-		const [step] = withCharacterChangeSteps([], [{ seatId: 's1', characterId: 'imp' }], characters);
+		const [step] = withCharacterChangeSteps(
+			plainGame(),
+			[],
+			[{ seatId: 's1', characterId: 'imp' }],
+			characters
+		);
 		expect(
 			nightTextPlain(nightTextSegments(step.reminder ?? '', { reminders: [], remindersGlobal: [] }))
 		).toBe('Wake this player. Show the «You are» info token, then the Imp token.');
@@ -45,9 +51,14 @@ describe('withCharacterChangeSteps', () => {
 
 	it('changes nothing without changes, and skips unknown characters', () => {
 		const steps = [marker('dusk'), marker('dawn')];
-		expect(withCharacterChangeSteps(steps, [], characters)).toEqual(steps);
+		expect(withCharacterChangeSteps(plainGame(), steps, [], characters)).toEqual(steps);
 		expect(
-			withCharacterChangeSteps(steps, [{ seatId: 's1', characterId: 'nobody' }], characters)
+			withCharacterChangeSteps(
+				plainGame(),
+				steps,
+				[{ seatId: 's1', characterId: 'nobody' }],
+				characters
+			)
 		).toEqual(steps);
 	});
 });

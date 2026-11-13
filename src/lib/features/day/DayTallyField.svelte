@@ -17,7 +17,7 @@
 
 	let { game, characterId }: Props = $props();
 
-	const rule = $derived(dayTallyOf(characterId, game.characters));
+	const rule = $derived(dayTallyOf(game.game, characterId, game.characters));
 	const count = $derived(tallyCount(game.game.today, characterId));
 	// One per player at most, and never fewer than the count already set.
 	const max = $derived(Math.max(count, game.game.seating.length));
