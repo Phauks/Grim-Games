@@ -1,4 +1,4 @@
-import { obj, opt, STRS } from '../field-spec.ts';
+import { CHARACTERS, obj, opt } from '../field-spec.ts';
 import { specPart, type PartValue } from './part.ts';
 
 /**
@@ -12,8 +12,8 @@ import { specPart, type PartValue } from './part.ts';
 export const infoDelay = specPart(
 	'night',
 	'Information a night late',
-	'While in play, characters that learn information receive it one night later, as it was when their ability was used.',
-	obj({ except: opt(STRS) })
+	'While in play, characters that learn information receive it one night later (a day later for day information), as it was when their ability was used.',
+	obj({ except: opt(CHARACTERS) })
 );
 
 export type InfoDelay = PartValue<typeof infoDelay>;
