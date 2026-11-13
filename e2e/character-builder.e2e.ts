@@ -408,12 +408,14 @@ test('a rule naming a character picks it, and asks for no words of ours (M84)', 
 	await page.getByTestId('reminders').getByRole('button', { name: 'Add a reminder' }).tap();
 	await page.getByRole('textbox', { name: 'Reminder 1' }).first().fill('Lit');
 
+	await page.getByRole('tab', { name: /^Rules/ }).tap();
+
 	// A hidden character is picked with the character picker, never typed as an id.
 	await page.getByTestId('add-rule').tap();
 	let dialog = page.getByRole('dialog', { name: 'Add a rule' });
-	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
-	await page.getByRole('option', { name: /^Or hidden as/ }).tap();
-	await expect(dialog.getByRole('textbox')).toHaveCount(0);
+	await dialog.getByRole('searchbox', { name: 'Find a rule' }).fill('hidden as');
+	await dialog.getByRole('button', { name: /^Or hidden as/ }).tap();
+	await expect(dialog.getByRole('textbox', { name: 'Or hidden as' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Choose a character' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Choose a character' })
@@ -426,8 +428,8 @@ test('a rule naming a character picks it, and asks for no words of ours (M84)', 
 	// Setup preparation asks for the token and its player; the step's words are made from them.
 	await page.getByTestId('add-rule').tap();
 	dialog = page.getByRole('dialog', { name: 'Add a rule' });
-	await dialog.getByRole('combobox', { name: 'Rule' }).tap();
-	await page.getByRole('option', { name: /^Setup preparation/ }).tap();
+	await dialog.getByRole('searchbox', { name: 'Find a rule' }).fill('setup preparation');
+	await dialog.getByRole('button', { name: /^Setup preparation/ }).tap();
 	await dialog.getByRole('button', { name: 'Add to Tokens to place' }).tap();
 	await expect(dialog.getByRole('combobox', { name: 'Reminder', exact: true })).toBeVisible();
 	await expect(dialog.getByRole('combobox', { name: 'On whom' })).toBeVisible();
