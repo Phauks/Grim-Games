@@ -380,8 +380,11 @@ export const modes = {
 	// Seat 7 read as "1 towns").
 	'modes.field.seats.count': 'Seats',
 	'modes.field.speaks': 'Storyteller speaks for it',
+	'modes.field.votes': 'Storyteller adds its vote once a day',
 	'modes.value.once-per-game': 'Once per game',
 	'modes.value.never': 'Never',
+	'modes.value.private-and-public': 'Once privately and once publicly',
+	'modes.value.once-per-day': 'Once a day',
 	'modes.field.travellers.inBag': 'Travellers in the bag',
 	'modes.field.announced': 'Announced',
 	'modes.field.storytellers': 'Storytellers',
