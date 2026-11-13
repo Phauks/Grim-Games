@@ -1,11 +1,5 @@
-import type {
-	CharacterRules,
-	DayClaim,
-	DayUse,
-	DayUseWho
-} from '#lib/core/data/character-rules.ts';
+import type { DayClaim, DayUse, DayUseWho } from '#lib/core/data/character-rules.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterGuess, CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
@@ -13,20 +7,26 @@ import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 
-type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
-
 /**
  * The claim a character's player makes in town, which the day log keeps for their ability
  * (`dayClaim` in its rules block; Trevor, 2026-10-23: L56). Guesses (the Juggler), one
  * statement the Storyteller marks true or false (the Gossip), or two statements (the Savant).
  */
-export function dayClaim(characterId: CharacterId, characters: RulesLookup): DayClaim | undefined {
-	return rulesOf(characterId, characters)?.dayClaim;
+export function dayClaim(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): DayClaim | undefined {
+	return rulesFor(game, characterId, characters)?.dayClaim;
 }
 
 /** How many guesses a character's claim may hold a day (`guessLimit` in its rules block). */
-export function guessLimit(characterId: CharacterId, characters: RulesLookup): number | undefined {
-	return rulesOf(characterId, characters)?.guessLimit;
+export function guessLimit(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): number | undefined {
+	return rulesFor(game, characterId, characters)?.guessLimit;
 }
 
 /**
@@ -35,23 +35,20 @@ export function guessLimit(characterId: CharacterId, characters: RulesLookup): n
  * execution it decided (the Judge). None for an ability about no player (the Artist).
  */
 export function dayUseWho(
+	game: Game,
 	characterId: CharacterId,
-	characters: RulesLookup
+	characters: CharacterLookup
 ): DayUseWho | undefined {
-	return rulesOf(characterId, characters)?.dayUse?.who;
+	return rulesFor(game, characterId, characters)?.dayUse?.who;
 }
 
 /** A character's whole `dayUse` rule: who, whether they die, and the token that marks it. */
-export function dayUseOf(characterId: CharacterId, characters: RulesLookup): DayUse | undefined {
-	return rulesOf(characterId, characters)?.dayUse;
-}
-
-/**
- * The characters no player holds whose day ability any living player may use, once each per
- * game (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer).
- */
-export function anyoneDayUses(game: Game, characters: CharacterLookup): CharacterId[] {
-	return game.ruleCharacters.filter((id) => rulesFor(game, id, characters)?.dayUse?.anyone);
+export function dayUseOf(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): DayUse | undefined {
+	return rulesFor(game, characterId, characters)?.dayUse;
 }
 
 /** The players who have used `characterId`'s day ability this game, today included. */

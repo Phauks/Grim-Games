@@ -62,7 +62,11 @@
 {#snippet text(line: NightTextLine)}{@const marks =
 		explained[at(line)] ?? []}{#each line as s, i (i)}{#if s.kind === 'text'}<GlossaryText
 				segments={marks[i] ?? []}
-			/>{:else}<NightTextPiece segment={s} {character} {alignment} />{/if}{/each}{/snippet}
+			/>{:else if s.kind !== 'reminder' && s.kind !== 'dead'}<NightTextPiece
+				segment={s}
+				{character}
+				{alignment}
+			/>{/if}{/each}{/snippet}
 
 {#snippet list(lines: readonly NightTextLine[], first: number, lettered: boolean)}
 	<StepLines {lettered}>
@@ -78,6 +82,9 @@
 <!--
 	Storyteller night text as numbered lines (Trevor, 2026-11-06, the "Ledger"): one line per
 	sentence, an "If ...:" sentence heading lettered lines. TPI's words are never changed.
+	Reminder tokens and the death marker are not drawn in the lines (Trevor, 2026-11-12: "No
+	longer list reminder tokens in line in night order"): the step's own rows under each line
+	show the real tokens. They stay in the data, which puts each row on its line.
 -->
 <div class="night-lines" data-testid="night-lines">
 	{#if steps.lines.length > 0}{@render list(steps.lines, 0, false)}{/if}

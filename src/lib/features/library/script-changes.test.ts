@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasChanges, scriptChanges } from './script-changes.ts';
+import { scriptChanges } from './script-changes.ts';
 
 const original = [
 	{ id: '_meta', name: 'Storm Front', author: 'Trevor' },
@@ -18,7 +18,14 @@ describe('scriptChanges', () => {
 			{ ability: 'Each night, choose a player.', id: 'stormwarden', team: 'townsfolk' },
 			{ id: 'imp' }
 		];
-		expect(hasChanges(scriptChanges(original, same))).toBe(false);
+		expect(scriptChanges(original, same)).toMatchObject({
+			otherDetails: false,
+			added: [],
+			removed: [],
+			edited: []
+		});
+		expect(scriptChanges(original, same).name).toBeFalsy();
+		expect(scriptChanges(original, same).author).toBeFalsy();
 	});
 
 	it('lists characters added and removed, in each script’s order', () => {

@@ -113,6 +113,7 @@
 	import AlignmentAsk from '#lib/features/grimoire/night/AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
+	import { gameResult } from '#lib/features/room/game-result.ts';
 	import { screenshotPart } from '#lib/ui/screenshot.ts';
 	import { EXPORT_HASH } from '#lib/features/history/export-hash.ts';
 	import GameFeedbackSheet from '#lib/features/grimoire/hosting/GameFeedbackSheet.svelte';
@@ -576,6 +577,16 @@
 		};
 		if (!watching) roomHost().setEnded(game.gameId, over || undefined);
 	});
+	// Phones in the room get the game's name-free result page to share (plan R4).
+	$effect(() => {
+		if (watching || !ended || !roomHost().code) return;
+		const gameId = game.gameId;
+		void untrack(exportGame)
+			.then(gameResult)
+			.then((id) => roomHost().setResult(gameId, id))
+			// Offline: the phones get no link, and their Share result stays off.
+			.catch(() => undefined);
+	});
 	// A finished game can be saved as a recap (Trevor, 2026-10-19), as it was when it ended.
 	let exportOpen = $state(false);
 	/** Players' feedback on the finished game, saved on this device (Trevor, 2026-10-25). */
@@ -709,7 +720,8 @@
 	/** What the grim cover shows: nothing from the grimoire (Trevor, 2026-10-26). */
 	const coverDetails = $derived<CoverDetails>({
 		logo: boardLogo || undefined,
-		name: showTitle ? game.script.meta?.name : undefined,
+		name: game.script.meta?.name || undefined,
+		hideTitle: !showTitle,
 		author: showTitle ? game.script.meta?.author : undefined,
 		storyteller: game.storytellerName?.trim() || undefined,
 		phase

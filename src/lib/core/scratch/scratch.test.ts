@@ -6,7 +6,6 @@ import {
 	inkBounds,
 	previewFit,
 	emptyPad,
-	isBlank,
 	readPad,
 	parseSizes,
 	redo,
@@ -118,14 +117,6 @@ describe('history', () => {
 		expect(commitStroke(h, pen([]))).toBe(h);
 		expect(undo(h)).toBe(h);
 		expect(redo(h)).toBe(h);
-	});
-});
-
-describe('isBlank', () => {
-	it('counts only pen strokes as drawing', () => {
-		expect(isBlank([])).toBe(true);
-		expect(isBlank([{ ...pen(), tool: 'eraser' }])).toBe(true);
-		expect(isBlank([pen()])).toBe(false);
 	});
 });
 

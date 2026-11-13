@@ -36,6 +36,12 @@ export type FieldSpec = Shape & {
 	readonly label?: string;
 	/** Plain words for a drop-down's choices, by value; others read as `optionLabel` says. */
 	readonly names?: Readonly<Record<string, string>>;
+	/**
+	 * Our own words for the Storyteller, written for official characters only (a step's reason,
+	 * a note on where a reminder goes): the Character builder leaves the setting out, so a custom
+	 * character is built only from parts that do something, and the app makes do without it (M84).
+	 */
+	readonly official?: true;
 };
 
 type Shape =
@@ -154,6 +160,16 @@ export const worded = <S extends FieldSpec>(
 	words: { label?: string; about?: string; names?: Readonly<Record<string, string>> },
 	spec: S
 ): S => ({ ...spec, ...words });
+
+/**
+ * `spec` as our own words for official characters, left out of the Character builder (M84,
+ * Trevor 2026-11-12: lean against free text). Give it `opt` in an object: a custom character
+ * never has it.
+ */
+export const ownWords = <S extends FieldSpec>(spec: S): S => ({ ...spec, official: true });
+
+/** A list of characters, each picked with the character picker. */
+export const CHARACTERS: Spec<readonly CharacterId[]> = { kind: 'list', of: CHARACTER };
 
 /** A setting that may be left out. */
 export const opt = <S extends FieldSpec>(spec: S): Optional<S> => ({ [OPTIONAL]: true, spec });
@@ -357,7 +373,8 @@ export function uncovered(spec: FieldSpec, value: unknown, path = ''): string[] 
 
 /**
  * A value on one line, for a rule's row: settings by name, lists by commas. With its `spec`,
- * settings and choices read in their plain words (M81).
+ * settings and choices read in their plain words (M81), and a picked character as a jinx's
+ * partner reads (M84).
  */
 export function summaryOf(value: unknown, spec?: FieldSpec): string {
 	if (spec?.kind === 'variants') {
@@ -366,7 +383,8 @@ export function summaryOf(value: unknown, spec?: FieldSpec): string {
 	}
 	if (value === true) return 'On';
 	if (value === false) return 'Off';
-	if (typeof value === 'string') return optionLabel(value, spec?.names);
+	if (typeof value === 'string')
+		return spec?.kind === 'character' ? fieldLabel(value) : optionLabel(value, spec?.names);
 	if (typeof value === 'number') return String(value);
 	if (Array.isArray(value)) {
 		const of = spec?.kind === 'list' ? spec.of : spec?.kind === 'enums' ? spec : undefined;

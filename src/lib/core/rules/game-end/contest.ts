@@ -6,7 +6,6 @@
  * (https://wiki.bloodontheclocktower.com/Fiddler). Votes are counted outside the app (Trevor,
  * 2026-11-01); the Storyteller enters the two totals.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
@@ -71,10 +70,11 @@ export function contestWinner(
  * (`dayUse.anyone`: the Doomsayer) or a contest (the Fiddler's).
  */
 export function ruleCharacterUse(
+	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): 'anyone' | 'contest' | undefined {
-	const rules = rulesOf(characterId, characters);
+	const rules = rulesFor(game, characterId, characters);
 	if (rules?.dayUse?.anyone) return 'anyone';
 	return rules?.gameEnd?.contest ? 'contest' : undefined;
 }

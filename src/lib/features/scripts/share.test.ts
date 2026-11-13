@@ -10,7 +10,6 @@ import {
 	OFFLINE_SINGLE_MAX,
 	PRINT_LINK_MAX,
 	printedLink,
-	shareLink,
 	sharedRefFromHash,
 	sharedRefHash,
 	type SharedRef
@@ -33,13 +32,8 @@ describe('share links', () => {
 	});
 
 	it('puts the script in the hash, never the query string', async () => {
-		const link = await shareLink('https://grim.example', script);
-		const url = new URL(link);
-		// Players share scripts with each other, so links open the player view.
-		expect(url.pathname).toBe('/play');
-		expect(new URL(await shareLink('https://grim.example', script, '/scripts')).pathname).toBe(
-			'/scripts'
-		);
+		const hash = sharedRefHash({ kind: 'inline', payload: await encodeSharedScript(script) });
+		const url = new URL(`https://grim.example/play${hash}`);
 		expect(url.search).toBe('');
 		expect(sharedRefFromHash(url.hash)).toEqual({
 			kind: 'inline',

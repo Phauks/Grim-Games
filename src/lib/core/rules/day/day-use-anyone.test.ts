@@ -8,7 +8,6 @@ import { Issues } from '#lib/core/data/validate.ts';
 import { decide, type Command } from '#lib/core/engine/index.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import {
-	anyoneDayUses,
 	dayUseCandidates,
 	dayUseDeath,
 	dayUseOpen,
@@ -35,7 +34,6 @@ function warnings(s: Scenario, command: Command): string[] {
 describe('day use by anyone (Doomsayer)', () => {
 	it('lets every living player use it while 4 or more live', () => {
 		const s = cast();
-		expect(anyoneDayUses(s.game, s.characters)).toEqual(['doomsayer']);
 		expect(dayUseCandidates(s.game, 'doomsayer', s.characters)).toEqual(s.seats);
 	});
 

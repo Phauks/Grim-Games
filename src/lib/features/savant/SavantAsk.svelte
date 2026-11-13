@@ -35,7 +35,7 @@
 			preferences.current.assistance.savantInfo && !grimoire.open.viewOnly
 				? game.seating.find(
 						(id) =>
-							dayClaim(game.seats[id].characterId ?? '', grimoire.open.characters) ===
+							dayClaim(game, game.seats[id].characterId ?? '', grimoire.open.characters) ===
 								'statements' && !game.seats[id].dead
 					)
 				: undefined;

@@ -328,10 +328,9 @@
 			void goto(`${resolve('/play')}${offlineHash(frame.bytes)}${room}`);
 			return true;
 		}
-		const read = frame?.kind === 'done' ? frame.text : text;
-		const room = scannedRoom(read);
+		const room = scannedRoom(text);
 		if (!room) {
-			if (openScannedScript(read)) return true;
+			if (openScannedScript(text)) return true;
 			scanProblem = t('room.scanNotRoom');
 			return false;
 		}
@@ -526,6 +525,7 @@
 		winner={view && !view.choosing ? view.ended?.winner : undefined}
 		seatNumber={mySeat}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
+		characterUntil={view?.roleUntil}
 	>
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->

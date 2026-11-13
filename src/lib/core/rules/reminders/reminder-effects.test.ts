@@ -54,11 +54,11 @@ describe('pickedEffect', () => {
 			]);
 
 	it('is offered on its token only', () => {
-		expect(pickedEffectOf(bad, base.characters)).toEqual({
+		expect(pickedEffectOf(base.game, bad, base.characters)).toEqual({
 			token: 'Something Bad',
 			effects: ['no-kill', 'poisoned', 'mad', 'no-vote-today', 'no-ability-today', 'dies']
 		});
-		expect(pickedEffectOf(protectedToken, base.characters)).toBeUndefined();
+		expect(pickedEffectOf(base.game, protectedToken, base.characters)).toBeUndefined();
 	});
 
 	it('acts on the next night: the coming one by day, the one after tonight at night', () => {

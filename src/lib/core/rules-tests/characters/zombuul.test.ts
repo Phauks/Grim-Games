@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
@@ -125,7 +126,9 @@ describe('Zombuul', () => {
 			const diedToday = { characterId: 'zombuul', label: 'Died Today' };
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('zombuul'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('chef'), s.characters)).toEqual([]);
-			expect(reminderPrompt('Died Today', 'zombuul', committedCharacters())).toBe('markDead');
+			expect(reminderPrompt(plainGame(), 'Died Today', 'zombuul', committedCharacters())).toBe(
+				'markDead'
+			);
 		});
 
 		it('does not wake while any player is marked Died Today', () => {

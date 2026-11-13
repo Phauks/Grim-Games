@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS, infoTokens } from './info-tokens.ts';
+import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from './info-tokens.ts';
 
 const byId = (id: string) => STANDARD_INFO_TOKENS.find((t) => t.id === id);
 
@@ -43,15 +43,6 @@ describe('info tokens', () => {
 		const madAs = STANDARD_INFO_TOKENS.find((t) => t.id === 'mad-as');
 		expect(madAs).toMatchObject({ text: 'You are mad as', characterId: 'cerenovus' });
 		expect(madAs?.extra).toBeUndefined();
-	});
-
-	it('lets the Storyteller hide standard cards and add custom ones', () => {
-		const list = infoTokens(
-			[{ id: 'c1', text: 'You are mad', source: 'custom' }],
-			['did-you-vote']
-		);
-		expect(list.map((t) => t.id)).not.toContain('did-you-vote');
-		expect(list.at(-1)?.text).toBe('You are mad');
 	});
 
 	it('asks for exactly the three bluffs with "not in play", and one character with "You are"', () => {

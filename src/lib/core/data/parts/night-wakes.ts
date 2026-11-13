@@ -1,12 +1,12 @@
 import {
 	anyOf,
+	CHARACTERS,
 	COUNT,
 	list,
 	obj,
 	oneOf,
 	opt,
 	STR,
-	STRS,
 	T,
 	type SpecValue
 } from '../field-spec.ts';
@@ -25,7 +25,7 @@ import { specPart } from './part.ts';
 const WAKE = obj({
 	when: oneOf(['each-night', 'each-night-except-first', 'one-night']),
 	night: opt(COUNT),
-	characters: opt(STRS),
+	characters: opt(CHARACTERS),
 	types: opt(anyOf(SEATED_TYPES)),
 	dead: opt(T),
 	chosen: opt(T),

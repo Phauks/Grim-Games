@@ -386,26 +386,6 @@ export interface LibraryFilter {
 	tags: readonly string[];
 }
 
-/** Rows matching the search, folder and tags. `haystack` is lower-cased searchable text. */
-export function filterLibrary<T extends { key: string; haystack: string }>(
-	rows: readonly T[],
-	state: LibraryLabels,
-	filter: LibraryFilter
-): T[] {
-	const term = filter.term.trim().toLocaleLowerCase();
-	// A folder's scripts include those in the folders inside it.
-	const inFolder =
-		filter.folder.kind === 'folder' ? folderAndDescendants(state, filter.folder.id) : new Set();
-	return rows.filter((row) => {
-		if (term && !row.haystack.includes(term)) return false;
-		const entry = labelsFor(state, row.key);
-		if (filter.folder.kind === 'none' && entry.folder) return false;
-		if (filter.folder.kind === 'folder' && !(entry.folder && inFolder.has(entry.folder)))
-			return false;
-		return filter.tags.every((tag) => entry.tags.includes(tag));
-	});
-}
-
 /** Labels sorted by name, the way lists of them are shown. */
 export function byName(labels: readonly Label[]): Label[] {
 	return [...labels].sort((a, b) =>

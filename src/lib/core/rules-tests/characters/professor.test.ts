@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { plainGame } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
@@ -148,7 +149,9 @@ describe('Professor', () => {
 			// Wiki: "If the Professor chose a dead Townsfolk, the chosen player becomes alive again—mark
 			// them with the Professor’s ALIVE reminder and remove their shroud. (They wake later
 			// tonight if they normally would."
-			expect(reminderPrompt('Alive', 'professor', committedCharacters())).toBe('revive');
+			expect(reminderPrompt(plainGame(), 'Alive', 'professor', committedCharacters())).toBe(
+				'revive'
+			);
 			expect(promptApplies('revive', true)).toBe(true);
 			const s = scenario(cast)
 				.newDay()

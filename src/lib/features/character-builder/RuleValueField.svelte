@@ -8,7 +8,8 @@
 		startFor,
 		startVariant,
 		variantOf,
-		type FieldSpec
+		type FieldSpec,
+		type ObjectField
 	} from '#lib/core/data/field-spec.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -125,6 +126,12 @@
 		return settle(parts.map((p) => (Number.isFinite(Number(p)) ? Number(p) : p)));
 	}
 
+	/** A list of characters, each picked with the character picker (M84). */
+	const pickList = $derived(spec.kind === 'list' && spec.of.kind === 'character');
+
+	/** Our own words for official characters are never typed in here (M84). */
+	const shownFields = (fields: readonly ObjectField[]) => fields.filter((f) => !f.spec.official);
+
 	const characterOf = (id: string) => characters.find((c) => c.id === id);
 
 	/** Which character the picker is open for: the setting itself, or entry `i`'s key. */
@@ -139,7 +146,9 @@
 	function picked(id: string) {
 		const at = picking;
 		pickerOpen = false;
-		if (at.entry === undefined) onchange(id);
+		if (pickList) {
+			if (!strings(value).includes(id)) onchange([...strings(value), id]);
+		} else if (at.entry === undefined) onchange(id);
 		else if (at.entry >= 0) renameKey(at.entry, id);
 		else if (!(id in rec(value)) && spec.kind === 'byCharacter')
 			onchange({ ...rec(value), [id]: startFor(spec.of) });
@@ -260,8 +269,8 @@
 		{/if}
 	</fieldset>
 {:else if spec.kind === 'object' && spec.pick}
-	{@const set = spec.fields.filter((f) => rec(value)[f.key] !== undefined)}
-	{@const unset = spec.fields.filter((f) => rec(value)[f.key] === undefined)}
+	{@const set = shownFields(spec.fields).filter((f) => rec(value)[f.key] !== undefined)}
+	{@const unset = shownFields(spec.fields).filter((f) => rec(value)[f.key] === undefined)}
 	<fieldset class:group={!top}>
 		<legend class:visually-hidden={top}>{label}</legend>
 		{#if help}<p class="help group-help">{help}</p>{/if}
@@ -304,7 +313,7 @@
 	<fieldset class:group={!top}>
 		{#if !top}<legend>{label}</legend>{/if}
 		{#if help}<p class="help group-help">{help}</p>{/if}
-		{#each spec.fields as field (field.key)}
+		{#each shownFields(spec.fields) as field (field.key)}
 			<RuleValueField
 				spec={field.spec}
 				value={rec(value)[field.key]}
@@ -315,6 +324,27 @@
 				{characters}
 			/>
 		{/each}
+	</fieldset>
+{:else if pickList}
+	<fieldset class:group={!top}>
+		<legend class:visually-hidden={top}>{label}</legend>
+		{#if help}<p class="help group-help">{help}</p>{/if}
+		{#each strings(value) as id, i (id)}
+			<div class="entry-head">
+				<CharacterPiece template="badge" characterId={id} character={characterOf(id)} />
+				<DeleteButton
+					label={t('character-builder.removeSetting', { label, number: i + 1 })}
+					onclick={() => onchange(settle(strings(value).filter((x) => x !== id)))}
+				/>
+			</div>
+		{:else}
+			<span class="muted">{t('common.none')}</span>
+		{/each}
+		<div class="add">
+			<Button variant="quiet" icon="add" onclick={() => pick({})}
+				>{t('character-builder.addSetting', { label })}</Button
+			>
+		</div>
 	</fieldset>
 {:else if spec.kind === 'list'}
 	<fieldset class:group={!top}>
@@ -453,11 +483,15 @@
 	</fieldset>
 {/if}
 
-{#if spec.kind === 'character' || spec.kind === 'byCharacter'}
+{#if spec.kind === 'character' || spec.kind === 'byCharacter' || pickList}
 	<Dialog bind:open={pickerOpen} title={t('character-builder.chooseLinked')} size="full">
 		<CharacterPicker
 			{characters}
-			selected={typeof value === 'string' ? [value] : Object.keys(rec(value))}
+			selected={typeof value === 'string'
+				? [value]
+				: pickList
+					? strings(value)
+					: Object.keys(rec(value))}
 			onSelect={picked}
 		/>
 	</Dialog>

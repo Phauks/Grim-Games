@@ -1,5 +1,6 @@
 import {
 	B,
+	CHARACTER,
 	COUNT,
 	list,
 	NUM,
@@ -7,6 +8,7 @@ import {
 	oneOf,
 	opt,
 	optObj,
+	ownWords,
 	STR,
 	STRS,
 	T,
@@ -69,7 +71,7 @@ export type DayReminderSpec = SpecValue<typeof REMINDER>;
  * `otherNoReminder`: only while this reminder of `other` is on no player ("No Ability": unused).
  */
 const INTERACTION = obj({
-	other: STR,
+	other: CHARACTER,
 	group: oneOf(DAY_GROUPS),
 	text: STR,
 	otherNoReminder: opt(STR)
@@ -124,7 +126,7 @@ export const dayReminders = specPart(
 		impairable: opt(T),
 		reminders: opt(list(REMINDER)),
 		interactions: opt(list(INTERACTION)),
-		none: opt(STR)
+		none: opt(ownWords(STR))
 	}),
 	(value, path, issues) => {
 		const before = issues.list.length;

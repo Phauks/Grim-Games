@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CODE_WORDS, type RandomBytes } from '#lib/core/codes/word-code.ts';
-import {
-	GRIM_VIEW_PASSWORD_BITS,
-	newGrimViewPassword,
-	normaliseGrimViewPassword
-} from './grim-view-password.ts';
+import { newGrimViewPassword, normaliseGrimViewPassword } from './grim-view-password.ts';
 
 /** Hands out `values` in order, one byte at a time. */
 function bytes(...values: number[]): RandomBytes {
@@ -33,10 +29,6 @@ describe("Grim view's password", () => {
 		expect(newGrimViewPassword(bytes(0, 0, 180, 255, 5))).toBe(
 			`${CODE_WORDS[0]}-${CODE_WORDS[0]}-15`
 		);
-	});
-
-	it('has more randomness than six random digits', () => {
-		expect(GRIM_VIEW_PASSWORD_BITS).toBeGreaterThan(6 * Math.log2(10));
 	});
 
 	it('is a different one each time', () => {

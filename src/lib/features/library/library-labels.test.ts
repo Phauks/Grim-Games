@@ -4,7 +4,6 @@ import {
 	deleteLabel,
 	emptyLabels,
 	childFolders,
-	filterLibrary,
 	folderPath,
 	folderTree,
 	freeName,
@@ -143,27 +142,6 @@ describe('parseLabels', () => {
 	});
 });
 
-describe('filterLibrary', () => {
-	const rows = [
-		{ key: 'a', haystack: 'trouble brewing\nwasherwoman' },
-		{ key: 'b', haystack: 'my script\nimp' },
-		{ key: 'c', haystack: 'other\nimp' }
-	];
-	let s = sample();
-	s = toggleTag(toggleTag(setFolder(s, 'a', 'f1'), 'a', 't1'), 'a', 't2');
-	s = toggleTag(s, 'b', 't1');
-	const keys = (filter: Parameters<typeof filterLibrary>[2]) =>
-		filterLibrary(rows, s, filter).map((r) => r.key);
-
-	it('filters by search, folder and every chosen tag', () => {
-		expect(keys({ term: ' IMP ', folder: { kind: 'all' }, tags: [] })).toEqual(['b', 'c']);
-		expect(keys({ term: '', folder: { kind: 'folder', id: 'f1' }, tags: [] })).toEqual(['a']);
-		expect(keys({ term: '', folder: { kind: 'none' }, tags: [] })).toEqual(['b', 'c']);
-		expect(keys({ term: '', folder: { kind: 'all' }, tags: ['t1'] })).toEqual(['a', 'b']);
-		expect(keys({ term: '', folder: { kind: 'all' }, tags: ['t1', 't2'] })).toEqual(['a']);
-	});
-});
-
 describe('nested folders', () => {
 	function tree(): LibraryLabels {
 		let s = emptyLabels();
@@ -248,20 +226,6 @@ describe('nested folders', () => {
 		const top = deleteLabel(s, 'folders', 'club');
 		expect(labelsFor(top, 'k1').folder).toBeUndefined();
 		expect(top.folders.find((f) => f.id === 'done')?.parent).toBeUndefined();
-	});
-
-	it('filtering by a folder includes the folders inside it', () => {
-		const rows = [
-			{ key: 'k1', haystack: 'a' },
-			{ key: 'k2', haystack: 'b' },
-			{ key: 'k3', haystack: 'c' }
-		];
-		const keys = (id: string) =>
-			filterLibrary(rows, tree(), { term: '', folder: { kind: 'folder', id }, tags: [] }).map(
-				(r) => r.key
-			);
-		expect(keys('club')).toEqual(['k1', 'k2']);
-		expect(keys('done')).toEqual(['k2']);
 	});
 });
 

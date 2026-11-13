@@ -77,8 +77,10 @@ describe("a player's reminder tray and the Storyteller's bank", () => {
 			bankCopies: new Map()
 		});
 		const phone = playerBankItems([...characters.values()], [], []);
+		// The stretch's own tokens: a character token that never runs out (the Bootlegger's)
+		// sits there too, in either tray only when its character is in it.
 		const generic = (items: typeof board) =>
-			items.filter((i) => i.group === 'generic').map((i) => i.key);
+			items.filter((i) => i.group === 'generic' && !i.key.startsWith('bank:')).map((i) => i.key);
 		expect(generic(phone)).toEqual(generic(board));
 	});
 

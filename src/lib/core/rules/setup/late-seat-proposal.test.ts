@@ -1,10 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { newGame, run, testContext } from '#lib/core/model/fixtures.test-support.ts';
-import { lateSeatCounts, proposeLateSeat } from './late-seat-proposal.ts';
+import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { drawState, proposeLateSeat } from './late-seat-proposal.ts';
+import { countByType } from './late-seat.ts';
 
 const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
+
+/** Tile counts once the proposal's changes are made, to check against its `tileTarget`. */
+function lateSeatCounts(
+	game: Game,
+	lookup: (id: CharacterId) => Character | undefined,
+	changes: readonly { seatId: SeatId; to: CharacterId }[],
+	bag: readonly CharacterId[]
+) {
+	const { seen, typeOf } = drawState(game, lookup);
+	const to = new Map(changes.map((c) => [c.seatId, c.to]));
+	return countByType([
+		...seen.map((s) => typeOf(to.get(s.seatId) ?? s.characterId)),
+		...bag.map(typeOf)
+	]);
+}
 const TB = [
 	'washerwoman',
 	'librarian',

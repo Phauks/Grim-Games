@@ -6,7 +6,6 @@ import {
 	findMatch,
 	fromSavedScript,
 	readProfileScript,
-	onlineSourceLabel,
 	removedElsewhere,
 	type ProfileScript,
 	type ProfileScriptEntry
@@ -103,16 +102,6 @@ describe('profile scripts', () => {
 		const pasted = fromSavedScript(saved(), 1)!;
 		const fromFile = fromSavedScript(saved({ source: { kind: 'file', fileName: 'a.json' } }), 2)!;
 		expect(findMatch([entry('a', pasted)], fromFile)?.id).toBe('a');
-	});
-
-	it('labels online sources', () => {
-		expect(onlineSourceLabel({ kind: 'botcscripts', scriptId: 7, version: '2.0' })).toBe(
-			'BotC Scripts #7, version 2.0'
-		);
-		expect(onlineSourceLabel({ kind: 'link', url: 'https://www.pastebin.com/raw/x' })).toBe(
-			'pastebin.com'
-		);
-		expect(onlineSourceLabel({ kind: 'paste' })).toBe('None');
 	});
 });
 

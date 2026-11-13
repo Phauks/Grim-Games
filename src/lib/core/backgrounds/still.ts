@@ -7,16 +7,7 @@
  * A still background is shared with the table's grims by its id and settings, and every phone
  * draws the same CSS.
  */
-import {
-	cleanParams,
-	colour,
-	matchingPreset,
-	paramDefaults,
-	paramPreset,
-	range,
-	type ParamSet,
-	type Params
-} from './params.ts';
+import { cleanParams, colour, paramDefaults, range, type ParamSet, type Params } from './params.ts';
 
 export const STILL_IDS = ['felt', 'parchment', 'stone', 'velvet'] as const;
 export type StillId = (typeof STILL_IDS)[number];
@@ -101,10 +92,6 @@ export interface StillChoice {
 }
 
 export const stillDefaults = (id: StillId): Params => paramDefaults(STILL_BACKGROUNDS[id]);
-export const stillPreset = (id: StillId, name: string): Params =>
-	paramPreset(STILL_BACKGROUNDS[id], name);
-export const stillPresetOf = (id: StillId, params: Params): string | undefined =>
-	matchingPreset(STILL_BACKGROUNDS[id], params);
 
 /**
  * A saved or shared still background, cleaned up. A choice saved before still backgrounds had

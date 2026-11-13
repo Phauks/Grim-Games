@@ -55,15 +55,6 @@ export function standardPlayersLine(players: number, travellers?: number): strin
 	return `${players} (${parts.join(', ')})`;
 }
 
-/**
- * The Players line from the seats as the table knows them (a room's public seats): every
- * seat, those the town knows are Travellers told apart. Undefined with no seats.
- */
-export function tablePlayersLine(seats: readonly { traveller?: string }[]): string | undefined {
-	if (!seats.length) return undefined;
-	return standardPlayersLine(seats.length, dealtSeats(seats).travellers);
-}
-
 /** The seats taking characters from the bag, and the Travellers the town knows about. */
 export function dealtSeats(seats: readonly { traveller?: string }[]): {
 	dealt: number;

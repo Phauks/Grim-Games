@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { plainGame, warned } from '#lib/core/model/fixtures.test-support.ts';
 import { dayUseWho } from '#lib/core/rules/day/day-claims.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
 import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
@@ -59,7 +59,7 @@ describe('Klutz', () => {
 		it('Example 1: Executed Klutz names a good player', () => {
 			// Wiki: "The Klutz dies by execution. After much yelling and confusion, the Klutz chooses a
 			// player—who is secretly the Seamstress. Night falls, and the game continues."
-			expect(dayUseWho('klutz', committedCharacters())).toBe('chosen');
+			expect(dayUseWho(plainGame(), 'klutz', committedCharacters())).toBe('chosen');
 			const s = scenario(['klutz', 'seamstress', 'chef', 'witch', 'vortox'])
 				.execute('klutz')
 				.do((at) => ({

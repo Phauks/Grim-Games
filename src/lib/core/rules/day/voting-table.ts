@@ -16,7 +16,6 @@
  * Doctor's Minion), or a Fabled or Loric in play (`Game.ruleCharacters`), which always works.
  */
 import type { Voting } from '#lib/core/data/parts/voting.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -141,7 +140,8 @@ export interface TownVoting {
 /**
  * The `voting` rules the town knows of: those of each living Traveller it knows (the Voudon
  * tells everyone who they are, https://wiki.bloodontheclocktower.com/Travellers). The town
- * cannot know a Traveller is drunk or poisoned, so a phone counts as if the ability works.
+ * cannot know a Traveller is drunk or poisoned, so a phone counts as if the ability works. A
+ * phone has only the town's view, no game, so it reads the rules block each Traveller carries.
  */
 export function townVoting(
 	seats: readonly { dead: boolean; traveller?: string; notInPlay?: true }[],
@@ -150,7 +150,7 @@ export function townVoting(
 	const out: TownVoting = {};
 	for (const seat of seats) {
 		if (seat.dead || seat.notInPlay || !seat.traveller) continue;
-		const rule = rulesOf(seat.traveller, characters)?.voting;
+		const rule = characters.get(seat.traveller)?.rules?.voting;
 		if (rule?.noMajority) out.noMajority = true;
 		if (rule?.deadNeedNoToken) out.deadNeedNoToken = true;
 	}

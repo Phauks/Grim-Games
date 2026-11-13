@@ -365,11 +365,3 @@ export interface SyncProvider {
 	publish(state: PublicGameState): Promise<void>;
 	close(): Promise<void>;
 }
-
-/** The provider used until live sync ships: publishes nothing. */
-export class NoopSyncProvider implements SyncProvider {
-	async publish(state: PublicGameState): Promise<void> {
-		void state;
-	}
-	async close(): Promise<void> {}
-}

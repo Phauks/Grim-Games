@@ -1,4 +1,5 @@
-import { stringPart } from './part.ts';
+import { ownWords, STR } from '../field-spec.ts';
+import { specPart } from './part.ts';
 
 /**
  * Our own short wording of the character's optional rule (`optionalRule`), shown beside its
@@ -6,8 +7,9 @@ import { stringPart } from './part.ts';
  * lines read as casual). Each official one is text Trevor approved; without it the wiki's own
  * line shows.
  */
-export const optionalRuleText = stringPart(
+export const optionalRuleText = specPart(
 	'setup',
 	'Optional rule text',
-	'Our own short wording of the optional rule, shown beside its switch.'
+	'Our own short wording of the optional rule, shown beside its switch.',
+	ownWords(STR)
 );

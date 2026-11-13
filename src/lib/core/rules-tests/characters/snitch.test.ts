@@ -121,6 +121,7 @@ describe('Snitch', () => {
 			// The night order wakes the new Snitch's player (a character change since dawn), and that
 			// step says each Minion learns three bluffs tonight.
 			const steps = withCharacterChangeSteps(
+				s.game,
 				nightOrder({
 					night: 'other',
 					sheet: committedGameData().nightSheet,

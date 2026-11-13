@@ -40,30 +40,41 @@
 	<span class="where"
 		>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
 	>
-	<Button variant="quiet" onclick={onchoose}>{at ? 'Move' : 'Place'}</Button>
-	<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17); there
-	     but unusable while not placed. -->
-	<DeleteButton
-		label={`Return ${label} to the reminder bank`}
-		disabled={!at}
-		onclick={() => at && onreturn(at.reminderId)}
-	/>
+	<!-- On a phone the buttons go under the seat rather than past the step's edge (Trevor,
+	     2026-11-12, a screenshot with the delete button cut off). -->
+	<span class="actions">
+		<Button variant="quiet" onclick={onchoose}>{at ? 'Move' : 'Place'}</Button>
+		<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17);
+		     there but unusable while not placed. -->
+		<DeleteButton
+			label={`Return ${label} to the reminder bank`}
+			disabled={!at}
+			onclick={() => at && onreturn(at.reminderId)}
+		/>
+	</span>
 </span>
 
 <style>
 	.reminder-row {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-3);
+		gap: var(--space-2) var(--space-3);
 		font-family: var(--font-body);
 	}
 	.where {
-		flex: 1;
+		flex: 1 1 12em;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		color: var(--on-surface-muted);
 		font-size: 0.9rem;
+	}
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-inline-start: auto;
 	}
 </style>

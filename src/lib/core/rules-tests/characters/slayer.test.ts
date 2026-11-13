@@ -72,7 +72,7 @@ describe('Slayer', () => {
 			// the Scarlet Woman. Nothing happens."
 			// The Imp has no day ability, and the Scarlet Woman isn't the Demon: nothing happens.
 			const s = scenario(['imp', 'scarletwoman', 'chef', 'monk', 'empath']);
-			expect(dayUseOf('imp', s.characters)).toBeUndefined();
+			expect(dayUseOf(s.game, 'imp', s.characters)).toBeUndefined();
 			expect(dayUseDeath(s.game, 'slayer', s.seat('scarletwoman'), s.characters)).toBe('no');
 		});
 	});

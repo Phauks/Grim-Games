@@ -271,12 +271,6 @@ export function writeAction(action: AbilityAction, hasOpening: boolean): string 
 	return hasOpening ? `, ${text}` : capital(text);
 }
 
-/** The ability's action, read from its whole text. */
-export function abilityAction(ability: string, self: string): AbilityAction {
-	const parts = readAbility(ability, self);
-	return readAction(parts.rest, !!parts.opening);
-}
-
 function withAction(ability: string, change: Partial<AbilityAction>, self: string): string {
 	const parts = readAbility(ability, self);
 	const hasOpening = !!parts.opening;
