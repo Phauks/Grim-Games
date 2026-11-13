@@ -9,6 +9,34 @@ test('home page renders on a touch device', async ({ page }) => {
 	expect(await page.evaluate(() => navigator.maxTouchPoints)).toBeGreaterThan(0);
 });
 
+// iOS 26 and later blur the top of an installed web app unless WebKit's hit test at the top
+// edge finds a fixed, full-width, opaque element; it reports a ::before as its parent, so the
+// status bar's strip must be a real element (blurry app name on an iPad, 2026-11-13). Chromium
+// has no status bar inset, so the strip is zero high here; this checks its shape only.
+test('the status bar strip is a real fixed, full-width, opaque element', async ({ page }) => {
+	await page.goto('/');
+	const strip = page.locator('.status-edge');
+	await expect(strip).toHaveCount(1);
+	const shape = await strip.evaluate((element) => {
+		const style = getComputedStyle(element);
+		const probe = document.createElement('canvas').getContext('2d')!;
+		probe.fillStyle = style.backgroundColor;
+		probe.fillRect(0, 0, 1, 1);
+		return {
+			position: style.position,
+			top: element.getBoundingClientRect().top,
+			width: element.getBoundingClientRect().width,
+			alpha: probe.getImageData(0, 0, 1, 1).data[3]
+		};
+	});
+	expect(shape).toEqual({
+		position: 'fixed',
+		top: 0,
+		width: await page.evaluate(() => document.documentElement.clientWidth),
+		alpha: 255
+	});
+});
+
 test('deep links fall back to the app with HTTP 200', async ({ request }) => {
 	const response = await request.get('/sheet/tb/washerwoman');
 	expect(response.status()).toBe(200);
@@ -230,7 +258,7 @@ test("the phone's bars follow the surface colour, custom colours included", asyn
 	const barColours = () =>
 		page.evaluate(() => ({
 			meta: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
-			header: getComputedStyle(document.querySelector('.app-body')!, '::before').backgroundColor
+			header: getComputedStyle(document.querySelector('.status-edge')!).backgroundColor
 		}));
 
 	await page.goto('/');

@@ -163,6 +163,13 @@
 	<title>{APP_NAME}</title>
 </svelte:head>
 
+<!-- The status bar's strip keeps the theme's colour while the page scrolls under it (an installed
+     app on iPhone and iPad draws the page there; zero high elsewhere). A real element, not a
+     ::before: iOS 26 and later blur the top of an installed web app unless a fixed, full-width,
+     solid box sits at the top edge, and WebKit finds that box by hit-testing, which reports a
+     pseudo-element as its parent (WebKit LocalFrameView::fixedContainerEdges, HitTestResult::
+     setInnerNonSharedNode). Seen as a blurry app name on an iPad, 2026-11-13. -->
+<div class="status-edge" aria-hidden="true"></div>
 <div class="app-body" class:bare={!shell}>
 	{#if shell}<AppNav />{/if}
 	<div class="app-main">{@render children()}</div>
@@ -191,10 +198,9 @@
 	.app-body {
 		padding-block: var(--app-top) env(safe-area-inset-bottom);
 	}
-	/* The status bar's strip keeps the theme's colour while the page scrolls under it (an
-	   installed app on iPhone draws the page there; zero high elsewhere). */
-	.app-body::before {
-		content: '';
+	/* The status bar's strip (see the element above). Opaque and the screen's full width, or
+	   WebKit doesn't take it as the top edge's colour and blurs the edge instead. */
+	.status-edge {
 		position: fixed;
 		inset: 0 0 auto;
 		z-index: var(--z-raised);
