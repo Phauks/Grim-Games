@@ -146,6 +146,11 @@ export interface NightStep {
 	 * team pretends to be (`Game.pretend`, M26): the Storyteller acts it out for the table.
 	 */
 	pretend?: true;
+	/**
+	 * On one copy of a character more than one seat holds: that seat, which wakes on its own
+	 * step (`withCopySteps` in `copy-steps.ts`).
+	 */
+	copy?: { seatId: string };
 }
 
 export interface OmittedStep {
