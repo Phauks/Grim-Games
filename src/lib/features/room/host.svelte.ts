@@ -134,6 +134,7 @@ export class RoomHost {
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
+	#result: { gameId: GameId; result: string } | undefined;
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
@@ -581,14 +582,26 @@ export class RoomHost {
 		this.ended = ended ? { gameId, ...ended } : undefined;
 		// Reopen takes the shared grimoire back (the room drops it too).
 		if (!ended && this.revealed?.gameId === gameId) this.revealed = undefined;
+		// and its result, which a new End game shares again.
+		if (!ended && this.#result?.gameId === gameId) this.#result = undefined;
+		this.#sendEnded();
+	}
+
+	/**
+	 * The ended game's name-free result page (plan R4, game-result.ts), for phones to share;
+	 * it goes with the game-over, now and after a reconnect.
+	 */
+	setResult(gameId: GameId, result: string): void {
+		this.#result = { gameId, result };
 		this.#sendEnded();
 	}
 
 	#sendEnded(): void {
 		if (!this.#ended || this.#ended.gameId !== this.#published?.gameId) return;
 		const { gameId, ended } = this.#ended;
+		const result = this.#result?.gameId === gameId ? { result: this.#result.result } : {};
 		this.#socket?.send(
-			ended ? { type: 'game-over', gameId, ...ended } : { type: 'reopen-game', gameId }
+			ended ? { type: 'game-over', gameId, ...ended, ...result } : { type: 'reopen-game', gameId }
 		);
 	}
 

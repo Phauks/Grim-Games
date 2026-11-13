@@ -138,7 +138,15 @@ export interface GameOver {
 	winner?: Alignment;
 	/** How it ended (`EndReason`): `demon-dead`, `two-alive`, `character:<id>` or `other`. */
 	reason?: string;
+	/**
+	 * The game's result page the Storyteller's device shared (a recap id, `/recap/<id>`): who
+	 * won and each seat's character, no names, for players to share (plan R4).
+	 */
+	result?: string;
 }
+
+/** A shared recap's id: 128 random bits in base64url (recap-share-api.ts). */
+const RESULT_ID = /^[A-Za-z0-9_-]{22}$/;
 
 /** The longest end reason a game-over message carries: `character:` and an id. */
 const MAX_END_REASON = 80;
@@ -537,13 +545,16 @@ export function castVote(
 
 /**
  * The current game is over. A game-over for another game (one the room has moved on from)
- * is ignored, and so are a winner other than good or evil and a reason too long to be one.
+ * is ignored, and so are a winner other than good or evil, a reason too long to be one and a
+ * result that isn't a recap id. The Storyteller's device sends it again once the result is
+ * shared, and again after a reconnect.
  */
 export function gameOver(
 	room: RoomState,
 	gameId: unknown,
 	winner?: unknown,
-	reason?: unknown
+	reason?: unknown,
+	result?: unknown
 ): RoomState {
 	if (typeof gameId !== 'string' || gameId !== room.gameId) return room;
 	const ended: GameOver = { gameId };
@@ -553,6 +564,7 @@ export function gameOver(
 			ended.reason = reason;
 		}
 	}
+	if (typeof result === 'string' && RESULT_ID.test(result)) ended.result = result;
 	return { ...room, ended };
 }
 

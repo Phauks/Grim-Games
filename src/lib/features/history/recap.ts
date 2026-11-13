@@ -63,7 +63,7 @@ function partsText(parts: readonly HistoryPart[], characters: CharacterLookup): 
 function characterAt(game: Game, seatId: SeatId, characters: CharacterLookup) {
 	const id = trueCharacter(game, seatId, characters);
 	if (!id) return undefined;
-	const out: RecapCharacter = { name: characters.get(id)?.name ?? id };
+	const out: RecapCharacter = { name: characters.get(id)?.name ?? id, id };
 	const alignment = alignmentOf(game, seatId);
 	if (alignment) out.alignment = alignment;
 	return out;
