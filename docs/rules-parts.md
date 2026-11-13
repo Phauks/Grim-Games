@@ -440,6 +440,13 @@ Every key a character's rules block may have, 100 in all. Each is one file in
 - Part: `src/lib/core/data/parts/on-death.ts`
 - Read by: `core/rules/night/night-killers.ts`
 
+### oneNightStep
+
+**One night step.** All its players share one night step: the Storyteller wakes or acts for them together.
+
+- Part: `src/lib/core/data/parts/one-night-step.ts`
+- Read by: `core/rules/night/copy-steps.ts`
+
 ### onNominated
 
 **On nomination.** When its player, or the player with one of its reminders, is nominated, something happens; on a Fabled, Loric or rule, any nomination.

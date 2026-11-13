@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
+	import { appliedEntries, recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
 	import { afterDawn, dayNumber } from '#lib/core/rules/night/night-order.ts';
 	import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
@@ -77,9 +77,7 @@
 	);
 	/** A dawn has come (End night), so "Nobody died in the night" means something. */
 	const dawned = $derived(
-		game.log.entries
-			.slice(0, game.log.cursor)
-			.some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
+		appliedEntries(game.log).some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
 	);
 	/** "Nobody died in the night", from the second day on (see the list below). */
 	const nobodyDied = $derived(died.length === 0 && dawned && dayNumber(g) > 1);

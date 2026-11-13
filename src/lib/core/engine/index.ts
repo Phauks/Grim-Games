@@ -4,6 +4,7 @@ export * from './context.ts';
 export * from './decide.ts';
 export * from './reducer.ts';
 export * from './log.ts';
+export * from './applied-entries.ts';
 export * from './persistence.ts';
 export * from './changed-characters.ts';
 export * from './dawns.ts';

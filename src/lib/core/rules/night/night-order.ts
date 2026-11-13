@@ -151,6 +151,11 @@ export interface NightStep {
 	 * delays it (One Day More's Signal Failure, `withHeldInfoSteps`): nothing new is worked out.
 	 */
 	heldInfo?: true;
+	/**
+	 * On one copy of a character more than one seat holds: that seat, which wakes on its own
+	 * step (`withCopySteps` in `copy-steps.ts`).
+	 */
+	copy?: { seatId: string };
 }
 
 export interface OmittedStep {

@@ -33,6 +33,7 @@ import {
 } from '#lib/core/rules/night/night-order.ts';
 import { pretendSeatsOf, pretendTeam } from '#lib/core/rules/abilities/pretend.ts';
 import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
+import { sheetStepId, withCopySteps } from '#lib/core/rules/night/copy-steps.ts';
 import {
 	oneNightWakesOn,
 	ruleSources,
@@ -114,10 +115,12 @@ export function boardNightSteps(
 	// last step (Trevor, 2026-10-20); the board's End night button still ends the night.
 	// A player whose character changed since dawn wakes before Dawn to learn it; changes only
 	// count after the first New day, so only other nights have them.
-	const woken =
+	const changedWoken =
 		night === 'other'
 			? withCharacterChangeSteps(game, steps, today.changes ?? [], characters)
 			: steps;
+	// Each player of a character in play more than once wakes on their own step.
+	const woken = withCopySteps(changedWoken, game, characters);
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	const sources = ruleSources(game, characters, rules);
@@ -204,6 +207,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 	}
 	if (step.changed) return [step.changed.seatId];
 	if (step.again) return [step.again.seatId];
+	if (step.copy) return [step.copy.seatId];
 	if (step.pretend && step.character) return pretendSeatsOf(game, step.character.id, characters);
 	// Starting alignment: the players who start with the other alignment (the evil Townsfolk).
 	if (step.setupAlignments) return step.setupAlignments.flatMap((t) => t.seats);
@@ -274,7 +278,7 @@ export function stepWakes(
 				!(
 					tonight.revived &&
 					tonight.order &&
-					revivedAfterStep(game, s, step.id, tonight.order, characters, tonight.revived)
+					revivedAfterStep(game, s, sheetStepId(step), tonight.order, characters, tonight.revived)
 				)
 		)
 	);

@@ -13,6 +13,7 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { replay, type GameLog } from './log.ts';
+import { appliedEntries } from './applied-entries.ts';
 
 export interface CharacterChange {
 	seatId: SeatId;
@@ -29,7 +30,7 @@ export interface CharacterChange {
 
 /** The game at the most recent New day, or undefined before the first one. */
 function atDawn(log: GameLog): Game | undefined {
-	const applied = log.entries.slice(0, log.cursor);
+	const applied = appliedEntries(log);
 	const dawn = applied.findLastIndex((e) => e.events.some((ev) => ev.type === 'DayStarted'));
 	return dawn < 0 ? undefined : replay({ entries: applied, cursor: dawn + 1 });
 }
@@ -38,7 +39,7 @@ function atDawn(log: GameLog): Game | undefined {
 export function changedCharacters(log: GameLog, game: Game): CharacterChange[] {
 	const before = atDawn(log);
 	if (!before) return [];
-	const since = log.entries.slice(0, log.cursor);
+	const since = appliedEntries(log);
 	const dawn = since.findLastIndex((e) => e.events.some((ev) => ev.type === 'DayStarted'));
 	return game.seating.flatMap((seatId) => {
 		const from = before.seats[seatId]?.characterId;

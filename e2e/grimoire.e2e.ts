@@ -2640,6 +2640,44 @@ test("a placed reminder's row fits the step, and the text lists no reminder toke
 	expect(await guide.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
 });
 
+// Trevor (2026-11-12): "Need to invoke separate wake ups ... if duplicate characters"; he
+// picked one step per player, each showing that seat in its alignment (2026-11-13).
+test('a character in play twice wakes once for each player, each step showing its seat', async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Empath'],
+		[2, 'Empath'],
+		[3, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		if (number === 2) {
+			await seatMenu(page, sheet, 'Change alignment');
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Confirm' })
+				.tap();
+		}
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Empath');
+	await expect(strip).toContainText('Seat 1');
+	await expect(strip).not.toContainText('Seat 2');
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(strip.locator('.step .name strong')).toHaveText('Empath');
+	await expect(strip).toContainText('Seat 2');
+	await expect(strip).not.toContainText('Seat 1,');
+	// Each step's band is its player's alignment: the evil Empath's is red.
+	const guide = await openStep(page, 'Empath');
+	await expect(guide.locator('.ring-row[data-team="evil"]').first()).toBeVisible();
+});
+
 test('a night step is filled in with help, and the night can be walked through', async ({
 	page
 }) => {
@@ -5213,6 +5251,55 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		.getByRole('button', { name: 'Show to player: These characters are not in play · Demon' })
 		.tap();
 	await expect(shown).toContainText('Fortune Teller');
+});
+
+// Sushi Buffet and Whale Buffet give the Demon no bluffs (Trevor, 2026-10-18): Demon info
+// offers none to choose, and the board menu's Demon bluffs stays in place, turned off.
+test('a mode without Demon bluffs offers none to choose', async ({ page }) => {
+	await startGame(page);
+	const gameId = page.url().split('/').pop()!;
+	await page.evaluate(
+		(id) =>
+			localStorage.setItem(
+				`grim-games:game-mode:v2:${id}`,
+				JSON.stringify({
+					modeId: 'sushi-buffet',
+					rules: [],
+					restrictions: { banned: [], allowed: [] }
+				})
+			),
+		gameId
+	);
+	await page.reload();
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Spy'],
+		[4, 'Empath'],
+		[5, 'Chef'],
+		[6, 'Monk'],
+		[7, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const demonInfo = await openStep(page, 'Demon info');
+	await expect(demonInfo.getByTestId('evil-info-card').nth(0)).toContainText(
+		'These are your Minions'
+	);
+	await expect(demonInfo.getByRole('button', { name: 'Choose bluffs' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Demon bluffs', exact: true })
+	).toBeDisabled();
 });
 
 test('an information step suggests every valid number, and the roles it could show', async ({

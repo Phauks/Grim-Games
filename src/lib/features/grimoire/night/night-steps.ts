@@ -15,9 +15,11 @@ import {
 import { type AnswerValue } from '#lib/core/rules/night/info/reliability.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
 import { boardNightSteps, tonight } from '#lib/core/rules/night/board-steps.ts';
+import { sheetStepId } from '#lib/core/rules/night/copy-steps.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
 import type { SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+import { appliedEntries } from '#lib/core/engine/applied-entries.ts';
 
 /** What a step's name needs: a player's night order passes its markers and characters too. */
 export type NamedStep = Pick<
@@ -48,7 +50,7 @@ export const MARKER_ICONS: Record<string, IconSlot> = {
 
 /** Seats revived since the New day, from the log: a first-night-only one wakes again tonight. */
 export function revivedToday(log: GameLog): SeatId[] {
-	return [...revivedSinceNewDay(log.entries.slice(0, log.cursor).flatMap((e) => e.events))];
+	return [...revivedSinceNewDay(appliedEntries(log).flatMap((e) => e.events))];
 }
 
 /**
@@ -63,11 +65,11 @@ export function tonightFromLog(
 	today: Parameters<typeof boardNightSteps>[4],
 	rules: readonly SpecialRule[]
 ): { diedTonight: Set<SeatId>; became: Set<SeatId>; revived: Set<SeatId>; order?: string[] } {
-	const events = log.entries.slice(0, log.cursor).flatMap((e) => e.events);
+	const events = appliedEntries(log).flatMap((e) => e.events);
 	const revived = revivedSinceNewDay(events);
 	const order =
 		data && revived.size > 0
-			? boardNightSteps(game, characters, tonight(game), data, today, rules).map((s) => s.id)
+			? boardNightSteps(game, characters, tonight(game), data, today, rules).map(sheetStepId)
 			: undefined;
 	return {
 		diedTonight: diedSinceNewDay(events),

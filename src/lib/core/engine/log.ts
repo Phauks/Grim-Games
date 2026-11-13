@@ -10,6 +10,7 @@ import type { EngineContext } from './context.ts';
 import { decide, type EngineError, type EngineWarning } from './decide.ts';
 import type { GameEvent } from './events.ts';
 import { applyEvent, applyEvents } from './reducer.ts';
+import { appliedEntries } from './applied-entries.ts';
 
 export interface LogEntry {
 	/** Milliseconds since the epoch. */
@@ -37,9 +38,9 @@ export type DispatchResult =
 	{ ok: true; session: GameSession; warnings: EngineWarning[] } | { ok: false; error: EngineError };
 
 /** Rebuilds the game from a log, up to its cursor. */
-export function replay(log: GameLog): Game {
+export function replay(log: Parameters<typeof appliedEntries>[0]): Game {
 	let game: Game | undefined;
-	for (const entry of log.entries.slice(0, log.cursor)) game = applyEvents(game, entry.events);
+	for (const entry of appliedEntries(log)) game = applyEvents(game, entry.events);
 	if (!game) throw new Error('the log has no GameCreated entry');
 	return game;
 }
@@ -109,9 +110,4 @@ export function redo(session: GameSession): GameSession {
 		log: { ...session.log, cursor: session.log.cursor + 1 },
 		game: next.events.reduce((g, e) => applyEvent(g, e), session.game)
 	};
-}
-
-/** The applied entries, oldest first, for a game history view. */
-export function history(session: GameSession): readonly LogEntry[] {
-	return session.log.entries.slice(0, session.log.cursor);
 }
