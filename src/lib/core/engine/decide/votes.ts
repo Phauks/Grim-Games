@@ -12,7 +12,7 @@ import {
 	uncountedVote,
 	voterRule
 } from '#lib/core/rules/day/vote-weights.ts';
-import { mayVote } from '#lib/core/rules/day/voting-table.ts';
+import { ghostVotesRestored, mayVote } from '#lib/core/rules/day/voting-table.ts';
 import { votesWithoutToken } from '#lib/core/rules/day/voting.ts';
 import type { GameEvent } from '../events.ts';
 import { entryOfKind, refuse, seatOf, type Deciders } from './shared.ts';
@@ -31,7 +31,13 @@ export function releaseVotes(game: Game, votes: NominationVotes | undefined): Ga
 	return events;
 }
 
-export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
+export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken' | 'RegainGhostVotes'> = {
+	RegainGhostVotes(game, command, ctx, warn) {
+		const seats = ghostVotesRestored(game, ctx.characters, true);
+		if (!seats.length) warn('no-change', 'no dead player has used their vote token');
+		return seats.map((seatId) => ({ type: 'GhostVoteRestored', seatId }));
+	},
+
 	RecordVotes(game, command, ctx, warn) {
 		const entry = entryOfKind(game, command.entryId, 'nomination');
 		const old = entry.votes;

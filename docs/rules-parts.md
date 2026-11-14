@@ -690,7 +690,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **How the table votes.** Changes who may vote, whether ghost votes are spent, the votes needed, secrecy or vote tokens, for everyone.
 
 - Part: `src/lib/core/data/parts/voting.ts`
-- Read by: `core/data/tpi-special-hooks.ts`, `core/rules/day/voting-table.ts`
+- Read by: `core/data/tpi-special-hooks.ts`, `core/rules/day/voting-table.ts`, `features/day/FinalDay.svelte`
 
 ### wakesWhen
 
