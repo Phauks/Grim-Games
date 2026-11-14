@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_RECAP_PARTS, escapeHtml, recapHtml, type GameRecap } from './recap-html.ts';
+import { escapeHtml, recapHtml, type GameRecap } from './recap-html.ts';
+import { ALL_RECAP_PARTS } from './recap-html.test-support.ts';
 
 const recap: GameRecap = {
 	title: 'Trouble <Brewing>',

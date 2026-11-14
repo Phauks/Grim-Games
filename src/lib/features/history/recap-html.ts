@@ -80,8 +80,6 @@ export interface RecapParts {
 	notes: boolean;
 }
 
-export const ALL_RECAP_PARTS: RecapParts = { log: true, image: true, notes: true };
-
 const ESCAPES: Record<string, string> = {
 	'&': '&amp;',
 	'<': '&lt;',

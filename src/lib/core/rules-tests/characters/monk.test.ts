@@ -18,11 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { starPass } from '#lib/core/rules/game-end/game-end.ts';
 import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';

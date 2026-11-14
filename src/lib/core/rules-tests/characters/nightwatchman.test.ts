@@ -19,11 +19,8 @@ import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
 import { reliability } from '#lib/core/rules/night/info/reliability.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { wakeConditionMet } from '#lib/core/rules/night/wakes-when.ts';
 

@@ -18,11 +18,8 @@ import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { livesWhileDead } from '#lib/core/rules/game-end/game-end-helpers.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 
 describe("Devil's Advocate", () => {

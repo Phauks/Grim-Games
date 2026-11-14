@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RULE_MINIMAL_EXAMPLE } from '#lib/core/modes/rule-guide.ts';
+import { RULE_MINIMAL_EXAMPLE } from '#lib/core/modes/rule-guide.test-support.ts';
 import { parseSpecialRule } from '#lib/core/modes/index.ts';
 import { modeFileFromHash, modePayloadOf, modeShareLink } from './mode-share.ts';
 

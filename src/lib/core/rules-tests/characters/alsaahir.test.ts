@@ -22,11 +22,8 @@ import {
 	plainGame,
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end/game-end.ts';

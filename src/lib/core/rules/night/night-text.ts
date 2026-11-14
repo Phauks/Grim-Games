@@ -419,34 +419,6 @@ export function nightTextStepLines(steps: NightTextSteps): NightTextLine[] {
 }
 
 /**
- * Plain text for tests and search: tokens as [Cursed] (+ placed, - removed), the death
- * marker as [Dead], info tokens as «You are», characters as {King}.
- */
-export function nightTextPlain(
-	segments: readonly NightTextSegment[],
-	name: (id: CharacterId) => string = (id) => id
-): string {
-	const sign = (action?: PlaceholderAction) =>
-		action === 'place' ? '+' : action === 'remove' ? '-' : '';
-	return segments
-		.map((s) => {
-			switch (s.kind) {
-				case 'text':
-					return s.text;
-				case 'character':
-					return `{${name(s.id)}}`;
-				case 'info':
-					return `«${s.label}»`;
-				case 'dead':
-					return `[${sign(s.action)}Dead]`;
-				case 'reminder':
-					return `[${sign(s.action)}${s.label ?? `reminder: ${s.options.join(' / ')}`}]`;
-			}
-		})
-		.join('');
-}
-
-/**
  * Problems with the `:reminder:` mapping against TPI's data: a night text whose
  * `:reminder:`s are not all mapped, a mapping for text that has a different number (or
  * none), and a token that is not one of the character's own. Empty when all is well; the

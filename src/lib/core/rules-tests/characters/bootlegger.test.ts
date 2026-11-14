@@ -19,11 +19,8 @@ import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { startingRuleCharacters, withScriptRules } from '#lib/core/data/script-rules.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';

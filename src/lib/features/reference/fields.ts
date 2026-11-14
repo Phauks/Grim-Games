@@ -1,7 +1,7 @@
 /**
  * The one list of what the Character Lab's table shows about a character: one column
  * each, rendered by `FieldValue.svelte`. The table is the page's only view (Trevor,
- * 2026-10-19: "remove card mode"); `coverage.ts` maps every piece of character data to the
+ * 2026-10-19: "remove card mode"); `coverage.test-support.ts` maps every piece of character data to the
  * column that shows it, so nothing can drop out of the table unnoticed.
  */
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -70,8 +70,3 @@ export const REFERENCE_FIELDS: readonly ReferenceField[] = FIELDS.map((field) =>
 		return t(`reference.field.${field.id}` as const);
 	}
 }));
-
-/** Fields the table view renders, one column each, in list order. */
-export function tableFieldIds(): FieldId[] {
-	return REFERENCE_FIELDS.map((f) => f.id);
-}

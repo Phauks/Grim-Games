@@ -24,11 +24,8 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';

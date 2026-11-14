@@ -18,11 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { voteWorth } from '#lib/core/rules/day/vote-weights.ts';

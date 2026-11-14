@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-	checkTranslation,
-	createTranslator,
-	formatMessage,
-	placeholdersOf
-} from '#lib/i18n/catalog.ts';
+import { createTranslator, formatMessage } from '#lib/i18n/catalog.ts';
+import { checkTranslation, placeholdersOf } from '#lib/i18n/catalog.test-support.ts';
 import { en } from '#lib/i18n/messages/en.ts';
 
 describe('formatMessage', () => {

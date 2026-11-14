@@ -21,7 +21,7 @@ import {
 	type Params
 } from './params.ts';
 
-export { formatParam, type RangeParam } from './params.ts';
+export { type RangeParam } from './params.ts';
 export type MovingParamValue = ParamValue;
 export type MovingParams = Params;
 export type MovingParam = BackgroundParam;

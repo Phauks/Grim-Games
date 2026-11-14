@@ -303,7 +303,7 @@ import type { JinxCondition } from './jinx-conditions.ts';
 import type { PROTECTS_FROM } from './parts/protects.ts';
 import type { TurnsPlayers } from './parts/turns-players-into.ts';
 
-export { JINX_FLAGS, type JinxCondition, type JinxFlag } from './jinx-conditions.ts';
+export { type JinxCondition, type JinxFlag } from './jinx-conditions.ts';
 
 export const JINX_WHO = ['self', 'partner'] as const;
 export type JinxWho = (typeof JINX_WHO)[number];

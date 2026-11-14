@@ -3,7 +3,8 @@ import { contrastRatio, resolveToken } from './contrast.ts';
 import { grimoire } from './grimoire/theme.ts';
 import { SHEET_BACKGROUNDS, SHEET_TOKENS, sheetStyle, sheetTheme } from './sheet-backgrounds.ts';
 import { FIXED_COLORS } from './team-colors.ts';
-import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
+import { SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
+import { EDGE_PAIRS } from './types.test-support.ts';
 
 // Every sheet background keeps its text readable (WCAG AA, 4.5:1 for body text).
 describe('sheet backgrounds', () => {

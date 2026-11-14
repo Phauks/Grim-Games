@@ -25,11 +25,8 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { decide } from '#lib/core/engine/index.ts';
 import { filledInfoToken } from '#lib/core/rules/night/info-token-characters.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
 

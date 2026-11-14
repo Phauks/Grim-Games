@@ -13,7 +13,6 @@ import {
 	isSharedGrimoire,
 	join,
 	markHere,
-	MAX_MEMBERS,
 	MIN_ROOM_PROTOCOL,
 	newRoom,
 	openVote,
@@ -38,6 +37,7 @@ import {
 	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
+import { MAX_MEMBERS } from './room-presence.ts';
 
 const s = (id: string) => id as SeatId;
 

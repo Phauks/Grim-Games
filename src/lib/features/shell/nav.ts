@@ -109,11 +109,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 	// gets there from a room's join code or a shared script link.
 ];
 
-export const NAV_ITEMS: readonly NavItem[] = [
-	HOME_ITEM,
-	...NAV_SECTIONS.flatMap((section) => section.items)
-];
-
 /** The games played on this device, under "You" after Friends (Trevor, 2026-10-29). */
 export const HISTORY_ITEM: NavItem = {
 	id: 'history',

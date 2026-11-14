@@ -562,7 +562,7 @@ export type DayEntryKind = DayEntry['kind'];
  * A nomination's recorded votes (`RecordVotes`): `voters` raised their hand, in seat order.
  * `ghostVotes`: dead voters whose one ghost vote this record spent; `tokens`: voters who used
  * a vote token they were given (the Beggar's). Both are given back when the record changes
- * or is removed. What the votes add up to is `tallyOf` (`rules/day/vote-weights.ts`).
+ * or is removed. Each vote counts as `voteWorth` (`rules/day/vote-weights.ts`) says.
  */
 export interface NominationVotes {
 	voters: SeatId[];

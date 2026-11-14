@@ -24,7 +24,6 @@ import {
 	FULL_NIGHT_INSTRUCTIONS,
 	SHOW_DIFFERS_FROM_SOURCE,
 	nightTextFor,
-	nightTextPlain,
 	nightTextSegments,
 	nightTextSteps,
 	nightTextStepLines,
@@ -33,6 +32,7 @@ import {
 	stepNightText,
 	type PlaceholderKey
 } from './night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { MARKER_TEXT } from './night-order.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';

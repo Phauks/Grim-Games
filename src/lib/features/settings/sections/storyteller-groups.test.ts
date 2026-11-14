@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.ts';
+import { STORYTELLER_HELP_KEYS } from '#lib/ui/assistance.test-support.ts';
 import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 describe('Storyteller settings groups', () => {

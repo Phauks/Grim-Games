@@ -25,11 +25,8 @@ import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>

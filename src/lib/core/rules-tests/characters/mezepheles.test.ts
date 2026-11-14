@@ -24,11 +24,8 @@ import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 

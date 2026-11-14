@@ -29,11 +29,8 @@ import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { withNightInfo } from '#lib/core/rules/night/info/steps.ts';
 import { revivedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { promptApplies, reminderPrompt } from '#lib/core/rules/reminders/reminder-prompts.ts';
 import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
 

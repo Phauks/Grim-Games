@@ -12,12 +12,12 @@ import type { EngineContext } from '#lib/core/engine/context.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Reminder } from '#lib/core/model/types.ts';
 import {
-	REMINDER_TARGETS,
 	reminderOffered,
 	reminderTargetMisses,
 	reminderTargets,
 	targetRule
 } from './reminder-targets.ts';
+import { REMINDER_TARGETS } from './reminder-targets.test-support.ts';
 
 const data = committedGameData();
 

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import type { BuildInfo } from './src/lib/build-info.ts';
 import { noteFor, type BuildCommit } from './src/lib/features/about/update-notes.ts';
 import type { Change, ChangeHistory } from './src/lib/features/about/changelog.ts';
-import { groupDirectCommits } from './src/lib/features/about/direct-commits.ts';
+import { groupDirectCommits } from './scripts/lib/direct-commits.ts';
 
 function git(args: string, timeout?: number, cwd?: string): string {
 	try {

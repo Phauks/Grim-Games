@@ -7,14 +7,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-	documentedFields,
 	GAME_MODE_REVISION,
 	GUIDE_SECTIONS,
-	guideFingerprint,
 	MINIMAL_EXAMPLE,
-	RULE_GUIDE_SECTIONS,
-	RULE_MINIMAL_EXAMPLE
+	RULE_GUIDE_SECTIONS
 } from './format-guide.ts';
+import { documentedFields, guideFingerprint } from './format-guide.test-support.ts';
+import { RULE_MINIMAL_EXAMPLE } from './rule-guide.test-support.ts';
 import { SPECIAL_RULES } from './rules/index.ts';
 import { GAME_MODES } from './registry.ts';
 import { MODE_SECTIONS, RULE_ONLY_SECTIONS } from './types.ts';

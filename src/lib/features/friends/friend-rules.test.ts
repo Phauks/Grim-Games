@@ -10,11 +10,11 @@ import {
 	gamePlayers,
 	sinceUnit,
 	byGamesTogether,
-	NO_RELATION,
 	planReceive,
 	planSend,
 	type BookCounts
 } from './friend-rules.ts';
+import { NO_RELATION } from './friend-rules.test-support.ts';
 
 const empty: BookCounts = { friends: 0, pending: 0, sentToday: 0 };
 

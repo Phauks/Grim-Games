@@ -23,11 +23,8 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 

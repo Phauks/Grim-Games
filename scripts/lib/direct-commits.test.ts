@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { groupDirectCommits } from './direct-commits.ts';
-import type { Change } from './changelog.ts';
+import type { Change } from '../../src/lib/features/about/changelog.ts';
 
 const c = (sha: string, date: string, pr?: number): Change => ({
 	sha,

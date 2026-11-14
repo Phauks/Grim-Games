@@ -15,17 +15,17 @@ import {
 	run as runCommands,
 	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
+import { impairmentOfLabel } from '#lib/core/rules/abilities/ability.ts';
 import {
 	dayReminders,
 	daySentence,
 	dayStateFromGame,
-	impairment,
 	isOnceOnlyDayAbility,
-	renderReminder,
 	type ReminderSegment,
 	type DaySeat,
 	type DayState
 } from './day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { type DayReminderOverride } from '#lib/core/model/overrides.ts';
 
 const data = committedGameData();
@@ -168,10 +168,10 @@ describe('state-based reminders', () => {
 	});
 
 	it('reads Poisoned and Drunk tokens from any source', () => {
-		expect(impairment('Poisoned')).toBe('poisoned');
-		expect(impairment('Drunk 2')).toBe('drunk');
-		expect(impairment('Everyone Is Drunk')).toBe('drunk');
-		expect(impairment('Safe')).toBeUndefined();
+		expect(impairmentOfLabel('Poisoned')).toBe('poisoned');
+		expect(impairmentOfLabel('Drunk 2')).toBe('drunk');
+		expect(impairmentOfLabel('Everyone Is Drunk')).toBe('drunk');
+		expect(impairmentOfLabel('Safe')).toBeUndefined();
 	});
 
 	// https://wiki.bloodontheclocktower.com/Juggler and /Riot: no day tracking, so tokens decide.

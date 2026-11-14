@@ -5,10 +5,10 @@ import {
 	FRIENDS_ITEM,
 	HISTORY_ITEM,
 	isCurrent,
-	NAV_ITEMS,
 	NAV_SECTIONS,
 	REPORTS_ITEM
 } from './nav.ts';
+import { NAV_ITEMS } from './nav.test-support.ts';
 
 describe('navigation', () => {
 	const scripts = NAV_ITEMS.find((item) => item.id === 'scripts')!;

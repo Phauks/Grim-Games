@@ -42,13 +42,6 @@ export interface BookCounts {
 	sentToday: number;
 }
 
-export const NO_RELATION: Relation = {
-	friend: false,
-	incoming: false,
-	outgoing: false,
-	blocked: false
-};
-
 /**
  * The asker's side. `accept` when the other had already asked: asking back makes friends.
  * Asking again while a request waits is `send` without counting against the day's limit.
