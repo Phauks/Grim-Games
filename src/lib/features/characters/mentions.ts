@@ -65,5 +65,18 @@ export function mentionCharacters<C extends NamedCharacter>(
 	game: ReadonlyMap<CharacterId, C> | undefined
 ): readonly C[] {
 	if (!game || game.size === 0) return official;
-	return [...official.filter((c) => !game.has(c.id)), ...game.values()];
+	// One list per pair, so every text on the screen shares one `matcher` (it caches by list).
+	let byOfficial = merged.get(game);
+	if (!byOfficial) merged.set(game, (byOfficial = new WeakMap()));
+	let list = byOfficial.get(official);
+	if (!list) {
+		list = [...official.filter((c) => !game.has(c.id)), ...game.values()];
+		byOfficial.set(official, list);
+	}
+	return list as readonly C[];
 }
+
+const merged = new WeakMap<
+	ReadonlyMap<CharacterId, NamedCharacter>,
+	WeakMap<readonly NamedCharacter[], readonly NamedCharacter[]>
+>();

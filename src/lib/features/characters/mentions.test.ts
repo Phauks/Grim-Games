@@ -66,5 +66,7 @@ describe('mentionSegments', () => {
 			{ id: 'imp', name: 'Pit Imp' }
 		]);
 		expect(mentionCharacters(characters, undefined)).toBe(characters);
+		// The same list each time, so its name pattern is built once for the whole screen.
+		expect(mentionCharacters(characters, game)).toBe(mentionCharacters(characters, game));
 	});
 });
