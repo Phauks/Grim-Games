@@ -17,14 +17,17 @@
 	} from '#lib/core/photo/frame-checks.ts';
 	import { readScriptLines, type PhotoLineTrace } from '#lib/core/photo/script-photo.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { groupByType } from '#lib/features/player/player-script.ts';
+	import PhotoScriptDialog from '#lib/features/scripts/PhotoScriptDialog.svelte';
+	import { chooseScript } from '#lib/features/scripts/current-script.svelte.ts';
+	import { PHOTO_ACCEPT } from '#lib/features/scripts/photo-accept.ts';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import {
 		openTextReader,
 		type PlacedLine,
 		type TextReader
 	} from '#lib/features/scripts/photo-reader.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import { downloadBlob } from '#lib/ui/download.ts';
@@ -32,21 +35,12 @@
 	import { onSheet, outline, palette, straighten } from './scan-frame.ts';
 
 	/**
-	 * Live script scan, mockup C built for real so the two ways of keeping its marks on the
-	 * sheet can be tried side by side (Trevor, 2026-11-10: "build prototypes for both ... and
-	 * then I decide"). The camera (or a pretend one) runs all the time; whenever the picture
-	 * is held still, the text reader reads a frame and each line it read is marked over the
-	 * picture: blue for a character, gold for the title, red for a name the app doesn't know,
-	 * dashed for glare. Each read adds to what was read before.
-	 *
-	 * - Fade while moving: marks stay where the read frame had them, and fade out as the
-	 *   picture moves away from that frame.
-	 * - Corner tracking: the sheet's four corners are found in every frame and the marks are
-	 *   moved with them. A read starts once the corners are steady (a hand's shake is fine,
-	 *   Trevor 2026-11-10: "I can't stay super still"); the picture is frozen, the sheet is
-	 *   straightened into a flat page of paper's shape, and the flat page is read (Trevor,
-	 *   2026-11-10: "get the corners, freeze it, align and straighten ... then attempts to
-	 *   read").
+	 * Live script scan, mockup C built for real (Trevor, 2026-11-10). The camera (or a pretend
+	 * one) runs all the time; once the sheet's corners are steady and the frame is sharp, the
+	 * picture is frozen, straightened into a flat page and read, and each line is marked over
+	 * it: blue for a character, gold for the title, red for a name the app doesn't know, dashed
+	 * for glare. With Corner tracking off, marks stay where they were read and fade as the
+	 * picture moves. What was read opens in the same review as a photo's.
 	 */
 
 	type Source = 'demo' | 'picture' | 'camera';
@@ -120,11 +114,14 @@
 	let pool = $state.raw<Character[]>([]);
 	const found = new SvelteMap<CharacterId, Character>();
 	let unknown = $state.raw<string[]>([]);
+	/** The grab's lines, reviewed as a photo's are (Trevor, 2026-11-14). */
+	let grabLines: PlacedLine[] = [];
+	let review: PhotoScriptDialog | undefined = $state();
+	let upload: HTMLInputElement | undefined = $state();
 
 	let view: HTMLCanvasElement | undefined = $state();
 	let video: HTMLVideoElement | undefined = $state();
 
-	const groups = $derived(groupByType([...found.values()]));
 	const banner = $derived(
 		found.size || title
 			? `${title || 'No title read yet'}. ${found.size} ${found.size === 1 ? 'character' : 'characters'} read.`
@@ -182,6 +179,27 @@
 	let drawn: ReturnType<typeof demoFeed> | undefined;
 	let chooser: HTMLInputElement | undefined = $state();
 
+	/** A picture read at once, as Add script reads a photo (Trevor, 2026-11-14). */
+	function uploadPicture(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file || !review) return;
+		startOver();
+		// Held, as after a grab: the camera reads nothing while the picture is reviewed.
+		grabbed = true;
+		review.reset();
+		reviewOpen = true;
+		void review.addPhoto(file);
+	}
+
+	function openReview() {
+		if (!review) return;
+		review.reset();
+		reviewOpen = true;
+		void review.addLines(grabLines);
+	}
+
 	function useDemo() {
 		source = 'demo';
 		feed = drawn;
@@ -236,6 +254,7 @@
 		const begun = round;
 		const lines: PlacedLine[] = await reader.read(frame);
 		if (begun !== round) return;
+		grabLines = lines;
 		readMs = performance.now() - started;
 		reads++;
 		const traces: PhotoLineTrace[] = [];
@@ -311,7 +330,7 @@
 		issues = problems.filter((i): i is string => !!i);
 		diagnostics.issues = issues;
 		grabbed = true;
-		reviewOpen = true;
+		openReview();
 	}
 
 	onMount(() => {
@@ -567,6 +586,18 @@
 			>Picture</Button
 		>
 		<Button variant={source === 'camera' ? 'accent' : 'solid'} onclick={useCamera}>Camera</Button>
+		<Button onclick={() => upload?.click()}>Upload picture</Button>
+		<input
+			bind:this={upload}
+			class="file"
+			type="file"
+			accept={PHOTO_ACCEPT}
+			aria-label="Upload picture"
+			aria-hidden="true"
+			tabindex="-1"
+			data-testid="live-scan-upload"
+			onchange={uploadPicture}
+		/>
 		<input
 			bind:this={chooser}
 			class="file"
@@ -609,7 +640,7 @@
 	<div class="result">
 		<p class="banner" data-testid="live-scan-banner">{banner}</p>
 		<Button icon="photo" disabled={grabbed} onclick={() => (shutter = true)}>Take picture</Button>
-		<Button onclick={() => (reviewOpen = true)} disabled={!found.size}>Review {found.size}</Button>
+		<Button onclick={() => (reviewOpen = true)} disabled={!grabbed}>Review {found.size}</Button>
 	</div>
 	<p class="stats">
 		Last read {(readMs / 1000).toFixed(1)} s · {reads} reads · corners {cornersFound
@@ -628,28 +659,14 @@
 	</figure>
 </div>
 
-<Dialog bind:open={reviewOpen} title={title || 'Script from a scan'}>
-	{#if issues.length}
-		<div class="issues" role="alert" data-testid="live-scan-issues">
-			<ul>
-				{#each issues as issue (issue)}<li>{issue}</li>{/each}
-			</ul>
-			<Button onclick={startOver}>Scan again</Button>
-		</div>
-	{/if}
-	{#each groups as group (group.type)}
-		<h3>{group.type}</h3>
-		<ul>
-			{#each group.characters as c (c.id)}<li>{c.name}</li>{/each}
-		</ul>
-	{/each}
-	{#if unknown.length}
-		<h3>Not matched</h3>
-		<ul>
-			{#each unknown as u (u)}<li>{u}</li>{/each}
-		</ul>
-	{/if}
-</Dialog>
+<PhotoScriptDialog
+	bind:this={review}
+	bind:open={reviewOpen}
+	{issues}
+	onrescan={startOver}
+	onconfirm={(script) =>
+		void chooseScript(script, { kind: 'photo' }).then(() => goto(resolve('/library')))}
+/>
 
 <style>
 	.file {
@@ -701,15 +718,6 @@
 		.taken::before {
 			animation: none;
 		}
-	}
-	.issues {
-		padding: var(--space-2) var(--space-3);
-		border: calc(0.125 * var(--u)) solid var(--evil);
-		border-radius: var(--radius-md);
-	}
-	.issues ul {
-		margin: 0 0 var(--space-2);
-		padding-inline-start: var(--space-4);
 	}
 	.spike {
 		display: flex;
