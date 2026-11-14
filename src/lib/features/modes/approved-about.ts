@@ -59,6 +59,9 @@ export const APPROVED_ABOUT: Readonly<Record<string, string>> = {
 		'A campaign of games with the Flesh and Bone Fabled. Characters executed in one game are out for the rest of the campaign and replaced on the next script.',
 	'two-games-at-once':
 		'The same players play two scripts at the same time, with a character in each game. No one may be the Demon in both.',
+	// Approved 2026-11-13 ("Yes"), after reading the draft in the deferred rules thread.
+	'one-day-more':
+		'Information from abilities arrives a day late, as it was when the ability was used. Evil learning each other, the Demon’s bluffs and the Artist are not delayed.',
 	'whale-buffet':
 		'Every character is on the script. Each player draws only a character type, then chooses any character of that type to play.'
 };
@@ -79,6 +82,9 @@ const DJINN_BARGAIN =
 	'A player may say, as they nominate, that they choose to die. Don’t ask them; once the nomination is made, the chance has passed. If they do, they die at once, and you announce it. Until dusk the next day, the nominee’s ability works twice: each time it takes effect, resolve it twice, one choice at a time. A once per game ability that was already used stays used.';
 
 export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly string[]>> = {
+	// Approved 2026-11-13 ("Yes"), after reading the draft in the deferred rules thread.
+	'one-day-more:setup.ruleChanges[0]':
+		'Work out each player’s information when their ability is used, as things stand then, and give it to them the next night instead. Whether they are drunk or poisoned counts when they receive it. Evil learning each other, the Demon’s bluffs and the Artist are not delayed.',
 	'flesh-and-bone:setup.forced':
 		'Put the Flesh and Bone Fabled in play. It is homebrew, so its ability is on its own page, not in the app.',
 	'flesh-and-bone:setup.ruleChanges[0]':
