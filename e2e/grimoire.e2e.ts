@@ -8490,6 +8490,53 @@ test("the Cacklejack's step changes any player's character but the one marked No
 	await expect(seat).toContainText(/Townsfolk · Good · Seat 3[\s\S]*Washerwoman/);
 });
 
+// https://wiki.bloodontheclocktower.com/Farmer: when the Farmer dies at night, an alive good
+// player becomes a Farmer. Its step offers only the alive good players.
+test("the Farmer's step makes an alive good player the new Farmer", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Farmer'],
+		[2, 'Chef'],
+		[3, 'Poisoner'],
+		[4, 'Imp'],
+		[5, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	// The Demon kills the Farmer tonight; the Empath is already dead.
+	for (const seat of [1, 5]) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+		await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+		await closeSheet(page);
+	}
+
+	const strip = await walkTo(page, 'Farmer');
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	const step = nightStep(page, 'Farmer');
+	const row = step.getByTestId('pass-on');
+	await expect(row).toContainText('None');
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'New character' });
+	await expect(seats.locator('li button')).toHaveCount(1);
+	await seats.getByRole('button', { name: /Seat 2/ }).tap();
+	await expect(row).toContainText('Farmer');
+	await expect(row.getByRole('button', { name: 'Choose' })).toHaveCount(0);
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	const seat = await openSeat(page, 2);
+	await expect(seat).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Farmer/);
+});
+
 // https://wiki.bloodontheclocktower.com/Barber: if the Barber died today or tonight, the Demon
 // may choose 2 players (not another Demon) to swap characters. Alignments stay; the Demon is
 // faded, still choosable as an override.

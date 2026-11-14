@@ -41,6 +41,7 @@
 	import JinxedPick from './JinxedPick.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
+	import PassOnStep from './PassOnStep.svelte';
 
 	/**
 	 * A step whose character changes a chosen player's character tonight (`changesCharacter`:
@@ -415,6 +416,9 @@
 		<ShowToPlayerButton onclick={() => onShow(characterId)} />
 	{/if}
 {/snippet}
+
+<!-- The Farmer's new Farmer (`passesOn`). -->
+<PassOnStep {grimoire} {step} {onShow} />
 
 {#if neighbours}
 	{@const now = alignmentOf(game, neighbours.seatId)}
