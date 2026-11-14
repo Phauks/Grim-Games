@@ -158,7 +158,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Day reminders.** What to watch for during the day because of it.
 
 - Part: `src/lib/core/data/parts/day-reminders.ts`
-- Read by: `core/rules/day/day-reminders.ts`
+- Read by: `core/rules/day/day-reminders.ts`, `core/rules/setup/custom-check.ts`
 
 ### dayTally
 
@@ -564,7 +564,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Where its reminders go.** Where each of its reminder tokens may go, by label.
 
 - Part: `src/lib/core/data/parts/reminder-targets.ts`
-- Read by: `core/modes/draft-seats.ts`, `core/rules/jinxes/jinx-targets.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/setup-reminders.ts`, `features/reference/reminder-target-label.ts`
+- Read by: `core/modes/draft-seats.ts`, `core/rules/jinxes/jinx-targets.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/custom-check.ts`, `core/rules/setup/setup-reminders.ts`, `features/reference/reminder-target-label.ts`
 
 ### seatSwapsPerDay
 
@@ -585,7 +585,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Setup preparation.** Tokens and steps to prepare before the first night.
 
 - Part: `src/lib/core/data/parts/setup-prep.ts`
-- Read by: `core/rules/setup/setup-reminders.ts`
+- Read by: `core/rules/setup/custom-check.ts`, `core/rules/setup/setup-reminders.ts`
 
 ### shownTo
 

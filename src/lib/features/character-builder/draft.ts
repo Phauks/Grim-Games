@@ -82,3 +82,6 @@ export function isEmptyCharacterDraft(draft: CharacterDraft): boolean {
 		!f.otherNightReminder.trim()
 	);
 }
+
+/** The Character builder form's tabs (M82): the character, its night, its rules. */
+export type CharacterFormTab = 'character' | 'night' | 'rules';

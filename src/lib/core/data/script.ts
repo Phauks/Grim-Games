@@ -692,6 +692,14 @@ function loadMeta(
  * Writes a loaded script back out in TPI's format (for sharing and saving): `_meta`, then
  * official characters as ids and homebrew characters as full objects with `team`.
  */
+/** A script's own character in TPI's format: its character object, without jinxes. */
+export function homebrewJson(character: Character): Json {
+	const { type, special, ...rest } = character;
+	const out: Json = { ...rest, team: type };
+	if (special.length > 0) out.special = special;
+	return out;
+}
+
 export function scriptToJson(script: LoadedScript): unknown[] {
 	const meta: Json = { id: '_meta', ...script.meta, name: script.meta.name || script.name };
 	const homebrew = new Set(script.homebrew);
@@ -708,9 +716,7 @@ export function scriptToJson(script: LoadedScript): unknown[] {
 		...script.characters.map((c) => {
 			if (!homebrew.has(c.id))
 				return jinxes.has(c.id) ? { id: c.id, jinxes: jinxes.get(c.id) } : c.id;
-			const { type, special, ...rest } = c;
-			const out: Json = { ...rest, team: type };
-			if (special.length > 0) out.special = special;
+			const out: Json = homebrewJson(c);
 			if (jinxes.has(c.id)) out.jinxes = jinxes.get(c.id);
 			return out;
 		})

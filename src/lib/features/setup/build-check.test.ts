@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Character } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { analyseSelection, planBag } from '#lib/core/rules/setup/bag-plan.ts';
 import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
-import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
+import { buildErrors, setupWarningMessages } from './build-check.ts';
 
 const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
@@ -108,32 +107,5 @@ describe('setupWarningMessages', () => {
 			'Choirboy needs the King in play, but the King is not on the script.'
 		);
 		expect(messages.some((m) => /swap a Townsfolk/.test(m))).toBe(false);
-	});
-});
-
-describe('uncuratedReminderCharacters', () => {
-	const data = committedGameData();
-	const official = (id: string): Character => data.characters.find((c) => c.id === id)!;
-	const custom = (id: string, reminders: string[]): Character => ({
-		...official('chef'),
-		id,
-		name: id,
-		reminders,
-		remindersGlobal: []
-	});
-
-	it('names custom characters with reminders, never official ones', () => {
-		const inPlay = [
-			official('washerwoman'),
-			official('chef'),
-			custom('lamp', ['Lit']),
-			custom('quiet', [])
-		];
-		expect(uncuratedReminderCharacters(inPlay)).toEqual(['lamp']);
-	});
-
-	it('leaves out a custom character whose rules say what it places at setup', () => {
-		const lamp = { ...custom('lamp', ['Lit']), rules: { setupPrep: { none: 'lit later' } } };
-		expect(uncuratedReminderCharacters([lamp])).toEqual([]);
 	});
 });

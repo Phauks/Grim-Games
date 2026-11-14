@@ -162,12 +162,18 @@ export function withBagRole(character: Character, role: BagRole): Character {
 
 /** The script with its homebrew character `id` set to `role`. */
 export function scriptWithBagRole(script: Script, id: CharacterId, role: BagRole): Script {
+	const own = script.entries.find((e) => e.kind === 'custom' && e.character.id === id);
+	return own?.kind === 'custom'
+		? scriptWithCharacter(script, withBagRole(own.character, role))
+		: script;
+}
+
+/** The script with its own character of `character`'s id replaced by `character`. */
+export function scriptWithCharacter(script: Script, character: Character): Script {
 	return {
 		...script,
 		entries: script.entries.map((e) =>
-			e.kind === 'custom' && e.character.id === id
-				? { kind: 'custom', character: withBagRole(e.character, role) }
-				: e
+			e.kind === 'custom' && e.character.id === character.id ? { kind: 'custom', character } : e
 		)
 	};
 }

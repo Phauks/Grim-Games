@@ -9,6 +9,7 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	interface Props {
 		analysis: SetupAnalysis;
@@ -18,19 +19,24 @@
 		/** Warnings in plain words, from the setup analysis, the bag and exclusive jinxes. */
 		warnings: readonly string[];
 		lookup: (id: CharacterId) => Character | undefined;
-		/** Custom characters in play whose setup reminders the app can't work out. */
-		uncurated?: readonly CharacterId[];
+		/** The script's own characters in play, and whether the Storyteller checked each (M85). */
+		own?: readonly { character: Character; checked: boolean }[];
+		/** Opens the check of one of the script's own characters. */
+		onCheck?: (characterId: CharacterId) => void;
 		/** Opens the choice of what a Drunk, Marionette or Lunatic is shown. */
 		onStandIn: (characterId: CharacterId) => void;
 	}
 
-	let { analysis, plan, jinxes, warnings, lookup, uncurated = [], onStandIn }: Props = $props();
+	let { analysis, plan, jinxes, warnings, lookup, own = [], onCheck, onStandIn }: Props = $props();
 
 	const name = (id: CharacterId) => lookup(id)?.name ?? id;
-	const warningCount = $derived(warnings.length + (uncurated.length ? 1 : 0));
+	const unchecked = $derived(own.filter((o) => !o.checked).map((o) => o.character));
+	const warningCount = $derived(warnings.length + (unchecked.length ? 1 : 0));
 	const changeCount = $derived(analysis.modifiers.length + analysis.notes.length);
 	// Verification counts everything inside it (Trevor, 2026-10-20).
-	const total = $derived(warningCount + plan.standIns.length + changeCount + jinxes.length);
+	const total = $derived(
+		warningCount + own.length + plan.standIns.length + changeCount + jinxes.length
+	);
 </script>
 
 <!--
@@ -65,18 +71,53 @@
 				{#if warningCount}
 					<ul class="warn">
 						{#each warnings as warning, i (i)}<li><GlossaryText text={warning} /></li>{/each}
-						{#if uncurated.length}
-							<li data-testid="custom-reminders">
-								{t('setup.check.customReminders')}
+						{#if unchecked.length}
+							<li data-testid="custom-unchecked">
+								{t('setup.check.unchecked')}
 								<span class="badges">
-									{#each uncurated as id (id)}<CharacterPiece
+									{#each unchecked as character (character.id)}<CharacterPiece
 											template="badge"
-											characterId={id}
-											character={lookup(id)}
+											characterId={character.id}
+											{character}
 										/>{/each}
 								</span>
 							</li>
 						{/if}
+					</ul>
+				{:else}<p>{t('common.none')}</p>{/if}
+			</Collapsible>
+
+			<Collapsible
+				title={t('setup.check.ownCharacters')}
+				level={4}
+				storageKey="setup-check:own-characters"
+				empty={own.length === 0}
+			>
+				{#snippet aside()}<CountBadge
+						count={own.length}
+						warn={unchecked.length > 0}
+						testid="own-character-count"
+					/>{/snippet}
+				{#if own.length}
+					<ul class="stand-ins">
+						{#each own as { character, checked } (character.id)}
+							<li data-testid="own-character-{character.id}">
+								<CharacterPiece template="badge" characterId={character.id} {character} />
+								<span class="state"
+									><Icon name={checked ? 'check' : 'warning'} />{checked
+										? t('setup.check.isChecked')
+										: t('setup.check.notChecked')}</span
+								>
+								<span class="end"
+									><Button
+										variant="quiet"
+										icon="edit"
+										aria-label={t('setup.check.checkFor', { name: character.name })}
+										onclick={() => onCheck?.(character.id)}>{t('setup.check.check')}</Button
+									></span
+								>
+							</li>
+						{/each}
 					</ul>
 				{:else}<p>{t('common.none')}</p>{/if}
 			</Collapsible>
@@ -182,6 +223,14 @@
 	.stand-ins {
 		padding: 0;
 		list-style: none;
+	}
+	.end {
+		justify-self: end;
+	}
+	.state {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
 	}
 	.stand-ins li {
 		display: grid;

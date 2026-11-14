@@ -36,6 +36,9 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCandles from './SetupCandles.svelte';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
+	import { checkedCharacters } from './checked-characters.svelte.ts';
+	import OwnCharacterCheck from './OwnCharacterCheck.svelte';
+	import { checkKey, ownCharacters } from '#lib/core/rules/setup/custom-check.ts';
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
@@ -58,7 +61,7 @@
 	import SetupDealt from './SetupDealt.svelte';
 	import SetupActions from './SetupActions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
+	import { buildErrors, setupWarningMessages } from './build-check.ts';
 	import { setupSelection } from './selection.svelte.ts';
 	import { duplicatesAllowedIn, gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import { requiredInBag } from './required.ts';
@@ -335,7 +338,15 @@
 			.map((id) => lookup(id))
 			.filter((c): c is Character => c !== undefined)
 	);
-	const uncurated = $derived(uncuratedReminderCharacters(inPlay));
+	/** The script's own characters in play, each with the Storyteller's check (M85). */
+	const own = $derived(
+		ownCharacters(inPlay).map((character) => ({
+			character,
+			checked: checkedCharacters.has(checkKey(character))
+		}))
+	);
+	let checkingId = $state<CharacterId>();
+	let checkOpen = $state(false);
 
 	$effect(() => {
 		if (ready && travellersChosenAtStart === undefined)
@@ -557,7 +568,11 @@
 					{jinxes}
 					{warnings}
 					{lookup}
-					{uncurated}
+					{own}
+					onCheck={(id) => {
+						checkingId = id;
+						checkOpen = true;
+					}}
 					onStandIn={(id) => {
 						askingFor = id;
 						standInOpen = true;
@@ -736,6 +751,13 @@
 		{#each errors as error, i (i)}<li><GlossaryText text={error} /></li>{/each}
 	</ul>
 </ConfirmDialog>
+<OwnCharacterCheck
+	bind:open={checkOpen}
+	characterId={checkingId}
+	{port}
+	{inPlay}
+	players={analysis.players}
+/>
 <ConfirmDialog bind:open={replaceOpen} title={t('setup.replace.title')} danger onConfirm={buildBag}>
 	<p>
 		{t('setup.replace.body', {

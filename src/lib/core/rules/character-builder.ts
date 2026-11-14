@@ -15,6 +15,8 @@ import {
 } from '#lib/core/data/index.ts';
 import { parseCharacterRules, readableRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { withSpecialParts } from '#lib/core/data/tpi-special-hooks.ts';
 import { bracketText, unreadSetupClauses } from '#lib/core/rules/setup/setup-modifiers.ts';
 import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
@@ -241,4 +243,20 @@ export function previewCharacter(fields: CharacterFields): Character {
 		if (parsed && Object.keys(parsed).length) character.rules = parsed;
 	}
 	return character;
+}
+
+/**
+ * A script's own character after the Storyteller changed it in the builder (M85): `entry` read
+ * back as the script loader reads it, keeping the original's id (the game's seats and bag name
+ * it) and its TPI `special` data, which the form has no field for. Undefined when it can't be
+ * read.
+ */
+export function editedCharacter(original: Character, entry: HomebrewEntry): Character | undefined {
+	const raw: Record<string, unknown> = { ...entry, id: original.id };
+	if (original.special.length) raw.special = original.special;
+	const character = parseCharacter(raw, original.id, new Issues(), {
+		strict: false,
+		scriptFields: true
+	});
+	return character && withSpecialParts(character);
 }
