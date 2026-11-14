@@ -1,6 +1,5 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
-import type { Character, CharacterId } from '#lib/core/data/index.ts';
-import { setupPrepOf } from '#lib/core/rules/setup/setup-reminders.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
 import type { BagIssue } from '#lib/core/rules/setup/bag-plan.ts';
 import type { ScriptRequirement } from '#lib/core/rules/setup/script-facts.ts';
 import type { SetupAnalysis, SetupWarning } from '#lib/core/rules/setup/setup.ts';
@@ -74,22 +73,4 @@ export function setupWarningMessages(
 			? t('setup.check.notOnScript', { name: name(id), required: name(required) })
 			: w.message;
 	});
-}
-
-/**
- * Custom characters in play whose reminder tokens the app can't place before the game
- * (Trevor, 2026-10-17): setup reminders come from a character's `setupPrep` rules (our
- * overlay files, or a custom character's own `rules`), and plain script JSON says nothing
- * about which reminders go out at setup. Only characters with reminders are named; one
- * without any has nothing to place.
- */
-export function uncuratedReminderCharacters(inPlay: readonly Character[]): CharacterId[] {
-	const lookup = new Map(inPlay.map((c) => [c.id, c]));
-	const ids = inPlay
-		.filter(
-			(c) =>
-				setupPrepOf(c.id, lookup) === undefined && c.reminders.length + c.remindersGlobal.length > 0
-		)
-		.map((c) => c.id);
-	return [...new Set(ids)];
 }

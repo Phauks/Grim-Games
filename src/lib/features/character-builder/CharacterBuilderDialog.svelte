@@ -17,7 +17,13 @@
 	import CharacterForm from './CharacterForm.svelte';
 	import CharacterPreview from './CharacterPreview.svelte';
 	import CollectionField from './CollectionField.svelte';
-	import { CHARACTER_DRAFT_VERSION, emptyCharacterDraft, type CharacterDraft } from './draft.ts';
+	import {
+		CHARACTER_DRAFT_VERSION,
+		emptyCharacterDraft,
+		type CharacterDraft,
+		type CharacterFormTab
+	} from './draft.ts';
+	import type { HomebrewEntry } from '#lib/core/rules/setup/script-builder.ts';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { CharacterBuilderDraft, savedCharacterNames, savedCharacters } from './stores.svelte.ts';
 
@@ -33,9 +39,25 @@
 		savedId?: string;
 		/** After Confirm, with the character as saved. */
 		onsaved?: (saved: SavedCharacter) => void;
+		/**
+		 * A character that is not saved here to edit instead, such as a game script's own
+		 * (M85): Confirm hands it back to `onentry` and saves nothing on this device.
+		 */
+		entry?: HomebrewEntry;
+		onentry?: (entry: HomebrewEntry) => void;
+		/** The form's tab to open on. */
+		tab?: CharacterFormTab;
 	}
 
-	let { open = $bindable(false), savedId, onsaved }: Props = $props();
+	let {
+		open = $bindable(false),
+		savedId,
+		onsaved,
+		entry,
+		onentry,
+		tab = 'character'
+	}: Props = $props();
+	let formTab = $state<CharacterFormTab>('character');
 
 	let data = $state.raw<GameData>();
 	let draft = $state.raw(new CharacterBuilderDraft(undefined, emptyCharacterDraft()));
@@ -44,6 +66,7 @@
 	let wasOpen = false;
 
 	function start(): CharacterDraft {
+		if (entry) return { version: CHARACTER_DRAFT_VERSION, fields: fieldsFromEntry(entry) };
 		const saved = savedId ? savedCharacters.get(savedId) : undefined;
 		if (!saved) return emptyCharacterDraft(savedCharacterNames());
 		return {
@@ -62,6 +85,7 @@
 	$effect(() => {
 		if (open && !wasOpen) {
 			const next = start();
+			formTab = tab;
 			draft = new CharacterBuilderDraft(undefined, next);
 			startJson = JSON.stringify(characterEntry(next.fields));
 			if (!data) {
@@ -92,6 +116,11 @@
 	function save() {
 		if (!canSave) return;
 		if (!f.name.trim()) f.name = randomCharacterName(savedCharacterNames());
+		if (onentry) {
+			close();
+			onentry(characterEntry(f));
+			return;
+		}
 		const id = savedCharacters.save(f, draft.current.editing);
 		const saved = savedCharacters.get(id);
 		close();
@@ -101,7 +130,7 @@
 
 <Dialog
 	bind:open
-	title={savedId ? t('character-builder.editTitle') : t('character-builder.newTitle')}
+	title={savedId || entry ? t('character-builder.editTitle') : t('character-builder.newTitle')}
 	size="max"
 	pinAside={false}
 	{beforeClose}
@@ -112,14 +141,15 @@
 		<ErrorBoundary area="character-builder">
 			<aside class="side">
 				<CharacterPreview fields={f} {problems}>
-					<CollectionField savedId={draft.current.editing} />
+					{#if !entry}<CollectionField savedId={draft.current.editing} />{/if}
 				</CharacterPreview>
 			</aside>
 		</ErrorBoundary>
 	{/snippet}
 	<ErrorBoundary area="character-builder">
 		<div class="builder" data-testid="character-builder-dialog">
-			<CharacterForm {draft} {data} />
+			<!-- Afresh for each opening, so it opens on the tab asked for. -->
+			{#key draft}<CharacterForm {draft} {data} bind:tab={formTab} />{/key}
 		</div>
 	</ErrorBoundary>
 	{#snippet actions()}

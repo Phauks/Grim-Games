@@ -8,18 +8,10 @@
  */
 import { fromBase64Url, toBase64Url } from './base64url.ts';
 import { blockCount, encodePiece, FountainDecoder } from './fountain.ts';
+import { fnv1a } from '#lib/core/text/hash.ts';
 
 /** More blocks than this take too long to read; the bytes are refused instead. */
 export const MAX_QR_FRAMES = 60;
-
-function fnv1a(length: number, at: (i: number) => number): number {
-	let hash = 0x811c9dc5;
-	for (let i = 0; i < length; i++) {
-		hash ^= at(i);
-		hash = Math.imul(hash, 0x01000193) >>> 0;
-	}
-	return hash;
-}
 
 const bytesId = (bytes: Uint8Array) => fnv1a(bytes.length, (i) => bytes[i]);
 

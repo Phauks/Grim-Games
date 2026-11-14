@@ -1023,12 +1023,10 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await expect(check.locator('.warn li').filter({ hasText: 'swap a Townsfolk' })).toHaveCount(0);
 });
 
-// Setup reminders come from our list of official characters, and script JSON doesn't say
-// which reminders go out before the game, so a chosen custom character with reminders is
-// named in the Warnings (Trevor, 2026-10-17). One without reminders has nothing to place.
-test('the setup check names chosen custom characters whose setup reminders it cannot work out', async ({
-	page
-}) => {
+// A script's own characters are checked before the game (M85, Trevor 2026-11-14: option A):
+// Verification lists them, and each one's check shows what the app assumed, marked where it
+// guessed from the ability. A change goes into this game's script; Checked is kept.
+test('checks and corrects a custom character before the game', async ({ page }) => {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	const paste = page.getByRole('dialog', { name: 'Add script' });
@@ -1039,10 +1037,10 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 				id: 'lamplighter',
 				name: 'Lamplighter',
 				team: 'townsfolk',
-				ability: 'Each night, learn something.',
-				reminders: ['Lit']
+				ability: 'Each night*, choose a player: they are safe from the Demon tonight.',
+				reminders: ['Lit'],
+				otherNightReminder: 'The Lamplighter chooses a player.'
 			},
-			{ id: 'quietone', name: 'Quiet One', team: 'townsfolk', ability: 'You do nothing.' },
 			'chef',
 			'empath',
 			'spy',
@@ -1059,18 +1057,51 @@ test('the setup check names chosen custom characters whose setup reminders it ca
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
 	const check = page.getByTestId('setup-check');
-	const custom = check.getByTestId('custom-reminders');
-	await page.getByRole('button', { name: 'Quiet One', exact: true }).tap();
-	await expect(custom).toHaveCount(0);
+	const unchecked = check.getByTestId('custom-unchecked');
+	await expect(unchecked).toHaveCount(0);
 	await page.getByRole('button', { name: 'Lamplighter', exact: true }).tap();
-	await expect(custom).toContainText('Lamplighter');
-	await expect(custom).not.toContainText('Quiet One');
-	// The badge in the warning is a button too: deselect from the character list.
-	await page
-		.getByRole('button', { name: 'Lamplighter', exact: true })
-		.and(page.locator(':not([data-testid="setup-check"] *)'))
+	await expect(unchecked).toContainText('Lamplighter');
+	const row = check.getByTestId('own-character-lamplighter');
+	await expect(row).toContainText('Not checked');
+
+	await row.getByRole('button', { name: 'Check the Lamplighter' }).tap();
+	const sheet = page.getByTestId('own-check');
+	await expect(sheet.getByTestId('own-check-first-night')).toContainText('None');
+	const other = sheet.getByTestId('own-check-other-nights');
+	await expect(other).toContainText('Guessed from its ability');
+	await expect(sheet.getByTestId('own-check-reminders')).toContainText('Lit');
+	await expect(sheet.getByTestId('own-check-placed-on')).toContainText('Any seat');
+
+	// Its pencil opens the Character builder on the Night tab; Confirm changes this game's script.
+	await other.getByRole('button', { name: 'Change Other nights' }).tap();
+	const builder = page.getByTestId('character-builder-dialog');
+	await expect(builder.getByRole('tab', { name: 'Night' })).toHaveAttribute(
+		'aria-selected',
+		'true'
+	);
+	await builder
+		.getByTestId('night-place-other')
+		.getByRole('button', { name: /^Minions/ })
 		.tap();
-	await expect(custom).toHaveCount(0);
+	const stage = page.getByRole('dialog', { name: 'Minions' });
+	await stage.getByRole('button', { name: 'Start of the stage' }).tap();
+	await expect(stage).toBeHidden();
+	await page
+		.getByRole('dialog', { name: 'Edit character' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(builder).toBeHidden();
+	await expect(other).toContainText('From its rules');
+
+	await sheet.getByRole('button', { name: 'Checked' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(row).toContainText('Checked');
+	await expect(row).not.toContainText('Not checked');
+	await expect(unchecked).toHaveCount(0);
+
+	// The check is kept on this device.
+	await page.reload();
+	await expect(page.getByTestId('own-character-lamplighter')).toContainText('Checked');
 });
 
 // Check sections showing None start closed, and open as soon as something appears (Trevor,

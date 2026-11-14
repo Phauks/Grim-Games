@@ -24,6 +24,7 @@
 	import RulesField from './RulesField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { savedCharacters, type CharacterBuilderDraft } from './stores.svelte.ts';
+	import type { CharacterFormTab } from './draft.ts';
 
 	/**
 	 * The Character builder's fields, the same on its page and in the builder opened over
@@ -35,9 +36,11 @@
 	interface Props {
 		draft: CharacterBuilderDraft;
 		data: GameData | undefined;
+		/** The tab on show; Character first. */
+		tab?: CharacterFormTab;
 	}
 
-	let { draft, data }: Props = $props();
+	let { draft, data, tab = $bindable('character') }: Props = $props();
 
 	const f = $derived(draft.current.fields);
 	const id = $derived(fieldsId(f));
@@ -67,9 +70,7 @@
 		)
 	);
 
-	type Part = 'character' | 'night' | 'rules';
-	let tab = $state<Part>('character');
-	const tabs = $derived<{ value: Part; label: string }[]>([
+	const tabs = $derived<{ value: CharacterFormTab; label: string }[]>([
 		{ value: 'character', label: t('character-builder.character') },
 		{ value: 'night', label: t('character-builder.night') },
 		{
