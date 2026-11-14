@@ -480,7 +480,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Passes on.** When its player dies, another player becomes this character.
 
 - Part: `src/lib/core/data/parts/passes-on.ts`
-- Read by: `core/rules/abilities/becomes.ts`
+- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/night/PassOnStep.svelte`
 
 ### pickedEffect
 
