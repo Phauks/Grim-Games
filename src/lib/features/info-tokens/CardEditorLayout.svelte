@@ -17,41 +17,12 @@
 	}
 
 	let { title, detail, children }: Props = $props();
-
-	let card = $state<HTMLDivElement>();
-
-	/**
-	 * Long words shrink until the whole card fits the box, so none of it drops out of sight
-	 * while typing (Trevor, 2026-10-31); past the smallest size the card scrolls instead.
-	 */
-	function fit() {
-		const content = card?.firstElementChild;
-		if (!card || !(content instanceof HTMLElement)) return;
-		let scale = 1;
-		card.style.setProperty('--card-fit', '1');
-		while (scale > MIN_FIT && content.scrollHeight > content.clientHeight) {
-			scale = Math.max(MIN_FIT, scale - 0.05);
-			card.style.setProperty('--card-fit', String(scale));
-		}
-	}
-	const MIN_FIT = 0.3;
-
-	$effect(() => {
-		void title;
-		void detail;
-		fit();
-	});
-	$effect(() => {
-		if (!card) return;
-		const observer = new ResizeObserver(() => fit());
-		observer.observe(card);
-		return () => observer.disconnect();
-	});
+	// The card fits its words to the preview box itself (ShownCard), as it does full screen.
 </script>
 
 <div class="editor">
 	<figure class="preview" aria-label={t('info-tokens.preview')}>
-		<div class="preview-card" bind:this={card}>
+		<div class="preview-card">
 			<ShownCard {title} {detail} compact />
 		</div>
 	</figure>

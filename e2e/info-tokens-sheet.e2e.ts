@@ -232,7 +232,11 @@ test("the quick card's preview shows the whole card", async ({ page }) => {
 	const text = (await heading.boundingBox())!;
 	expect(text.y).toBeGreaterThanOrEqual(box.y);
 	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height);
-	expect(box.height).toBeGreaterThan(2 * text.height);
+	// A real box, not a sliver; the words grow to fill it (Trevor, 2026-11-14).
+	const rem = await page.evaluate(() =>
+		parseFloat(getComputedStyle(document.documentElement).fontSize)
+	);
+	expect(box.height).toBeGreaterThan(6 * rem);
 });
 
 test("a long quick card's preview fits every word", async ({ page }) => {
