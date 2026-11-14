@@ -1,37 +1,21 @@
 /**
- * Every setting of a rule has a name in plain words (M81, Trevor 2026-11-12: "do it all"), added
- * rule by rule: `WORDED` lists the rules done so far, and only grows until it lists every one.
+ * Every setting of a rule the Character builder offers has a name in plain words (M81, Trevor
+ * 2026-11-12: "do it all"), so a new setting can't go in without one.
  */
 import { describe, expect, it } from 'vitest';
 import * as PARTS from './index.ts';
 import type { FieldSpec } from '../field-spec.ts';
-import type { RuleGroup } from './part.ts';
-
-/** Rule groups whose every part the builder offers is worded (M81 batch 2). */
-const WORDED_GROUPS: readonly RuleGroup[] = ['night', 'day', 'deaths', 'abilities', 'tokens'];
 
 /** Parts set outside the Rules section, never shown with these fields. */
 const ELSEWHERE = ['nightOrder', 'nightText'];
 
-const WORDED: readonly (keyof typeof PARTS)[] = [
-	'believesOtherCharacter',
-	'believesType',
-	'breaksRules',
-	'carriesScriptRules',
-	'hidesRoles',
-	'jinxesOnly',
-	'limitsExtraEvil',
-	'makesExtraEvil',
-	'optionalRuleText',
-	'pretendTeam',
-	'quietStart',
-	'setupModifier',
-	'setupPrep',
-	'twoStorytellers'
-];
-
-/** Each setting under `spec` the builder shows with no plain name, by its path. */
-function unnamed(spec: FieldSpec, path: string): string[] {
+/**
+ * Each setting under `spec` the builder shows with no plain name, by its path; a spec already
+ * open above it (a jinx condition's `not`) is not walked again.
+ */
+function unnamed(spec: FieldSpec, path: string, open = new Set<FieldSpec>()): string[] {
+	if (open.has(spec)) return [];
+	const inner = new Set(open).add(spec);
 	switch (spec.kind) {
 		case 'object':
 			// Our own words for official characters are never shown in the builder (M84).
@@ -39,15 +23,15 @@ function unnamed(spec: FieldSpec, path: string): string[] {
 				.filter((f) => !f.spec.official)
 				.flatMap((f) => [
 					...(f.spec.label ? [] : [`${path}.${f.key}`]),
-					...unnamed(f.spec, `${path}.${f.key}`)
+					...unnamed(f.spec, `${path}.${f.key}`, inner)
 				]);
 		case 'variants':
-			return spec.variants.flatMap((v) => unnamed(v.spec, `${path}<${v.label}>`));
+			return spec.variants.flatMap((v) => unnamed(v.spec, `${path}<${v.label}>`, inner));
 		case 'list':
 		case 'byToken':
 		case 'byKey':
 		case 'byCharacter':
-			return unnamed(spec.of, `${path}.*`);
+			return unnamed(spec.of, `${path}.*`, inner);
 		default:
 			return [];
 	}
@@ -82,15 +66,10 @@ function words(
 }
 
 describe('setting names in plain words', () => {
-	const done = [
-		...new Set([
-			...WORDED,
-			...(Object.keys(PARTS) as (keyof typeof PARTS)[]).filter(
-				(key) => WORDED_GROUPS.includes(PARTS[key].group) && !ELSEWHERE.includes(key)
-			)
-		])
-	];
-	it.each(done)('%s names every setting', (key) => {
+	const offered = (Object.keys(PARTS) as (keyof typeof PARTS)[]).filter(
+		(key) => !ELSEWHERE.includes(key)
+	);
+	it.each(offered)('%s names every setting', (key) => {
 		expect(unnamed(PARTS[key].field, key)).toEqual([]);
 	});
 

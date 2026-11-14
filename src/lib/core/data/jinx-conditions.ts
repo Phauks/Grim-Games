@@ -48,6 +48,7 @@ import {
 	oneOf,
 	STR,
 	TOKEN,
+	worded,
 	type FieldSpec,
 	type Variant
 } from './field-spec.ts';
@@ -99,24 +100,73 @@ export type JinxCondition =
  * its value. A `not` holds another condition, so the description refers to itself.
  */
 const CONDITION_VARIANTS: Variant[] = [
-	{ label: 'Condition', is: 'string', spec: oneOf(JINX_FLAGS) },
-	{ label: 'After day', has: 'afterDay', spec: obj({ afterDay: COUNT }) },
-	{ label: 'Day', has: 'day', spec: obj({ day: COUNT }) },
-	{ label: 'Night', has: 'night', spec: obj({ night: COUNT }) },
+	{
+		label: 'Condition',
+		is: 'string',
+		spec: worded(
+			{
+				label: 'Condition',
+				names: {
+					'self-alive': 'Its player is alive',
+					'partner-alive': 'The partner’s player is alive',
+					'self-dead': 'Its player is dead',
+					'partner-dead': 'The partner’s player is dead',
+					'self-in-play': 'It is in play',
+					'partner-in-play': 'The partner is in play',
+					'self-executed': 'Its player was executed today',
+					'partner-executed': 'The partner’s player was executed today',
+					'nominated-partner': 'Its player nominated the partner’s today',
+					'nominated-by-partner': 'The partner’s player nominated its player today',
+					'has-partner-ability': 'Its player has the partner’s ability',
+					'partner-has-this-ability': 'The partner’s player has its ability',
+					'after-execution': 'Someone was executed today',
+					'final-day': 'It is the final day'
+				}
+			},
+			oneOf(JINX_FLAGS)
+		)
+	},
+	{
+		label: 'After day',
+		has: 'afterDay',
+		spec: obj({ afterDay: worded({ label: 'After day' }, COUNT) })
+	},
+	{ label: 'Day', has: 'day', spec: obj({ day: worded({ label: 'Day' }, COUNT) }) },
+	{ label: 'Night', has: 'night', spec: obj({ night: worded({ label: 'Night' }, COUNT) }) },
 	// The partner's reminder on this character's player: not one of this character's own.
-	{ label: 'Marked', has: 'marked', spec: obj({ marked: STR }) },
-	{ label: 'Partner marked', has: 'partnerMarked', spec: obj({ partnerMarked: TOKEN }) },
-	{ label: 'Alignment', has: 'alignment', spec: obj({ alignment: oneOf(ALIGNMENTS) }) },
+	{
+		label: 'Marked',
+		has: 'marked',
+		spec: obj({ marked: worded({ label: 'Its player has the partner’s' }, STR) })
+	},
+	{
+		label: 'Partner marked',
+		has: 'partnerMarked',
+		spec: obj({ partnerMarked: worded({ label: 'The partner’s player has' }, TOKEN) })
+	},
+	{
+		label: 'Alignment',
+		has: 'alignment',
+		spec: obj({ alignment: worded({ label: 'Its player is' }, oneOf(ALIGNMENTS)) })
+	},
 	{
 		label: 'Partner alignment',
 		has: 'partnerAlignment',
-		spec: obj({ partnerAlignment: oneOf(ALIGNMENTS) })
+		spec: obj({ partnerAlignment: worded({ label: 'The partner’s player is' }, oneOf(ALIGNMENTS)) })
 	},
-	{ label: 'Alive', has: 'alive', spec: obj({ alive: CHARACTER }) },
-	{ label: 'In play', has: 'inPlay', spec: obj({ inPlay: CHARACTER }) }
+	{ label: 'Alive', has: 'alive', spec: obj({ alive: worded({ label: 'Alive' }, CHARACTER) }) },
+	{
+		label: 'In play',
+		has: 'inPlay',
+		spec: obj({ inPlay: worded({ label: 'In play' }, CHARACTER) })
+	}
 ];
 export const CONDITION_FIELD: FieldSpec = { kind: 'variants', variants: CONDITION_VARIANTS };
-CONDITION_VARIANTS.push({ label: 'Not', has: 'not', spec: obj({ not: CONDITION_FIELD }) });
+CONDITION_VARIANTS.push({
+	label: 'Not',
+	has: 'not',
+	spec: obj({ not: worded({ label: 'Not' }, CONDITION_FIELD) })
+});
 
 const NUMBER_CONDITIONS = ['afterDay', 'day', 'night'] as const;
 const LABEL_CONDITIONS = ['marked', 'partnerMarked', 'alive', 'inPlay'] as const;

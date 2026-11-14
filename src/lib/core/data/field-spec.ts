@@ -177,7 +177,18 @@ export interface Words {
 export function wordAt<S extends FieldSpec>(spec: S, words: Readonly<Record<string, Words>>): S {
 	const used = new Set<string>();
 	const join = (path: string, step: string) => (path ? `${path}.${step}` : step);
+	// A spec inside itself (a jinx condition's `not`) is left as it is below its first copy.
+	const open = new Set<FieldSpec>();
 	const walk = (at: FieldSpec, path: string): FieldSpec => {
+		if (open.has(at)) return at;
+		open.add(at);
+		try {
+			return step(at, path);
+		} finally {
+			open.delete(at);
+		}
+	};
+	const step = (at: FieldSpec, path: string): FieldSpec => {
 		const own = words[path];
 		if (own) used.add(path);
 		const next = { ...at, ...own } as FieldSpec;
