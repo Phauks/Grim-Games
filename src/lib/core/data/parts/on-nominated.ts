@@ -1,6 +1,6 @@
 import { NUM, obj, oneOf, opt, T, TOKEN, type SpecValue } from '../field-spec.ts';
 import { CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * What being nominated sets off:
@@ -30,17 +30,42 @@ export type NominatedEffect = SpecValue<typeof NOMINATED_EFFECT>;
  * Fabled, a Loric, a game mode or a special rule), every nomination sets it off. A character
  * with a "No Ability" reminder is spent once that marks it.
  */
-export const onNominated = specPart(
-	'day',
-	'On nomination',
-	'When its player, or the player with one of its reminders, is nominated, something happens; on a Fabled, Loric or rule, any nomination.',
-	obj({
-		by: opt(oneOf(CHARACTER_TYPES)),
-		carrier: opt(TOKEN),
-		effect: NOMINATED_EFFECT,
-		first: opt(T),
-		minAlive: opt(NUM)
-	})
+export const onNominated = partWords(
+	specPart(
+		'day',
+		'On nomination',
+		'When its player, or the player with one of its reminders, is nominated, something happens; on a Fabled, Loric or rule, any nomination.',
+		obj({
+			by: opt(oneOf(CHARACTER_TYPES)),
+			carrier: opt(TOKEN),
+			effect: NOMINATED_EFFECT,
+			first: opt(T),
+			minAlive: opt(NUM)
+		})
+	),
+	{
+		by: {
+			label: 'Only by this type'
+		},
+		carrier: {
+			label: 'Or the player with'
+		},
+		effect: {
+			label: 'What happens',
+			names: {
+				'execute-nominator': 'The nominator is executed',
+				'may-kill-nominator': 'Its player may kill the nominator',
+				'evil-swap': 'Evil nominator and nominee swap characters',
+				'nominator-may-die': 'The nominator may choose to die'
+			}
+		},
+		first: {
+			label: 'Only the first nomination'
+		},
+		minAlive: {
+			label: 'Only while at least this many alive'
+		}
+	}
 );
 
 export type OnNominated = PartValue<typeof onNominated>;

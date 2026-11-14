@@ -1,6 +1,6 @@
 import { anyOf, CHARACTERS, obj, oneOf, opt, TOKEN } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const MAD_AS_WHO = ['carrier', 'self'] as const;
 export type MadAsWho = (typeof MAD_AS_WHO)[number];
@@ -18,29 +18,49 @@ export type MadAsWho = (typeof MAD_AS_WHO)[number];
  * - `mad: "self"`: this character's own player is mad as the character of the player carrying
  *   the token (the Pixie, https://wiki.bloodontheclocktower.com/Pixie).
  */
-export const madAs = specPart(
-	'day',
-	'Mad as',
-	'The character a player is mad as, found by its token.',
-	// With `mad: "carrier"`: `choose`, the types the character is chosen from, and
-	// `characters`, characters it may also be, whatever their type.
-	obj({
-		token: TOKEN,
-		mad: oneOf(MAD_AS_WHO),
-		choose: opt(anyOf(SEATED_TYPES)),
-		characters: opt(CHARACTERS)
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		if (value.mad === 'carrier' && !value.choose) {
-			issues.add(`${path}.choose`, 'required with mad "carrier"');
-		}
-		for (const key of ['choose', 'characters'] as const) {
-			if (value[key] && value.mad !== 'carrier') {
-				issues.add(`${path}.${key}`, 'only with mad "carrier"');
+export const madAs = partWords(
+	specPart(
+		'day',
+		'Mad as',
+		'The character a player is mad as, found by its token.',
+		// With `mad: "carrier"`: `choose`, the types the character is chosen from, and
+		// `characters`, characters it may also be, whatever their type.
+		obj({
+			token: TOKEN,
+			mad: oneOf(MAD_AS_WHO),
+			choose: opt(anyOf(SEATED_TYPES)),
+			characters: opt(CHARACTERS)
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			if (value.mad === 'carrier' && !value.choose) {
+				issues.add(`${path}.choose`, 'required with mad "carrier"');
 			}
+			for (const key of ['choose', 'characters'] as const) {
+				if (value[key] && value.mad !== 'carrier') {
+					issues.add(`${path}.${key}`, 'only with mad "carrier"');
+				}
+			}
+			return issues.list.length > before ? undefined : value;
 		}
-		return issues.list.length > before ? undefined : value;
+	),
+	{
+		token: {
+			label: 'Reminder'
+		},
+		mad: {
+			label: 'Who is mad',
+			names: {
+				carrier: 'The player with the reminder',
+				self: 'Its own player'
+			}
+		},
+		choose: {
+			label: 'Character chosen from types'
+		},
+		characters: {
+			label: 'Or one of these'
+		}
 	}
 );
 

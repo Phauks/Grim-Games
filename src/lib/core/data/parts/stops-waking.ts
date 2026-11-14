@@ -1,6 +1,6 @@
 import { obj, oneOf, opt, TOKEN } from '../field-spec.ts';
 import { CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /** A reminder token and, when given, the only character type it works on. */
 export const TOKEN_ON_TYPE = obj({ token: TOKEN, type: opt(oneOf(CHARACTER_TYPES)) });
@@ -11,11 +11,21 @@ export const TOKEN_ON_TYPE = obj({ token: TOKEN, type: opt(oneOf(CHARACTER_TYPES
  * Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist). Shown at
  * the stopped step (`rules/night/night-alerts.ts`).
  */
-export const stopsWaking = specPart(
-	'night',
-	'Stops waking',
-	'Its token on a player stops them waking tonight.',
-	TOKEN_ON_TYPE
+export const stopsWaking = partWords(
+	specPart(
+		'night',
+		'Stops waking',
+		'Its token on a player stops them waking tonight.',
+		TOKEN_ON_TYPE
+	),
+	{
+		token: {
+			label: 'Reminder'
+		},
+		type: {
+			label: 'Only on this type'
+		}
+	}
 );
 
 export type StopsWaking = PartValue<typeof stopsWaking>;

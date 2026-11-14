@@ -5,6 +5,13 @@
 import { describe, expect, it } from 'vitest';
 import * as PARTS from './index.ts';
 import type { FieldSpec } from '../field-spec.ts';
+import type { RuleGroup } from './part.ts';
+
+/** Rule groups whose every part the builder offers is worded (M81 batch 2). */
+const WORDED_GROUPS: readonly RuleGroup[] = ['night', 'day'];
+
+/** Parts set outside the Rules section, never shown with these fields. */
+const ELSEWHERE = ['nightOrder', 'nightText'];
 
 const WORDED: readonly (keyof typeof PARTS)[] = [
 	'believesOtherCharacter',
@@ -75,7 +82,15 @@ function words(
 }
 
 describe('setting names in plain words', () => {
-	it.each(WORDED)('%s names every setting', (key) => {
+	const done = [
+		...new Set([
+			...WORDED,
+			...(Object.keys(PARTS) as (keyof typeof PARTS)[]).filter(
+				(key) => WORDED_GROUPS.includes(PARTS[key].group) && !ELSEWHERE.includes(key)
+			)
+		])
+	];
+	it.each(done)('%s names every setting', (key) => {
 		expect(unnamed(PARTS[key].field, key)).toEqual([]);
 	});
 

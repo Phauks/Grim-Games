@@ -1,5 +1,5 @@
 import { oneOf, optObj, type SpecValue } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * When an execution fails while the ability works, whoever nominated: `only-evil-voted`, no
@@ -27,15 +27,37 @@ const EXECUTE_NOW = oneOf(['good-voted']);
 export type ExecuteNow = SpecValue<typeof EXECUTE_NOW>;
 
 /** How the ability fails, forces or hurries an execution (`rules/day/execution-outcome.ts`). */
-export const executionOutcome = specPart(
-	'day',
-	'Execution outcome',
-	'Makes an execution fail, or lets its player force one to pass or fail.',
-	optObj({ failsIf: FAILS_IF, force: FORCES, executeNow: EXECUTE_NOW }),
-	(value, path, issues) => {
-		if (Object.keys(value).length > 0) return value;
-		issues.add(path, 'expected failsIf, force or executeNow');
-		return undefined;
+export const executionOutcome = partWords(
+	specPart(
+		'day',
+		'Execution outcome',
+		'Makes an execution fail, or lets its player force one to pass or fail.',
+		optObj({ failsIf: FAILS_IF, force: FORCES, executeNow: EXECUTE_NOW }),
+		(value, path, issues) => {
+			if (Object.keys(value).length > 0) return value;
+			issues.add(path, 'expected failsIf, force or executeNow');
+			return undefined;
+		}
+	),
+	{
+		failsIf: {
+			label: 'Execution fails if',
+			names: {
+				'only-evil-voted': 'Only evil players voted'
+			}
+		},
+		force: {
+			label: 'Its player may force',
+			names: {
+				'pass-or-fail': 'A pass or a fail'
+			}
+		},
+		executeNow: {
+			label: 'Its player may execute at once',
+			names: {
+				'good-voted': 'When a good player voted'
+			}
+		}
 	}
 );
 

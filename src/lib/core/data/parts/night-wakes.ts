@@ -12,7 +12,7 @@ import {
 	type SpecValue
 } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * Players a rule source wakes at night, on top of the night order: these `characters` or
@@ -36,14 +36,45 @@ const WAKE = obj({
 export type NightWake = SpecValue<typeof WAKE>;
 
 /** Players it wakes at night, on top of the night order (`features/grimoire/night/night-steps.ts`). */
-export const nightWakes = specPart(
-	'night',
-	'Night wakes',
-	'Players it wakes at night, on top of the night order.',
-	list(WAKE),
-	(value, path, issues) => {
-		const unset = value.flatMap((w, i) => (w.when === 'one-night' && !w.night ? [i] : []));
-		for (const i of unset) issues.add(`${path}[${i}].night`, 'missing');
-		return unset.length ? undefined : value;
+export const nightWakes = partWords(
+	specPart(
+		'night',
+		'Night wakes',
+		'Players it wakes at night, on top of the night order.',
+		list(WAKE),
+		(value, path, issues) => {
+			const unset = value.flatMap((w, i) => (w.when === 'one-night' && !w.night ? [i] : []));
+			for (const i of unset) issues.add(`${path}[${i}].night`, 'missing');
+			return unset.length ? undefined : value;
+		}
+	),
+	{
+		'*.when': {
+			label: 'Which nights',
+			names: {
+				'each-night': 'Each night',
+				'each-night-except-first': 'Each night except the first',
+				'one-night': 'One night'
+			}
+		},
+		'*.night': {
+			label: 'Night number',
+			about: 'For one night: 1 is the first night.'
+		},
+		'*.characters': {
+			label: 'Characters'
+		},
+		'*.types': {
+			label: 'Character types'
+		},
+		'*.dead': {
+			label: 'Every dead player'
+		},
+		'*.chosen': {
+			label: 'One player the Storyteller picks'
+		},
+		'*.minutes': {
+			label: 'For how many minutes'
+		}
 	}
 );

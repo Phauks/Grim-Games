@@ -1,5 +1,5 @@
 import { obj, opt, STR, TOKEN } from '../field-spec.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * Each evil player learns who carries its `carrier` reminder: shown "This player is" with
@@ -8,9 +8,21 @@ import { specPart } from './part.ts';
  * https://wiki.bloodontheclocktower.com/Storm_Catcher). `named`: the key of its prep value
  * (`setupPrep` note `value`) holding the character named, saved even when not in play.
  */
-export const evilLearns = specPart(
-	'night',
-	'Evil learns',
-	'Each evil player learns who carries its reminder.',
-	obj({ carrier: TOKEN, named: opt(STR) })
+export const evilLearns = partWords(
+	specPart(
+		'night',
+		'Evil learns',
+		'Each evil player learns who carries its reminder.',
+		obj({ carrier: TOKEN, named: opt(STR) })
+	),
+	{
+		carrier: {
+			label: 'Reminder',
+			about: 'Each evil player learns who carries it.'
+		},
+		named: {
+			label: 'Prep value',
+			about: 'The name of the prep value holding the character named.'
+		}
+	}
 );

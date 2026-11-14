@@ -1,5 +1,5 @@
 import { optObj, ownWords, STR, T, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * How it changes the Minion and Demon info steps: a note to remember at each step while it is
@@ -21,21 +21,53 @@ import { specPart, type PartValue } from './part.ts';
  * `wakeToken`: one of its reminders; on a night after the first while it is on a player, the
  * Minion info and Demon info steps come back (`late-evil-info.ts`; the Poppy Grower's Evil Wakes).
  */
-export const evilInfo = specPart(
-	'night',
-	'Evil info steps',
-	'How it changes the Minion and Demon info steps.',
-	optObj({
-		notes: ownWords(optObj({ minioninfo: STR, demoninfo: STR })),
-		lateNote: ownWords(STR),
-		wakeToken: TOKEN,
-		hidesDemon: T,
-		anyPlayerCount: T,
-		hidesMinions: T,
-		shownAsOtherEvil: T,
-		whileWorking: T,
-		none: T
-	})
+export const evilInfo = partWords(
+	specPart(
+		'night',
+		'Evil info steps',
+		'How it changes the Minion and Demon info steps.',
+		optObj({
+			notes: ownWords(optObj({ minioninfo: STR, demoninfo: STR })),
+			lateNote: ownWords(STR),
+			wakeToken: TOKEN,
+			hidesDemon: T,
+			anyPlayerCount: T,
+			hidesMinions: T,
+			shownAsOtherEvil: T,
+			whileWorking: T,
+			none: T
+		})
+	),
+	{
+		wakeToken: {
+			label: 'Brings back evil info',
+			about:
+				'While this reminder of its own is on a player, Minion and Demon info come back tonight.'
+		},
+		hidesDemon: {
+			label: 'Hides the Demon',
+			about: 'A Minion may not learn the Demon.'
+		},
+		anyPlayerCount: {
+			label: 'At any player count',
+			about: 'Evil info happens below 7 players too.'
+		},
+		hidesMinions: {
+			label: 'Hides the Minions while alive',
+			about: 'The Demon learns no Minions.'
+		},
+		shownAsOtherEvil: {
+			label: 'Shown as the other side',
+			about: 'The Demon sees it as a Minion, and the Minions see it as the Demon.'
+		},
+		whileWorking: {
+			label: 'Only while its ability works'
+		},
+		none: {
+			label: 'No evil info',
+			about: 'Leaves out Minion and Demon info at any player count.'
+		}
+	}
 );
 
 export type EvilInfo = PartValue<typeof evilInfo>;

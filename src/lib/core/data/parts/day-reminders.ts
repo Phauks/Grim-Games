@@ -17,7 +17,7 @@ import {
 	type SpecValue
 } from '../field-spec.ts';
 import type { CharacterId } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const DAY_GROUPS = [
 	'day-ability',
@@ -118,33 +118,124 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  *
  * Text here is our own summary, never wiki prose.
  */
-export const dayReminders = specPart(
-	'day',
-	'Day reminders',
-	'What to watch for during the day because of it.',
-	obj({
-		impairable: opt(T),
-		reminders: opt(list(REMINDER)),
-		interactions: opt(list(INTERACTION)),
-		none: opt(ownWords(STR))
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		value.reminders?.forEach(({ template, when }, i) => {
-			const at = `${path}.reminders[${i}]`;
-			if (!template.length) issues.add(`${at}.template`, 'expected a list of segments');
-			if (when?.cause?.includes(''))
-				issues.add(`${at}.when.cause`, 'expected a list of death causes or character ids');
-			if (when?.reminder && when.nomineeChose)
-				issues.add(`${at}.when.nomineeChose`, 'a reminder or nomineeChose, not both');
-			if (template.some((p) => 'target' in p) && !when?.reminder && !when?.nomineeChose)
-				issues.add(`${at}.when.reminder`, 'a target segment needs the reminder that marks them');
-			if (template.some((p) => 'nominee' in p) && !when?.nomineeChose)
-				issues.add(`${at}.when.nomineeChose`, 'a nominee segment needs nomineeChose');
-		});
-		if (value.none !== undefined && value.reminders?.length)
-			issues.add(`${path}.none`, 'a character with day reminders has something to watch');
-		return issues.list.length > before ? undefined : value;
+export const dayReminders = partWords(
+	specPart(
+		'day',
+		'Day reminders',
+		'What to watch for during the day because of it.',
+		obj({
+			impairable: opt(T),
+			reminders: opt(list(REMINDER)),
+			interactions: opt(list(INTERACTION)),
+			none: opt(ownWords(STR))
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			value.reminders?.forEach(({ template, when }, i) => {
+				const at = `${path}.reminders[${i}]`;
+				if (!template.length) issues.add(`${at}.template`, 'expected a list of segments');
+				if (when?.cause?.includes(''))
+					issues.add(`${at}.when.cause`, 'expected a list of death causes or character ids');
+				if (when?.reminder && when.nomineeChose)
+					issues.add(`${at}.when.nomineeChose`, 'a reminder or nomineeChose, not both');
+				if (template.some((p) => 'target' in p) && !when?.reminder && !when?.nomineeChose)
+					issues.add(`${at}.when.reminder`, 'a target segment needs the reminder that marks them');
+				if (template.some((p) => 'nominee' in p) && !when?.nomineeChose)
+					issues.add(`${at}.when.nomineeChose`, 'a nominee segment needs nomineeChose');
+			});
+			if (value.none !== undefined && value.reminders?.length)
+				issues.add(`${path}.none`, 'a character with day reminders has something to watch');
+			return issues.list.length > before ? undefined : value;
+		}
+	),
+	{
+		impairable: {
+			label: 'Says when its ability does not work',
+			about: 'One line saying it is drunk or poisoned replaces its lines.'
+		},
+		reminders: {
+			label: 'Lines to show'
+		},
+		'reminders.*.group': {
+			label: 'Section'
+		},
+		'reminders.*.template': {
+			label: 'Line',
+			about: 'Built from pieces in order.'
+		},
+		'reminders.*.template.*<Its player>.self': {
+			label: 'Its player'
+		},
+		'reminders.*.template.*<Its target>.target': {
+			label: 'The player with the reminder'
+		},
+		'reminders.*.template.*<The nominee>.nominee': {
+			label: 'The nominee'
+		},
+		'reminders.*.template.*<Text>.text': {
+			label: 'Words'
+		},
+		'reminders.*.template.*<A value>.value': {
+			label: 'Prep value',
+			about: 'The name of a value noted down at setup.'
+		},
+		'reminders.*.template.*<A value>.placeholder': {
+			label: 'Until noted down'
+		},
+		'reminders.*.when': {
+			label: 'Only when'
+		},
+		'reminders.*.when.self': {
+			label: 'Its player is',
+			names: {
+				alive: 'Alive',
+				dead: 'Dead',
+				any: 'Alive or dead'
+			}
+		},
+		'reminders.*.when.reminder': {
+			label: 'While a player has'
+		},
+		'reminders.*.when.noReminder': {
+			label: 'While no player has'
+		},
+		'reminders.*.when.cause': {
+			label: 'Died by',
+			about: 'Execution, exile, demon, other, or character ids.'
+		},
+		'reminders.*.when.minAlive': {
+			label: 'At least this many alive'
+		},
+		'reminders.*.when.targetAlive': {
+			label: 'The player with the reminder is alive'
+		},
+		'reminders.*.when.nomineeChose': {
+			label: 'For each nominee who chose a player'
+		},
+		'reminders.*.when.noWish': {
+			label: 'No wish granted yet'
+		},
+		'reminders.*.when.day': {
+			label: 'Only on day'
+		},
+		interactions: {
+			label: 'May set off another’s ability',
+			about: 'Ways it may register falsely by day.'
+		},
+		'interactions.*.other': {
+			label: 'Other character'
+		},
+		'interactions.*.group': {
+			label: 'Section'
+		},
+		'interactions.*.text': {
+			label: 'Words',
+			about: 'Shown between the two characters.'
+		},
+		'interactions.*.otherNoReminder': {
+			label: 'While the other has no',
+			about: 'The other character’s reminder that says its ability is used.'
+		}
 	}
 );
 

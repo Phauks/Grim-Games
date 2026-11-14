@@ -3,7 +3,7 @@ import { ALIGNMENTS, CHARACTER_TYPES, type Alignment, type CharacterType } from 
 import type { Issues } from '../validate.ts';
 import { DAY_MARKS, type DayMark } from './day-mark.ts';
 import { presetTable } from '../presets.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 import type { ReminderLabel } from '../types.ts';
 
 /**
@@ -150,70 +150,153 @@ function asked(
 }
 
 /** A night answer worked out from the grimoire and today's log (the Town Crier). */
-export const answers = specPart(
-	'night',
-	'Night answer',
-	'A night answer worked out from the grimoire and today’s log.',
-	obj({
-		question: oneOf(ANSWER_NAMES),
-		among: opt(oneOf(ANSWER_GROUPS)),
-		alignment: opt(oneOf(ALIGNMENTS)),
-		types: opt(anyOf(CHARACTER_TYPES)),
-		mark: opt(oneOf(DAY_MARKS)),
-		onlyYes: opt(B),
-		choices: opt(anyOf(ANSWER_CHOICES)),
-		token: opt(TOKEN),
-		firstNight: opt(oneOf(ANSWER_NAMES)),
-		wakes: opt(oneOf(ANSWER_WAKES)),
-		falseToken: opt(TOKEN)
-	}),
-	(value, path, issues): Answers | undefined => {
-		const { question, among, alignment, types, mark, choices, token, firstNight, wakes } = value;
-		const onlyYes = value.onlyYes || undefined;
-		let group: AnswerGroup | undefined;
-		if (isAnswerBlock(question)) {
-			if (!among) {
-				issues.add(`${path}.among`, 'missing');
+export const answers = partWords(
+	specPart(
+		'night',
+		'Night answer',
+		'A night answer worked out from the grimoire and today’s log.',
+		obj({
+			question: oneOf(ANSWER_NAMES),
+			among: opt(oneOf(ANSWER_GROUPS)),
+			alignment: opt(oneOf(ALIGNMENTS)),
+			types: opt(anyOf(CHARACTER_TYPES)),
+			mark: opt(oneOf(DAY_MARKS)),
+			onlyYes: opt(B),
+			choices: opt(anyOf(ANSWER_CHOICES)),
+			token: opt(TOKEN),
+			firstNight: opt(oneOf(ANSWER_NAMES)),
+			wakes: opt(oneOf(ANSWER_WAKES)),
+			falseToken: opt(TOKEN)
+		}),
+		(value, path, issues): Answers | undefined => {
+			const { question, among, alignment, types, mark, choices, token, firstNight, wakes } = value;
+			const onlyYes = value.onlyYes || undefined;
+			let group: AnswerGroup | undefined;
+			if (isAnswerBlock(question)) {
+				if (!among) {
+					issues.add(`${path}.among`, 'missing');
+					return undefined;
+				}
+				group = {
+					among,
+					...(alignment ? { alignment } : {}),
+					...(types ? { types } : {}),
+					...(mark ? { mark } : {}),
+					...(onlyYes ? { onlyYes } : {})
+				};
+				if (!checkAnswerBlock(question, group, path, issues)) return undefined;
+			} else if (among || alignment || types || mark || onlyYes) {
+				issues.add(
+					path,
+					'only a block that looks at a group takes `among`, `alignment`, `types`, `mark` and `onlyYes`'
+				);
 				return undefined;
 			}
-			group = {
-				among,
-				...(alignment ? { alignment } : {}),
-				...(types ? { types } : {}),
-				...(mark ? { mark } : {}),
-				...(onlyYes ? { onlyYes } : {})
+			if (question === 'storyteller' && !choices) {
+				issues.add(`${path}.choices`, 'missing');
+				return undefined;
+			}
+			if (choices && question !== 'storyteller') {
+				issues.add(`${path}.choices`, 'only `storyteller` takes it');
+				return undefined;
+			}
+			if (choices && (choices.length < 2 || new Set(choices).size < choices.length)) {
+				issues.add(`${path}.choices`, 'expected two or more of `good`, `evil` and `neither`');
+				return undefined;
+			}
+			if (firstNight && (isAnswerBlock(firstNight) || firstNight === 'storyteller')) {
+				issues.add(`${path}.firstNight`, `a \`${firstNight}\` needs its own fields: name a preset`);
+				return undefined;
+			}
+			return {
+				...asked(question, group, choices),
+				...(token ? { token } : {}),
+				...(firstNight ? { firstNight: asked(firstNight) } : {}),
+				...(wakes ? { wakes } : {}),
+				...(value.falseToken ? { falseToken: value.falseToken } : {})
 			};
-			if (!checkAnswerBlock(question, group, path, issues)) return undefined;
-		} else if (among || alignment || types || mark || onlyYes) {
-			issues.add(
-				path,
-				'only a block that looks at a group takes `among`, `alignment`, `types`, `mark` and `onlyYes`'
-			);
-			return undefined;
 		}
-		if (question === 'storyteller' && !choices) {
-			issues.add(`${path}.choices`, 'missing');
-			return undefined;
+	),
+	{
+		question: {
+			label: 'What it learns',
+			names: {
+				count: 'How many of a group match',
+				any: 'Whether any of a group match',
+				character: 'The character of one in a group',
+				characters: 'The characters in play of a type',
+				statement: 'Whether today’s statement was true',
+				storyteller: 'The Storyteller’s own call',
+				'outsider-died': 'Whether an Outsider died today',
+				'correct-guesses': 'How many guesses were right',
+				'statement-true': 'Today’s statement was true',
+				'winning-alignment': 'Which team is winning',
+				'evil-dead': 'How many dead players are evil',
+				'evil-marked': 'How many marked players are evil',
+				'abnormal-abilities': 'How many abilities worked abnormally',
+				'minion-nominated': 'Whether a Minion nominated today',
+				'demon-voted': 'Whether the Demon voted today',
+				'executed-character': 'The character executed today',
+				'outsiders-in-play': 'The Outsiders in play'
+			}
+		},
+		among: {
+			label: 'Group',
+			about: 'The players it looks at.',
+			names: {
+				dead: 'Dead players',
+				marked: 'Players with its reminders',
+				abnormal: 'Players whose ability worked abnormally',
+				guessed: 'Today’s right guesses',
+				nominators: 'Players who nominated today',
+				voters: 'Players who voted today',
+				executed: 'Player executed today',
+				died: 'Players who died today',
+				everyone: 'Everyone'
+			}
+		},
+		alignment: {
+			label: 'Only this alignment'
+		},
+		types: {
+			label: 'Only these character types'
+		},
+		mark: {
+			label: 'Answered by the day mark',
+			about: 'The Storyteller’s mark from the day, used when set.',
+			names: {
+				'demon-voted': 'Demon voted',
+				'minion-nominated': 'Minion nominated'
+			}
+		},
+		onlyYes: {
+			label: 'Only a yes',
+			about: 'A no is nothing to learn.'
+		},
+		choices: {
+			label: 'Answers offered',
+			names: {
+				neither: 'Neither'
+			}
+		},
+		token: {
+			label: 'Answer reminder',
+			about: 'Its reminder that marks the answer on the board.'
+		},
+		firstNight: {
+			label: 'On the first night instead',
+			about: 'What it learns on the first night, when that differs.'
+		},
+		wakes: {
+			label: 'Wakes',
+			names: {
+				marked: 'Each player with its reminders'
+			}
+		},
+		falseToken: {
+			label: 'False info reminder',
+			about: 'Its reminder on the player who gets false information.'
 		}
-		if (choices && question !== 'storyteller') {
-			issues.add(`${path}.choices`, 'only `storyteller` takes it');
-			return undefined;
-		}
-		if (choices && (choices.length < 2 || new Set(choices).size < choices.length)) {
-			issues.add(`${path}.choices`, 'expected two or more of `good`, `evil` and `neither`');
-			return undefined;
-		}
-		if (firstNight && (isAnswerBlock(firstNight) || firstNight === 'storyteller')) {
-			issues.add(`${path}.firstNight`, `a \`${firstNight}\` needs its own fields: name a preset`);
-			return undefined;
-		}
-		return {
-			...asked(question, group, choices),
-			...(token ? { token } : {}),
-			...(firstNight ? { firstNight: asked(firstNight) } : {}),
-			...(wakes ? { wakes } : {}),
-			...(value.falseToken ? { falseToken: value.falseToken } : {})
-		};
 	}
 );
 

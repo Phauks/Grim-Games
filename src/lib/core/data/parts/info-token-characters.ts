@@ -17,7 +17,7 @@ import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from '../info-tokens.ts';
 import { readSpec } from '../read-spec.ts';
 import type { CharacterId } from '../types.ts';
 import type { Issues } from '../validate.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * `self`: the character whose step it is; `chosen`: the player the Storyteller taps; `value`:
@@ -169,10 +169,92 @@ export function readInfoTokenCharacters(
  *
  * The Storyteller can still change them: a card with room left opens with these picked.
  */
-export const infoTokenCharacters = specPart(
-	'night',
-	'Info token characters',
-	'The characters its night step’s info tokens show, filled in.',
-	SPEC,
-	checkCards
+export const infoTokenCharacters = partWords(
+	specPart(
+		'night',
+		'Info token characters',
+		'The characters its night step’s info tokens show, filled in.',
+		SPEC,
+		checkCards
+	),
+	{
+		'*<One step>.characters': {
+			label: 'Characters shown',
+			about: 'Character ids, or self, chosen, value, demon, marked, mad, changed or given.'
+		},
+		'*<One step>.upTo': {
+			label: 'Up to'
+		},
+		'*<One step>.others': {
+			label: 'The others',
+			names: {
+				'opposite-alignment': 'Of the other alignment'
+			}
+		},
+		'*<One step>.shuffle': {
+			label: 'Shuffled'
+		},
+		'*<One step>.order': {
+			label: 'Order',
+			names: {
+				'good-first': 'Good first'
+			}
+		},
+		'*<One step>.offer': {
+			label: 'Offered',
+			about: 'The Storyteller may show it or not.'
+		},
+		'*<One step>.omit': {
+			label: 'Left out'
+		},
+		'*<One step>.value': {
+			label: 'Prep value',
+			about: 'The name of the prep value it shows.'
+		},
+		'*<One step>.token': {
+			label: 'Marked by'
+		},
+		'*<One step>.after': {
+			label: 'After the card'
+		},
+		'*<Several steps>.*.characters': {
+			label: 'Characters shown',
+			about: 'Character ids, or self, chosen, value, demon, marked, mad, changed or given.'
+		},
+		'*<Several steps>.*.upTo': {
+			label: 'Up to'
+		},
+		'*<Several steps>.*.others': {
+			label: 'The others',
+			names: {
+				'opposite-alignment': 'Of the other alignment'
+			}
+		},
+		'*<Several steps>.*.shuffle': {
+			label: 'Shuffled'
+		},
+		'*<Several steps>.*.order': {
+			label: 'Order',
+			names: {
+				'good-first': 'Good first'
+			}
+		},
+		'*<Several steps>.*.offer': {
+			label: 'Offered',
+			about: 'The Storyteller may show it or not.'
+		},
+		'*<Several steps>.*.omit': {
+			label: 'Left out'
+		},
+		'*<Several steps>.*.value': {
+			label: 'Prep value',
+			about: 'The name of the prep value it shows.'
+		},
+		'*<Several steps>.*.token': {
+			label: 'Marked by'
+		},
+		'*<Several steps>.*.after': {
+			label: 'After the card'
+		}
+	}
 );

@@ -1,5 +1,5 @@
 import { COUNT, optObj, T, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * How its own player votes, while the character's ability works:
@@ -12,22 +12,41 @@ import { specPart, type PartValue } from './part.ts';
  *   Storyteller privately tells them the alignment of each player who gives them one
  *   (`tokenGiverInfo` in `rules/day/vote-weights.ts`).
  */
-export const voter = specPart(
-	'day',
-	'How its player votes',
-	'Its player may vote only with another, must vote, or needs a vote token to vote.',
-	optObj({ onlyWith: TOKEN, must: T, minAlive: COUNT, needsToken: T, learnsGiver: T }),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		if (value.learnsGiver && !value.needsToken) {
-			issues.add(`${path}.learnsGiver`, 'only with needsToken');
+export const voter = partWords(
+	specPart(
+		'day',
+		'How its player votes',
+		'Its player may vote only with another, must vote, or needs a vote token to vote.',
+		optObj({ onlyWith: TOKEN, must: T, minAlive: COUNT, needsToken: T, learnsGiver: T }),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			if (value.learnsGiver && !value.needsToken) {
+				issues.add(`${path}.learnsGiver`, 'only with needsToken');
+			}
+			if (value.minAlive !== undefined && !value.must)
+				issues.add(`${path}.minAlive`, 'only with must');
+			if (!value.onlyWith && !value.must && !value.needsToken) {
+				issues.add(path, 'expected onlyWith, must or needsToken');
+			}
+			return issues.list.length > before ? undefined : value;
 		}
-		if (value.minAlive !== undefined && !value.must)
-			issues.add(`${path}.minAlive`, 'only with must');
-		if (!value.onlyWith && !value.must && !value.needsToken) {
-			issues.add(path, 'expected onlyWith, must or needsToken');
+	),
+	{
+		onlyWith: {
+			label: 'Votes only with the player with'
+		},
+		must: {
+			label: 'Must vote'
+		},
+		minAlive: {
+			label: 'While at least this many alive'
+		},
+		needsToken: {
+			label: 'Needs a vote token'
+		},
+		learnsGiver: {
+			label: 'Learns each giver’s alignment'
 		}
-		return issues.list.length > before ? undefined : value;
 	}
 );
 

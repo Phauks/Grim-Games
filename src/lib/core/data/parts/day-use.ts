@@ -1,5 +1,5 @@
 import { COUNT, oneOf, optObj, T, TOKEN, type SpecValue } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The player a day ability's use is about, asked when it is marked used: the player its
@@ -50,24 +50,69 @@ export type DayUseVote = SpecValue<typeof DAY_USE_VOTES>;
  * (the Psychopath, https://wiki.bloodontheclocktower.com/Psychopath). Who marking it used asks
  * for: Trevor, 2026-10-30.
  */
-export const dayUse = specPart(
-	'day',
-	'Day ability use',
-	'Who marking its day ability used asks for, and what follows.',
-	optObj({
-		who: DAY_USE_WHO,
-		vote: DAY_USE_VOTES,
-		kills: T,
-		spentToken: TOKEN,
-		answer: DAY_USE_ANSWERS,
-		anyone: T,
-		minAlive: COUNT,
-		beforeNominations: T
-	}),
-	(value, path, issues) => {
-		if ((value.who === undefined) !== (value.vote === undefined)) return value;
-		issues.add(path, value.who ? 'expected who or vote, not both' : 'expected who or vote');
-		return undefined;
+export const dayUse = partWords(
+	specPart(
+		'day',
+		'Day ability use',
+		'Who marking its day ability used asks for, and what follows.',
+		optObj({
+			who: DAY_USE_WHO,
+			vote: DAY_USE_VOTES,
+			kills: T,
+			spentToken: TOKEN,
+			answer: DAY_USE_ANSWERS,
+			anyone: T,
+			minAlive: COUNT,
+			beforeNominations: T
+		}),
+		(value, path, issues) => {
+			if ((value.who === undefined) !== (value.vote === undefined)) return value;
+			issues.add(path, value.who ? 'expected who or vote, not both' : 'expected who or vote');
+			return undefined;
+		}
+	),
+	{
+		who: {
+			label: 'Used on',
+			names: {
+				chosen: 'The player chosen',
+				nominator: 'The nominator',
+				nominee: 'Another’s nominee',
+				nominated: 'The player its player nominated',
+				guesser: 'The player who guessed',
+				guessed: 'The player guessed',
+				ally: 'A player of its alignment'
+			}
+		},
+		vote: {
+			label: 'Calls a vote',
+			names: {
+				'all-good-join': 'Every good player must join'
+			}
+		},
+		kills: {
+			label: 'Kills that player'
+		},
+		spentToken: {
+			label: 'Used up by',
+			about: 'When that is not No Ability.'
+		},
+		answer: {
+			label: 'Its player learns',
+			names: {
+				'demon-if-marked': 'The Demon, if that player is marked'
+			}
+		},
+		anyone: {
+			label: 'Any living player may use it',
+			about: 'Once per game each.'
+		},
+		minAlive: {
+			label: 'Only while at least this many alive'
+		},
+		beforeNominations: {
+			label: 'Only before the first nomination'
+		}
 	}
 );
 

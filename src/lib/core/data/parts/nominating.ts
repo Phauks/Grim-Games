@@ -1,5 +1,5 @@
 import { COUNT, obj, oneOf, variants } from '../field-spec.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * Who may nominate, one of:
@@ -9,12 +9,25 @@ import { specPart } from './part.ts';
  *   https://wiki.bloodontheclocktower.com/Golem).
  * A nomination that breaks it is recorded with a warning (warn, never lock).
  */
-export const nominating = specPart(
-	'day',
-	'Who may nominate',
-	'Only the Storyteller nominates, or its player may nominate only so many times a game.',
-	variants(
-		{ label: 'Only the Storyteller', has: 'by', spec: obj({ by: oneOf(['storyteller']) }) },
-		{ label: 'Times a game', has: 'perGame', spec: obj({ perGame: COUNT }) }
-	)
+export const nominating = partWords(
+	specPart(
+		'day',
+		'Who may nominate',
+		'Only the Storyteller nominates, or its player may nominate only so many times a game.',
+		variants(
+			{ label: 'Only the Storyteller', has: 'by', spec: obj({ by: oneOf(['storyteller']) }) },
+			{ label: 'Times a game', has: 'perGame', spec: obj({ perGame: COUNT }) }
+		)
+	),
+	{
+		'<Only the Storyteller>.by': {
+			label: 'Nominates',
+			names: {
+				storyteller: 'Only the Storyteller'
+			}
+		},
+		'<Times a game>.perGame': {
+			label: 'Times a game'
+		}
+	}
 );

@@ -161,6 +161,52 @@ export const worded = <S extends FieldSpec>(
 	spec: S
 ): S => ({ ...spec, ...words });
 
+/** A setting's plain words (M81): its name, help line and choices' names. */
+export interface Words {
+	label?: string;
+	about?: string;
+	names?: Readonly<Record<string, string>>;
+}
+
+/**
+ * `spec` with plain words for the settings under it, by path from the spec itself (M81): `key`
+ * for an object's setting, `*` for a list's or keyed object's entries, `<Label>` for one of
+ * several shapes (`types`, `reminders.*.target<A chosen player>.choose`). A part's words sit beside its spec in one
+ * table; a path that names no setting throws, so a renamed key can't lose its words.
+ */
+export function wordAt<S extends FieldSpec>(spec: S, words: Readonly<Record<string, Words>>): S {
+	const used = new Set<string>();
+	const join = (path: string, step: string) => (path ? `${path}.${step}` : step);
+	const walk = (at: FieldSpec, path: string): FieldSpec => {
+		const own = words[path];
+		if (own) used.add(path);
+		const next = { ...at, ...own } as FieldSpec;
+		switch (next.kind) {
+			case 'object':
+				return {
+					...next,
+					fields: next.fields.map((f) => ({ ...f, spec: walk(f.spec, join(path, f.key)) }))
+				};
+			case 'variants':
+				return {
+					...next,
+					variants: next.variants.map((v) => ({ ...v, spec: walk(v.spec, `${path}<${v.label}>`) }))
+				};
+			case 'list':
+			case 'byToken':
+			case 'byKey':
+			case 'byCharacter':
+				return { ...next, of: walk(next.of, join(path, '*')) };
+			default:
+				return next;
+		}
+	};
+	const out = walk(spec, '') as S;
+	const unknown = Object.keys(words).filter((p) => !used.has(p));
+	if (unknown.length) throw new Error(`No setting at ${unknown.join(', ')}`);
+	return out;
+}
+
 /**
  * `spec` as our own words for official characters, left out of the Character builder (M84,
  * Trevor 2026-11-12: lean against free text). Give it `opt` in an object: a custom character
