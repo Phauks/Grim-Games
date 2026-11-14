@@ -4,7 +4,7 @@
 	import { lineShown, type ReminderLines } from './reminder-lines.ts';
 
 	/**
-	 * A thin line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to their
+	 * A bold line from each seat to its reminders (Trevor, 2026-10-22: reminders keep to their
 	 * seat's line, with a line back when they have to sit further out), so whose a reminder is
 	 * reads at a glance. The Storyteller's board and a player's Grim tab both draw them (Trevor,
 	 * 2026-10-29), each with its own "Reminder lines" choice. Goes first in the town, so every
@@ -43,6 +43,14 @@
 			{#if shows(seat.at, p, !!seat.held)}
 				{@const from = rimToward(seat.at, p, board, size)}
 				<line
+					class="edge"
+					x1={from.x}
+					y1={from.y}
+					x2={p.x}
+					y2={p.y}
+					vector-effect="non-scaling-stroke"
+				/>
+				<line
 					class:held={seat.held}
 					x1={from.x}
 					y1={from.y}
@@ -68,9 +76,16 @@
 	.under {
 		z-index: var(--z-under);
 	}
+	/* Bold, with a dark edge so it shows on every background (Trevor, 2026-11-13: the thin
+	   line was weak and hard to see). */
 	line {
 		stroke: var(--on-surface);
-		stroke-opacity: 0.35;
-		stroke-width: 1.5;
+		stroke-opacity: 0.9;
+		stroke-width: 3;
+		stroke-linecap: round;
+	}
+	line.edge {
+		stroke: var(--surface);
+		stroke-width: 6;
 	}
 </style>

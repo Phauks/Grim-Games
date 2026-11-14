@@ -515,7 +515,6 @@
 				{size}
 				reminders={visible}
 				{names}
-				{notes}
 				{characterOf}
 				bind:held
 				clear={toolsClear}

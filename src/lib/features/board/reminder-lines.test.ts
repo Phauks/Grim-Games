@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { awayFromSeat, lineShown, parseReminderLines, type LineInput } from './reminder-lines.ts';
 
-// A 100px token with 40px reminders: the first spot in front of it is 50 + 20 + 6 = 76px out.
+// A 100px token with 40px reminders: the nearest spot beside it is 50 + 20 + 2 = 72px out.
 const seat = { x: 0, y: 0 };
-const near: LineInput = { seat, at: { x: 76, y: 0 }, size: 100, chip: 40, held: false };
-const far: LineInput = { ...near, at: { x: 76 + 50, y: 0 } };
+const near: LineInput = { seat, at: { x: 72, y: 0 }, size: 100, chip: 40, held: false };
+const far: LineInput = { ...near, at: { x: 72 + 50, y: 0 } };
 
 describe('reminder lines', () => {
 	it('reads a stored choice, and anything else as always', () => {
@@ -17,7 +17,7 @@ describe('reminder lines', () => {
 	it('counts a reminder past the first spot in front of its seat as away', () => {
 		expect(awayFromSeat(near)).toBe(false);
 		// Half a reminder further out is still the first spot, nudged clear of a name.
-		expect(awayFromSeat({ ...near, at: { x: 96, y: 0 } })).toBe(false);
+		expect(awayFromSeat({ ...near, at: { x: 92, y: 0 } })).toBe(false);
 		expect(awayFromSeat(far)).toBe(true);
 	});
 

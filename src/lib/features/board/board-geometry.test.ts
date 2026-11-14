@@ -84,11 +84,11 @@ describe('cornerObstacles', () => {
 });
 
 describe('avoidBoxes', () => {
-	const base = { centre: { x: 100, y: 100 }, size: 40, nameOffset: 0, dead: false, note: false };
+	const base = { centre: { x: 100, y: 100 }, size: 40, nameOffset: 0 };
 
 	it('avoids the name box of a seat with no character', () => {
 		const name = { x: 100, y: 130, w: 50, h: 16 };
-		expect(avoidBoxes({ ...base, hasFace: false, name })).toEqual([name]);
+		expect(avoidBoxes({ ...base, hasFace: false, name })[0]).toEqual(name);
 	});
 
 	it('avoids the badge on the rim of a seat with a character', () => {
@@ -97,24 +97,15 @@ describe('avoidBoxes', () => {
 		expect(badge.h).toBeCloseTo(7.2);
 	});
 
-	it('also avoids a dead seat’s skull and a note mark', () => {
-		const boxes = avoidBoxes({ ...base, hasFace: true, name: undefined, dead: true, note: true });
-		expect(boxes).toHaveLength(3);
-		expect(boxes[1].x).toBeLessThan(100);
-		expect(boxes[2].x).toBeGreaterThan(100);
-	});
-
-	it('avoids the top marks: nominations top left, orphan top middle, avatar top right', () => {
-		const boxes = avoidBoxes({
-			...base,
-			hasFace: true,
-			name: undefined,
-			nominations: true,
-			orphan: true,
-			avatar: true
-		});
-		expect(boxes).toHaveLength(4);
-		const [, marks, orphan, avatar] = boxes;
+	it('keeps the space for every mark, shown or not (Trevor, 2026-11-13)', () => {
+		const boxes = avoidBoxes({ ...base, hasFace: true, name: undefined });
+		expect(boxes).toHaveLength(6);
+		const [, skull, note, marks, orphan, avatar] = boxes;
+		// The skull lower left, the note lower right.
+		for (const box of [skull, note]) expect(box.y).toBeGreaterThan(100);
+		expect(skull.x).toBeLessThan(100);
+		expect(note.x).toBeGreaterThan(100);
+		// Nominations top left, orphan top middle, avatar top right.
 		for (const box of [marks, orphan, avatar]) expect(box.y).toBeLessThan(100);
 		expect(marks.x).toBeLessThan(orphan.x);
 		expect(orphan.x).toBeLessThan(avatar.x);

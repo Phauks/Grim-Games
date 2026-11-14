@@ -115,19 +115,15 @@ export interface AvoidInput {
 	hasFace: boolean;
 	/** The name box, used when the seat has no character. */
 	name: Box | undefined;
-	dead: boolean;
-	note: boolean;
 	/** The badge offset (Board and tokens). */
 	nameOffset: number;
-	/** The marks over the top rim (SeatToken): the nomination pill, the orphan warning, the avatar. */
-	nominations?: boolean;
-	orphan?: boolean;
-	avatar?: boolean;
 }
 
 /**
- * What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark,
- * and the marks over its top rim.
+ * What a seat's reminders keep off: its name, and the space round its token kept for its
+ * controls, whether they show or not (Trevor, 2026-11-13: "we have reserved areas around the
+ * characters for certain controls"), so a mark appearing never lands on a reminder: a dead
+ * seat's skull (SeatDisc), the note mark, and the marks over the top rim (SeatToken).
  */
 export function avoidBoxes(input: AvoidInput): Box[] {
 	const { centre: c, size } = input;
@@ -138,25 +134,16 @@ export function avoidBoxes(input: AvoidInput): Box[] {
 		// The badge pill straddles the token's lower rim (PlayerNameMark).
 		out.push({ x: c.x, y: c.y + (0.5 + input.nameOffset) * size, w: 0.9 * size, h: 0.18 * size });
 	}
-	if (input.dead) {
-		out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
-	}
-	// The note mark, lower right (SeatToken).
-	if (input.note) {
-		out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
-	}
+	// The dead skull, lower left.
+	out.push({ x: c.x - 0.41 * size, y: c.y + 0.37 * size, w: 0.38 * size, h: 0.38 * size });
+	// The note mark, lower right.
+	out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
 	// The nomination pill, top left: two marks reaching past the token's left edge (RimPill).
-	if (input.nominations) {
-		out.push({ x: c.x - 0.44 * size, y: c.y - 0.43 * size, w: 0.62 * size, h: 0.32 * size });
-	}
+	out.push({ x: c.x - 0.44 * size, y: c.y - 0.43 * size, w: 0.62 * size, h: 0.32 * size });
 	// The orphan warning, top middle.
-	if (input.orphan) {
-		out.push({ x: c.x + 0.05 * size, y: c.y - 0.49 * size, w: 0.3 * size, h: 0.3 * size });
-	}
+	out.push({ x: c.x + 0.05 * size, y: c.y - 0.49 * size, w: 0.3 * size, h: 0.3 * size });
 	// The avatar, top right.
-	if (input.avatar) {
-		out.push({ x: c.x + 0.39 * size, y: c.y - 0.39 * size, w: 0.3 * size, h: 0.3 * size });
-	}
+	out.push({ x: c.x + 0.39 * size, y: c.y - 0.39 * size, w: 0.3 * size, h: 0.3 * size });
 	return out;
 }
 
