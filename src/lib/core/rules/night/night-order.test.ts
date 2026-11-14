@@ -200,6 +200,54 @@ describe('custom order from _meta', () => {
 	});
 });
 
+describe('evil info left out of a custom order', () => {
+	// Wiki (https://wiki.bloodontheclocktower.com/Glossary): Minion and Demon info come with the
+	// first night, so left out of a script's own order they stay ahead of its steps instead of
+	// following a step the script moved late.
+	// Wiki: "Shorthand on the night sheet representing the information that the Minions receive on the first night if there are seven or more players."
+	it('keeps Minion and Demon info ahead of the script steps when an early step is listed last', () => {
+		expect(
+			stepIds({
+				inPlay: get('poisoner', 'chef', 'philosopher', 'imp', 'washerwoman'),
+				customOrder: ['dusk', 'poisoner', 'washerwoman', 'chef', 'philosopher', 'dawn']
+			})
+		).toEqual([
+			'dusk',
+			'minioninfo',
+			'demoninfo',
+			'poisoner',
+			'washerwoman',
+			'chef',
+			'philosopher',
+			'dawn'
+		]);
+	});
+
+	// Wiki: "Shorthand on the night sheet representing the information that the Demon receives on the first night, if there are seven or more players."
+	it('does the same when a homebrew step placed before them is listed last', () => {
+		const seer = homebrew({
+			id: 'palantirseer',
+			name: 'Palantir Seer',
+			ability: 'Once per game, at night, choose a good character: gain that ability.',
+			firstNightReminder: 'The Palantir Seer may choose a character.'
+		});
+		const result = order({
+			official: data.byId,
+			inPlay: [seer, ...get('poisoner', 'chef', 'imp')],
+			customOrder: ['dusk', 'poisoner', 'chef', 'palantirseer', 'dawn']
+		});
+		expect(result.steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'minioninfo',
+			'demoninfo',
+			'poisoner',
+			'chef',
+			'palantirseer',
+			'dawn'
+		]);
+	});
+});
+
 describe('homebrew characters', () => {
 	// TPI publishes no night numbers for official characters, so a homebrew number cannot be
 	// matched against them: the step goes before Dawn for the Storyteller to check.

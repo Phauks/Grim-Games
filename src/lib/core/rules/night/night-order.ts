@@ -474,7 +474,9 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				});
 			}
 		}
-		// Insert everything the custom order left out after its standard predecessor.
+		// Insert everything the custom order left out after its standard predecessor, but never
+		// after a step the standard order puts later: Minion info left out of an order that lists
+		// an early step last still comes before the script's first step after it.
 		ordered.forEach((candidate, i) => {
 			if (customIds.has(candidate.id) || !present.has(candidate.id)) return;
 			let at = 0;
@@ -485,6 +487,9 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 					break;
 				}
 			}
+			const later = new Set(ordered.slice(i + 1).map((c) => c.id));
+			const firstLater = result.findIndex((r) => later.has(r.id));
+			if (firstLater >= 0 && firstLater < at) at = firstLater;
 			const notes =
 				candidate.placement === 'marker'
 					? candidate.notes
