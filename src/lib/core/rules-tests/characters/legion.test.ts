@@ -21,7 +21,7 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { executionOutcomes, votersAnswer } from '#lib/core/rules/day/execution-outcome.ts';
+import { executionOutcomes } from '#lib/core/rules/day/execution-outcome.ts';
 import { nightKill } from '#lib/core/rules/night/night-kill.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import {
@@ -146,8 +146,6 @@ describe('Legion', () => {
 			expect(executionOutcomes(s.game, s.seat('chef'), s.characters)).toEqual([
 				{ kind: 'fails', characterId: 'legion', seatId: s.seat(1), works: true }
 			]);
-			expect(votersAnswer(s.game, 'only-evil-voted', [s.seat(1), s.seat(3)])).toBe(true);
-			expect(votersAnswer(s.game, 'only-evil-voted', [s.seat(1), s.seat('empath')])).toBe(false);
 		});
 
 		it('lets About To Die mark any player for a secret execution', () => {

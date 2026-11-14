@@ -9,14 +9,12 @@
  * - `executeNow: good-voted`: its player may execute a nominee straight away once a good
  *   player voted for them (the Vizier, https://wiki.bloodontheclocktower.com/Vizier).
  *
- * Votes aren't recorded yet, so the Storyteller answers whether only evil (or any good)
- * voted. `votersAnswer` is the hook for a recorded vote: given the voters, it works the
- * answer out, and gives undefined while there is no record.
+ * Votes aren't recorded, so the Storyteller answers whether only evil (or any good) voted.
  */
 import type { ExecutionOutcomeRule } from '#lib/core/data/parts/execution-outcome.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { ownJinxEffects } from '#lib/core/rules/jinxes/jinxes.ts';
@@ -183,20 +181,4 @@ export function outcomeProblem(
 ): OutcomeProblem | 'no-rule' | undefined {
 	const holder = outcomeHolder(game, outcome, characters);
 	return holder ? problemOf(game, holder, nominee, characters) : 'no-rule';
-}
-
-/**
- * The hook for a recorded vote (M9a): given who voted, whether only evil players did
- * (`only-evil-voted`, the Legion) or a good player did (`good-voted`, the Vizier). Undefined
- * while there is no record, so the Storyteller is asked. Alignments are the grimoire's: a
- * player who might register otherwise is still the Storyteller's call.
- */
-export function votersAnswer(
-	game: Game,
-	question: 'only-evil-voted' | 'good-voted',
-	voters: readonly SeatId[] | undefined
-): boolean | undefined {
-	if (voters === undefined) return undefined;
-	const good = voters.some((s) => alignmentOf(game, s) === 'good');
-	return question === 'good-voted' ? good : voters.length > 0 && !good;
 }

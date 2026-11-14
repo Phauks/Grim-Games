@@ -9,12 +9,7 @@ import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import {
-	executionOutcomes,
-	outcomeHolders,
-	outcomeProblem,
-	votersAnswer
-} from './execution-outcome.ts';
+import { executionOutcomes, outcomeHolders, outcomeProblem } from './execution-outcome.ts';
 
 describe('the executionOutcome part', () => {
 	it('reads failsIf, force and executeNow', () => {
@@ -85,15 +80,6 @@ describe('Legion: executions fail if only evil voted', () => {
 		});
 		// Another nominee with a good vote may still be executed (the page's example).
 		expect(warned(s.session, s.ctx, { type: 'Execute', seatId: s.seat('empath') })).toEqual([]);
-	});
-
-	it('works the answer out from recorded voters, once there are any', () => {
-		expect(votersAnswer(base.game, 'only-evil-voted', undefined)).toBeUndefined();
-		expect(votersAnswer(base.game, 'only-evil-voted', [base.seat(0), base.seat(1)])).toBe(true);
-		expect(votersAnswer(base.game, 'only-evil-voted', [base.seat(0), base.seat('chef')])).toBe(
-			false
-		);
-		expect(votersAnswer(base.game, 'only-evil-voted', [])).toBe(false);
 	});
 });
 
@@ -203,10 +189,5 @@ describe('Vizier: execute now once a good player voted', () => {
 			forcedBy: { characterId: 'vizier', seatId: s.seat('vizier') }
 		});
 		expect(s.game.seats[s.seat('vizier')].reminders).toEqual([]);
-	});
-
-	it('works the good vote out from recorded voters', () => {
-		expect(votersAnswer(base.game, 'good-voted', [base.seat('imp'), base.seat('chef')])).toBe(true);
-		expect(votersAnswer(base.game, 'good-voted', [base.seat('imp')])).toBe(false);
 	});
 });

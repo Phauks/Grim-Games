@@ -6,7 +6,6 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	believerAmong,
 	charactersReallyInPlay,
-	demonBluffsInPlay,
 	lunaticInPlay,
 	randomBelieverBluffs,
 	randomBluffs,
@@ -64,12 +63,8 @@ describe('bluffs and characters in play', () => {
 		expect(inPlay.has('empath')).toBe(true);
 	});
 
-	it('flags Demon bluffs that are now in play, but not the Lunatic set', () => {
-		const { game: g, characters } = game('bmr', ['sailor', 'lunatic', 'zombuul'], () => [
-			{ type: 'SetBluffs', set: 0, characterIds: ['sailor', 'chambermaid', 'exorcist'] },
-			{ type: 'SetBluffs', set: 1, characterIds: ['sailor'] }
-		]);
-		expect(demonBluffsInPlay(g, characters)).toEqual(['sailor']);
+	it('has a Lunatic set with a Lunatic', () => {
+		const { game: g, characters } = game('bmr', ['sailor', 'lunatic', 'zombuul']);
 		expect(lunaticInPlay(g, characters)).toBe(true);
 	});
 
