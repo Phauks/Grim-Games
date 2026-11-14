@@ -35,6 +35,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ImportLogDialog from './ImportLogDialog.svelte';
 	import ScriptNameFields from './ScriptNameFields.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { describeFile, failureText, importLog, logLine } from './import-log.svelte.ts';
 
 	/**
@@ -48,9 +49,13 @@
 		open?: boolean;
 		/** Called with the script to add, once Confirm is pressed. */
 		onconfirm: (script: LoadedScript) => void;
+		/** What looked wrong with a live scan's picture, each a reason to scan again. */
+		issues?: readonly string[];
+		/** Scans again, offered beside `issues`. */
+		onrescan?: () => void;
 	}
 
-	let { open = $bindable(false), onconfirm }: Props = $props();
+	let { open = $bindable(false), onconfirm, issues = [], onrescan }: Props = $props();
 
 	let lines = $state.raw<PhotoLine[]>([]);
 	let reading = $state(false);
@@ -65,6 +70,12 @@
 	let logOpen = $state(false);
 	/** The name, author and version as typed over what was read (Trevor, 2026-11-10). */
 	let typed = $state<{ name?: string; author?: string; version?: string }>({});
+	/**
+	 * Names the app doesn't know become new custom characters, with the ability read beside
+	 * them and the sheet's night order (Trevor, 2026-11-14, picked A: decided after the scan,
+	 * from what was already read, so it never needs a rescan).
+	 */
+	let customOn = $state(false);
 
 	const LEAVE_OUT = '';
 
@@ -89,16 +100,26 @@
 	const author = $derived(typed.author ?? result.author);
 	const version = $derived(typed.version ?? '');
 	const kept = $derived(result.found.filter((f) => !left.has(f.character.id)));
-	const picked = $derived(
+	const customs = $derived(customOn ? result.customs.map((c) => c.character) : []);
+	const customIds = $derived(new Set(customs.map((c) => c.id)));
+	/** Unmatched lines with their place in `result.unmatched`, which picks are kept by. */
+	const unmatched = $derived(
 		result.unmatched
-			.map((_, i) => pool.find((c) => c.id === picks[i]))
-			.filter((c): c is Character => !!c)
+			.map((read, i) => ({ read, i }))
+			.filter(({ read }) => !customOn || !result.customReads.includes(read))
+	);
+	const picked = $derived(
+		unmatched.map(({ i }) => pool.find((c) => c.id === picks[i])).filter((c): c is Character => !!c)
 	);
 	const chosen = $derived.by(() => {
-		const all = [...kept.map((f) => f.character), ...picked];
+		const all = [
+			...kept.map((f) => f.character),
+			...customs.filter((c) => !left.has(c.id)),
+			...picked
+		];
 		return all.filter((c, i) => all.findIndex((o) => o.id === c.id) === i);
 	});
-	const groups = $derived(groupByType(result.found.map((f) => f.character)));
+	const groups = $derived(groupByType([...result.found.map((f) => f.character), ...customs]));
 	const closeCount = $derived(result.found.filter((f) => f.kind === 'close').length);
 	const kinds = $derived(new Map(result.found.map((f) => [f.character.id, f.kind])));
 	const pickOptions = $derived([
@@ -113,6 +134,15 @@
 	 * Reads one more photo, or a PDF of the sheet, and adds its lines to what was read. A PDF's
 	 * own text is used as it is; a scanned page is read like a photo.
 	 */
+	/** Adds lines another reader read (a live scan's picture) to what was read. */
+	export async function addLines(read: readonly PhotoLine[]): Promise<void> {
+		if (lines.length === 0) importLog.start(`Live scan: ${read.length} lines read`);
+		else importLog.add(`Another live scan: ${read.length} lines read`);
+		data ??= await loadOfficialData();
+		lines = [...lines, ...read];
+		logReading();
+	}
+
 	export async function addPhoto(photo: Blob): Promise<void> {
 		reading = true;
 		failed = false;
@@ -191,6 +221,15 @@
 		importLog.add(
 			`Found ${reading.found.length} (${close} close), ${reading.unmatched.length} not matched, title "${reading.title}", author "${reading.author}"`
 		);
+		for (const c of reading.customs) {
+			importLog.add(`Custom character if switched on: ${c.read}, ${c.character.type}`);
+		}
+		const night = reading.night;
+		if (night) {
+			importLog.add(
+				`Night order read: first night ${night.first.join(', ') || 'none'}; other nights ${night.other.join(', ') || 'none'}`
+			);
+		}
 	}
 
 	/** Starts again with no photos read. */
@@ -199,6 +238,7 @@
 		left.clear();
 		picks = {};
 		typed = {};
+		customOn = false;
 		failed = false;
 	}
 
@@ -217,7 +257,13 @@
 	function confirm() {
 		if (!data) return;
 		open = false;
-		const json = photoScriptJson(name.trim(), chosen, author.trim(), version.trim());
+		const json = photoScriptJson(
+			name.trim(),
+			chosen,
+			author.trim(),
+			version.trim(),
+			customOn ? result.night : undefined
+		);
 		const loaded = loadScript(json, data);
 		importLog.add(
 			`Confirmed: "${name}" with ${chosen.length} characters, ${loaded.problems.length} problem(s)`
@@ -233,7 +279,14 @@
 			? t('scripts.photo.reading', { percent: Math.round(progress * 100) })
 			: failed
 				? t('scripts.photo.failed')
-				: t('scripts.photo.summary', { found: result.found.length, check: closeCount })
+				: customOn
+					? t('scripts.photo.summaryCustom', {
+							found: result.found.length,
+							check: closeCount,
+							custom: customs.length,
+							night: result.night ? t('scripts.photo.nightRead') : ''
+						})
+					: t('scripts.photo.summary', { found: result.found.length, check: closeCount })
 	);
 </script>
 
@@ -258,6 +311,14 @@
 			onclick={() => (logOpen = true)}
 		/>
 	</div>
+	{#if issues.length}
+		<div class="issues" role="alert" data-testid="live-scan-issues">
+			<ul>
+				{#each issues as issue (issue)}<li>{issue}</li>{/each}
+			</ul>
+			{#if onrescan}<Button onclick={onrescan}>{t('scripts.photo.rescan')}</Button>{/if}
+		</div>
+	{/if}
 	<div class="details">
 		<ScriptNameFields
 			{name}
@@ -267,6 +328,12 @@
 			onName={(v) => (typed = { ...typed, name: v })}
 			onAuthor={(v) => (typed = { ...typed, author: v })}
 			onVersion={(v) => (typed = { ...typed, version: v })}
+		/>
+		<Toggle
+			label={t('scripts.photo.custom')}
+			checked={customOn}
+			disabled={reading}
+			onChange={(on) => (customOn = on)}
 		/>
 	</div>
 	{#each groups as group (group.type)}
@@ -278,11 +345,17 @@
 						<CharacterPiece
 							template="name"
 							character={c}
+							ability={customIds.has(c.id)}
 							withCheck
 							checked={!left.has(c.id)}
 							onclick={() => toggle(c.id)}
 						>
 							{#snippet marks()}
+								{#if customIds.has(c.id)}<span
+										class="check"
+										title={t('scripts.photo.newTitle')}
+										data-testid="new-mark">{t('scripts.photo.new')}</span
+									>{/if}
 								{#if kinds.get(c.id) === 'close'}<span
 										class="check"
 										title={t('scripts.photo.closeMark')}
@@ -297,9 +370,9 @@
 	{/each}
 	<section>
 		<h3 data-type-band="outline">{t('scripts.photo.unmatched')}</h3>
-		{#if result.unmatched.length}
+		{#if unmatched.length}
 			<ul class="unmatched">
-				{#each result.unmatched as read, i (i)}
+				{#each unmatched as { read, i } (i)}
 					<li>
 						<Combobox
 							label={t('scripts.photo.read', { text: read })}
@@ -389,6 +462,16 @@
 		background: var(--accent);
 		color: var(--on-accent);
 		font-weight: 800;
+	}
+	.issues {
+		margin-top: var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		border: calc(0.125 * var(--u)) solid var(--evil);
+		border-radius: var(--radius-md);
+	}
+	.issues ul {
+		margin: 0 0 var(--space-2);
+		padding-inline-start: var(--space-4);
 	}
 	.none {
 		margin: 0;

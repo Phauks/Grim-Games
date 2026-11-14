@@ -11,8 +11,15 @@
  * named by the sheet's title, never matched to a known script (Trevor, 2026-11-10: a sheet
  * may differ slightly from it).
  */
+import { normaliseCharacterId } from '#lib/core/data/parse.ts';
 import { scriptToJson } from '#lib/core/data/script.ts';
-import type { Character, CharacterId, CharacterName } from '#lib/core/data/index.ts';
+import type {
+	Character,
+	CharacterId,
+	CharacterName,
+	CharacterType,
+	NightMarker
+} from '#lib/core/data/index.ts';
 
 /** One line of text as the reader found it, top to bottom. */
 export interface PhotoLine {
@@ -43,6 +50,33 @@ export interface PhotoReading {
 	title: string;
 	/** The script's author, from a "By: name" line (Trevor, 2026-11-06); '' when there is none. */
 	author: string;
+	/**
+	 * Characters the sheet lists that the app doesn't know, as new custom characters: each name
+	 * with the ability printed beside it, and its type from the heading above it or the known
+	 * characters around it. Only used when the review's Custom characters switch is on
+	 * (Trevor, 2026-11-14, picked A).
+	 */
+	customs: PhotoCustom[];
+	/** The lines of `unmatched` the customs and the night order account for. */
+	customReads: string[];
+	/**
+	 * The sheet's own night order, when it prints one under "First night" and "Other nights"
+	 * headings (Trevor, 2026-11-14): character ids, custom ones included, and night steps.
+	 */
+	night?: PhotoNight;
+}
+
+/** A character the app doesn't know, read off the sheet. */
+export interface PhotoCustom {
+	character: Character;
+	/** The name as read. */
+	read: string;
+}
+
+/** A night order read off a sheet, each list in the sheet's order. */
+export interface PhotoNight {
+	first: (CharacterId | NightMarker)[];
+	other: (CharacterId | NightMarker)[];
 }
 
 /** How one line was read, for the import log (Trevor, 2026-11-06: "more verbose logging"). */
@@ -158,6 +192,38 @@ const SHEET_WORDS = new Set([
 	'demon info'
 ]);
 
+/** Type headings a sheet prints, and the character type each starts. */
+const TYPE_HEADINGS: Record<string, CharacterType> = {
+	townsfolk: 'townsfolk',
+	outsider: 'outsider',
+	outsiders: 'outsider',
+	minion: 'minion',
+	minions: 'minion',
+	demon: 'demon',
+	demons: 'demon',
+	traveller: 'traveller',
+	travellers: 'traveller',
+	traveler: 'traveller',
+	travelers: 'traveller',
+	fabled: 'fabled',
+	loric: 'loric'
+};
+
+/** Night steps a printed night order names beside the characters. */
+const NIGHT_STEPS: Record<string, NightMarker> = {
+	dusk: 'dusk',
+	dawn: 'dawn',
+	'minion info': 'minioninfo',
+	'demon info': 'demoninfo'
+};
+
+/** A title is at most this many words. */
+const TITLE_WORDS = 8;
+/** A night order's lines are a name or a step: a longer line carries an ability. */
+const NIGHT_WORDS = 4;
+/** A night order with fewer steps than this is a stray heading, not a list. */
+const NIGHT_MIN = 2;
+
 interface Candidate {
 	character: Character;
 	name: string;
@@ -232,9 +298,39 @@ function named(candidate: Candidate, score: number) {
 function looksLikeName(text: string): boolean {
 	const words = text.trim().split(/\s+/);
 	if (words.length < 1 || words.length > NAME_WORDS) return false;
-	if (!words.every((w) => /^[A-Z][a-zA-Z'’-]+$/.test(w))) return false;
+	if (!words.every((w) => NAME_WORD.test(w))) return false;
 	const plain = plainText(text);
 	return plain.replace(/ /g, '').length >= 4 && !SHEET_WORDS.has(plain);
+}
+
+const NAME_WORD = /^[A-Z][a-zA-Z'’-]+$/;
+
+/** The words abilities start with ("Each", "You", "If"), to tell where a name ends on its line. */
+function abilityOpeners(characters: readonly Character[]): Set<string> {
+	return new Set(
+		characters.map((c) => plainText(c.ability).split(' ')[0]).filter((w) => w.length > 1)
+	);
+}
+
+/**
+ * A name the app doesn't know and its ability read as one line ("Lamplighter Each night,
+ * choose a player: ..."): one to three capitalised words, then a capitalised word an ability
+ * starts with (`openers`, the first words of the known abilities), then the ability.
+ */
+function nameAndAbility(
+	text: string,
+	openers: ReadonlySet<string>
+): { name: string; ability: string } | undefined {
+	const words = text.trim().split(/\s+/);
+	for (let n = 1; n <= Math.min(NAME_WORDS, words.length - 5); n++) {
+		if (!NAME_WORD.test(words[n - 1])) return undefined;
+		const next = words[n];
+		if (!/^[A-Z]/.test(next) || !openers.has(plainText(next))) continue;
+		const name = words.slice(0, n).join(' ');
+		if (!looksLikeName(name)) return undefined;
+		return { name, ability: words.slice(n).join(' ') };
+	}
+	return undefined;
 }
 
 /**
@@ -248,6 +344,7 @@ export function readScriptLines(
 	trace?: (line: PhotoLineTrace) => void
 ): PhotoReading {
 	const pool = candidates(characters);
+	const openers = abilityOpeners(characters);
 	const found = new Map<CharacterId, PhotoFound>();
 	const unmatched: string[] = [];
 	const unnamed: { text: string; height: number; index: number }[] = [];
@@ -295,9 +392,11 @@ export function readScriptLines(
 			return;
 		}
 		if (tail) traces.push({ index, text, outcome: 'tail' });
-		else if (looksLikeName(text)) {
-			unmatched.push(text);
-			const near = nearestName(text, pool);
+		else if (looksLikeName(text) || nameAndAbility(text, openers)) {
+			// A name the app doesn't know, alone or with its ability on the line.
+			const read = nameAndAbility(text, openers)?.name ?? text;
+			unmatched.push(read);
+			const near = nearestName(read, pool);
 			traces.push({
 				index,
 				text,
@@ -309,28 +408,153 @@ export function readScriptLines(
 	});
 
 	// The title: the tallest line that names no character, among the sheet's first lines.
+	// A long line (a character the app doesn't know, with its ability) or a heading is no title.
 	const top = unnamed.filter(
-		(l) => l.index < Math.max(3, lines.length / 4) && /[a-z]{4}/i.test(l.text)
+		(l) =>
+			l.index < Math.max(3, lines.length / 4) &&
+			/[a-z]{4}/i.test(l.text) &&
+			l.text.split(/\s+/).length <= TITLE_WORDS &&
+			!SHEET_WORDS.has(plainText(l.text))
 	);
 	const title = top.reduce<(typeof top)[number] | undefined>(
 		(best, l) => (!best || l.height > best.height ? l : best),
 		undefined
 	);
 	const titleText = title?.text ?? '';
-	if (trace) {
-		for (const t of traces) {
-			// The title is told apart from the other lines that name no one.
-			trace(
-				title && t.index === title.index ? { index: t.index, text: t.text, outcome: 'title' } : t
-			);
-		}
-	}
+	// The title is told apart from the other lines that name no one.
+	const told = traces.map((t): PhotoLineTrace =>
+		title && t.index === title.index ? { index: t.index, text: t.text, outcome: 'title' } : t
+	);
+	if (trace) for (const t of told) trace(t);
 	return {
 		found: [...found.values()],
 		unmatched: unmatched.filter((u) => u !== titleText),
 		title: titleOf(titleText),
-		author
+		author,
+		...sheetExtras(told, characters, pool, openers)
 	};
+}
+
+/** A custom character being read: its name, and its ability as the lines after it add to it. */
+interface Reading {
+	name: string;
+	ability: string[];
+	/** The heading above it, if the sheet prints one. */
+	type?: CharacterType;
+	/** Where it was read, to find the known characters around it. */
+	index: number;
+}
+
+/**
+ * The second look at a sheet's lines: the names the app doesn't know, with the ability lines
+ * under each, as custom characters; and the night order, when the sheet prints one. A night
+ * heading starts a list of names and night steps that ends at a type heading or a longer line,
+ * which carries an ability (a sheet that prints its night order beside the characters).
+ */
+function sheetExtras(
+	traces: readonly PhotoLineTrace[],
+	characters: readonly Character[],
+	pool: readonly Candidate[],
+	openers: ReadonlySet<string>
+): Pick<PhotoReading, 'customs' | 'customReads' | 'night'> {
+	const byName = new Map(characters.map((c) => [c.name, c]));
+	const reads: Reading[] = [];
+	/** Each known character's type, by where it was read. */
+	const known: { index: number; type: CharacterType }[] = [];
+	const night: PhotoNight = { first: [], other: [] };
+	const used: string[] = [];
+	let section: CharacterType | undefined;
+	let list: (CharacterId | NightMarker)[] | undefined;
+	let current: Reading | undefined;
+
+	for (const t of traces) {
+		const plain = plainText(t.text);
+		if (TYPE_HEADINGS[plain]) {
+			section = TYPE_HEADINGS[plain];
+			list = current = undefined;
+			continue;
+		}
+		if (/^first nights?\b/.test(plain) || /^other nights?\b/.test(plain)) {
+			list = plain.startsWith('first') ? night.first : night.other;
+			current = undefined;
+			continue;
+		}
+		if (list && t.outcome !== 'ability' && t.text.split(/\s+/).length <= NIGHT_WORDS) {
+			// A step of the night order: a known character, one read above, or a night step.
+			const custom = reads.find((r) => likeness(plainText(r.name), plain) >= MATCHED);
+			const entry =
+				NIGHT_STEPS[plain] ??
+				(custom ? customId(custom.name) : undefined) ??
+				('name' in t ? byName.get(t.name)?.id : undefined);
+			if (entry && !list.includes(entry)) list.push(entry);
+			if (t.outcome === 'unmatched' && !used.includes(t.text)) used.push(t.text);
+			continue;
+		}
+		list = undefined;
+		if ('name' in t) {
+			const type = byName.get(t.name)?.type;
+			if (type) known.push({ index: t.index, type });
+			current = undefined;
+		} else if (t.outcome === 'unmatched') {
+			const both = nameAndAbility(t.text, openers);
+			const name = both?.name ?? t.text;
+			const ability = both ? [both.ability] : [];
+			reads.push((current = { name, ability, type: section, index: t.index }));
+			used.push(name);
+		} else if (t.outcome === 'unnamed' || t.outcome === 'tail') current?.ability.push(t.text);
+		else current = undefined;
+	}
+
+	const typeAt = (index: number): CharacterType =>
+		known.findLast((k) => k.index < index)?.type ??
+		known.find((k) => k.index > index)?.type ??
+		'townsfolk';
+	const ids = new Set(pool.map((p) => p.character.id));
+	const customs: PhotoCustom[] = [];
+	for (const r of reads) {
+		const id = customId(r.name);
+		if (!id || ids.has(id)) continue;
+		ids.add(id);
+		const ability = r.ability.join(' ').replace(/\s+/g, ' ').trim();
+		customs.push({
+			read: r.name,
+			character: {
+				id,
+				name: r.name,
+				type: r.type ?? typeAt(r.index),
+				ability,
+				setup: /\[[^\]]+\]/.test(ability),
+				reminders: [],
+				remindersGlobal: [],
+				special: []
+			}
+		});
+	}
+	const keep = (steps: (CharacterId | NightMarker)[]) =>
+		steps.filter((s) => s.length > 0 && (s in NIGHT_IDS || ids.has(s)));
+	const first = keep(night.first);
+	const other = keep(night.other);
+	return {
+		customs,
+		customReads: used,
+		...(first.length >= NIGHT_MIN || other.length >= NIGHT_MIN
+			? {
+					night: {
+						first: first.length >= NIGHT_MIN ? first : [],
+						other: other.length >= NIGHT_MIN ? other : []
+					}
+				}
+			: {})
+	};
+}
+
+const NIGHT_IDS: Record<string, true> = Object.fromEntries(
+	Object.values(NIGHT_STEPS).map((id) => [id, true])
+);
+
+/** The id a custom character read off a sheet takes: its name, as TPI's ids are written. */
+function customId(name: string): CharacterId {
+	return normaliseCharacterId(name) as CharacterId;
 }
 
 const letterCount = (text: string) => text.replace(/[^\p{L}]/gu, '').length;
@@ -360,11 +584,26 @@ export function photoScriptJson(
 	name: string,
 	characters: readonly Character[],
 	author = '',
-	version = ''
+	version = '',
+	/** The sheet's own night order, kept as the script's (`_meta.firstNight`, `otherNight`). */
+	night?: PhotoNight
 ): unknown[] {
+	const kept = new Set<string>(characters.map((c) => c.id));
+	const order = (steps: readonly string[] = []) => {
+		const on = steps.filter((s) => kept.has(s) || s in NIGHT_IDS);
+		return on.some((s) => kept.has(s)) ? on : undefined;
+	};
+	const firstNight = order(night?.first);
+	const otherNight = order(night?.other);
 	return scriptToJson({
 		name,
-		meta: { name, ...(author && { author }), ...(version && { version }) },
+		meta: {
+			name,
+			...(author && { author }),
+			...(version && { version }),
+			...(firstNight && { firstNight }),
+			...(otherNight && { otherNight })
+		},
 		characters: [...characters],
 		homebrew: characters.filter((c) => !c.edition).map((c) => c.id),
 		homebrewJinxes: [],
