@@ -15,7 +15,7 @@ import {
 	type SpecValue
 } from '../field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 const TYPES = anyOf(CHARACTER_TYPES);
 
@@ -108,11 +108,105 @@ export type TargetRule = SpecValue<typeof TARGET>;
  * The checks only suggest and warn (`rules/reminders/reminder-targets.ts`); the Storyteller can put
  * any token anywhere.
  */
-export const reminderTargets = specPart(
-	'tokens',
-	'Where its reminders go',
-	'Where each of its reminder tokens may go, by label.',
-	byToken(TARGET)
+export const reminderTargets = partWords(
+	specPart(
+		'tokens',
+		'Where its reminders go',
+		'Where each of its reminder tokens may go, by label.',
+		byToken(TARGET)
+	),
+	{
+		'*.seat': {
+			label: 'Whose seat',
+			names: {
+				self: 'Its own',
+				other: 'Never its own',
+				any: 'Any'
+			}
+		},
+		'*.types': {
+			label: 'Only these types'
+		},
+		'*.shown': {
+			label: 'Dealt a token of type'
+		},
+		'*.characters': {
+			label: 'Only these characters'
+		},
+		'*.alignment': {
+			label: 'Only this alignment',
+			names: {
+				same: 'Its own alignment',
+				opposite: 'The other alignment'
+			}
+		},
+		'*.sameAlignmentAs': {
+			label: 'Same alignment as the player with'
+		},
+		'*.alignmentCounts': {
+			label: 'At most, by alignment'
+		},
+		'*.alignmentCounts.good': {
+			label: 'On good players'
+		},
+		'*.alignmentCounts.evil': {
+			label: 'On evil players'
+		},
+		'*.maxPlaced': {
+			label: 'At most this many at once'
+		},
+		'*.life': {
+			label: 'Only on players who are',
+			names: {
+				alive: 'Alive',
+				dead: 'Dead'
+			}
+		},
+		'*.neighbour': {
+			label: 'A neighbour'
+		},
+		'*.neighbour.of': {
+			label: 'Of',
+			about: 'self, or the player with one of its reminders.'
+		},
+		'*.neighbour.ofType': {
+			label: 'Of players of type'
+		},
+		'*.neighbour.type': {
+			label: 'Only neighbours of type'
+		},
+		'*.neighbour.alignment': {
+			label: 'Only neighbours of alignment'
+		},
+		'*.neighbour.alive': {
+			label: 'Skip dead players'
+		},
+		'*.neighbour.both': {
+			label: 'Both neighbours must fit'
+		},
+		'*.withLabel': {
+			label: 'Only with'
+		},
+		'*.notWithLabel': {
+			label: 'Never with'
+		},
+		'*.global': {
+			label: 'Marks the game, not a player'
+		},
+		'*.minOwners': {
+			label: 'Only with this many players of it'
+		},
+		'*.differsFromLastNight': {
+			label: 'Different from last night',
+			names: {
+				player: 'Another player',
+				type: 'Another character type'
+			}
+		},
+		'*.info': {
+			label: 'Marks what its information showed'
+		}
+	}
 );
 
 export type ReminderTargets = PartValue<typeof reminderTargets>;

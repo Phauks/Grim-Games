@@ -11,7 +11,7 @@ import {
 	type SpecValue
 } from '../field-spec.ts';
 import { CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /** Why an ability does not work. `no-ability`: an effect such as the Preacher's. */
 const REASON = oneOf(['drunk', 'poisoned', 'no-ability']);
@@ -48,16 +48,73 @@ export type TokenImpairment = SpecValue<typeof TOKEN_IMPAIRMENT>;
  * information while its ability works, even when another ability says it must or may be false
  * (the Barista's "Sober & Healthy" under the Vortox).
  */
-export const impairs = specPart(
-	'abilities',
-	'Drunk, poisoned or no ability',
-	'How the ability leaves players drunk, poisoned or with no ability.',
-	optObj({
-		self: obj({ reason: REASON, aliveAtMost: opt(NUM) }),
-		tokens: byToken(TOKEN_IMPAIRMENT),
-		clears: TOKENS,
-		truthful: TOKENS
-	})
+export const impairs = partWords(
+	specPart(
+		'abilities',
+		'Drunk, poisoned or no ability',
+		'How the ability leaves players drunk, poisoned or with no ability.',
+		optObj({
+			self: obj({ reason: REASON, aliveAtMost: opt(NUM) }),
+			tokens: byToken(TOKEN_IMPAIRMENT),
+			clears: TOKENS,
+			truthful: TOKENS
+		})
+	),
+	{
+		self: {
+			label: 'Its own player'
+		},
+		'self.reason': {
+			label: 'Is',
+			names: {
+				drunk: 'Drunk',
+				poisoned: 'Poisoned',
+				'no-ability': 'Without an ability'
+			}
+		},
+		'self.aliveAtMost': {
+			label: 'Once at most this many alive'
+		},
+		tokens: {
+			label: 'By reminder'
+		},
+		'tokens.*.reason': {
+			label: 'Makes',
+			names: {
+				drunk: 'Drunk',
+				poisoned: 'Poisoned',
+				'no-ability': 'No ability'
+			}
+		},
+		'tokens.*.on': {
+			label: 'Who',
+			names: {
+				carrier: 'The player it is on',
+				others: 'Every other player'
+			}
+		},
+		'tokens.*.type': {
+			label: 'Only this type'
+		},
+		'tokens.*.whileWorks': {
+			label: 'Only while its ability works'
+		},
+		'tokens.*.whileKept': {
+			label: 'Only while a player keeps their ability'
+		},
+		'tokens.*.whileKept.token': {
+			label: 'The player with'
+		},
+		'tokens.*.whileKept.nearest': {
+			label: 'On their nearest of type'
+		},
+		clears: {
+			label: 'Make sober and healthy'
+		},
+		truthful: {
+			label: 'Always get true information'
+		}
+	}
 );
 
 export type Impairs = PartValue<typeof impairs>;

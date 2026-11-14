@@ -1,6 +1,6 @@
 import { byToken, obj, oneOf, variants, type SpecValue } from '../field-spec.ts';
 import { ALIGNMENTS } from '../types.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * When a reminder comes off by itself: at the next Dawn, at the next Dusk, at the dusk after
@@ -36,14 +36,29 @@ export type ReminderEndRule = SpecValue<typeof END>;
  * nominated (`{ "nominated": "evil" }`). The app takes each off then
  * (`rules/reminders/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
  */
-export const reminderEnds = specPart(
-	'tokens',
-	'Reminders that come off',
-	'Its reminders that come off by themselves at dawn, at dusk, at a nomination or when its player dies.',
-	byToken(END),
-	(value, path, issues) => {
-		if (Object.keys(value).length > 0) return value;
-		issues.add(path, 'expected at least one reminder');
-		return undefined;
+export const reminderEnds = partWords(
+	specPart(
+		'tokens',
+		'Reminders that come off',
+		'Its reminders that come off by themselves at dawn, at dusk, at a nomination or when its player dies.',
+		byToken(END),
+		(value, path, issues) => {
+			if (Object.keys(value).length > 0) return value;
+			issues.add(path, 'expected at least one reminder');
+			return undefined;
+		}
+	),
+	{
+		'*<At a time>': {
+			names: {
+				dawn: 'At dawn',
+				dusk: 'At dusk',
+				'dusk-after-dawn': 'At the dusk after next dawn',
+				'owner-dies': 'When its player dies'
+			}
+		},
+		'*<At a nomination>.nominated': {
+			label: 'When nominated is'
+		}
 	}
 );

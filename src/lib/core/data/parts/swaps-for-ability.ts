@@ -1,6 +1,6 @@
 import { anyOf, obj, TOKEN } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * Its player's token is swapped for a character whose ability they gain, of `good` types
@@ -10,11 +10,24 @@ import { specPart, type PartValue } from './part.ts';
  * (`features/grimoire/GainAbilityDialog.svelte`), the ability is recorded as given by their own
  * character and they keep their own token (Trevor, 2026-11-12).
  */
-export const swapsForAbility = specPart(
-	'abilities',
-	'Swaps for an ability',
-	'Its player’s token is swapped for a character whose ability they gain.',
-	obj({ token: TOKEN, good: anyOf(SEATED_TYPES), evil: anyOf(SEATED_TYPES) })
+export const swapsForAbility = partWords(
+	specPart(
+		'abilities',
+		'Swaps for an ability',
+		'Its player’s token is swapped for a character whose ability they gain.',
+		obj({ token: TOKEN, good: anyOf(SEATED_TYPES), evil: anyOf(SEATED_TYPES) })
+	),
+	{
+		token: {
+			label: 'Reminder'
+		},
+		good: {
+			label: 'When good, from types'
+		},
+		evil: {
+			label: 'When evil, from types'
+		}
+	}
 );
 
 export type SwapsForAbility = PartValue<typeof swapsForAbility>;

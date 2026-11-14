@@ -1,5 +1,5 @@
 import { obj, TOKENS } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The `tokenFlow` part of a character's rules block (Trevor, 2026-11-06: "placing has should
@@ -10,16 +10,24 @@ import { specPart, type PartValue } from './part.ts';
  * off (`rules/abilities/token-flow.ts`); the Storyteller may keep both (the Pukka's How to Run keeps
  * Poisoned by Dead while a death ability resolves), so it never happens on its own.
  */
-export const tokenFlow = specPart(
-	'tokens',
-	'Token flow',
-	'Its tokens that take the place of the one before on the same player, in order.',
-	obj({ tokens: TOKENS }),
-	(value, path, issues) => {
-		if (value.tokens.length >= 2 && new Set(value.tokens).size === value.tokens.length)
-			return value;
-		issues.add(`${path}.tokens`, 'expected two or more different reminders, in order');
-		return undefined;
+export const tokenFlow = partWords(
+	specPart(
+		'tokens',
+		'Token flow',
+		'Its tokens that take the place of the one before on the same player, in order.',
+		obj({ tokens: TOKENS }),
+		(value, path, issues) => {
+			if (value.tokens.length >= 2 && new Set(value.tokens).size === value.tokens.length)
+				return value;
+			issues.add(`${path}.tokens`, 'expected two or more different reminders, in order');
+			return undefined;
+		}
+	),
+	{
+		tokens: {
+			label: 'Reminders, in order',
+			about: 'Each takes the place of the one before on the same player.'
+		}
 	}
 );
 

@@ -1,5 +1,5 @@
 import { anyOf, obj, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * What a reminder whose effect the Storyteller picks can do, each one the rules know (the Angel's
@@ -30,11 +30,30 @@ export type ReminderEffectKind = (typeof REMINDER_EFFECTS)[number];
  * A reminder that carries an effect the Storyteller picks (Trevor, 2026-11-02: M17f): its
  * reminder `token`, whose effect the Storyteller picks from `effects` or writes.
  */
-export const pickedEffect = specPart(
-	'abilities',
-	'Picked effect',
-	'Its reminder carries an effect the Storyteller picks, or their own words.',
-	obj({ token: TOKEN, effects: anyOf(REMINDER_EFFECTS) })
+export const pickedEffect = partWords(
+	specPart(
+		'abilities',
+		'Picked effect',
+		'Its reminder carries an effect the Storyteller picks, or their own words.',
+		obj({ token: TOKEN, effects: anyOf(REMINDER_EFFECTS) })
+	),
+	{
+		token: {
+			label: 'Reminder'
+		},
+		effects: {
+			label: 'Effects offered',
+			names: {
+				'no-kill': 'Kills no one for a night',
+				poisoned: 'Poisoned',
+				mad: 'Mad',
+				'no-vote-today': 'May not vote today',
+				'no-ability-today': 'No ability today',
+				dies: 'Dies',
+				other: 'The Storyteller’s own words'
+			}
+		}
+	}
 );
 
 export type PickedEffect = PartValue<typeof pickedEffect>;

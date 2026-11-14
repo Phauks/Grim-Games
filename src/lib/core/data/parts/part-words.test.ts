@@ -8,7 +8,7 @@ import type { FieldSpec } from '../field-spec.ts';
 import type { RuleGroup } from './part.ts';
 
 /** Rule groups whose every part the builder offers is worded (M81 batch 2). */
-const WORDED_GROUPS: readonly RuleGroup[] = ['night', 'day'];
+const WORDED_GROUPS: readonly RuleGroup[] = ['night', 'day', 'deaths', 'abilities', 'tokens'];
 
 /** Parts set outside the Rules section, never shown with these fields. */
 const ELSEWHERE = ['nightOrder', 'nightText'];

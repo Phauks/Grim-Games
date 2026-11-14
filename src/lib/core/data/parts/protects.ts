@@ -1,6 +1,6 @@
 import { obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
 import type { ReminderLabel } from '../types.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * What a protection stops: the Demon's kill, any death, only an execution (the Devil's
@@ -44,28 +44,67 @@ export type Protects = (
  * with its `token` (the Monk's "Safe") or any good player's (`good`, the Pacifist), against
  * the Demon's kill only, any kill, or an execution only.
  */
-export const protects = specPart(
-	'deaths',
-	'Protects',
-	'The ability stops a death: its own player’s, a marked player’s or any good player’s.',
-	obj({
-		who: oneOf(['self', 'marked', 'good']),
-		token: opt(TOKEN),
-		from: oneOf(PROTECTS_FROM),
-		night: opt(T),
-		storytellerDecides: opt(T),
-		whileNeighboursGood: opt(T),
-		whileCarrierAlive: opt(TOKEN)
-	}),
-	(value, path, issues): Protects | undefined => {
-		const { who, token, ...rest } = value;
-		if (who === 'marked') {
-			if (token) return { who, token, ...rest };
-			issues.add(`${path}.token`, 'missing');
+export const protects = partWords(
+	specPart(
+		'deaths',
+		'Protects',
+		'The ability stops a death: its own player’s, a marked player’s or any good player’s.',
+		obj({
+			who: oneOf(['self', 'marked', 'good']),
+			token: opt(TOKEN),
+			from: oneOf(PROTECTS_FROM),
+			night: opt(T),
+			storytellerDecides: opt(T),
+			whileNeighboursGood: opt(T),
+			whileCarrierAlive: opt(TOKEN)
+		}),
+		(value, path, issues): Protects | undefined => {
+			const { who, token, ...rest } = value;
+			if (who === 'marked') {
+				if (token) return { who, token, ...rest };
+				issues.add(`${path}.token`, 'missing');
+				return undefined;
+			}
+			if (token === undefined) return { who, ...rest };
+			issues.add(`${path}.token`, 'only a marked player has a token');
 			return undefined;
 		}
-		if (token === undefined) return { who, ...rest };
-		issues.add(`${path}.token`, 'only a marked player has a token');
-		return undefined;
+	),
+	{
+		who: {
+			label: 'Who',
+			names: {
+				self: 'Its own player',
+				marked: 'The player with its reminder',
+				good: 'Any good player'
+			}
+		},
+		token: {
+			label: 'Reminder'
+		},
+		from: {
+			label: 'Against',
+			names: {
+				demon: 'The Demon’s kill',
+				any: 'Any death',
+				execution: 'Only an execution',
+				'not-execution': 'Any death but an execution',
+				day: 'Any death by day',
+				exile: 'Only an exile'
+			}
+		},
+		night: {
+			label: 'Only tonight'
+		},
+		storytellerDecides: {
+			label: 'Storyteller decides',
+			about: 'The player only might not die.'
+		},
+		whileNeighboursGood: {
+			label: 'While both neighbours are good'
+		},
+		whileCarrierAlive: {
+			label: 'While the player with it lives'
+		}
 	}
 );

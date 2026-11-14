@@ -8,7 +8,7 @@ import {
 } from '../types.ts';
 import type { Issues } from '../validate.ts';
 import { presetTable } from '../presets.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * Ways an ability ends the game, each worked out in `rules/game-end/game-end.ts`:
@@ -464,69 +464,262 @@ const END_PRESETS = presetTable<Exclude<EndKind, 'condition'>, EndsGame, EndsGam
  * part of its rules block, read here and worked out in `rules/game-end/game-end.ts`. Each entry names
  * a behaviour and its parameters, never a character.
  */
-export const gameEnd = specPart(
-	'deaths',
-	'Game end',
-	'How the ability ends the game, keeps it going, or changes who wins.',
-	obj({
-		ends: opt(
-			list(
-				obj({
-					kind: oneOf(END_KINDS),
-					event: opt(oneOf(END_EVENTS)),
-					subject: opt(oneOf(END_SUBJECTS)),
-					carries: opt(T),
-					otherAlive: opt(T),
-					nominatedBySelf: opt(T),
-					whileAlive: opt(T),
-					noExecution: opt(T),
-					aliveTotal: opt(NUM),
-					onDay: opt(NUM),
-					executions: opt(NUM),
-					aliveAtMost: opt(NUM),
-					wins: opt(oneOf(END_WINS)),
-					then: opt(oneOf(END_THEN)),
-					token: opt(TOKEN),
-					winner: opt(oneOf(ALIGNMENTS)),
-					alive: opt(NUM),
-					alignment: opt(oneOf(ALIGNMENTS)),
-					types: opt(anyOf(CHARACTER_TYPES)),
-					count: opt(NUM),
-					day: opt(NUM),
-					night: opt(NUM),
-					on: opt(oneOf([...ALIGNMENTS, ...CHARACTER_TYPES]))
-				})
-			)
-		),
-		holds: opt(
-			list(
-				obj({
-					kind: oneOf(HOLD_KINDS),
-					then: opt(oneOf(HOLD_THEN)),
-					whileAlive: opt(T),
-					ownKill: opt(T),
-					token: opt(TOKEN),
-					aliveAtLeast: opt(NUM),
-					to: opt(oneOf(CHARACTER_TYPES)),
-					spentToken: opt(TOKEN)
-				})
-			)
-		),
-		aliveWhileDead: opt(optObj({ untilToken: TOKEN, whileCarrierAlive: TOKEN })),
-		invertWinner: opt(B),
-		decidedByStoryteller: opt(B),
-		joinsWinner: opt(B),
-		alwaysWinsWith: opt(oneOf(ALIGNMENTS)),
-		contest: opt(obj({ chooser: oneOf(CHARACTER_TYPES), tie: oneOf(ALIGNMENTS) }))
-	}),
-	(value, path, issues): GameEndRules | undefined => {
-		const before = issues.list.length;
-		const { ends, holds, ...rest } = value;
-		const out: GameEndRules = {
-			...rest,
-			...(ends ? { ends: ends.map((e, i) => readEnd(e, `${path}.ends[${i}]`, issues)) } : {}),
-			...(holds ? { holds: holds.map((h, i) => readHold(h, `${path}.holds[${i}]`, issues)) } : {})
-		};
-		return issues.list.length > before ? undefined : out;
+export const gameEnd = partWords(
+	specPart(
+		'deaths',
+		'Game end',
+		'How the ability ends the game, keeps it going, or changes who wins.',
+		obj({
+			ends: opt(
+				list(
+					obj({
+						kind: oneOf(END_KINDS),
+						event: opt(oneOf(END_EVENTS)),
+						subject: opt(oneOf(END_SUBJECTS)),
+						carries: opt(T),
+						otherAlive: opt(T),
+						nominatedBySelf: opt(T),
+						whileAlive: opt(T),
+						noExecution: opt(T),
+						aliveTotal: opt(NUM),
+						onDay: opt(NUM),
+						executions: opt(NUM),
+						aliveAtMost: opt(NUM),
+						wins: opt(oneOf(END_WINS)),
+						then: opt(oneOf(END_THEN)),
+						token: opt(TOKEN),
+						winner: opt(oneOf(ALIGNMENTS)),
+						alive: opt(NUM),
+						alignment: opt(oneOf(ALIGNMENTS)),
+						types: opt(anyOf(CHARACTER_TYPES)),
+						count: opt(NUM),
+						day: opt(NUM),
+						night: opt(NUM),
+						on: opt(oneOf([...ALIGNMENTS, ...CHARACTER_TYPES]))
+					})
+				)
+			),
+			holds: opt(
+				list(
+					obj({
+						kind: oneOf(HOLD_KINDS),
+						then: opt(oneOf(HOLD_THEN)),
+						whileAlive: opt(T),
+						ownKill: opt(T),
+						token: opt(TOKEN),
+						aliveAtLeast: opt(NUM),
+						to: opt(oneOf(CHARACTER_TYPES)),
+						spentToken: opt(TOKEN)
+					})
+				)
+			),
+			aliveWhileDead: opt(optObj({ untilToken: TOKEN, whileCarrierAlive: TOKEN })),
+			invertWinner: opt(B),
+			decidedByStoryteller: opt(B),
+			joinsWinner: opt(B),
+			alwaysWinsWith: opt(oneOf(ALIGNMENTS)),
+			contest: opt(obj({ chooser: oneOf(CHARACTER_TYPES), tie: oneOf(ALIGNMENTS) }))
+		}),
+		(value, path, issues): GameEndRules | undefined => {
+			const before = issues.list.length;
+			const { ends, holds, ...rest } = value;
+			const out: GameEndRules = {
+				...rest,
+				...(ends ? { ends: ends.map((e, i) => readEnd(e, `${path}.ends[${i}]`, issues)) } : {}),
+				...(holds ? { holds: holds.map((h, i) => readHold(h, `${path}.holds[${i}]`, issues)) } : {})
+			};
+			return issues.list.length > before ? undefined : out;
+		}
+	),
+	{
+		ends: {
+			label: 'Ways it ends the game'
+		},
+		'ends.*.kind': {
+			label: 'How',
+			names: {
+				condition: 'When these hold',
+				'executed-loses': 'Its player executed: their team loses',
+				'marked-executed': 'Of its player and the marked player, one executed',
+				'day-without-execution': 'A day ends with no execution',
+				'alive-at-dusk': 'So many alive at dusk, no execution',
+				'executions-of-alignment': 'So many of an alignment executed',
+				'survives-day': 'Its player survives a day',
+				'nominated-marked-executed': 'Its player nominates the marked player, who is executed',
+				'dead-without-demon': 'No Demon and its players dead',
+				'extra-day': 'One more day after the Demon’s execution',
+				'used-on-loses': 'Its ability used on the wrong player',
+				'executed-with-token': 'Its player executed while marked: their team wins',
+				'alignment-alive': 'At most so many of an alignment alive',
+				'guesses-evil-team': 'Its player guesses the evil team',
+				'cult-joined': 'Its player’s vote passed',
+				'storyteller-executed': 'The Storyteller is executed'
+			}
+		},
+		'ends.*.event': {
+			label: 'When',
+			names: {
+				executed: 'A player is executed',
+				'day-ends': 'A day ends',
+				dusk: 'At dusk',
+				always: 'Whenever it holds',
+				'ability-used': 'Its ability is first used',
+				'vote-passed': 'Its player’s vote passed',
+				guessed: 'Its player’s guesses are right',
+				'storyteller-executed': 'The Storyteller is executed',
+				'no-demon': 'There is no Demon',
+				'demon-executed': 'The Demon’s execution would end the game'
+			}
+		},
+		'ends.*.subject': {
+			label: 'Executed player',
+			names: {
+				self: 'Its own player',
+				marked: 'The player with its reminder',
+				either: 'Either of the two'
+			}
+		},
+		'ends.*.carries': {
+			label: 'Executed player has its reminder'
+		},
+		'ends.*.otherAlive': {
+			label: 'The other one lives'
+		},
+		'ends.*.nominatedBySelf': {
+			label: 'Nominated by its player'
+		},
+		'ends.*.whileAlive': {
+			label: 'While its player lives'
+		},
+		'ends.*.noExecution': {
+			label: 'No execution that day'
+		},
+		'ends.*.aliveTotal': {
+			label: 'Exactly this many alive',
+			about: 'Travellers count.'
+		},
+		'ends.*.onDay': {
+			label: 'On day'
+		},
+		'ends.*.executions': {
+			label: 'Executed so far'
+		},
+		'ends.*.aliveAtMost': {
+			label: 'At most this many alive',
+			about: 'Travellers do not count.'
+		},
+		'ends.*.wins': {
+			label: 'Who wins',
+			names: {
+				own: 'Its player’s team',
+				other: 'The other team',
+				opposing: 'The executed player’s other team'
+			}
+		},
+		'ends.*.then': {
+			label: 'Then',
+			names: {
+				'extra-day': 'Play one more day'
+			}
+		},
+		'ends.*.token': {
+			label: 'Reminder'
+		},
+		'ends.*.winner': {
+			label: 'Winning team'
+		},
+		'ends.*.alive': {
+			label: 'Players alive'
+		},
+		'ends.*.alignment': {
+			label: 'Alignment'
+		},
+		'ends.*.types': {
+			label: 'Character types'
+		},
+		'ends.*.count': {
+			label: 'How many'
+		},
+		'ends.*.day': {
+			label: 'Day'
+		},
+		'ends.*.night': {
+			label: 'Or once night is over'
+		},
+		'ends.*.on': {
+			label: 'Used on a player who is'
+		},
+		holds: {
+			label: 'Ways it keeps the game going',
+			about: 'Once every Demon is dead.'
+		},
+		'holds.*.kind': {
+			label: 'How',
+			names: {
+				condition: 'When these hold',
+				'marked-alive': 'Its player and the marked player both alive',
+				'becomes-demon': 'Its player may become the Demon',
+				'death-passes': 'The Demon passes on after killing itself'
+			}
+		},
+		'holds.*.then': {
+			label: 'Then',
+			names: {
+				'blocks-good': 'Good can’t win',
+				'becomes-demon': 'Its player may become the Demon',
+				'demon-passes': 'A player of a type may become the Demon'
+			}
+		},
+		'holds.*.whileAlive': {
+			label: 'While its player lives'
+		},
+		'holds.*.ownKill': {
+			label: 'The Demon died by its own kill'
+		},
+		'holds.*.token': {
+			label: 'While the player with it lives'
+		},
+		'holds.*.aliveAtLeast': {
+			label: 'At least this many alive',
+			about: 'Travellers do not count.'
+		},
+		'holds.*.to': {
+			label: 'Passes to type'
+		},
+		'holds.*.spentToken': {
+			label: 'Used up by'
+		},
+		aliveWhileDead: {
+			label: 'Alive for the game’s end while dead'
+		},
+		'aliveWhileDead.untilToken': {
+			label: 'Until its player has'
+		},
+		'aliveWhileDead.whileCarrierAlive': {
+			label: 'While the player with it lives'
+		},
+		invertWinner: {
+			label: 'Whoever wins loses'
+		},
+		decidedByStoryteller: {
+			label: 'Storyteller decides',
+			about: 'A claim or choice only the Storyteller sees can end the game.'
+		},
+		joinsWinner: {
+			label: 'May join the winners',
+			about: 'When the Storyteller judges its ability met.'
+		},
+		alwaysWinsWith: {
+			label: 'Always wins with'
+		},
+		contest: {
+			label: 'A contest may end the game'
+		},
+		'contest.chooser': {
+			label: 'Chosen by type'
+		},
+		'contest.tie': {
+			label: 'A tie goes to'
+		}
 	}
 );

@@ -1,5 +1,5 @@
 import { oneOf, optObj, T, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * Whom the Demon attacks, when the rule decides it: `script-order` is the next living in-play
@@ -15,26 +15,42 @@ export type DemonTarget = (typeof DEMON_TARGETS)[number];
  * step by `features/grimoire/night/NoAttackStep.svelte`). With `target`, the rule decides whom the
  * Demon attacks (named on the Demon's step by `features/grimoire/night/night-walk.svelte.ts`).
  */
-export const demonAttack = specPart(
-	'deaths',
-	'Demon attack',
-	'While in play, the Demon may choose not to attack at night, may have to once per game, or attacks whom the rule says.',
-	// `mustSkipOnce`: the Demon must choose not to attack at least once per game. This reminder
-	// marks the Demon until it has, and while it is on the Demon, the Demon doesn't wake on a
-	// night its attack could end the game (the Toymaker's Final Night: No Attack,
-	// https://wiki.bloodontheclocktower.com/Toymaker). `target`: whom the Demon attacks each
-	// night after the first.
-	optObj({ maySkip: T, mustSkipOnce: TOKEN, target: oneOf(DEMON_TARGETS) }),
-	(value, path, issues) => {
-		if (!value.maySkip && !value.target) {
-			issues.add(path, 'expected maySkip or target');
-			return undefined;
+export const demonAttack = partWords(
+	specPart(
+		'deaths',
+		'Demon attack',
+		'While in play, the Demon may choose not to attack at night, may have to once per game, or attacks whom the rule says.',
+		// `mustSkipOnce`: the Demon must choose not to attack at least once per game. This reminder
+		// marks the Demon until it has, and while it is on the Demon, the Demon doesn't wake on a
+		// night its attack could end the game (the Toymaker's Final Night: No Attack,
+		// https://wiki.bloodontheclocktower.com/Toymaker). `target`: whom the Demon attacks each
+		// night after the first.
+		optObj({ maySkip: T, mustSkipOnce: TOKEN, target: oneOf(DEMON_TARGETS) }),
+		(value, path, issues) => {
+			if (!value.maySkip && !value.target) {
+				issues.add(path, 'expected maySkip or target');
+				return undefined;
+			}
+			if (value.mustSkipOnce && !value.maySkip) {
+				issues.add(`${path}.mustSkipOnce`, 'needs maySkip');
+				return undefined;
+			}
+			return value;
 		}
-		if (value.mustSkipOnce && !value.maySkip) {
-			issues.add(`${path}.mustSkipOnce`, 'needs maySkip');
-			return undefined;
+	),
+	{
+		maySkip: {
+			label: 'Demon may not attack'
+		},
+		mustSkipOnce: {
+			label: 'Must skip once, marked by'
+		},
+		target: {
+			label: 'Demon attacks',
+			names: {
+				'script-order': 'The next character in script order'
+			}
 		}
-		return value;
 	}
 );
 

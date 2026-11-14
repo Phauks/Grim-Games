@@ -1,6 +1,6 @@
 import { anyOf, obj, opt, T, TOKEN } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The `gainedFrom` part of a character's rules block: the ability it has is another
@@ -24,18 +24,42 @@ import { specPart, type PartValue } from './part.ts';
  *   `token` on its player; any other is held by the player (`Seat.abilities`, via this
  *   character), whose token stays as it is (Trevor, 2026-11-03).
  */
-export const gainedFrom = specPart(
-	'abilities',
-	'Ability gained from',
-	'The ability it has is another player’s, found by its token.',
-	obj({
-		token: TOKEN,
-		pending: opt(TOKEN),
-		swapped: opt(T),
-		wakes: opt(T),
-		ifEvil: opt(TOKEN),
-		choose: opt(anyOf(SEATED_TYPES))
-	})
+export const gainedFrom = partWords(
+	specPart(
+		'abilities',
+		'Ability gained from',
+		'The ability it has is another player’s, found by its token.',
+		obj({
+			token: TOKEN,
+			pending: opt(TOKEN),
+			swapped: opt(T),
+			wakes: opt(T),
+			ifEvil: opt(TOKEN),
+			choose: opt(anyOf(SEATED_TYPES))
+		})
+	),
+	{
+		token: {
+			label: 'Ability of the player with'
+		},
+		pending: {
+			label: 'Until then, a dead player with',
+			about: 'Gives the ability if the Storyteller judges it gained.'
+		},
+		swapped: {
+			label: 'Its token was swapped for the character'
+		},
+		wakes: {
+			label: 'Wakes as that character'
+		},
+		ifEvil: {
+			label: 'If that player is evil, place',
+			about: 'On its own player, who is then impaired.'
+		},
+		choose: {
+			label: 'Chooses a character of these types'
+		}
+	}
 );
 
 export type GainedFrom = PartValue<typeof gainedFrom>;

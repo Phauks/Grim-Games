@@ -1,6 +1,6 @@
 import { anyOf, byToken, oneOf, optObj, T, TOKEN, type SpecValue } from '../field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 const REGISTERS = optObj({ alignments: anyOf(ALIGNMENTS), types: anyOf(CHARACTER_TYPES) });
 
@@ -30,11 +30,42 @@ export type TokenRegisters = SpecValue<typeof TOKEN_REGISTERS>;
  * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
  * player, as evil; `TokenRegisters`). A Fabled's tokens work while it is in play.
  */
-export const registersAs = specPart(
-	'abilities',
-	'Registers as',
-	'Players who may register as another alignment or character type.',
-	optObj({ self: REGISTERS, tokens: byToken(TOKEN_REGISTERS) })
+export const registersAs = partWords(
+	specPart(
+		'abilities',
+		'Registers as',
+		'Players who may register as another alignment or character type.',
+		optObj({ self: REGISTERS, tokens: byToken(TOKEN_REGISTERS) })
+	),
+	{
+		self: {
+			label: 'Its own player'
+		},
+		'self.alignments': {
+			label: 'As alignments'
+		},
+		'self.types': {
+			label: 'As character types'
+		},
+		tokens: {
+			label: 'By reminder'
+		},
+		'tokens.*.alignments': {
+			label: 'As alignments'
+		},
+		'tokens.*.types': {
+			label: 'As character types'
+		},
+		'tokens.*.carrierAlignment': {
+			label: 'Only while the player is'
+		},
+		'tokens.*.asAnything': {
+			label: 'As anything'
+		},
+		'tokens.*.whileToken': {
+			label: 'While this reminder is out'
+		}
+	}
 );
 
 export type RegistersAs = PartValue<typeof registersAs>;

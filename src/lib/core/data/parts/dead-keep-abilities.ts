@@ -1,6 +1,6 @@
 import { anyOf, obj } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * Who has an ability while a rule source with this part is in play: dead players keep theirs,
@@ -8,11 +8,21 @@ import { specPart, type PartValue } from './part.ts';
  * they die (The Phantom Detectives,
  * https://schnauzerclub.neocities.org/scripts/thephantomdetectives; `rules/rule-sources.ts`).
  */
-export const deadKeepAbilities = specPart(
-	'deaths',
-	'Dead keep abilities',
-	'While in play, dead players keep their abilities, except some types, and living players of some types have none until they die.',
-	obj({ deadLose: anyOf(SEATED_TYPES), livingLose: anyOf(SEATED_TYPES) })
+export const deadKeepAbilities = partWords(
+	specPart(
+		'deaths',
+		'Dead keep abilities',
+		'While in play, dead players keep their abilities, except some types, and living players of some types have none until they die.',
+		obj({ deadLose: anyOf(SEATED_TYPES), livingLose: anyOf(SEATED_TYPES) })
+	),
+	{
+		deadLose: {
+			label: 'Dead of these types lose theirs'
+		},
+		livingLose: {
+			label: 'Living of these types have none'
+		}
+	}
 );
 
 export type DeadKeepAbilities = PartValue<typeof deadKeepAbilities>;

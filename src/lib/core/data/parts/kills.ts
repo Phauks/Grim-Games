@@ -1,5 +1,5 @@
 import { B, COUNT, obj, oneOf, opt, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
@@ -15,19 +15,64 @@ import { specPart, type PartValue } from './part.ts';
  *   play (the Ojo); `live-or-die`, the players its reminders mark, who each choose to live or
  *   die, and all die if all live (the Al-Hadikhia).
  */
-export const kills = specPart(
-	'deaths',
-	'Kills',
-	'The ability kills at night.',
-	obj({
-		by: oneOf(['demon', 'other']),
-		targets: opt(oneOf(['any', 'self'])),
-		ignoresProtection: opt(B),
-		count: opt(COUNT),
-		charged: opt(obj({ token: TOKEN, count: COUNT })),
-		delayed: opt(TOKEN),
-		chooses: opt(oneOf(['character', 'live-or-die']))
-	})
+export const kills = partWords(
+	specPart(
+		'deaths',
+		'Kills',
+		'The ability kills at night.',
+		obj({
+			by: oneOf(['demon', 'other']),
+			targets: opt(oneOf(['any', 'self'])),
+			ignoresProtection: opt(B),
+			count: opt(COUNT),
+			charged: opt(obj({ token: TOKEN, count: COUNT })),
+			delayed: opt(TOKEN),
+			chooses: opt(oneOf(['character', 'live-or-die']))
+		})
+	),
+	{
+		by: {
+			label: 'Whose kill',
+			names: {
+				demon: 'The Demon’s',
+				other: 'Another ability’s'
+			}
+		},
+		targets: {
+			label: 'Who it may kill',
+			names: {
+				any: 'Any player',
+				self: 'Only its own player'
+			}
+		},
+		ignoresProtection: {
+			label: 'Ignores protection'
+		},
+		count: {
+			label: 'Players a night',
+			about: '1 when left empty.'
+		},
+		charged: {
+			label: 'More after choosing no one'
+		},
+		'charged.token': {
+			label: 'While its player has'
+		},
+		'charged.count': {
+			label: 'Players a night'
+		},
+		delayed: {
+			label: 'Falls on the player with',
+			about: 'Needs no waking.'
+		},
+		chooses: {
+			label: 'Chooses instead of a player',
+			names: {
+				character: 'A character',
+				'live-or-die': 'Marked players choose to live or die'
+			}
+		}
+	}
 );
 
 export type Kills = PartValue<typeof kills>;

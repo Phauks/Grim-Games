@@ -1,5 +1,5 @@
 import { optObj, ownWords, STR, TOKENS } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * Which of a character's reminder tokens should stay on the seat they were first placed on
@@ -25,24 +25,38 @@ import { specPart, type PartValue } from './part.ts';
  *
  * `why` and `relocates` are our own summaries, never wiki prose.
  */
-export const reminderMovement = specPart(
-	'tokens',
-	'Reminders that stay',
-	'Which of its reminder tokens stay where they were placed.',
-	optObj({
-		fixed: TOKENS,
-		why: ownWords(STR),
-		relocates: ownWords(STR),
-		followsNeighbours: TOKENS
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		value.followsNeighbours?.forEach((label, i) => {
-			if (value.fixed?.includes(label)) {
-				issues.add(`${path}.followsNeighbours[${i}]`, 'a fixed token cannot follow the neighbours');
-			}
-		});
-		return issues.list.length > before ? undefined : value;
+export const reminderMovement = partWords(
+	specPart(
+		'tokens',
+		'Reminders that stay',
+		'Which of its reminder tokens stay where they were placed.',
+		optObj({
+			fixed: TOKENS,
+			why: ownWords(STR),
+			relocates: ownWords(STR),
+			followsNeighbours: TOKENS
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			value.followsNeighbours?.forEach((label, i) => {
+				if (value.fixed?.includes(label)) {
+					issues.add(
+						`${path}.followsNeighbours[${i}]`,
+						'a fixed token cannot follow the neighbours'
+					);
+				}
+			});
+			return issues.list.length > before ? undefined : value;
+		}
+	),
+	{
+		fixed: {
+			label: 'Stay where placed'
+		},
+		followsNeighbours: {
+			label: 'Follow the neighbours',
+			about: 'Moved to the new neighbours after seats change.'
+		}
 	}
 );
 
