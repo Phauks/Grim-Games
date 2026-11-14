@@ -162,18 +162,18 @@ const DUPLICATES: readonly RuleSwitch[] = [
 	}
 ];
 
-/** Seat 7 under A Terrifying Whisper; our wording (drafted 2026-11-12, waiting on Trevor). */
+/** Seat 7 under A Terrifying Whisper; our wording (approved by Trevor 2026-11-13). */
 export const SEAT_7_WHISPER =
 	'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. You may speak for it twice: once privately and once publicly.';
 
-/** Seat 7 under Seats Rise Up; our wording (drafted 2026-11-12, waiting on Trevor). */
+/** Seat 7 under Seats Rise Up; our wording (approved by Trevor 2026-11-13). */
 export const SEAT_7_RISE_UP =
 	'Once per day, while the seat still has a vote, you may add its vote to one nomination, before the next nomination is made. Announce it before the players vote.';
-/** Seat 7 under Amnesiac at Home; our wording (drafted 2026-11-12, waiting on Trevor). */
+/** Seat 7 under Amnesiac at Home; our wording (approved by Trevor 2026-11-13). */
 export const SEAT_7_AT_HOME =
 	'If a new player sits in the seat during the game, you may let them stay and speak for it. Don’t tell them its character or anything it learned.';
 
-/** Seat 7 under The Grandmother Principle; our wording (drafted 2026-11-12, waiting on Trevor). */
+/** Seat 7 under The Grandmother Principle; our wording (approved by Trevor 2026-11-13). */
 export const SEAT_7_PROTECTOR =
 	'Wake one player and tell them they have been chosen to protect the seat no one plays. If that seat is executed, you may have them die too.';
 

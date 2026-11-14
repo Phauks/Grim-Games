@@ -4,7 +4,11 @@ import {
 	DUPLICATE_DEMONS,
 	INFINITE_NAMED,
 	PLUS_ONE_MAY_BE,
-	PLUS_ONE_NAMED
+	PLUS_ONE_NAMED,
+	SEAT_7_AT_HOME,
+	SEAT_7_PROTECTOR,
+	SEAT_7_RISE_UP,
+	SEAT_7_WHISPER
 } from './rule-switches.ts';
 
 /**
@@ -101,8 +105,16 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 		'Don’t announce who has died. Dead players can still nominate. Poisoned players don’t wake at night.',
 	'stowed-away:setup.travellers':
 		'Put up to 2 Travellers in the bag, and set the player count for that many fewer players. Don’t announce who the Travellers are. Exiling a Traveller counts as an execution.',
-	'seat-7:setup.seats':
+	// The second text is with A Terrifying Whisper on (approved 2026-11-13).
+	'seat-7:setup.seats': [
 		'One seat is dealt a character as usual, but no one plays it. Make its choices arbitrarily. Once per game you may speak for it.',
+		SEAT_7_WHISPER
+	],
+	// Seat 7's optional rules add their rule changes in this order, after those of the ones
+	// before that are on (approved 2026-11-13, "yes", after reading the four drafts).
+	'seat-7:setup.ruleChanges[0]': [SEAT_7_RISE_UP, SEAT_7_AT_HOME, SEAT_7_PROTECTOR],
+	'seat-7:setup.ruleChanges[1]': [SEAT_7_AT_HOME, SEAT_7_PROTECTOR],
+	'seat-7:setup.ruleChanges[2]': SEAT_7_PROTECTOR,
 	// Approved 2026-10-22 ("other special rules are approved"), after he read the rule files.
 	'binary-supernovae:setup.winConditions':
 		'Good wins as soon as any Demon dies by execution, unless an ability such as the Mastermind’s keeps the game going. A Demon killed by an ability doesn’t end it.',
