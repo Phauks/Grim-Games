@@ -109,7 +109,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	characterTokens: {
 		label: 'Show characters as tokens',
 		description:
-			'When you show a player a character, such as You are, a big token with its name and ability. Off lists them as the script does.'
+			'When you show a player one character, such as You are, a big token with its name and ability. Off lists it as the script does.'
 	},
 	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {

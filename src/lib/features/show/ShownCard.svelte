@@ -30,7 +30,6 @@
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
 	let captionHeight = $state(0);
-	let nameHeight = $state(0);
 
 	/**
 	 * A short answer (a number, Yes/No, True/False, a custom card's choice) fills the space it
@@ -50,39 +49,6 @@
 			Math.floor(Math.min(areaWidth * 0.75, areaHeight * 0.55, areaHeight - captionHeight - 16))
 		)
 	);
-
-	/**
-	 * Several characters (the Demon's bluffs) are tokens too, not lines of text (Trevor,
-	 * 2026-10-27): as large as fits, trying each number of columns, each with its name below.
-	 */
-	let tokenList = $state<HTMLUListElement>();
-	let gap = $state(0);
-	/** Each name's own width: a column is as wide as the widest name, if wider than its token. */
-	let nameWidths = $state<number[]>([]);
-	$effect(() => {
-		void areaWidth;
-		if (tokenList) gap = parseFloat(getComputedStyle(tokenList).columnGap) || 0;
-	});
-	const many = $derived.by(() => {
-		const n = characters.length;
-		const widestName = Math.max(0, ...nameWidths.slice(0, n));
-		let best = { size: 0, columns: 1 };
-		for (let columns = 1; columns <= n; columns++) {
-			const rows = Math.ceil(n / columns);
-			const across = (areaWidth - gap * (columns - 1)) / columns;
-			// More columns only while the names still fit side by side.
-			if (columns > 1 && widestName > across) break;
-			const down = (areaHeight - rows * (nameHeight + gap)) / rows;
-			const size = Math.floor(Math.min(across, down, areaWidth * 0.75, areaHeight * 0.55));
-			if (size > best.size) best = { size, columns };
-		}
-		const size = Math.max(48, best.size);
-		return {
-			size,
-			columns: best.columns,
-			width: Math.min(areaWidth, Math.max(size, widestName))
-		};
-	});
 </script>
 
 {#snippet jinxList(shown: ShownCharacter)}
@@ -114,8 +80,10 @@
 			{detail}
 		</p>
 	{/if}
-	{#if characters.length > 0 && !asTokens}
-		<!-- Rows only, as the script sheet lists them (the Storyteller's setting). -->
+	{#if characters.length > 1 || (characters.length > 0 && !asTokens)}
+		<!-- Rows, as the script sheet lists them: always for several characters (Trevor,
+		     2026-11-14: "Rows only", the standard way, with the ability readable from afar),
+		     and for one when the Storyteller's setting turns tokens off. -->
 		<div class="area rows-area">
 			<ul class="rows" data-testid="shown-rows">
 				{#each characters as shown (shown.character.id)}
@@ -146,35 +114,6 @@
 					{@render jinxList(characters[0])}
 				</div>
 			</div>
-		</div>
-	{:else if characters.length > 1}
-		<!-- Several characters (bluffs): tokens with their names (Trevor, 2026-10-27). -->
-		<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
-			<ul
-				class="tokens"
-				bind:this={tokenList}
-				style:max-width="{many.columns * many.width + (many.columns - 1) * gap}px"
-				data-testid="shown-characters"
-			>
-				{#each characters as shown, i (shown.character.id)}
-					<li style:width="{many.width}px">
-						<CharacterToken
-							character={shown.character}
-							alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-							size={many.size}
-						/>
-						<span class="name" bind:clientHeight={nameHeight} bind:clientWidth={nameWidths[i]}
-							><CharacterPiece
-								template="badge"
-								characterId={shown.character.id}
-								character={shown.character}
-								alignment={shown.alignment ?? defaultAlignment(shown.character.type)}
-								interactive={false}
-							/></span
-						>
-					</li>
-				{/each}
-			</ul>
 		</div>
 	{/if}
 </div>
@@ -298,37 +237,5 @@
 		list-style: none;
 		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
 		text-align: start;
-	}
-	.tokens {
-		/* Flex, not grid: a short last row sits in the middle. */
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		width: 100%;
-		gap: var(--space-4);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.tokens li {
-		flex: 0 0 auto;
-		display: grid;
-		justify-items: center;
-		align-content: start;
-		gap: var(--space-2);
-		min-width: 0;
-	}
-	/* The shared badge, larger: it names the character the player is being shown. */
-	.name {
-		max-width: 100%;
-		font-size: clamp(1.3rem, 5vw, 1.8rem);
-	}
-	/* Several names share the width, so each is a size smaller than a single one. */
-	.tokens .name {
-		max-width: none;
-		font-size: clamp(1rem, 3.5vw, 1.4rem);
-	}
-	.content[data-compact] .name {
-		font-size: 1.1rem;
 	}
 </style>

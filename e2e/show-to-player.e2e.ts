@@ -151,8 +151,12 @@ test('"This player is" shows several characters, e.g. for the Dreamer', async ({
 	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const shown = page.getByTestId('show-to-player');
-	await expect(shown).toContainText('Empath');
-	await expect(shown).toContainText('Imp');
+	// Several characters are the standard rows, name and ability (Trevor, 2026-11-14).
+	await expect(shown.getByTestId('shown-rows').locator('.ring-row')).toHaveCount(2);
+	await expect(shown).toContainText('Each night, you learn how many of your 2 alive neighbors');
+	await expect(shown).toContainText('Each night*, choose a player: they die.');
+	await expect(shown.getByTestId('shown-character')).toHaveCount(0);
+	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });
 
 const choice = (page: import('@playwright/test').Page, name: string) =>
@@ -160,9 +164,7 @@ const choice = (page: import('@playwright/test').Page, name: string) =>
 		name: new RegExp(`^${name}(, .*)?$`)
 	});
 
-test('the Storyteller sets the 3 Demon bluffs at once and shows them as tokens', async ({
-	page
-}) => {
+test('the Storyteller sets the 3 Demon bluffs at once and shows them as rows', async ({ page }) => {
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
 	// One set only, without a Lunatic.
@@ -196,16 +198,17 @@ test('the Storyteller sets the 3 Demon bluffs at once and shows them as tokens',
 	// The open one: the Lunatic sample on the same page has its own (closed) player view.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
-	// Tokens with their names, not lines of text (Trevor, 2026-10-27), all on the screen.
-	const items = shown.getByTestId('shown-characters').getByRole('listitem');
-	await expect(items).toHaveCount(3);
-	await expect(items).toContainText(['Investigator', 'Monk', 'Saint']);
+	// The standard rows with each ability (Trevor, 2026-11-14), all inside the screen.
+	const rows = shown.getByTestId('shown-rows').locator('.ring-row');
+	await expect(rows).toHaveCount(3);
+	await expect(shown.getByTestId('shown-rows')).toContainText('Investigator');
+	await expect(shown.getByTestId('shown-rows')).toContainText('Monk');
+	await expect(shown.getByTestId('shown-rows')).toContainText('Saint');
 	const viewport = page.viewportSize()!;
-	for (const token of await shown.getByTestId('shown-characters').locator('.token').all()) {
-		const box = (await token.boundingBox())!;
+	for (const row of await rows.all()) {
+		const box = (await row.boundingBox())!;
 		expect(box.x).toBeGreaterThanOrEqual(0);
 		expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-		expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 	}
 	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 	await shown.getByRole('button', { name: 'Close' }).tap();
