@@ -1,5 +1,5 @@
 import { obj, oneOf, opt, T, TOKENS } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const COUNTER_TIMES = ['dawn', 'dusk'] as const;
 export type CounterTime = (typeof COUNTER_TIMES)[number];
@@ -14,15 +14,32 @@ export type CounterTime = (typeof COUNTER_TIMES)[number];
  * that carries only one at a time (the Leviathan). Moved by `rules/reminders/counters.ts`, as the
  * Storyteller's setting says.
  */
-export const counter = specPart(
-	'tokens',
-	'Counter',
-	'Its run of day or night tokens gains the next one each dawn or dusk.',
-	obj({ tokens: TOKENS, at: oneOf(COUNTER_TIMES), replaces: opt(T) }),
-	(value, path, issues) => {
-		if (value.tokens.length >= 2) return value;
-		issues.add(`${path}.tokens`, 'expected two or more reminders, in the order placed');
-		return undefined;
+export const counter = partWords(
+	specPart(
+		'tokens',
+		'Counter',
+		'Its run of day or night tokens gains the next one each dawn or dusk.',
+		obj({ tokens: TOKENS, at: oneOf(COUNTER_TIMES), replaces: opt(T) }),
+		(value, path, issues) => {
+			if (value.tokens.length >= 2) return value;
+			issues.add(`${path}.tokens`, 'expected two or more reminders, in the order placed');
+			return undefined;
+		}
+	),
+	{
+		tokens: {
+			label: 'Reminders, in order'
+		},
+		at: {
+			label: 'Next one goes on at',
+			names: {
+				dawn: 'Dawn',
+				dusk: 'Dusk'
+			}
+		},
+		replaces: {
+			label: 'Replaces the one before'
+		}
 	}
 );
 

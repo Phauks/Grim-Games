@@ -1,6 +1,6 @@
 import { anyOf, CHARACTERS, COUNT, obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
 import { ALIGNMENTS, SEATED_TYPES } from '../types.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * On its night step, this character's living player chooses a
@@ -42,35 +42,99 @@ import { specPart } from './part.ts';
  *   `types`, so the new Minions spread out from it in a line (the Lord of Typhon's
  *   neighbours).
  */
-export const changesCharacter = specPart(
-	'night',
-	'Changes character',
-	'Its night step makes a chosen player another character.',
-	obj({
-		types: anyOf(SEATED_TYPES),
-		notInPlay: opt(T),
-		notTravellers: opt(T),
-		alignment: opt(oneOf(ALIGNMENTS)),
-		token: opt(TOKEN),
-		spent: opt(TOKEN),
-		onlyFrom: opt(CHARACTERS),
-		notMarked: opt(TOKEN),
-		sameType: opt(T),
-		anyType: opt(T),
-		afterDeath: opt(T),
-		firstNight: opt(T),
-		upTo: opt(oneOf(['minions'])),
-		extraMinions: opt(COUNT),
-		minMinions: opt(COUNT),
-		outward: opt(T)
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		if (!value.types.length) issues.add(`${path}.types`, 'expected at least one character type');
-		if (value.anyType && !value.sameType) issues.add(`${path}.anyType`, 'only with sameType');
-		for (const key of ['extraMinions', 'minMinions'] as const) {
-			if (value[key] !== undefined && !value.upTo) issues.add(`${path}.${key}`, 'only with upTo');
+export const changesCharacter = partWords(
+	specPart(
+		'night',
+		'Changes character',
+		'Its night step makes a chosen player another character.',
+		obj({
+			types: anyOf(SEATED_TYPES),
+			notInPlay: opt(T),
+			notTravellers: opt(T),
+			alignment: opt(oneOf(ALIGNMENTS)),
+			token: opt(TOKEN),
+			spent: opt(TOKEN),
+			onlyFrom: opt(CHARACTERS),
+			notMarked: opt(TOKEN),
+			sameType: opt(T),
+			anyType: opt(T),
+			afterDeath: opt(T),
+			firstNight: opt(T),
+			upTo: opt(oneOf(['minions'])),
+			extraMinions: opt(COUNT),
+			minMinions: opt(COUNT),
+			outward: opt(T)
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			if (!value.types.length) issues.add(`${path}.types`, 'expected at least one character type');
+			if (value.anyType && !value.sameType) issues.add(`${path}.anyType`, 'only with sameType');
+			for (const key of ['extraMinions', 'minMinions'] as const) {
+				if (value[key] !== undefined && !value.upTo) issues.add(`${path}.${key}`, 'only with upTo');
+			}
+			return issues.list.length > before ? undefined : value;
 		}
-		return issues.list.length > before ? undefined : value;
+	),
+	{
+		types: {
+			label: 'New character’s types'
+		},
+		notInPlay: {
+			label: 'Only characters not in play'
+		},
+		notTravellers: {
+			label: 'Never a Traveller'
+		},
+		alignment: {
+			label: 'New alignment',
+			about: 'Left empty, the player keeps theirs.'
+		},
+		token: {
+			label: 'Only on the night of',
+			about: 'Only on a night its own reminder marks.'
+		},
+		spent: {
+			label: 'Used up by',
+			about: 'Not once this reminder of its own is on its player.'
+		},
+		onlyFrom: {
+			label: 'Only players of',
+			about: 'Only a player of one of these characters changes.'
+		},
+		notMarked: {
+			label: 'Never the player with',
+			about: 'Never the player this reminder of its own marks.'
+		},
+		sameType: {
+			label: 'Each into their own type',
+			about: 'Each player of these types may change into another character of their type.'
+		},
+		anyType: {
+			label: 'Into any of the types',
+			about: 'With each into their own type: any of the types, not only their own.'
+		},
+		afterDeath: {
+			label: 'Only once its player has died'
+		},
+		firstNight: {
+			label: 'Only on the first night'
+		},
+		upTo: {
+			label: 'One after another until',
+			names: {
+				minions: 'The usual number of Minions'
+			}
+		},
+		extraMinions: {
+			label: 'Minions more than usual'
+		},
+		minMinions: {
+			label: 'Only with at least this many Minions',
+			about: 'The usual number of Minions for the player count.'
+		},
+		outward: {
+			label: 'Outward from its player',
+			about: 'Only the nearest player each side not yet of these types.'
+		}
 	}
 );

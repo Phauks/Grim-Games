@@ -1,5 +1,5 @@
 import { obj, oneOf, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const DAY_MARKS = ['demon-voted', 'minion-nominated'] as const;
 export type DayMark = (typeof DAY_MARKS)[number];
@@ -18,15 +18,32 @@ export type DayMark = (typeof DAY_MARKS)[number];
  *
  * While such a character is in play, End day asks for any of today's marks still unset.
  */
-export const dayMark = specPart(
-	'day',
-	'Day mark',
-	'A fact about today the Storyteller marks for its night answer.',
-	obj({ mark: oneOf(DAY_MARKS), yes: TOKEN, no: TOKEN }),
-	(value, path, issues) => {
-		if (value.yes !== value.no) return value;
-		issues.add(`${path}.no`, 'the same token as yes');
-		return undefined;
+export const dayMark = partWords(
+	specPart(
+		'day',
+		'Day mark',
+		'A fact about today the Storyteller marks for its night answer.',
+		obj({ mark: oneOf(DAY_MARKS), yes: TOKEN, no: TOKEN }),
+		(value, path, issues) => {
+			if (value.yes !== value.no) return value;
+			issues.add(`${path}.no`, 'the same token as yes');
+			return undefined;
+		}
+	),
+	{
+		mark: {
+			label: 'Fact',
+			names: {
+				'demon-voted': 'The Demon voted',
+				'minion-nominated': 'A Minion nominated'
+			}
+		},
+		yes: {
+			label: 'Reminder for yes'
+		},
+		no: {
+			label: 'Reminder for no'
+		}
 	}
 );
 

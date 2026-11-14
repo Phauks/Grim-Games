@@ -10,7 +10,7 @@ import {
 	type SpecValue
 } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const DEATH_KINDS = ['kills', 'own-death', 'execution', 'gained-ability'] as const;
 export type DeathKind = (typeof DEATH_KINDS)[number];
@@ -71,23 +71,73 @@ export type RegistersAs = Extract<VictimRule, { who: 'registers' }>['as'];
  *
  * The kinds are our reading of TPI's ability text and the character's wiki page.
  */
-export const deathCause = specPart(
-	'deaths',
-	'Death cause',
-	'Whether and how its ability can cause a death.',
-	variants(
-		{ label: 'None', has: 'none', spec: obj({ none: ownWords(STR) }) },
-		{
-			label: 'Causes a death',
-			has: 'kind',
-			spec: obj({
-				kind: oneOf(DEATH_KINDS),
-				onlyWith: opt(CHARACTERS),
-				afterChanging: opt(oneOf(SEATED_TYPES)),
-				victim: opt(VICTIM)
-			})
+export const deathCause = partWords(
+	specPart(
+		'deaths',
+		'Death cause',
+		'Whether and how its ability can cause a death.',
+		variants(
+			{ label: 'None', has: 'none', spec: obj({ none: ownWords(STR) }) },
+			{
+				label: 'Causes a death',
+				has: 'kind',
+				spec: obj({
+					kind: oneOf(DEATH_KINDS),
+					onlyWith: opt(CHARACTERS),
+					afterChanging: opt(oneOf(SEATED_TYPES)),
+					victim: opt(VICTIM)
+				})
+			}
+		)
+	),
+	{
+		'<Causes a death>.kind': {
+			label: 'How',
+			names: {
+				kills: 'Kills a player',
+				'own-death': 'Only its own player’s death',
+				execution: 'Causes an execution',
+				'gained-ability': 'Through an ability it gains or gives'
+			}
+		},
+		'<Causes a death>.onlyWith': {
+			label: 'Only with',
+			about: 'Only when one of these is on the script or in play.'
+		},
+		'<Causes a death>.afterChanging': {
+			label: 'Only once it has made a',
+			about: 'Once a player it changed is of this type.'
+		},
+		'<Causes a death>.victim': {
+			label: 'Who it can kill'
+		},
+		'<Causes a death>.victim<Registers as>.who': {
+			label: 'Who',
+			names: {
+				registers: 'A player who registers as'
+			}
+		},
+		'<Causes a death>.victim<Registers as>.as': {
+			label: 'Registers as',
+			names: {
+				demon: 'The Demon',
+				'not-demon': 'Not the Demon',
+				good: 'Good',
+				townsfolk: 'A Townsfolk'
+			}
+		},
+		'<Causes a death>.victim<Registers as>.notSelf': {
+			label: 'Not its own player'
+		},
+		'<Causes a death>.victim<Who>.who': {
+			label: 'Who',
+			names: {
+				self: 'Only its own player',
+				'not-self': 'Anyone but its own player',
+				'alive-neighbour': 'A living neighbour'
+			}
 		}
-	)
+	}
 );
 
 export type DeathCauseRule = PartValue<typeof deathCause>;

@@ -19,6 +19,8 @@ import {
 	T,
 	TEXT,
 	variants,
+	wordAt,
+	worded,
 	type FieldSpec,
 	type Spec,
 	type SpecValue,
@@ -57,6 +59,7 @@ import { CONDITION_FIELD, readCondition } from './jinx-conditions.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
 import { readSpec } from './read-spec.ts';
 import { jinxNeedsOn } from './jinx-needs.ts';
+import { VERB_WORDS } from './jinx-verb-words.ts';
 import {
 	ALIGNMENTS,
 	CHARACTER_TYPES,
@@ -435,13 +438,23 @@ const VERBS: { readonly [K in VerbKey]: Verb<Params<K>> } = {
  * short, `true` (a verb with no main setting) or its main setting's value alone.
  */
 function verbField(v: Verb<unknown>): FieldSpec {
-	const who = oneOf(v.both ? [...JINX_WHO, 'both'] : JINX_WHO);
+	const who = worded(
+		{
+			label: 'Whose',
+			names: {
+				self: 'This character',
+				partner: 'The partner',
+				...(v.both ? { both: 'Both' } : {})
+			}
+		},
+		oneOf(v.both ? [...JINX_WHO, 'both'] : JINX_WHO)
+	);
 	const full: FieldSpec = {
 		kind: 'object',
 		fields: [
 			...v.spec.fields,
 			{ key: 'who', spec: who, optional: true },
-			{ key: 'when', spec: list(CONDITION_FIELD), optional: true }
+			{ key: 'when', spec: worded({ label: 'Only when' }, list(CONDITION_FIELD)), optional: true }
 		]
 	};
 	const main = v.main ? v.spec.fields.find((f) => f.key === v.main)?.spec : undefined;
@@ -460,9 +473,16 @@ function verbField(v: Verb<unknown>): FieldSpec {
  */
 export const JINX_FIELDS: FieldSpec = byCharacter(
 	someOf({
-		exclusive: T,
+		exclusive: worded(
+			{ label: 'Only one of the two', about: 'The two may not both be in play.' },
+			T
+		),
 		...Object.fromEntries(
-			Object.entries(VERBS).map(([key, v]) => [key, verbField(v as Verb<unknown>)])
+			Object.entries(VERBS).map(([key, v]) => {
+				const { fields, ...words } = VERB_WORDS[key as VerbKey];
+				const spec = wordAt((v as Verb<unknown>).spec, fields ?? {});
+				return [key, worded(words, verbField({ ...(v as Verb<unknown>), spec }))];
+			})
 		)
 	})
 );

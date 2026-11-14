@@ -1,5 +1,5 @@
 import { CHARACTERS, obj, opt } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * While a rule source with this part is in play, every character whose ability gives it
@@ -9,11 +9,18 @@ import { specPart, type PartValue } from './part.ts';
  * Demon's bluffs are separate steps, so they never are. One Day More's Signal Failure
  * (https://beardytas.com/garden-of-djinn/one-day-more/; `rules/night/info/held-info.ts`).
  */
-export const infoDelay = specPart(
-	'night',
-	'Information a night late',
-	'While in play, characters that learn information receive it one night later (a day later for day information), as it was when their ability was used.',
-	obj({ except: opt(CHARACTERS) })
+export const infoDelay = partWords(
+	specPart(
+		'night',
+		'Information a night late',
+		'While in play, characters that learn information receive it one night later (a day later for day information), as it was when their ability was used.',
+		obj({ except: opt(CHARACTERS) })
+	),
+	{
+		except: {
+			label: 'Not delayed'
+		}
+	}
 );
 
 export type InfoDelay = PartValue<typeof infoDelay>;

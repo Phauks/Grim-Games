@@ -8,7 +8,7 @@ import {
 } from '../types.ts';
 import type { Issues } from '../validate.ts';
 import { presetTable } from '../presets.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * The building blocks (M60, M78): an answer over a group of players.
@@ -159,67 +159,169 @@ export interface Learns {
 }
 
 /** First-night information the Storyteller picks from the truthful options (the Chef). */
-export const learns = specPart(
-	'night',
-	'First-night information',
-	'First-night information the Storyteller picks from the truthful options.',
-	obj({
-		measure: oneOf(LEARNS_MEASURES),
-		type: opt(oneOf(CHARACTER_TYPES)),
-		token: opt(TOKEN),
-		noneWhenAbsent: opt(B),
-		self: opt(B),
-		alive: opt(B),
-		types: opt(anyOf(CHARACTER_TYPES)),
-		alignment: opt(oneOf(ALIGNMENTS)),
-		reminders: opt(optObj({ target: TOKEN, other: TOKEN, each: TOKEN })),
-		scope: opt(oneOf(LEARNS_SCOPES)),
-		choose: opt(NUM),
-		matching: opt(NUM),
-		woke: opt(B),
-		to: opt(anyOf(CHARACTER_TYPES)),
-		atLeast: opt(B),
-		killer: opt(B),
-		differsFromToken: opt(TOKEN)
-	}),
-	(value, path, issues): Learns | undefined => {
-		const before = issues.list.length;
-		const { measure, type, token, types, alignment, scope, choose, matching, to } = value;
-		if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
-		if ((measure === 'demon-or-token' || measure === 'type-differs-from-token') && !token) {
-			issues.add(`${path}.token`, 'missing');
+export const learns = partWords(
+	specPart(
+		'night',
+		'First-night information',
+		'First-night information the Storyteller picks from the truthful options.',
+		obj({
+			measure: oneOf(LEARNS_MEASURES),
+			type: opt(oneOf(CHARACTER_TYPES)),
+			token: opt(TOKEN),
+			noneWhenAbsent: opt(B),
+			self: opt(B),
+			alive: opt(B),
+			types: opt(anyOf(CHARACTER_TYPES)),
+			alignment: opt(oneOf(ALIGNMENTS)),
+			reminders: opt(optObj({ target: TOKEN, other: TOKEN, each: TOKEN })),
+			scope: opt(oneOf(LEARNS_SCOPES)),
+			choose: opt(NUM),
+			matching: opt(NUM),
+			woke: opt(B),
+			to: opt(anyOf(CHARACTER_TYPES)),
+			atLeast: opt(B),
+			killer: opt(B),
+			differsFromToken: opt(TOKEN)
+		}),
+		(value, path, issues): Learns | undefined => {
+			const before = issues.list.length;
+			const { measure, type, token, types, alignment, scope, choose, matching, to } = value;
+			if (measure === 'pair-of-type' && !type) issues.add(`${path}.type`, 'missing');
+			if ((measure === 'demon-or-token' || measure === 'type-differs-from-token') && !token) {
+				issues.add(`${path}.token`, 'missing');
+			}
+			const out: Learns = PRESETS.has(measure) ? PRESETS.expand(measure, value) : { measure };
+			const block = out.measure;
+			// The Balloonist's token marks who was shown, which the players shown now must differ from.
+			if (token && measure === 'type-differs-from-token') out.differsFromToken = token;
+			else if (token) out.token = token;
+			if (value.differsFromToken) out.differsFromToken = value.differsFromToken;
+			if (value.killer) out.killer = true;
+			if (value.atLeast) {
+				if (block !== 'players') issues.add(`${path}.atLeast`, 'only `players` takes it');
+				else out.atLeast = true;
+			}
+			if (value.noneWhenAbsent !== undefined) out.noneWhenAbsent = value.noneWhenAbsent;
+			if (type) {
+				if (measure !== 'pair-of-type') issues.add(`${path}.type`, 'only `pair-of-type` takes it');
+				else out.types = [type];
+			}
+			if (value.self) out.self = true;
+			if (value.alive) out.alive = true;
+			if (types) out.types = types;
+			if (alignment) out.alignment = alignment;
+			if (to) {
+				if (block !== 'distance') issues.add(`${path}.to`, 'only `distance` takes it');
+				else out.to = to;
+			}
+			if (scope) out.scope = scope;
+			if (choose !== undefined) out.choose = choose;
+			if (matching !== undefined) out.matching = matching;
+			if (value.woke) out.woke = true;
+			if (isLearnsBlock(block)) checkBlock(out, path, issues);
+			if (value.reminders) out.reminders = value.reminders;
+			return issues.list.length > before ? undefined : out;
 		}
-		const out: Learns = PRESETS.has(measure) ? PRESETS.expand(measure, value) : { measure };
-		const block = out.measure;
-		// The Balloonist's token marks who was shown, which the players shown now must differ from.
-		if (token && measure === 'type-differs-from-token') out.differsFromToken = token;
-		else if (token) out.token = token;
-		if (value.differsFromToken) out.differsFromToken = value.differsFromToken;
-		if (value.killer) out.killer = true;
-		if (value.atLeast) {
-			if (block !== 'players') issues.add(`${path}.atLeast`, 'only `players` takes it');
-			else out.atLeast = true;
+	),
+	{
+		measure: {
+			label: 'What it learns',
+			names: {
+				count: 'How many match',
+				players: 'Players shown, some matching',
+				'any-of': 'Whether any chosen player matches',
+				character: 'A player’s character',
+				same: 'Whether chosen players share an alignment',
+				alignment: 'A chosen player’s alignment',
+				direction: 'Which way the closest match sits',
+				distance: 'Steps from a match to a type',
+				storyteller: 'Players the Storyteller picks',
+				'pair-of-type': 'Two players, one of a type',
+				'evil-pairs': 'Pairs of evil neighbours',
+				'evil-alive-neighbours': 'Evil living neighbours',
+				'demon-minion-steps': 'Steps from the Demon to a Minion',
+				'demon-or-token': 'Whether either is the Demon',
+				'good-player': 'A good player',
+				'one-evil-of-three': 'Three players, one evil',
+				'same-alignment': 'Whether two players share an alignment',
+				'demon-in-pair': 'Two players, one the Demon',
+				'character-of': 'A chosen player’s character',
+				'not-demon-pair': 'Two players, neither the Demon',
+				'evil-player': 'An evil player',
+				'demon-player': 'The Demon’s player',
+				'closest-evil-direction': 'Which way the closest evil player sits',
+				'chosen-alignment': 'A chosen player’s alignment',
+				'type-differs-from-token': 'A player of another type than the last',
+				'woke-tonight': 'How many woke tonight',
+				'storyteller-pick': 'A player the Storyteller picks'
+			}
+		},
+		type: {
+			label: 'Character type'
+		},
+		token: {
+			label: 'Or carries',
+			about: 'A player with this reminder of its own matches too.'
+		},
+		noneWhenAbsent: {
+			label: 'May learn none match'
+		},
+		self: {
+			label: 'May be its own player'
+		},
+		alive: {
+			label: 'Only living players'
+		},
+		types: {
+			label: 'Matching types'
+		},
+		alignment: {
+			label: 'Matching alignment'
+		},
+		reminders: {
+			label: 'Reminders to place'
+		},
+		'reminders.target': {
+			label: 'On the shown player'
+		},
+		'reminders.other': {
+			label: 'On the second player'
+		},
+		'reminders.each': {
+			label: 'On each player tapped'
+		},
+		scope: {
+			label: 'Where it looks',
+			names: {
+				'alive-neighbours': 'Living neighbours',
+				'neighbour-pairs': 'Pairs of neighbours',
+				everyone: 'Everyone'
+			}
+		},
+		choose: {
+			label: 'Players chosen or shown'
+		},
+		matching: {
+			label: 'How many match',
+			about: 'All of them when left empty.'
+		},
+		woke: {
+			label: 'Only players who woke tonight'
+		},
+		to: {
+			label: 'Steps to these types'
+		},
+		atLeast: {
+			label: 'At least that many match'
+		},
+		killer: {
+			label: 'Only the player who killed it',
+			about: 'When any match.'
+		},
+		differsFromToken: {
+			label: 'Type differs from',
+			about: 'Players whose type differs from those carrying this reminder.'
 		}
-		if (value.noneWhenAbsent !== undefined) out.noneWhenAbsent = value.noneWhenAbsent;
-		if (type) {
-			if (measure !== 'pair-of-type') issues.add(`${path}.type`, 'only `pair-of-type` takes it');
-			else out.types = [type];
-		}
-		if (value.self) out.self = true;
-		if (value.alive) out.alive = true;
-		if (types) out.types = types;
-		if (alignment) out.alignment = alignment;
-		if (to) {
-			if (block !== 'distance') issues.add(`${path}.to`, 'only `distance` takes it');
-			else out.to = to;
-		}
-		if (scope) out.scope = scope;
-		if (choose !== undefined) out.choose = choose;
-		if (matching !== undefined) out.matching = matching;
-		if (value.woke) out.woke = true;
-		if (isLearnsBlock(block)) checkBlock(out, path, issues);
-		if (value.reminders) out.reminders = value.reminders;
-		return issues.list.length > before ? undefined : out;
 	}
 );
 

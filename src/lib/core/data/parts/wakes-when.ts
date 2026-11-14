@@ -1,6 +1,6 @@
 import { anyOf, CHARACTERS, COUNT, obj, oneOf, opt, optObj, T, TOKEN } from '../field-spec.ts';
 import { CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The `wakesWhen` part of a character's rules block: a condition its night step needs before
@@ -32,30 +32,82 @@ import { specPart, type PartValue } from './part.ts';
  *   so never on the first night (the Damsel's step shows the Minions a Damsel made mid-game;
  *   on the first night Minion info shows them, https://wiki.bloodontheclocktower.com/Damsel).
  */
-export const wakesWhen = specPart(
-	'night',
-	'Wakes when',
-	'A condition its player needs before waking for it.',
-	optObj({
-		deadAtLeastLiving: T,
-		deadAtLeast: COUNT,
-		diedTonight: obj({ characters: CHARACTERS, by: opt(oneOf(['demon'])) }),
-		diedToday: obj({ types: anyOf(CHARACTER_TYPES), token: opt(TOKEN) }),
-		nobodyDiedToday: T,
-		untilToken: TOKEN,
-		noneMarked: TOKEN,
-		markedDied: TOKEN,
-		nightAfterDay: COUNT,
-		becameToday: T
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		if (value.diedTonight?.characters.length === 0) {
-			issues.add(`${path}.diedTonight.characters`, 'missing');
+export const wakesWhen = partWords(
+	specPart(
+		'night',
+		'Wakes when',
+		'A condition its player needs before waking for it.',
+		optObj({
+			deadAtLeastLiving: T,
+			deadAtLeast: COUNT,
+			diedTonight: obj({ characters: CHARACTERS, by: opt(oneOf(['demon'])) }),
+			diedToday: obj({ types: anyOf(CHARACTER_TYPES), token: opt(TOKEN) }),
+			nobodyDiedToday: T,
+			untilToken: TOKEN,
+			noneMarked: TOKEN,
+			markedDied: TOKEN,
+			nightAfterDay: COUNT,
+			becameToday: T
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			if (value.diedTonight?.characters.length === 0) {
+				issues.add(`${path}.diedTonight.characters`, 'missing');
+			}
+			if (value.diedToday?.types.length === 0) issues.add(`${path}.diedToday.types`, 'missing');
+			if (Object.keys(value).length === 0) issues.add(path, 'no condition');
+			return issues.list.length > before ? undefined : value;
 		}
-		if (value.diedToday?.types.length === 0) issues.add(`${path}.diedToday.types`, 'missing');
-		if (Object.keys(value).length === 0) issues.add(path, 'no condition');
-		return issues.list.length > before ? undefined : value;
+	),
+	{
+		deadAtLeastLiving: {
+			label: 'Dead at least as many as living'
+		},
+		deadAtLeast: {
+			label: 'At least this many dead'
+		},
+		diedTonight: {
+			label: 'One of these died tonight'
+		},
+		'diedTonight.characters': {
+			label: 'Characters'
+		},
+		'diedTonight.by': {
+			label: 'Killed by',
+			names: {
+				demon: 'The Demon'
+			}
+		},
+		diedToday: {
+			label: 'One of these died today'
+		},
+		'diedToday.types': {
+			label: 'Character types'
+		},
+		'diedToday.token': {
+			label: 'Or marked with'
+		},
+		nobodyDiedToday: {
+			label: 'Nobody died today'
+		},
+		untilToken: {
+			label: 'Until its player has',
+			about: 'Stops once this reminder of its own is on its player.'
+		},
+		noneMarked: {
+			label: 'While nobody has',
+			about: 'Only while no player carries this reminder of its own.'
+		},
+		markedDied: {
+			label: 'Once the player with it dies',
+			about: 'After the first night, only once the player with this reminder has died.'
+		},
+		nightAfterDay: {
+			label: 'Only the night after day'
+		},
+		becameToday: {
+			label: 'Became this character today'
+		}
 	}
 );
 

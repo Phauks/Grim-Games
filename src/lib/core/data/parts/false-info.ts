@@ -1,6 +1,6 @@
 import { anyOf, oneOf, optObj, T, TOKEN } from '../field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * The `falseInfo` part of a character's rules block: while its ability works, the information
@@ -10,22 +10,40 @@ import { specPart, type PartValue } from './part.ts';
  * Fibbin: once per game, a good player, https://wiki.bloodontheclocktower.com/Fibbin).
  * Read by `rules/night/info/reliability.ts`.
  */
-export const falseInfo = specPart(
-	'night',
-	'False information',
-	'These character types’ information must be false.',
-	optObj({
-		types: anyOf(CHARACTER_TYPES),
-		may: T,
-		alignment: oneOf(ALIGNMENTS),
-		spentToken: TOKEN
-	}),
-	(value, path, issues) => {
-		if (value.may) return value;
-		// Without `may`, only `types` says anything: their information must be false.
-		if (value.types) return { types: value.types };
-		issues.add(`${path}.types`, 'required');
-		return undefined;
+export const falseInfo = partWords(
+	specPart(
+		'night',
+		'False information',
+		'These character types’ information must be false.',
+		optObj({
+			types: anyOf(CHARACTER_TYPES),
+			may: T,
+			alignment: oneOf(ALIGNMENTS),
+			spentToken: TOKEN
+		}),
+		(value, path, issues) => {
+			if (value.may) return value;
+			// Without `may`, only `types` says anything: their information must be false.
+			if (value.types) return { types: value.types };
+			issues.add(`${path}.types`, 'required');
+			return undefined;
+		}
+	),
+	{
+		types: {
+			label: 'Character types'
+		},
+		may: {
+			label: 'May be false',
+			about: 'Instead of must be false.'
+		},
+		alignment: {
+			label: 'Only players of'
+		},
+		spentToken: {
+			label: 'Used up by',
+			about: 'Not once this reminder of its own is placed.'
+		}
 	}
 );
 

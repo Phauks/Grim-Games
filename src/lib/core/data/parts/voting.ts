@@ -1,5 +1,5 @@
 import { oneOf, optObj, T } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * How the whole table votes, while the character's ability works:
@@ -15,21 +15,46 @@ import { specPart, type PartValue } from './part.ts';
  *   the Storyteller calls the final day (the Ferryman,
  *   https://wiki.bloodontheclocktower.com/Ferryman).
  */
-export const voting = specPart(
-	'day',
-	'How the table votes',
-	'Changes who may vote, whether ghost votes are spent, the votes needed, secrecy or vote tokens, for everyone.',
-	optObj({
-		voters: oneOf(['self-and-dead']),
-		deadNeedNoToken: T,
-		noMajority: T,
-		secret: T,
-		deadRegainToken: oneOf(['final-day'])
-	}),
-	(value, path, issues) => {
-		if (Object.keys(value).length > 0) return value;
-		issues.add(path, 'expected voters, deadNeedNoToken, noMajority, secret or deadRegainToken');
-		return undefined;
+export const voting = partWords(
+	specPart(
+		'day',
+		'How the table votes',
+		'Changes who may vote, whether ghost votes are spent, the votes needed, secrecy or vote tokens, for everyone.',
+		optObj({
+			voters: oneOf(['self-and-dead']),
+			deadNeedNoToken: T,
+			noMajority: T,
+			secret: T,
+			deadRegainToken: oneOf(['final-day'])
+		}),
+		(value, path, issues) => {
+			if (Object.keys(value).length > 0) return value;
+			issues.add(path, 'expected voters, deadNeedNoToken, noMajority, secret or deadRegainToken');
+			return undefined;
+		}
+	),
+	{
+		voters: {
+			label: 'Who may vote',
+			names: {
+				'self-and-dead': 'Its player and the dead'
+			}
+		},
+		deadNeedNoToken: {
+			label: 'Dead vote without a token'
+		},
+		noMajority: {
+			label: 'No majority needed'
+		},
+		secret: {
+			label: 'Secret votes'
+		},
+		deadRegainToken: {
+			label: 'Dead get their vote token back',
+			names: {
+				'final-day': 'On the final day'
+			}
+		}
 	}
 );
 

@@ -1,6 +1,6 @@
 import { obj, oneOf } from '../field-spec.ts';
 import { SEATED_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * Which players:
@@ -19,11 +19,26 @@ export type TurnsPlayers = (typeof TURNS_PLAYERS)[number];
  * Players it turns into characters of another type at setup, worked out in `modes/draft.ts`
  * (Sushi Buffet). It names a behaviour and its type, never a character (the Kazali).
  */
-export const turnsPlayersInto = specPart(
-	'night',
-	'Turns players into',
-	'Players it turns into another type at setup.',
-	obj({ type: oneOf(SEATED_TYPES), players: oneOf(TURNS_PLAYERS) })
+export const turnsPlayersInto = partWords(
+	specPart(
+		'night',
+		'Turns players into',
+		'Players it turns into another type at setup.',
+		obj({ type: oneOf(SEATED_TYPES), players: oneOf(TURNS_PLAYERS) })
+	),
+	{
+		type: {
+			label: 'Into this type'
+		},
+		players: {
+			label: 'Which players',
+			names: {
+				chosen: 'Players it chooses',
+				neighbours: 'Its two neighbours',
+				drafter: 'The player who drafts it'
+			}
+		}
+	}
 );
 
 export type TurnsPlayersInto = PartValue<typeof turnsPlayersInto>;

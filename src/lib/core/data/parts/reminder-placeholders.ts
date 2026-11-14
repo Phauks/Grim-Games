@@ -10,7 +10,7 @@ import {
 	TOKEN,
 	type SpecValue
 } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /** One `:reminder:`: the tokens it handles, or `either` when only one of them applies. */
 const PLACEHOLDER = obj({
@@ -39,19 +39,61 @@ export type PlaceholderAction = PlaceholderToken['action'];
  * `note` says what the mapping encodes, in our own words. Each mapping was decided from the
  * character's wiki page (the rules authority).
  */
-export const reminderPlaceholders = specPart(
-	'tokens',
-	'Night text reminders',
-	'What each reminder named in its night text means.',
-	optObj({ first: list(PLACEHOLDER), other: list(PLACEHOLDER), note: ownWords(STR) }),
-	(value, path, issues) => {
-		const empty = (['first', 'other'] as const).flatMap((night) =>
-			(value[night] ?? []).flatMap((p, i) =>
-				p.tokens.length ? [] : [`${path}.${night}[${i}].tokens`]
-			)
-		);
-		for (const at of empty) issues.add(at, 'expected a list of tokens');
-		return empty.length ? undefined : value;
+export const reminderPlaceholders = partWords(
+	specPart(
+		'tokens',
+		'Night text reminders',
+		'What each reminder named in its night text means.',
+		optObj({ first: list(PLACEHOLDER), other: list(PLACEHOLDER), note: ownWords(STR) }),
+		(value, path, issues) => {
+			const empty = (['first', 'other'] as const).flatMap((night) =>
+				(value[night] ?? []).flatMap((p, i) =>
+					p.tokens.length ? [] : [`${path}.${night}[${i}].tokens`]
+				)
+			);
+			for (const at of empty) issues.add(at, 'expected a list of tokens');
+			return empty.length ? undefined : value;
+		}
+	),
+	{
+		first: {
+			label: 'First night'
+		},
+		'first.*.tokens': {
+			label: 'Reminders'
+		},
+		'first.*.tokens.*.label': {
+			label: 'Reminder'
+		},
+		'first.*.tokens.*.action': {
+			label: 'Action',
+			names: {
+				place: 'Place',
+				remove: 'Take off'
+			}
+		},
+		'first.*.either': {
+			label: 'Either one'
+		},
+		other: {
+			label: 'Other nights'
+		},
+		'other.*.tokens': {
+			label: 'Reminders'
+		},
+		'other.*.tokens.*.label': {
+			label: 'Reminder'
+		},
+		'other.*.tokens.*.action': {
+			label: 'Action',
+			names: {
+				place: 'Place',
+				remove: 'Take off'
+			}
+		},
+		'other.*.either': {
+			label: 'Either one'
+		}
 	}
 );
 

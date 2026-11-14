@@ -1,5 +1,5 @@
 import { obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * The `becomes` part of a character's rules block: its reminder token says a player changed
@@ -26,21 +26,53 @@ import { specPart } from './part.ts';
  * not once this own token is on this character's player (a Mezepheles marked No Ability turns
  * no one else evil).
  */
-export const becomes = specPart(
-	'abilities',
-	'Becomes',
-	'Its token says a player changed character or alignment.',
-	obj({
-		token: TOKEN,
-		into: oneOf(['demon', 'evil', 'swap', 'carrier-alignment']),
-		when: opt(oneOf(['placed', 'removed'])),
-		follows: opt(T),
-		evenIfImpaired: opt(T),
-		spent: opt(TOKEN)
-	}),
-	(value, path, issues) => {
-		if (!value.follows || value.into === 'carrier-alignment') return value;
-		issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
-		return undefined;
+export const becomes = partWords(
+	specPart(
+		'abilities',
+		'Becomes',
+		'Its token says a player changed character or alignment.',
+		obj({
+			token: TOKEN,
+			into: oneOf(['demon', 'evil', 'swap', 'carrier-alignment']),
+			when: opt(oneOf(['placed', 'removed'])),
+			follows: opt(T),
+			evenIfImpaired: opt(T),
+			spent: opt(TOKEN)
+		}),
+		(value, path, issues) => {
+			if (!value.follows || value.into === 'carrier-alignment') return value;
+			issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
+			return undefined;
+		}
+	),
+	{
+		token: {
+			label: 'Reminder'
+		},
+		into: {
+			label: 'What changes',
+			names: {
+				demon: 'The marked player becomes the Demon',
+				evil: 'The marked player turns evil',
+				swap: 'A marked Demon swaps with its player',
+				'carrier-alignment': 'Its player takes the marked player’s alignment'
+			}
+		},
+		when: {
+			label: 'When',
+			names: {
+				placed: 'When placed',
+				removed: 'When taken off'
+			}
+		},
+		follows: {
+			label: 'Keeps following their alignment'
+		},
+		evenIfImpaired: {
+			label: 'Even if drunk or poisoned'
+		},
+		spent: {
+			label: 'Used up by'
+		}
 	}
 );

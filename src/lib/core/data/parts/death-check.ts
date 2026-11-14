@@ -1,5 +1,5 @@
 import { obj, oneOf, opt, TOKEN, type SpecValue } from '../field-spec.ts';
-import { specPart } from './part.ts';
+import { specPart, partWords } from './part.ts';
 
 /**
  * Night deaths the ability itself decides (`rules/night/night-deaths.ts`):
@@ -13,14 +13,30 @@ const KIND = oneOf(['wrong-guess', 'chose-impaired', 'chosen-good-dies', 'marked
 export type DeathCheckKind = SpecValue<typeof KIND>;
 
 /** A night death its own ability decides (`rules/night/night-deaths.ts`). */
-export const deathCheck = specPart(
-	'deaths',
-	'Death check',
-	'A night death its own ability decides.',
-	obj({ kind: KIND, token: opt(TOKEN) }),
-	(value, path, issues) => {
-		if (value.kind !== 'marked-killed-by-demon' || value.token) return value;
-		issues.add(`${path}.token`, 'missing');
-		return undefined;
+export const deathCheck = partWords(
+	specPart(
+		'deaths',
+		'Death check',
+		'A night death its own ability decides.',
+		obj({ kind: KIND, token: opt(TOKEN) }),
+		(value, path, issues) => {
+			if (value.kind !== 'marked-killed-by-demon' || value.token) return value;
+			issues.add(`${path}.token`, 'missing');
+			return undefined;
+		}
+	),
+	{
+		kind: {
+			label: 'Its player dies when',
+			names: {
+				'wrong-guess': 'They guess wrong',
+				'chose-impaired': 'Their pick is drunk or poisoned',
+				'chosen-good-dies': 'A chosen good player dies instead of the Demon’s kill',
+				'marked-killed-by-demon': 'The Demon kills the player with its reminder'
+			}
+		},
+		token: {
+			label: 'Reminder'
+		}
 	}
 );

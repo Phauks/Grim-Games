@@ -350,22 +350,28 @@ test('rules are added, changed and removed one at a time', async ({ page }) => {
 	const confirm = dialog.getByRole('button', { name: 'Confirm' });
 	await expect(confirm).toBeDisabled();
 	await dialog.getByRole('combobox', { name: 'Who' }).tap();
-	await page.getByRole('option', { name: 'marked', exact: true }).tap();
+	await page.getByRole('option', { name: 'The player with its reminder', exact: true }).tap();
 	await dialog.getByRole('combobox', { name: 'Reminder', exact: true }).tap();
 	await page.getByRole('option', { name: 'Lit', exact: true }).tap();
-	await dialog.getByRole('combobox', { name: 'From' }).tap();
-	await page.getByRole('option', { name: 'any', exact: true }).tap();
-	await dialog.getByRole('checkbox', { name: 'Night', includeHidden: true }).check({ force: true });
+	await dialog.getByRole('combobox', { name: 'Against' }).tap();
+	await page.getByRole('option', { name: 'Any death', exact: true }).tap();
+	await dialog
+		.getByRole('checkbox', { name: 'Only tonight', includeHidden: true })
+		.check({ force: true });
 	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
 	await confirm.tap();
-	await expect(rules).toContainText('Who marked · Reminder Lit · From any · Night');
+	await expect(rules).toContainText(
+		'Who The player with its reminder · Reminder Lit · Against Any death · Only tonight'
+	);
 	await expect(rulesTab).toHaveText('Rules · 2');
 
 	// Change: the ⋯ opens the rule with its settings; Rules text shows the same rule as text.
 	await rules.getByRole('button', { name: 'Protects options' }).tap();
 	await page.getByRole('menuitem', { name: 'Change' }).tap();
 	dialog = page.getByRole('dialog', { name: 'Change a rule' });
-	await expect(dialog.getByRole('combobox', { name: 'Who' })).toHaveText(/marked/);
+	await expect(dialog.getByRole('combobox', { name: 'Who' })).toHaveText(
+		/The player with its reminder/
+	);
 	await dialog
 		.getByRole('checkbox', { name: 'Rules text', includeHidden: true })
 		.check({ force: true });
@@ -407,11 +413,13 @@ test('a jinx is built with its partner and effects as fields (M79)', async ({ pa
 
 	// Effects are added one at a time from the jinx verbs, each with its own fields.
 	await dialog.getByRole('combobox', { name: 'Add to Empath' }).tap();
-	await page.getByRole('option', { name: 'Grimoire', exact: true }).tap();
-	await expect(dialog.getByRole('combobox', { name: 'Grimoire', exact: true })).toHaveText(/all/);
+	await page.getByRole('option', { name: 'Grimoire shown', exact: true }).tap();
+	await expect(dialog.getByRole('combobox', { name: 'Grimoire shown', exact: true })).toHaveText(
+		/All of it/
+	);
 	await expect(dialog.getByTestId('rule-problems')).toHaveText('');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByTestId('rules')).toContainText('Empath Grimoire all');
+	await expect(page.getByTestId('rules')).toContainText('Empath Grimoire shown All of it');
 });
 
 test('a rule naming a character picks it, and asks for no words of ours (M84)', async ({

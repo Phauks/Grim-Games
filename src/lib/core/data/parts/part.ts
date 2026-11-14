@@ -5,7 +5,7 @@
  * new part is a new file and one line there. The Character builder's Rules section lists the
  * parts by `label` and `description`, and edits a part with a `field` through that field (M62).
  */
-import type { FieldSpec, SpecValue } from '../field-spec.ts';
+import { wordAt, type FieldSpec, type SpecValue, type Words } from '../field-spec.ts';
 import { readSpec } from '../read-spec.ts';
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
@@ -150,4 +150,12 @@ export function tokenPart(
 		field: { kind: 'token' },
 		read: (block, key, path, issues, reminders) => readToken(block, key, path, issues, reminders)
 	};
+}
+
+/**
+ * `part` with plain words for its settings in the Character builder (M81), by path
+ * (`wordAt`): a part's words sit beside it, in one table.
+ */
+export function partWords<V>(part: Part<V>, words: Readonly<Record<string, Words>>): Part<V> {
+	return { ...part, field: wordAt(part.field, words) };
 }

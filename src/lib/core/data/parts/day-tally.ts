@@ -1,5 +1,5 @@
 import { obj, opt, STR, T } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * A count the Storyteller keeps of something its player does by day (`dayTally`), starting
@@ -8,11 +8,22 @@ import { specPart, type PartValue } from './part.ts';
  * Yaggababble's phrase said aloud, https://wiki.bloodontheclocktower.com/Yaggababble). Read
  * by `rules/day/day-tally.ts` (Trevor, 2026-11-02: M17c).
  */
-export const dayTally = specPart(
-	'day',
-	'Day tally',
-	'A count the Storyteller keeps of times its player does something today.',
-	obj({ label: STR, kills: opt(T) })
+export const dayTally = partWords(
+	specPart(
+		'day',
+		'Day tally',
+		'A count the Storyteller keeps of times its player does something today.',
+		obj({ label: STR, kills: opt(T) })
+	),
+	{
+		label: {
+			label: 'What is counted'
+		},
+		kills: {
+			label: 'Kills',
+			about: 'Each count may kill a player.'
+		}
+	}
 );
 
 export type DayTally = PartValue<typeof dayTally>;

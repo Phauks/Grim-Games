@@ -1,6 +1,6 @@
 import { obj, oneOf, opt, T, TOKEN } from '../field-spec.ts';
 import { ALIGNMENTS, CHARACTER_TYPES } from '../types.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 /**
  * When a player dies by execution, the ability's `token` goes on the board by itself, while
@@ -21,24 +21,64 @@ import { specPart, type PartValue } from './part.ts';
  *   executed player has this `alignment`, and comes off when they don't (the Cannibal's
  *   Poisoned after an evil lunch).
  */
-export const afterExecution = specPart(
-	'day',
-	'After an execution',
-	'Its token goes on its player, or on the executed player, when a player dies by execution.',
-	obj({
-		of: opt(oneOf(CHARACTER_TYPES)),
-		alignment: opt(oneOf(ALIGNMENTS)),
-		token: TOKEN,
-		on: opt(oneOf(['executed'])),
-		moves: opt(T),
-		marksSelf: opt(obj({ token: TOKEN, alignment: oneOf(ALIGNMENTS) })),
-		when: opt(oneOf(['day']))
-	}),
-	(value, path, issues) => {
-		if (value.on) return value;
-		const loose = (['moves', 'marksSelf'] as const).filter((key) => value[key] !== undefined);
-		for (const key of loose) issues.add(`${path}.${key}`, 'only with "on": "executed"');
-		return loose.length ? undefined : value;
+export const afterExecution = partWords(
+	specPart(
+		'day',
+		'After an execution',
+		'Its token goes on its player, or on the executed player, when a player dies by execution.',
+		obj({
+			of: opt(oneOf(CHARACTER_TYPES)),
+			alignment: opt(oneOf(ALIGNMENTS)),
+			token: TOKEN,
+			on: opt(oneOf(['executed'])),
+			moves: opt(T),
+			marksSelf: opt(obj({ token: TOKEN, alignment: oneOf(ALIGNMENTS) })),
+			when: opt(oneOf(['day']))
+		}),
+		(value, path, issues) => {
+			if (value.on) return value;
+			const loose = (['moves', 'marksSelf'] as const).filter((key) => value[key] !== undefined);
+			for (const key of loose) issues.add(`${path}.${key}`, 'only with "on": "executed"');
+			return loose.length ? undefined : value;
+		}
+	),
+	{
+		of: {
+			label: 'Only an executed player of this type'
+		},
+		alignment: {
+			label: 'Only an executed player of this alignment'
+		},
+		token: {
+			label: 'Reminder'
+		},
+		on: {
+			label: 'Goes on',
+			about: 'Left empty, it goes on its own player.',
+			names: {
+				executed: 'The executed player'
+			}
+		},
+		moves: {
+			label: 'Moves to the next executed player',
+			about: 'Otherwise a reminder already out stays, and none is added.'
+		},
+		marksSelf: {
+			label: 'Also marks its own player',
+			about: 'When the executed player has this alignment.'
+		},
+		'marksSelf.token': {
+			label: 'Reminder'
+		},
+		'marksSelf.alignment': {
+			label: 'When the executed player is'
+		},
+		when: {
+			label: 'Counts',
+			names: {
+				day: 'Any death by day'
+			}
+		}
 	}
 );
 

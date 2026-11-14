@@ -1,5 +1,5 @@
 import { obj, oneOf, opt, TOKEN } from '../field-spec.ts';
-import { specPart, type PartValue } from './part.ts';
+import { specPart, type PartValue, partWords } from './part.ts';
 
 export const MADNESS_BREAKING = ['execution', 'death'] as const;
 export type MadnessBreaking = (typeof MADNESS_BREAKING)[number];
@@ -23,25 +23,50 @@ export type MadnessChosenBy = (typeof MADNESS_CHOSEN_BY)[number];
  *   https://wiki.bloodontheclocktower.com/Big_Wig); the board asks the nominee's choice when a
  *   nomination is recorded.
  */
-export const madness = specPart(
-	'day',
-	'Madness',
-	'A player it makes mad may be executed or die for breaking it.',
-	obj({
-		token: opt(TOKEN),
-		breaking: oneOf(MADNESS_BREAKING),
-		alsoDies: opt(TOKEN),
-		chosenBy: opt(oneOf(MADNESS_CHOSEN_BY))
-	}),
-	(value, path, issues) => {
-		const before = issues.list.length;
-		if (value.alsoDies && value.breaking !== 'death') {
-			issues.add(`${path}.alsoDies`, 'only with breaking "death"');
+export const madness = partWords(
+	specPart(
+		'day',
+		'Madness',
+		'A player it makes mad may be executed or die for breaking it.',
+		obj({
+			token: opt(TOKEN),
+			breaking: oneOf(MADNESS_BREAKING),
+			alsoDies: opt(TOKEN),
+			chosenBy: opt(oneOf(MADNESS_CHOSEN_BY))
+		}),
+		(value, path, issues) => {
+			const before = issues.list.length;
+			if (value.alsoDies && value.breaking !== 'death') {
+				issues.add(`${path}.alsoDies`, 'only with breaking "death"');
+			}
+			if (value.chosenBy && value.token) {
+				issues.add(`${path}.chosenBy`, 'a token or chosenBy, not both');
+			}
+			return issues.list.length > before ? undefined : value;
 		}
-		if (value.chosenBy && value.token) {
-			issues.add(`${path}.chosenBy`, 'a token or chosenBy, not both');
+	),
+	{
+		token: {
+			label: 'Marks the mad player',
+			about: 'Left empty, its own player is mad.'
+		},
+		breaking: {
+			label: 'Breaking it means',
+			names: {
+				execution: 'Might be executed',
+				death: 'Might die'
+			}
+		},
+		alsoDies: {
+			label: 'Or the player with',
+			about: 'A second player who might die instead or as well.'
+		},
+		chosenBy: {
+			label: 'Mad player chosen by',
+			names: {
+				nominee: 'Today’s nominee'
+			}
 		}
-		return issues.list.length > before ? undefined : value;
 	}
 );
 
