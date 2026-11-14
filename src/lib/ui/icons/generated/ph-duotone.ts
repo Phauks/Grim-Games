@@ -6,7 +6,6 @@ import ph_archive_duotone from '~icons/ph/archive-duotone';
 import ph_arrow_arc_left_duotone from '~icons/ph/arrow-arc-left-duotone';
 import ph_arrow_arc_right_duotone from '~icons/ph/arrow-arc-right-duotone';
 import ph_arrow_bend_up_right_duotone from '~icons/ph/arrow-bend-up-right-duotone';
-import ph_arrow_circle_right_duotone from '~icons/ph/arrow-circle-right-duotone';
 import ph_arrow_clockwise_duotone from '~icons/ph/arrow-clockwise-duotone';
 import ph_arrow_counter_clockwise_duotone from '~icons/ph/arrow-counter-clockwise-duotone';
 import ph_arrow_down_duotone from '~icons/ph/arrow-down-duotone';
@@ -16,7 +15,6 @@ import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
 import ph_arrow_up_duotone from '~icons/ph/arrow-up-duotone';
-import ph_arrows_clockwise_duotone from '~icons/ph/arrows-clockwise-duotone';
 import ph_arrows_down_up_duotone from '~icons/ph/arrows-down-up-duotone';
 import ph_arrows_in_duotone from '~icons/ph/arrows-in-duotone';
 import ph_arrows_left_right_duotone from '~icons/ph/arrows-left-right-duotone';
@@ -253,7 +251,6 @@ const icons: IconMap = {
 	'ph:arrow-arc-left-duotone': ph_arrow_arc_left_duotone,
 	'ph:arrow-arc-right-duotone': ph_arrow_arc_right_duotone,
 	'ph:arrow-bend-up-right-duotone': ph_arrow_bend_up_right_duotone,
-	'ph:arrow-circle-right-duotone': ph_arrow_circle_right_duotone,
 	'ph:arrow-clockwise-duotone': ph_arrow_clockwise_duotone,
 	'ph:arrow-counter-clockwise-duotone': ph_arrow_counter_clockwise_duotone,
 	'ph:arrow-down-duotone': ph_arrow_down_duotone,
@@ -263,7 +260,6 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
 	'ph:arrow-up-duotone': ph_arrow_up_duotone,
-	'ph:arrows-clockwise-duotone': ph_arrows_clockwise_duotone,
 	'ph:arrows-down-up-duotone': ph_arrows_down_up_duotone,
 	'ph:arrows-in-duotone': ph_arrows_in_duotone,
 	'ph:arrows-left-right-duotone': ph_arrows_left_right_duotone,
