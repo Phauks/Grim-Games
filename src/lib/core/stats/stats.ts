@@ -11,6 +11,7 @@
  */
 import type { Alignment, CharacterId, CharacterName, CharacterType } from '#lib/core/data/index.ts';
 import { isAlternateEnd } from '#lib/core/rules/game-end/end-reason.ts';
+import type { GameId } from '#lib/core/model/index.ts';
 import type { GameRecord, RecordSeat } from './record.ts';
 
 export interface TeamCounts {
@@ -39,6 +40,8 @@ export interface ScriptStats {
 	games: number;
 	wins: TeamCounts;
 	lastPlayed: number;
+	/** Its games, most recent first: players' feedback is kept per game (ratings by script). */
+	gameIds: GameId[];
 }
 
 export interface CharacterStats {
@@ -121,12 +124,19 @@ export function historyStats(records: readonly GameRecord[]): HistoryStats {
 		const key = scriptKey(record.script);
 		let script = scripts.get(key);
 		if (!script) {
-			script = { key, games: 0, wins: { good: 0, evil: 0 }, lastPlayed: record.endedAt };
+			script = {
+				key,
+				games: 0,
+				wins: { good: 0, evil: 0 },
+				lastPlayed: record.endedAt,
+				gameIds: []
+			};
 			if (record.script.name) script.name = record.script.name;
 			if (record.script.author) script.author = record.script.author;
 			scripts.set(key, script);
 		}
 		script.games++;
+		script.gameIds.push(record.gameId);
 		if (record.winner) script.wins[record.winner]++;
 
 		const runBy = record.storyteller?.trim();

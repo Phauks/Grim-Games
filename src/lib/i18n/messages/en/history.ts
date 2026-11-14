@@ -16,6 +16,7 @@ export const history = {
 	'history.averageDays': 'Average days',
 	'history.averagePlayers': 'Average players',
 	'history.scripts': 'Scripts',
+	'history.scriptFeedback': 'Player feedback on {script}',
 	'history.storytellers': 'Storytellers',
 	'history.storyteller': 'Storyteller',
 	'history.characters': 'Characters',

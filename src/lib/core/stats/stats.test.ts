@@ -271,6 +271,8 @@ describe('historyStats', () => {
 			['Sects & Violets', 'TPI', 1, { good: 1, evil: 0 }]
 		]);
 		expect(scripts[0].lastPlayed).toBe(3);
+		// Each script's games, most recent first, for the players' feedback kept per game.
+		expect(scripts.map((s) => s.gameIds)).toEqual([['c', 'a'], ['b']]);
 	});
 
 	it('counts wins per starting character over decided games', () => {
