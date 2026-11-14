@@ -6,7 +6,6 @@ import ph_archive_light from '~icons/ph/archive-light';
 import ph_arrow_arc_left_light from '~icons/ph/arrow-arc-left-light';
 import ph_arrow_arc_right_light from '~icons/ph/arrow-arc-right-light';
 import ph_arrow_bend_up_right_light from '~icons/ph/arrow-bend-up-right-light';
-import ph_arrow_circle_right_light from '~icons/ph/arrow-circle-right-light';
 import ph_arrow_clockwise_light from '~icons/ph/arrow-clockwise-light';
 import ph_arrow_counter_clockwise_light from '~icons/ph/arrow-counter-clockwise-light';
 import ph_arrow_down_light from '~icons/ph/arrow-down-light';
@@ -16,7 +15,6 @@ import ph_arrow_square_out_light from '~icons/ph/arrow-square-out-light';
 import ph_arrow_u_up_left_light from '~icons/ph/arrow-u-up-left-light';
 import ph_arrow_u_up_right_light from '~icons/ph/arrow-u-up-right-light';
 import ph_arrow_up_light from '~icons/ph/arrow-up-light';
-import ph_arrows_clockwise_light from '~icons/ph/arrows-clockwise-light';
 import ph_arrows_down_up_light from '~icons/ph/arrows-down-up-light';
 import ph_arrows_in_light from '~icons/ph/arrows-in-light';
 import ph_arrows_left_right_light from '~icons/ph/arrows-left-right-light';
@@ -253,7 +251,6 @@ const icons: IconMap = {
 	'ph:arrow-arc-left-light': ph_arrow_arc_left_light,
 	'ph:arrow-arc-right-light': ph_arrow_arc_right_light,
 	'ph:arrow-bend-up-right-light': ph_arrow_bend_up_right_light,
-	'ph:arrow-circle-right-light': ph_arrow_circle_right_light,
 	'ph:arrow-clockwise-light': ph_arrow_clockwise_light,
 	'ph:arrow-counter-clockwise-light': ph_arrow_counter_clockwise_light,
 	'ph:arrow-down-light': ph_arrow_down_light,
@@ -263,7 +260,6 @@ const icons: IconMap = {
 	'ph:arrow-u-up-left-light': ph_arrow_u_up_left_light,
 	'ph:arrow-u-up-right-light': ph_arrow_u_up_right_light,
 	'ph:arrow-up-light': ph_arrow_up_light,
-	'ph:arrows-clockwise-light': ph_arrows_clockwise_light,
 	'ph:arrows-down-up-light': ph_arrows_down_up_light,
 	'ph:arrows-in-light': ph_arrows_in_light,
 	'ph:arrows-left-right-light': ph_arrows_left_right_light,

@@ -15,7 +15,7 @@ export const ONE_DAY_MORE: SpecialRule = {
 	format: SPECIAL_RULE_FORMAT,
 	id: 'one-day-more',
 	name: 'One Day More',
-	// Our own draft (2026-11-12): waiting on Trevor's wording.
+	// Our own wording (2026-11-12), approved by Trevor 2026-11-13.
 	about:
 		'Information from abilities arrives a day late, as it was when the ability was used. Evil learning each other, the Demon’s bluffs and the Artist are not delayed.',
 	aliases: ['Signal Failure'],
@@ -28,7 +28,7 @@ export const ONE_DAY_MORE: SpecialRule = {
 		],
 		ruleChanges: [
 			{
-				// Our own draft (2026-11-12): waiting on Trevor's wording.
+				// Our own wording (2026-11-12), approved by Trevor 2026-11-13.
 				instructions:
 					'Work out each player’s information when their ability is used, as things stand then, and give it to them the next night instead. Whether they are drunk or poisoned counts when they receive it. Evil learning each other, the Demon’s bluffs and the Artist are not delayed.'
 			}

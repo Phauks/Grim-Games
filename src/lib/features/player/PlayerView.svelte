@@ -49,6 +49,7 @@
 		startLocalTown
 	} from './local-town.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import StorytellerSoundsAsk from '#lib/features/sound/StorytellerSoundsAsk.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
@@ -410,6 +411,7 @@
 			/>{/key}
 	{/if}
 </Page>
+<StorytellerSoundsAsk />
 
 <!-- Overlays go beside the Page, not inside it. -->
 <!-- Leaving the script asks first (Trevor, 2026-10-19), but a room's link, a typed code and a

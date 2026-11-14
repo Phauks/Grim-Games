@@ -15,6 +15,7 @@ import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { ambience } from './ambience.ts';
 import { soundboard } from './soundboard.svelte.ts';
+import { storytellerSounds } from './storyteller-sounds.svelte.ts';
 import { audio, playSound, unlockOnFirstTap } from './sound.ts';
 
 /**
@@ -78,17 +79,36 @@ export class RoomSounds {
 		});
 	}
 
+	/** The table last followed, to play once the player says yes. */
+	#table: PublicGameState | undefined;
+
+	/**
+	 * A player's phone plays the Storyteller's sounds only once its player said yes (Trevor,
+	 * 2026-11-14); the Public Town tablet is the table's speaker and always plays them.
+	 */
+	#allowed(): boolean {
+		return this.#listener !== 'phones' || storytellerSounds.on;
+	}
+
 	/** A soundboard command from the Storyteller. */
 	hear(command: TownSoundCommand): void {
+		if (!this.#allowed()) return;
 		if (command.command === 'play') this.#askForTap();
 		soundboard.fromStoryteller(command);
 	}
 
 	/** Follows the public table as each copy arrives; undefined when there is none. */
 	follow(table: PublicGameState | undefined): void {
+		// Asked on joining (Trevor, 2026-11-14, B), once per device; the answer plays the table.
+		if (this.#listener === 'phones' && !this.#table && table)
+			storytellerSounds.ask(() => this.follow(this.#table));
+		this.#table = table;
 		const sound = parsePublicSound(table?.sound);
-		const heard = !!sound && hearsSound(sound.on, this.#listener);
-		const cue = sound && hearsAmbience(sound.on, this.#listener) ? sound.ambience : undefined;
+		const heard = !!sound && this.#allowed() && hearsSound(sound.on, this.#listener);
+		const cue =
+			sound && this.#allowed() && hearsAmbience(sound.on, this.#listener)
+				? sound.ambience
+				: undefined;
 		if (cue) this.#askForTap();
 		ambience.follow(cue);
 		this.#setBell(heard ? dayTimers.parsePublicTimer(table?.timer) : undefined, sound?.timerSound);
@@ -97,6 +117,8 @@ export class RoomSounds {
 	/** Leaving the room: everything it started stops. */
 	stop(): void {
 		this.#stopFollowingVolume();
+		if (this.#listener === 'phones') storytellerSounds.forget();
+		this.#table = undefined;
 		ambience.follow(undefined);
 		soundboard.fromStoryteller({ command: 'stop' });
 		this.#setBell(undefined, undefined);

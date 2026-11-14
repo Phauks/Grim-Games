@@ -167,6 +167,11 @@ export type Command =
 	| { type: 'SpendGhostVote'; seatId: SeatId }
 	| { type: 'RestoreGhostVote'; seatId: SeatId }
 	/**
+	 * The Storyteller calls the final day while a `deadRegainToken` rule is in play (the
+	 * Ferryman): every dead player who spent their vote token gets it back, as one step.
+	 */
+	| { type: 'RegainGhostVotes' }
+	/**
 	 * `tokenId`: copied from one of the bank's ∞ tokens, so it starts with that token's look.
 	 * Without one, a generic reminder may start with a `look` of its own (the bank's # token).
 	 */

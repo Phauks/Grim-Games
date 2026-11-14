@@ -1,28 +1,16 @@
 <script lang="ts">
-	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import type { AvatarId } from '#lib/core/avatars/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
-	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
-	import type { GenericGuess } from './grim-guesses.ts';
+	import type { SeatGuess } from './grim-guesses.ts';
 
 	/**
-	 * A seat's guesses in its sheet on the player's Grim, front first (Trevor, 2026-10-25): its
-	 * guesses and, once it has one, the player's avatar (2026-10-26). The front one is pressed.
-	 * What a tap does is the sheet's: a guess comes off (2026-11-10), the avatar comes to the
-	 * front.
+	 * A seat's guesses in its sheet on the player's Grim, newest first (Trevor, 2026-10-25). A
+	 * tap takes one off (2026-11-10).
 	 */
 	interface Props {
-		entries: readonly {
-			id: CharacterId;
-			character?: Character;
-			generic?: GenericGuess;
-			avatar?: AvatarId;
-			name?: string;
-			label?: string;
-			picture?: string;
-		}[];
+		entries: readonly SeatGuess[];
 		onPick: (id: CharacterId) => void;
 	}
 
@@ -30,17 +18,10 @@
 </script>
 
 <ul class="chips" aria-label={t('player.grim.guesses')}>
-	{#each entries as g, i (g.id)}
+	{#each entries as g (g.id)}
 		<li>
-			<button
-				type="button"
-				class="chip"
-				aria-pressed={i === 0}
-				aria-label={g.avatar ? g.label : undefined}
-				onclick={() => onPick(g.id)}
-				>{#if g.avatar}<span class="avatar-chip"
-						><AvatarFace avatar={g.avatar} name={g.name ?? ''} picture={g.picture} /></span
-					>{:else if g.generic}<AlignmentPill
+			<button type="button" class="chip" onclick={() => onPick(g.id)}
+				>{#if g.generic}<AlignmentPill
 						alignment={g.generic.team}
 						text={g.label ?? ''}
 					/>{:else}<CharacterPiece
@@ -57,7 +38,7 @@
 </ul>
 
 <style>
-	/* One line of up to three and the avatar, so adding a guess moves nothing below it. Every
+	/* One line of up to three, so adding a guess moves nothing below it. Every
 	   entry shrinks to share the line, a name ending in "…" (CharacterBadge), so none is cut
 	   off past the sheet's right edge on a phone (Trevor, 2026-10-31). */
 	.chips {
@@ -91,18 +72,7 @@
 	.chip > :global(*) {
 		max-width: 100%;
 	}
-	/* The main guess, the one on the token. */
-	.chip[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
 	.none {
 		color: var(--on-surface-muted);
-	}
-	/* The seat's avatar in its cycle, the size of a badge's icon. */
-	.avatar-chip {
-		display: block;
-		width: 2em;
-		height: 2em;
 	}
 </style>

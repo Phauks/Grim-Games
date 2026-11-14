@@ -99,8 +99,6 @@ export const ICON_SLOTS = {
 	support: { label: 'Support', choices: ['ph:coffee', 'ph:hand-coins'] },
 	back: { label: 'Back', choices: ['ph:caret-left', 'ph:arrow-left'] },
 	forward: { label: 'Forward', choices: ['ph:caret-right', 'ph:arrow-right'] },
-	/** The arrow on a player's guess pill: the next guess becomes the main one (Trevor, 2026-10-25). */
-	nextGuess: { label: 'Next guess', choices: ['ph:arrows-clockwise', 'ph:arrow-circle-right'] },
 	check: { label: 'Selected', choices: ['ph:check'] },
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
 	/** Deal at random on the Draw page: the bag split out to the seats, not the shuffle of Random selection (Trevor, 2026-10-29). */

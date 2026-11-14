@@ -24,7 +24,19 @@ export default defineConfig({
 	use: {
 		baseURL: `http://localhost:${PORT}`,
 		launchOptions: { executablePath },
-		trace: 'retain-on-failure'
+		trace: 'retain-on-failure',
+		// Every test's phone has said yes to the Storyteller's sounds, so the join question
+		// (features/sound/storyteller-sounds.svelte.ts) doesn't cover the screen;
+		// e2e/storyteller-sounds.e2e.ts starts with no answer to test the question itself.
+		storageState: {
+			cookies: [],
+			origins: [
+				{
+					origin: `http://localhost:${PORT}`,
+					localStorage: [{ name: 'grim-games:storyteller-sounds:v1', value: 'on' }]
+				}
+			]
+		}
 	},
 	projects: [
 		// Chromium emulations of an iPhone and an Android tablet keep CI to one browser.

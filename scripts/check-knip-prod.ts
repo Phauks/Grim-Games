@@ -33,7 +33,6 @@ export const TESTS_ONLY_TODO: readonly string[] = [
 	'src/lib/core/rules/day/day-timer.ts: dayTimers.reset',
 	'src/lib/core/rules/day/execution-outcome.ts: votersAnswer',
 	'src/lib/core/rules/day/vote-weights.ts: tallyOf',
-	'src/lib/core/rules/day/voting-table.ts: ghostVotesRestored',
 	'src/lib/core/rules/game-clock.ts: gameClock.formatGameLength',
 	'src/lib/core/rules/game-clock.ts: gameClock.gameLength',
 	'src/lib/core/rules/game-end/end-reason.ts: alwaysWinners',

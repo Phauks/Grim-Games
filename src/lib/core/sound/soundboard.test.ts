@@ -6,6 +6,7 @@ import {
 	SOUND_ACTIONS,
 	SOUND_OUTPUTS,
 	hearsAmbience,
+	parseStorytellerSounds,
 	hearsSound,
 	parseSoundOutput,
 	actionTaken,
@@ -178,5 +179,14 @@ describe('Play on', () => {
 		expect(parseSoundOutput('both')).toBe('town');
 		expect(parseSoundOutput('phones')).toBe('phones');
 		expect(parseSoundOutput(7)).toBeUndefined();
+	});
+});
+
+describe('a player’s answer to the Storyteller’s sounds', () => {
+	it('keeps on or off, and reads anything else as not asked yet', () => {
+		expect(parseStorytellerSounds('on')).toBe('on');
+		expect(parseStorytellerSounds('off')).toBe('off');
+		expect(parseStorytellerSounds(undefined)).toBeUndefined();
+		expect(parseStorytellerSounds('yes')).toBeUndefined();
 	});
 });

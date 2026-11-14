@@ -47,24 +47,20 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { ringAboveTray } from './tray-ring.ts';
 	import {
-		AVATAR_GUESS,
 		GENERIC_GUESSES,
-		cycleGuess,
 		genericGuess,
 		guessesOf,
-		mainGuess,
 		readGuesses,
-		seatCycle,
 		toggleGuess,
 		travellerGuess,
 		travellerTeam,
 		writeGuesses,
 		type GenericGuess,
-		type GuessMark,
-		type Guesses
+		type Guesses,
+		type SeatGuess
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
-	import GuessMarks from './GuessMarks.svelte';
+	import SplitGuessFace from './SplitGuessFace.svelte';
 	import SeatGuessChips from './SeatGuessChips.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
 	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
@@ -296,13 +292,9 @@
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
-		// The note mark opens the note (Trevor, 2026-10-25); the guess pill makes the next guess
-		// the main one, and its "+N" opens the sheet listing every guess (Trevor, 2026-10-29).
+		// The note mark opens the note (Trevor, 2026-10-25); anywhere else, the seat's sheet.
 		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
-		else if (target?.closest('[data-testid="more-guesses"]')) open = true;
-		else if (target?.closest('[data-testid="guess-marks"]'))
-			save(cycleGuess(guesses, seat.seatId, withAvatar(seat)));
 		else open = true;
 	}
 	/** A generic guess's word: its character type, or Good or Evil. */
@@ -319,7 +311,7 @@
 		writeGuesses(kept, guesses);
 	}
 	/**
-	 * A tap in the sheet adds a guess as the main one, or takes it off (up to three a seat,
+	 * A tap in the sheet adds a guess first, or takes it off (up to three a seat,
 	 * Trevor 2026-10-25); the sheet stays open so the next can be added.
 	 */
 	function guess(characterId: CharacterId) {
@@ -327,7 +319,7 @@
 		save(
 			current?.traveller
 				? travellerGuess(guesses, chosen.seatId, characterId)
-				: toggleGuess(guesses, chosen.seatId, characterId, withAvatar(chosen))
+				: toggleGuess(guesses, chosen.seatId, characterId)
 		);
 	}
 	/**
@@ -364,40 +356,26 @@
 		const next = traveller && current?.traveller !== characterId ? characterId : undefined;
 		if (traveller || current?.traveller)
 			saveLocalTown(local, setTraveller(localTown(local), seatId, next));
-		if (!traveller) save(toggleGuess(guesses, seatId, characterId, withAvatar(chosen)));
+		if (!traveller) save(toggleGuess(guesses, seatId, characterId));
 	}
 	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
 	const guessChoices = $derived(
 		current?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
 	);
 	/**
-	 * A seat's avatar joins its guesses' cycle (Trevor, 2026-10-26), except on a Traveller's
-	 * seat, whose character the town knows.
-	 */
-	/** A seat further right than this (in %) has its guesses' pill on the left rim. */
-	const PILL_FLIP_X = 65;
-	const withAvatar = (seat: PublicSeat) => !!seat.avatar && !seat.traveller;
-	/**
-	 * The seat's cycle, front first, as the token, its pill and the sheet show it: its guesses
-	 * and, once it has one, its avatar.
+	 * The seat's guesses, newest first, as its token and its sheet show them: on a Traveller's
+	 * seat only Good or Evil, and none this script can't name.
 	 */
 	const listed = (seatId: string) => {
 		const seat = seats.find((s) => s.seatId === seatId);
-		return (
-			seat?.traveller
-				? guessesOf(guesses, seatId).filter(
-						(id) => genericGuess(id)?.type === undefined && !!genericGuess(id)
-					)
-				: seatCycle(guesses, seatId, !!seat && withAvatar(seat))
-		).map((id) => {
+		return guessesOf(guesses, seatId).flatMap((id): SeatGuess[] => {
 			const generic = genericGuess(id);
-			if (id === AVATAR_GUESS && seat?.avatar) {
-				const [name, label, picture] = [nameOf(seat), t('player.grim.avatar'), pictureOf(seat)];
-				return { id, avatar: seat.avatar, name, label, picture };
-			}
-			return generic
-				? { id, generic, label: genericLabel(generic) }
-				: { id, character: characterOf(id) };
+			if (generic)
+				return seat?.traveller && generic.type
+					? []
+					: [{ id, generic, label: genericLabel(generic) }];
+			const character = seat?.traveller ? undefined : characterOf(id);
+			return character ? [{ id, character }] : [];
 		});
 	};
 
@@ -473,21 +451,10 @@
 				{@const known = characterOf(seat.traveller)}
 				<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
 				{@const team = known && !hiding ? travellerTeam(guesses, seat.seatId)?.team : undefined}
-				{@const cycle = known || hiding ? [] : listed(seat.seatId)}
-				<!-- The front of the cycle: a guess, or the player's avatar (plan R6) cycled to. -->
-				{@const main = cycle[0]?.id}
-				{@const guessed = genericGuess(main) ?? characterOf(main)}
-				{@const others = cycle
-					.slice(1)
-					.flatMap((g): GuessMark[] =>
-						g.avatar
-							? [{ avatar: g.avatar, name: g.name, label: g.label, picture: g.picture }]
-							: g.generic
-								? [{ generic: g.generic, label: g.label }]
-								: g.character
-									? [{ character: g.character }]
-									: []
-					)}
+				<!-- Every guess on the token at once, split when there are two or three (Trevor,
+				     2026-11-13); with none, the player's avatar (plan R6) or the seat number. -->
+				{@const all = known || hiding ? [] : listed(seat.seatId)}
+				{@const guessed = all[0]?.generic ?? all[0]?.character}
 				{@const shown = known ?? guessed}
 				<!-- A display's seats are only drawn: nothing on the table's tablet can be tapped. -->
 				<svelte:element
@@ -517,18 +484,17 @@
 						picture={pictureOf(seat)}
 						usedVote={boardLooks.current.usedGhostVote}
 						frame={seatFrame(seat.frame)}
-						marks={notes[seat.seatId] || others.length ? marks : undefined}
+						marks={notes[seat.seatId] ? marks : undefined}
 					/>
 					{#snippet marks()}
 						<!-- The board's own mark (SeatNoteMark): tapping it opens the note, as on the board. -->
-						{#if notes[seat.seatId]}<SeatNoteMark />{/if}
-						{#if others.length}<GuessMarks
-								{others}
-								side={(point?.x ?? 0) > PILL_FLIP_X ? 'left' : 'right'}
-							/>{/if}
+						<SeatNoteMark />
 					{/snippet}
 					{#snippet face()}
-						{#if shown && 'key' in shown}<GenericGuessToken
+						{#if !known && all.length > 1}<SplitGuessFace
+								entries={all}
+								{size}
+							/>{:else if shown && 'key' in shown}<GenericGuessToken
 								guess={shown}
 								label={genericLabel(shown)}
 								{size}
@@ -646,21 +612,14 @@
 	actions={player && chosen ? pictureMenu : undefined}
 	lead={chosen?.avatar ? seatAvatar : undefined}
 >
-	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
-	     it has one, the player's avatar (2026-10-26). A tap on a guess takes it off, the same
-	     toggle as the picker below (Trevor, 2026-11-10); a tap on the avatar brings it to the
-	     front. Then the note, a row of its own, so the two never read as one. -->
+	<!-- This seat's guesses, newest first, at the top (Trevor, 2026-10-25). A tap on one takes
+	     it off, the same toggle as the picker below (Trevor, 2026-11-10). Then the note, a row
+	     of its own, so the two never read as one. -->
 	<!-- A players-only game: what the town knows about this seat, marked by the player (plan M55). -->
 	{#if local && current}<LocalSeatRows notesKey={local} seat={current} />{/if}
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
-		<SeatGuessChips
-			entries={chosen ? listed(chosen.seatId) : []}
-			onPick={(id) =>
-				id === AVATAR_GUESS
-					? chosen && save(mainGuess(guesses, chosen.seatId, id, withAvatar(chosen)))
-					: guess(id)}
-		/>
+		<SeatGuessChips entries={chosen ? listed(chosen.seatId) : []} onPick={guess} />
 	</div>
 	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap on one
 	     opens its About, where it comes off, as on the board's sheet (Trevor, 2026-11-01). -->

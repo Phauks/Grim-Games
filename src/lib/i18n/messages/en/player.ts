@@ -32,11 +32,6 @@ export const player = {
 	'player.grim.traveller': 'Traveller: {name}',
 	'player.grim.guess': 'your guess: {name}',
 	'player.grim.guesses': 'Guesses',
-	'player.grim.nextGuess': 'Next guess',
-	'player.grim.moreGuesses': {
-		one: '{count} more guess',
-		other: '{count} more guesses'
-	},
 	'player.grim.generic': 'Guess a type or alignment',
 	'player.grim.hasNote': 'your note',
 	'player.grim.notesTitle': 'Notes: {name}',
@@ -47,7 +42,6 @@ export const player = {
 	'player.grim.editToken': 'Edit token',
 	'player.grim.removeReminder': 'Remove reminder',
 	'player.grim.genericTokens': 'Generic',
-	'player.grim.avatar': 'Avatar',
 	'player.grim.seatMore': 'More for this seat',
 	'player.grim.reportPicture': 'Report picture',
 	'player.grim.pictureReported': 'Picture reported',

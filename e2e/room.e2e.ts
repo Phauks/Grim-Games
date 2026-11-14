@@ -1931,12 +1931,11 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	await seatTwo.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your guess: Empath');
 	await expect(seats.nth(1)).toHaveAttribute('data-guess', 'true');
-	await expect(seats.nth(1).getByTestId('guess-marks')).toHaveCount(0);
-	// Several roles for one seat (Trevor, 2026-10-25): the newest is the main one, on the face,
-	// and the others are icons in a pill over the top-right rim.
+	await expect(seats.nth(1).getByTestId('split-guesses')).toHaveCount(0);
+	// Several roles for one seat (Trevor, 2026-10-25), all on the token at once, split in
+	// halves, the newest on the left (Trevor, 2026-11-13).
 	await seatTwo.getByRole('button', { name: 'Spy', exact: true }).tap();
 	await expect(yours.getByRole('button')).toHaveCount(2);
-	await expect(yours.getByRole('button').first()).toHaveAttribute('aria-pressed', 'true');
 	await expect(yours.getByRole('button').first()).toContainText('Spy');
 	await phone.keyboard.press('Escape');
 	await expect(seatTwo).toBeHidden();
@@ -1944,15 +1943,19 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		'aria-label',
 		'Seat 2: Seat 2, your guess: Spy, Empath'
 	);
-	await expect(seats.nth(1).getByTestId('guess-mark')).toHaveCount(1);
-	await expect(seats.nth(1).getByRole('img', { name: 'Empath' })).toBeVisible();
-	// Tapping the pill makes the next guess the main one, without opening the sheet.
-	await seats.nth(1).getByTestId('guess-marks').tap();
-	await expect(seatTwo).toBeHidden();
-	await expect(seats.nth(1)).toHaveAttribute(
-		'aria-label',
-		'Seat 2: Seat 2, your guess: Empath, Spy'
-	);
+	const slices = seats.nth(1).getByTestId('guess-slice');
+	await expect(slices).toHaveCount(2);
+	await expect(slices.first().getByRole('img', { name: 'Spy' })).toBeVisible();
+	await expect(slices.last().getByRole('img', { name: 'Empath' })).toBeVisible();
+	// Each icon sits in the middle of its own half, inside the token, the newest on the left.
+	const token = (await seats.nth(1).getByTestId('split-guesses').boundingBox())!;
+	const spy = (await slices.first().getByRole('img', { name: 'Spy' }).boundingBox())!;
+	const empathIcon = (await slices.last().getByRole('img', { name: 'Empath' }).boundingBox())!;
+	const middle = token.x + token.width / 2;
+	expect(spy.x).toBeGreaterThanOrEqual(token.x);
+	expect(spy.x + spy.width / 2).toBeLessThan(middle);
+	expect(empathIcon.x + empathIcon.width / 2).toBeGreaterThan(middle);
+	expect(empathIcon.x + empathIcon.width).toBeLessThanOrEqual(token.x + token.width);
 	// In the sheet, tapping a guess in the Guesses row takes it off (Trevor, 2026-11-10), as
 	// tapping it in the list does.
 	await seats.nth(1).tap();
@@ -2417,16 +2420,13 @@ test("a player's tray has the bank's # token, its number picked in hand", async 
 	await phoneContext.close();
 });
 
-test("a seat's other guesses stay on the screen, on whichever side of the Grim it sits", async ({
+test("a seat's three guesses share its token in thirds, and a tap on it opens the sheet", async ({
 	page,
 	browser
 }, testInfo) => {
-	// Trevor (2026-10-27): "Guesses run off side of screen". A pill of other guesses sits on
-	// the rim toward the middle of the grim, so a seat at the screen's edge keeps it in view.
-	// Thirteen seats, as in Trevor's game, puts seats against both edges of a phone.
-	// Three guesses on each of thirteen seats takes a while.
-	test.slow();
-	const board = await startGame(page, undefined, 13);
+	// Trevor (2026-11-13), picked from mockups: every guess on the token at once, split so
+	// each icon sits whole in its own slice, rather than one guess and a pill to cycle.
+	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
@@ -2435,32 +2435,40 @@ test("a seat's other guesses stay on the screen, on whichever side of the Grim i
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	const seats = phone.getByTestId('grim-seat');
-	const count = await seats.count();
-	for (let i = 0; i < count; i++) {
-		await seats.nth(i).tap();
-		const sheet = phone.getByRole('dialog', { name: `Seat ${i + 1} · Seat ${i + 1}` });
-		await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
-		await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
-		await sheet.getByRole('button', { name: 'Imp', exact: true }).tap();
-		await phone.keyboard.press('Escape');
-		await expect(sheet).toBeHidden();
+	const seat = phone.getByTestId('grim-seat').first();
+	await seat.tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 1 · Seat 1' });
+	for (const name of ['Empath', 'Spy', 'Imp'])
+		await sheet.getByRole('button', { name, exact: true }).tap();
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	const slices = seat.getByTestId('guess-slice');
+	await expect(slices).toHaveCount(3);
+	const token = (await seat.getByTestId('split-guesses').boundingBox())!;
+	const middle = { x: token.x + token.width / 2, y: token.y + token.height / 2 };
+	const icons = [];
+	for (const [i, name] of ['Imp', 'Spy', 'Empath'].entries()) {
+		const icon = slices.nth(i).getByRole('img', { name });
+		await expect(icon).toBeVisible();
+		const box = (await icon.boundingBox())!;
+		// Whole inside the token.
+		expect(box.x, name).toBeGreaterThanOrEqual(token.x);
+		expect(box.y, name).toBeGreaterThanOrEqual(token.y);
+		expect(box.x + box.width, name).toBeLessThanOrEqual(token.x + token.width);
+		expect(box.y + box.height, name).toBeLessThanOrEqual(token.y + token.height);
+		icons.push({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
 	}
-	const width = phone.viewportSize()!.width;
-	for (let i = 0; i < count; i++) {
-		const pill = seats.nth(i).getByTestId('guess-marks');
-		await expect(pill).toBeVisible();
-		const box = (await pill.boundingBox())!;
-		expect(box.x, `Seat ${i + 1}'s pill`).toBeGreaterThanOrEqual(0);
-		expect(box.x + box.width, `Seat ${i + 1}'s pill`).toBeLessThanOrEqual(width);
-		// Two slots at most (Trevor, 2026-10-29): the next guess, then "+1" for the third.
-		await expect(pill.getByTestId('guess-mark')).toHaveCount(1);
-		await expect(pill.getByTestId('more-guesses')).toHaveText('+1');
-	}
-	// The count opens the seat's sheet, where every guess is listed.
-	await seats.nth(0).getByTestId('more-guesses').tap();
-	const first = phone.getByRole('dialog', { name: 'Seat 1 · Seat 1' });
-	await expect(first.getByTestId('seat-guesses').getByRole('button')).toHaveCount(3);
+	// The newest on top, the next bottom right, the oldest bottom left.
+	expect(icons[0].y).toBeLessThan(middle.y);
+	expect(icons[1].x).toBeGreaterThan(middle.x);
+	expect(icons[1].y).toBeGreaterThan(middle.y);
+	expect(icons[2].x).toBeLessThan(middle.x);
+	expect(icons[2].y).toBeGreaterThan(middle.y);
+
+	// No pill to cycle: a tap anywhere on the token opens the sheet, listing every guess.
+	await seat.tap();
+	await expect(sheet.getByTestId('seat-guesses').getByRole('button')).toHaveCount(3);
 	await phoneContext.close();
 });
 
@@ -2704,7 +2712,7 @@ test("on a laptop the player's screen shows the script's logo, and the guess she
 	await laptop.close();
 });
 
-test("a player's initials and frame go on their seat, and their avatar is in the cycle of guesses", async ({
+test("a player's initials and frame go on their seat, until a guess covers their avatar", async ({
 	page,
 	browser
 }, testInfo) => {
@@ -2756,8 +2764,8 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 		.toBe(true);
 	await expect(seat.locator('[data-growing]')).toHaveCount(0);
 
-	// Every phone at the table sees it. A guess goes on the token, and the avatar joins the
-	// guesses' cycle, so the pill brings it back (Trevor, 2026-10-26).
+	// Every phone at the table sees it, until the player guesses the seat: then the guess is
+	// on the token, and the avatar stays in the sheet's header (Trevor, 2026-11-13).
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	const mine = phone.getByTestId('grim-seat').nth(2);
 	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
@@ -2772,26 +2780,21 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await empath.scrollIntoViewIfNeeded();
 	await expect(empath).toBeInViewport();
 	await empath.tap();
-	// The sheet's cycle: the guess in front, then the avatar.
-	const cycle = sheet.getByTestId('seat-guesses').getByRole('button');
-	await expect(cycle).toHaveCount(2);
-	await expect(cycle.first()).toContainText('Empath');
-	await expect(cycle.last()).toHaveAccessibleName('Avatar');
+	// The sheet's Guesses row holds the guess only, and the avatar stays in the header.
+	const listed = sheet.getByTestId('seat-guesses').getByRole('button');
+	await expect(listed).toHaveCount(1);
+	await expect(listed.first()).toContainText('Empath');
+	await expect(sheet.getByTestId('sheet-avatar')).toHaveText('AK');
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
 	await expect(mine).toHaveAttribute('data-guess', 'true');
-	const pill = mine.getByTestId('guess-marks');
-	await expect(pill.getByRole('img', { name: 'Avatar' })).toBeVisible();
-	await pill.tap();
-	await expect(sheet).toBeHidden();
-	await expect(mine).not.toHaveAttribute('data-guess', 'true');
-	await expect(pill.getByRole('img', { name: 'Empath' })).toBeVisible();
+	await expect(mine.getByTestId('avatar-face')).toHaveCount(0);
+	// Taking the guess off brings the avatar back.
+	await mine.tap();
+	await listed.first().tap();
+	await phone.keyboard.press('Escape');
 	await expect(mine.getByTestId('avatar-face')).toHaveText('AK');
-	// Still the player's guess, behind the avatar.
-	await expect(mine).toHaveAttribute('aria-label', /your guess: Empath/);
-	await pill.tap();
-	await expect(mine).toHaveAttribute('data-guess', 'true');
 	await phoneContext.close();
 });
 
