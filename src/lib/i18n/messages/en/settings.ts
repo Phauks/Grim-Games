@@ -54,10 +54,10 @@ export const settings = {
 	'settings.soundOutput.phones': 'Players’ phones',
 	'settings.soundOutput.town': 'Town Square',
 	'settings.soundOutputTownHeard': 'Tap the screen to hear the Storyteller’s sounds',
-	'settings.storytellerSounds': 'Play the Storyteller’s sounds',
-	'settings.storytellerSoundsAsk': 'Play the Storyteller’s sounds?',
+	'settings.storytellerSounds': 'Allow Storyteller to push sounds',
+	'settings.storytellerSoundsAsk': 'Allow Storyteller to push sounds to this device?',
 	'settings.storytellerSoundsWhat':
-		'Bells, the timer and day and night sound play on this phone when the Storyteller sends them.',
+		'Bells, the timer and day and night sound play on this device when the Storyteller sends them.',
 	'settings.speaker': 'Speaker',
 	'settings.speakerDefault': 'Device default',
 	'settings.speakerUnnamed': 'Speaker {n}',
