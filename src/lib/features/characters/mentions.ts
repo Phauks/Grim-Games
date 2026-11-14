@@ -54,3 +54,16 @@ export function mentionSegments(
 	if (at < text.length) out.push({ kind: 'text', text: text.slice(at) });
 	return out;
 }
+
+/**
+ * The characters whose names `mentionSegments` marks: the official ones, and the game's own
+ * on top (a homebrew character, or one with its own name), so a homebrew "Witch-King" is one
+ * mention rather than the Witch and the King.
+ */
+export function mentionCharacters<C extends NamedCharacter>(
+	official: readonly C[],
+	game: ReadonlyMap<CharacterId, C> | undefined
+): readonly C[] {
+	if (!game || game.size === 0) return official;
+	return [...official.filter((c) => !game.has(c.id)), ...game.values()];
+}
