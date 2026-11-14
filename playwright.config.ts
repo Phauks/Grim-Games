@@ -33,7 +33,13 @@ export default defineConfig({
 			origins: [
 				{
 					origin: `http://localhost:${PORT}`,
-					localStorage: [{ name: 'grim-games:storyteller-sounds:v1', value: 'on' }]
+					localStorage: [
+						{ name: 'grim-games:storyteller-sounds:v1', value: 'on' },
+						// The Library's folders and tags start folded on a phone so the list shows
+						// first; tests that use them start with them open, and
+						// e2e/library.e2e.ts checks the folded start itself.
+						{ name: 'grim-games:collapsed:library-navigation', value: '0' }
+					]
 				}
 			]
 		}

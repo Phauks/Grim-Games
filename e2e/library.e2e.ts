@@ -28,6 +28,17 @@ async function open(target: Locator) {
 }
 const crumbs = (page: Page) => page.getByRole('navigation', { name: 'Folder path' });
 const sidebar = (page: Page) => page.getByTestId('library-sidebar');
+/** Kinds and Campaigns are one drop-down at the top of the sidebar (Trevor, 2026-11-14). */
+async function showKind(page: Page, name: string) {
+	const option = page.getByRole('option', { name, exact: true });
+	// The first tap can land while the search box is still giving up focus.
+	await expect(async () => {
+		if (!(await option.isVisible()))
+			await sidebar(page).getByRole('combobox', { name: 'Kinds' }).tap();
+		await expect(option).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	await option.tap();
+}
 /** The open item: a pane beside the list on a computer, over the screen on a phone or tablet. */
 const pane = (page: Page, name: string) =>
 	page.getByRole('dialog', { name }).or(page.getByRole('region', { name }));
@@ -309,7 +320,7 @@ test('a saved script can be renamed in the Library and still knows where it came
 	await expect(row(page, 'Club storm')).toBeVisible();
 
 	// Empty Campaigns look like the rest: the same table, saying None (Trevor, 2026-10-18).
-	await sidebar(page).getByRole('button', { name: 'Campaigns' }).tap();
+	await showKind(page, 'Campaigns');
 	await expect(page.getByTestId('library-campaigns').getByRole('table')).toContainText('None');
 	await expect(page.getByRole('button', { name: 'Search the Library' })).toBeVisible();
 });
@@ -372,7 +383,7 @@ test('characters and character collections are Library items too', async ({ page
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
 
 	await page.goto('/library');
-	await sidebar(page).getByRole('button', { name: 'Characters', exact: true }).tap();
+	await showKind(page, 'Characters');
 	await expect(table(page).locator('tbody tr')).toHaveCount(1);
 	await open(row(page, 'Lamp Lighter'));
 	const character = pane(page, 'Lamp Lighter');
@@ -400,10 +411,10 @@ test('characters and character collections are Library items too', async ({ page
 	await expect(members).toContainText('Lamp Lighter');
 	await collection.getByRole('button', { name: 'Close' }).tap();
 
-	await sidebar(page).getByRole('button', { name: 'Character Collections' }).tap();
+	await showKind(page, 'Character Collections');
 	await expect(row(page, 'Lamp set')).toContainText('2 characters');
 	await page.reload();
-	await sidebar(page).getByRole('button', { name: 'Everything' }).tap();
+	await showKind(page, 'Everything');
 	await expect(row(page, 'Lamp set')).toBeVisible();
 	await expect(row(page, 'Lamp Lighter')).toBeVisible();
 
@@ -454,11 +465,9 @@ test('New folder makes "New folder" at once, selected, numbered when the name is
 	await expect(page.getByRole('button', { name: 'Rename New folder 2' })).toBeEnabled();
 });
 
-test('the sidebar’s folders, kinds and tags fold away, and folders are made there', async ({
-	page
-}) => {
+test('the sidebar’s folders and tags fold away, and folders are made there', async ({ page }) => {
 	// Trevor (2026-10-18): "allow collapsing of folders, kind, and tags" and "move add folder
-	// button into left sidebar, in nav area".
+	// button into left sidebar, in nav area". Kinds became one drop-down (Trevor, 2026-11-14).
 	await page.goto('/library');
 	const nav = sidebar(page);
 	await expect(nav.getByRole('button', { name: 'New folder', exact: true })).toBeVisible();
@@ -467,7 +476,6 @@ test('the sidebar’s folders, kinds and tags fold away, and folders are made th
 
 	for (const [group, inside] of [
 		['Folders', /^Club night/],
-		['Kinds', /^Scripts/],
 		['Tags', 'New tag']
 	] as const) {
 		const head = nav.getByRole('button', { name: group, exact: true });
@@ -478,12 +486,47 @@ test('the sidebar’s folders, kinds and tags fold away, and folders are made th
 	}
 	// Remembered on this device.
 	await page.reload();
-	await expect(nav.getByRole('button', { name: 'Kinds', exact: true })).toHaveAttribute(
-		'aria-expanded',
-		'false'
-	);
-	await nav.getByRole('button', { name: 'Kinds', exact: true }).tap();
-	await expect(nav.getByRole('button', { name: /^Scripts/ })).toBeVisible();
+	const folders = nav.getByRole('button', { name: 'Folders', exact: true });
+	await expect(folders).toHaveAttribute('aria-expanded', 'false');
+	await folders.tap();
+	await expect(nav.getByRole('button', { name: /^Club night/ })).toBeVisible();
+	// The kind drop-down stays above them, folded or not.
+	await expect(nav.getByRole('combobox', { name: 'Kinds' })).toBeVisible();
+});
+
+test('kinds and Campaigns are one drop-down, and on a phone the sidebar starts folded', async ({
+	page
+}, testInfo) => {
+	// Trevor (2026-11-14, option A): a short sidebar, so the list keeps its room and on a
+	// phone shows first.
+	await page.goto('/library');
+	await page.evaluate(() => localStorage.removeItem('grim-games:collapsed:library-navigation'));
+	await page.reload();
+	await expect(table(page)).toBeVisible();
+	const folded = page.getByRole('button', { name: 'Folders and tags', exact: true });
+	if (testInfo.project.name === 'phone') {
+		await expect(folded).toHaveAttribute('aria-expanded', 'false');
+		await expect(sidebar(page)).toBeHidden();
+		await folded.tap();
+	} else {
+		await expect(folded).toHaveCount(0);
+	}
+	const kinds = sidebar(page).getByRole('combobox', { name: 'Kinds' });
+	await expect(kinds).toHaveText(/Everything/);
+	await kinds.tap();
+	await expect(page.getByRole('option')).toHaveText([
+		'Everything',
+		'Scripts',
+		'Characters',
+		'Character Collections',
+		'Game modes',
+		'Special rules',
+		'Campaigns'
+	]);
+	await page.getByRole('option', { name: 'Campaigns', exact: true }).tap();
+	await expect(page.getByTestId('library-campaigns')).toBeVisible();
+	await expect(kinds).toHaveText(/Campaigns/);
+	await noSidewaysScroll(page);
 });
 
 test('an item changes kind, told first what won’t carry over', async ({ page }) => {
@@ -1001,11 +1044,11 @@ test('game mode and special rule files are Library items, added and opened like 
 	await expect(rule.getByTestId('library-mode')).toBeVisible();
 	await rule.getByRole('button', { name: 'Close' }).tap();
 
-	// Each kind has its own place in the sidebar.
-	await sidebar(page).getByRole('button', { name: 'Game modes', exact: true }).tap();
+	// Each kind has its own place in the sidebar's Kinds drop-down.
+	await showKind(page, 'Game modes');
 	await expect(table(page).locator('tbody tr')).toHaveCount(1);
 	await expect(row(page, 'Tiny Mode')).toBeVisible();
-	await sidebar(page).getByRole('button', { name: 'Special rules', exact: true }).tap();
+	await showKind(page, 'Special rules');
 	await expect(row(page, 'Quiet Rule')).toBeVisible();
 
 	// A file with problems says so and adds nothing.
@@ -1013,7 +1056,7 @@ test('game mode and special rule files are Library items, added and opened like 
 	await expect(page.getByText(/This mode file has \d+ problems/).first()).toBeVisible();
 
 	// Edit opens it in the Mode builder.
-	await sidebar(page).getByRole('button', { name: 'Everything' }).tap();
+	await showKind(page, 'Everything');
 	await open(row(page, 'Tiny Mode'));
 	await mode.getByRole('button', { name: 'Edit Tiny Mode in the Mode builder' }).tap();
 	await expect(page).toHaveURL(/\/build-mode/);

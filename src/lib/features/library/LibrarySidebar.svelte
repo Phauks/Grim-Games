@@ -6,11 +6,11 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import TagList from './TagList.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { TOP_FOLDER, dragToFolder, type DragSource } from './drag-to-folder.ts';
 	import type { KindFilter } from './library-items.ts';
 	import { folderTree } from './library-labels.ts';
@@ -36,7 +36,7 @@
 		onmove: (source: DragSource, target: string | undefined) => void;
 		/** F2 on a folder renames it where it is (Trevor, 2026-10-18: "from outside the folder"). */
 		onrename: (folder: string) => void;
-		/** False leaves out the Kinds list and Campaigns, for a browser of one kind of item. */
+		/** False leaves out the Kinds drop-down, for a browser of one kind of item. */
 		kinds?: boolean;
 	}
 
@@ -51,6 +51,19 @@
 		onrename,
 		kinds: showKinds = true
 	}: Props = $props();
+
+	/**
+	 * Kinds and Campaigns are one drop-down above the folders (Trevor, 2026-11-14: option A),
+	 * so the sidebar stays short and the list keeps its room.
+	 */
+	const kindValue = $derived(place === 'campaigns' ? 'campaigns' : kind);
+	function setKind(v: KindFilter | 'campaigns') {
+		if (v === 'campaigns') place = 'campaigns';
+		else {
+			kind = v;
+			place = 'files';
+		}
+	}
 
 	/** Folders shown closed, their folders hidden (Trevor, 2026-10-18: collapsible), per device. */
 	const CLOSED_KEY = 'grim-games:library-closed-folders';
@@ -75,13 +88,15 @@
 			return true;
 		});
 	});
-	const kinds: { value: KindFilter; label: string; icon: IconSlot }[] = $derived([
-		{ value: 'all', label: t('library.kind.all'), icon: 'library' },
-		{ value: 'script', label: t('library.kind.scripts'), icon: 'script' },
-		{ value: 'character', label: t('library.kind.characters'), icon: 'buildCharacter' },
-		{ value: 'collection', label: t('library.kind.collections'), icon: 'players' },
-		{ value: 'mode', label: t('library.kind.modes'), icon: 'buildMode' },
-		{ value: 'rule', label: t('library.kind.rules'), icon: 'specialRule' }
+	const kinds: { value: KindFilter | 'campaigns'; label: string }[] = $derived([
+		{ value: 'all', label: t('library.kind.all') },
+		{ value: 'script', label: t('library.kind.scripts') },
+		{ value: 'character', label: t('library.kind.characters') },
+		{ value: 'collection', label: t('library.kind.collections') },
+		{ value: 'mode', label: t('library.kind.modes') },
+		{ value: 'rule', label: t('library.kind.rules') },
+		// Each version of a living script (Trevor, 2026-10-18).
+		{ value: 'campaigns', label: t('library.campaigns') }
 	]);
 
 	function openFolder(id: string | undefined) {
@@ -90,8 +105,19 @@
 	}
 </script>
 
-<!-- Folders, Kinds and Tags fold away like every other section, remembered on this device. -->
+<!-- Folders and Tags fold away like every other section, remembered on this device. -->
 <nav class="sidebar" aria-label={t('library.navigation')} data-testid="library-sidebar">
+	{#if showKinds}
+		<div class="kind-select">
+			<Select
+				label={t('library.kinds')}
+				hideLabel
+				value={kindValue}
+				options={kinds}
+				onChange={setKind}
+			/>
+		</div>
+	{/if}
 	<SectionStack edge>
 		<Collapsible title={t('library.folders')} storageKey="library-folders">
 			{#snippet aside()}
@@ -156,46 +182,14 @@
 			</ul>
 		</Collapsible>
 
-		{#if showKinds}
-			<Collapsible title={t('library.kinds')} storageKey="library-kinds">
-				<ul>
-					{#each kinds as k (k.value)}
-						<li>
-							<button
-								type="button"
-								class="entry"
-								aria-pressed={place === 'files' && kind === k.value}
-								onclick={() => {
-									kind = k.value;
-									place = 'files';
-								}}
-							>
-								<Icon name={k.icon} />
-								<span class="name">{k.label}</span>
-							</button>
-						</li>
-					{/each}
-					<li>
-						<!-- Each version of a living script (Trevor, 2026-10-18). -->
-						<button
-							type="button"
-							class="entry"
-							aria-pressed={place === 'campaigns'}
-							onclick={() => (place = 'campaigns')}
-						>
-							<Icon name="history" />
-							<span class="name">{t('library.campaigns')}</span>
-						</button>
-					</li>
-				</ul>
-			</Collapsible>
-		{/if}
-
 		<TagList bind:filter={tags} />
 	</SectionStack>
 </nav>
 
 <style>
+	.kind-select {
+		padding-block-end: var(--space-2);
+	}
 	.sidebar {
 		display: grid;
 		align-content: start;
@@ -265,8 +259,7 @@
 	.entry:hover {
 		background: var(--surface-selected);
 	}
-	.entry[aria-current],
-	.entry[aria-pressed='true'] {
+	.entry[aria-current] {
 		background: var(--surface-selected);
 		font-weight: 600;
 	}
