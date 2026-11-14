@@ -291,3 +291,14 @@ export function parseSoundOutput(value: unknown): SoundOutput | undefined {
 	if (value === 'both') return 'town';
 	return (SOUND_OUTPUTS as readonly unknown[]).includes(value) ? (value as SoundOutput) : undefined;
 }
+
+/**
+ * A player's answer to whether their phone plays the Storyteller's sounds (Trevor, 2026-11-14:
+ * players opt in or out, "it could be seen as somewhat invasive"); undefined until they answer.
+ */
+export type StorytellerSoundsAnswer = 'on' | 'off';
+
+/** A stored answer; anything else is no answer yet. */
+export function parseStorytellerSounds(raw: unknown): StorytellerSoundsAnswer | undefined {
+	return raw === 'on' || raw === 'off' ? raw : undefined;
+}

@@ -12,6 +12,7 @@
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
 	import CallTownPushToggle from '#lib/features/room/CallTownPushToggle.svelte';
+	import StorytellerSoundsToggle from './StorytellerSoundsToggle.svelte';
 
 	/**
 	 * Plays the timer sound once the volume slider rests, so a drag doesn't restart it every
@@ -39,6 +40,8 @@
 	defaultValue={1}
 	onChange={setVolume}
 />
+<!-- Whether this phone plays the Storyteller's sounds, as a player answered on joining. -->
+<StorytellerSoundsToggle />
 <!-- Which speaker every sound plays on (plan U11); Chrome and Edge on a computer only. -->
 <SpeakerSetting />
 <!-- One switch for every alert: the timer running out and a Back to town call. -->
