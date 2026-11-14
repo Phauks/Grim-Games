@@ -488,6 +488,16 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await openFeedback();
 	await expect(entries).toHaveCount(2);
 	await expect(entry).toHaveCount(1);
+
+	// The feedback stays with the script too (Trevor, 2026-10-20): History's Scripts table
+	// rates Trouble Brewing from its games, and the rating opens their feedback.
+	await page.goto('/history');
+	const scripts = page.getByTestId('history-scripts');
+	const rating = scripts.getByRole('button', { name: '3 of 5' });
+	await rating.tap();
+	const scriptSheet = page.getByRole('dialog', { name: 'Player feedback on Trouble Brewing' });
+	await expect(scriptSheet.getByTestId('feedback-average')).toHaveText('3 of 5 from 2 rated');
+	await expect(scriptSheet.getByTestId('feedback-entry')).toHaveCount(2);
 });
 
 test('after End game the Storyteller shares the finished grimoire with the room', async ({
