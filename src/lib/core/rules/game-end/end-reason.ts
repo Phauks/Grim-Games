@@ -116,7 +116,7 @@ export function endCharacters(
  * The players who may win with `winner` although not on that team, if the Storyteller judges
  * their ability met (`gameEnd.joinsWinner`: the Politician most responsible for their own team
  * losing, https://wiki.bloodontheclocktower.com/Politician), even if dead. In seating order.
- * Not those who win with `winner` anyway (`alwaysWinners`).
+ * Not those who win with `winner` anyway (`gameEnd.alwaysWinsWith`).
  */
 export function joinsWinners(game: Game, characters: CharacterLookup, winner: Alignment): SeatId[] {
 	return game.seating.filter((id) => {
@@ -127,23 +127,6 @@ export function joinsWinners(game: Game, characters: CharacterLookup, winner: Al
 			rules.alwaysWinsWith !== winner
 		);
 	});
-}
-
-/**
- * The players who win with `winner` although not on that team, with no call to make
- * (`gameEnd.alwaysWinsWith`: the Politician always wins with good, Trevor, 2026-11-03), even if
- * dead. Their alignment does not change. In seating order.
- */
-export function alwaysWinners(
-	game: Game,
-	characters: CharacterLookup,
-	winner: Alignment
-): SeatId[] {
-	return game.seating.filter(
-		(id) =>
-			game.seats[id].alignment !== winner &&
-			winRules(game, id, characters)?.alwaysWinsWith === winner
-	);
 }
 
 /** The `gameEnd` rules of the seat's true character. */

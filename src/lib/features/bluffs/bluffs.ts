@@ -78,12 +78,6 @@ export function randomBelieverBluffs(
 	);
 }
 
-/** The Demon's bluffs that are now in play (after a seat change), to be replaced. */
-export function demonBluffsInPlay(game: Game, characters: CharacterLookup): CharacterId[] {
-	const inPlay = charactersReallyInPlay(game, characters);
-	return (game.bluffs[DEMON_SET] ?? []).filter((id) => inPlay.has(id));
-}
-
 /**
  * The name of a bluff set: the one the Storyteller gave it (not the Demon's set, Trevor
  * 2026-10-17), else by position: the Demon's first, then "Set 2" and on, except that the
