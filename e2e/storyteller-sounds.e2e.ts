@@ -78,7 +78,9 @@ test('a player is asked on joining, plays nothing until they say yes, and is not
 		if (path.startsWith('/sounds/ambience/')) fetched.push(path);
 	});
 	await phone.goto(`/join/${code}`);
-	const question = phone.getByRole('alertdialog', { name: 'Play the Storyteller’s sounds?' });
+	const question = phone.getByRole('alertdialog', {
+		name: 'Allow Storyteller to push sounds to this device?'
+	});
 	await expect(question).toBeVisible();
 	await question.getByRole('button', { name: 'Cancel', exact: true }).tap();
 	await expect(question).toBeHidden();
@@ -101,9 +103,9 @@ test('a player is asked on joining, plays nothing until they say yes, and is not
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })
 		.tap();
-	const toggle = settings.getByRole('checkbox', { name: 'Play the Storyteller’s sounds' });
+	const toggle = settings.getByRole('checkbox', { name: 'Allow Storyteller to push sounds' });
 	await expect(toggle).not.toBeChecked();
-	await settings.getByText('Play the Storyteller’s sounds', { exact: true }).tap();
+	await settings.getByText('Allow Storyteller to push sounds', { exact: true }).tap();
 	await expect(toggle).toBeChecked();
 	await expect.poll(() => fetched).toContain('/sounds/ambience/night-meadow.mp3');
 	await phoneContext.close();
@@ -126,7 +128,9 @@ test('saying yes on joining plays the Storyteller’s sounds', async ({
 		if (path.startsWith('/sounds/ambience/')) fetched.push(path);
 	});
 	await phone.goto(`/join/${code}`);
-	const question = phone.getByRole('alertdialog', { name: 'Play the Storyteller’s sounds?' });
+	const question = phone.getByRole('alertdialog', {
+		name: 'Allow Storyteller to push sounds to this device?'
+	});
 	await question.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(question).toBeHidden();
 	await startNight(page);

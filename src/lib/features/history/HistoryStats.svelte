@@ -24,6 +24,10 @@
 	import StatCards from '#lib/ui/layout/StatCards.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
+	import { summarizeFeedback } from '#lib/core/feedback/index.ts';
+	import FeedbackSummary from '#lib/features/room/FeedbackSummary.svelte';
+	import { gameFeedback } from '#lib/features/room/game-feedback.svelte.ts';
+	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { loadGameRecords } from './records.ts';
 	import { matchesText, nextSort, sortRows } from './stat-rows.ts';
 
@@ -86,7 +90,7 @@
 	};
 
 	// ── Scripts ──
-	type ScriptColumn = 'script' | 'games' | 'good' | 'evil';
+	type ScriptColumn = 'script' | 'games' | 'good' | 'evil' | 'rating';
 	let scriptSort = $state<DataSort<ScriptColumn> | undefined>();
 	let scriptFilter = $state('');
 	const scriptColumns = $derived<DataColumn<ScriptColumn, ScriptStats>[]>([
@@ -121,10 +125,35 @@
 			align: 'end',
 			width: width(5),
 			value: (s) => scriptValue(s, 'evil')
+		},
+		{
+			id: 'rating',
+			label: t('room.feedback.rating'),
+			sortable: true,
+			align: 'end',
+			width: width(7),
+			value: (s) => scriptValue(s, 'rating')
 		}
 	]);
+	/**
+	 * Players' feedback stays with the script (Trevor, 2026-10-20): each script's games' saved
+	 * feedback (game-feedback.svelte.ts) together, read again whenever more is saved.
+	 */
+	const scriptFeedback = $derived(
+		new Map(stats.scripts.map((s) => [s.key, s.gameIds.flatMap((id) => gameFeedback.read(id))]))
+	);
+	const scriptRating = (s: ScriptStats) =>
+		summarizeFeedback((scriptFeedback.get(s.key) ?? []).map((e) => e.feedback)).rating;
+	/** The script whose feedback is open. */
+	let feedbackOf = $state<ScriptStats>();
 	const scriptValue = (s: ScriptStats, c: ScriptColumn) =>
-		c === 'script' ? (s.name ?? '') : c === 'games' ? s.games : s.wins[c];
+		c === 'rating'
+			? scriptRating(s)
+			: c === 'script'
+				? (s.name ?? '')
+				: c === 'games'
+					? s.games
+					: s.wins[c];
 	const scriptRows = $derived(
 		sortRows(
 			stats.scripts.filter((s) => matchesText(s.name, scriptFilter)),
@@ -369,6 +398,19 @@
 			{#if column.id === 'script'}
 				<span class="script">{s.name || t('common.none')}</span>
 				{#if s.author}<span class="author">{t('history.byAuthor', { author: s.author })}</span>{/if}
+			{:else if column.id === 'rating'}
+				{@const rating = scriptRating(s)}
+				{@const label =
+					rating === undefined
+						? t('common.none')
+						: t('room.feedback.ratingValue', { rating: intl.number(rating) })}
+				{#if scriptFeedback.get(s.key)?.length}
+					<Button variant="quiet" aria-haspopup="dialog" onclick={() => (feedbackOf = s)}
+						>{label}</Button
+					>
+				{:else}
+					{label}
+				{/if}
 			{:else}
 				{count(scriptValue(s, column.id) as number)}
 			{/if}
@@ -378,6 +420,13 @@
 		{/snippet}
 	</DataTable>
 </PageSection>
+
+<BottomSheet
+	bind:open={() => !!feedbackOf, (on) => !on && (feedbackOf = undefined)}
+	title={t('history.scriptFeedback', { script: feedbackOf?.name || t('common.none') })}
+>
+	<FeedbackSummary entries={feedbackOf ? (scriptFeedback.get(feedbackOf.key) ?? []) : []} />
+</BottomSheet>
 
 <PageSection title={t('history.storytellers')} collapsible storageKey="history.storytellers">
 	<DataTable
