@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GAME_MODES, SPECIAL_RULES } from '#lib/core/modes/index.ts';
+import { GAME_MODES, SPECIAL_RULES, type SpecialRule } from '#lib/core/modes/index.ts';
 import {
 	aboutApproved,
 	APPROVED_ABOUT,
@@ -7,7 +7,13 @@ import {
 	instructionApproved,
 	shownParts
 } from './approved-about.ts';
-import { INFINITE_NAMED, PLUS_ONE_NAMED, RULE_SWITCHES } from './rule-switches.ts';
+import {
+	INFINITE_NAMED,
+	PLUS_ONE_NAMED,
+	RULE_SWITCHES,
+	SEAT_7_PROTECTOR,
+	SEAT_7_WHISPER
+} from './rule-switches.ts';
 
 describe('approved mode descriptions', () => {
 	it('show only while the text is exactly what Trevor approved', () => {
@@ -48,6 +54,11 @@ describe('approved Storyteller instructions', () => {
 		expect(instructionApproved('infinite-possibilities:setup.information[0]', INFINITE_NAMED)).toBe(
 			true
 		);
+		// Seat 7's optional rules (approved 2026-11-13): the Grandmother Principle's line is last,
+		// whichever of the others are on.
+		expect(instructionApproved('seat-7:setup.seats', SEAT_7_WHISPER)).toBe(true);
+		for (const i of [0, 1, 2])
+			expect(instructionApproved(`seat-7:setup.ruleChanges[${i}]`, SEAT_7_PROTECTOR)).toBe(true);
 	});
 
 	it('approve only text a built-in mode or rule still has', () => {
@@ -55,12 +66,15 @@ describe('approved Storyteller instructions', () => {
 		const stale = Object.entries(APPROVED_INSTRUCTIONS).filter(([key, approved]) => {
 			const [, id, part, index] = /^([^:]+):setup\.(\w+)(?:\[(\d+)\])?$/.exec(key) ?? [];
 			const mode = builtIn.find((m) => m.id === id);
-			// A rule with a switch has a text for each setting of it.
+			// A rule with switches has a text for each setting of them, in every combination.
+			const switches = mode ? (RULE_SWITCHES[mode.id] ?? []) : [];
 			const versions = mode
-				? [
-						mode,
-						...(RULE_SWITCHES[mode.id] ?? []).map((sw) => sw.apply(mode as never, !sw.default))
-					]
+				? Array.from({ length: 2 ** switches.length }, (_, bits) =>
+						switches.reduce<SpecialRule>(
+							(m, sw, i) => sw.apply(m, (bits & (1 << i)) !== 0),
+							mode as SpecialRule
+						)
+					)
 				: [];
 			const texts = versions.map((m) => {
 				const value: unknown = m.setup[part as never];
