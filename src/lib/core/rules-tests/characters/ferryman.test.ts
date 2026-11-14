@@ -103,11 +103,10 @@ describe('Ferryman', () => {
 			const ferried = s.rule('ferryman');
 			const back = ghostVotesRestored(ferried.game, ferried.characters, true);
 			expect(back).toEqual(cast.slice(0, 10).map((id) => s.seat(id)));
-			const after = back.reduce(
-				(at, seatId) => at.do({ type: 'RestoreGhostVote', seatId }),
-				ferried
-			);
+			// The Storyteller's Final day gives them all back as one step, so one Undo takes it back.
+			const after = ferried.do({ type: 'RegainGhostVotes' });
 			expect(ghostVotesRestored(after.game, after.characters, true)).toEqual([]);
+			expect(after.session.log.cursor).toBe(ferried.session.log.cursor + 1);
 		});
 	});
 
@@ -135,6 +134,9 @@ describe('Ferryman', () => {
 				s.seat('chef'),
 				s.seat('empath')
 			]);
+			const after = s.do({ type: 'RegainGhostVotes' });
+			expect(after.game.seats[s.seat('chef')].ghostVoteUsed).toBeFalsy();
+			expect(after.game.seats[s.seat('empath')].ghostVoteUsed).toBeFalsy();
 		});
 	});
 });

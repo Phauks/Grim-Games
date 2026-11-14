@@ -52,6 +52,7 @@
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
 	import RuleDayControl, { hasRuleDayControl } from './RuleDayControl.svelte';
+	import FinalDay, { hasFinalDay } from './FinalDay.svelte';
 	import { atDayStart } from './day-start.ts';
 	import RuleCharacterUse from './RuleCharacterUse.svelte';
 	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
@@ -506,6 +507,8 @@
 														owner={character.id}
 														stoppers={stopRows[reminder.key]}
 													/></span
+												>{:else if hasFinalDay(g, reminder.characterId, game.characters)}<span
+													class="day-end"><FinalDay {game} /></span
 												>{/if}</span
 										>
 										<BorrowedAbilityRows {game} seatId={head?.ref.seatId} />
