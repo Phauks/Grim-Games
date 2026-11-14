@@ -10,12 +10,3 @@ export function shortCommit(info: BuildInfo): string {
 export function describeBuild(info: BuildInfo): string {
 	return `v${info.version} · ${shortCommit(info)} · ${info.branch} · ${info.channel} · built ${info.builtAt}`;
 }
-
-/** The issue forms in `.github/ISSUE_TEMPLATE/`, one per kind of report (listed on the chooser). */
-export const ISSUE_FORMS = {
-	bug: 'bug_report.yml',
-	enhancement: 'feature_request.yml',
-	rules: 'rules_error.yml',
-	data: 'data_problem.yml',
-	question: 'question.yml'
-} as const;

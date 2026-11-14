@@ -1,8 +1,8 @@
 import { globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findHardcodedText } from '#lib/i18n/hardcoded.ts';
-import { ALLOWED_TEXT, MIGRATED_PATHS } from '#lib/i18n/migrated.ts';
+import { findHardcodedText } from '#lib/i18n/hardcoded.test-support.ts';
+import { ALLOWED_TEXT, MIGRATED_PATHS } from '#lib/i18n/migrated.test-support.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 

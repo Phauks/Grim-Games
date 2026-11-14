@@ -1,6 +1,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ISSUE_FORMS } from '../src/lib/features/about/report-issue.ts';
+
+/** The issue forms in `.github/ISSUE_TEMPLATE/`, one per kind of report (listed on the chooser). */
+const ISSUE_FORMS = {
+	bug: 'bug_report.yml',
+	enhancement: 'feature_request.yml',
+	rules: 'rules_error.yml',
+	data: 'data_problem.yml',
+	question: 'question.yml'
+} as const;
 
 const dir = new URL('../.github/ISSUE_TEMPLATE/', import.meta.url);
 

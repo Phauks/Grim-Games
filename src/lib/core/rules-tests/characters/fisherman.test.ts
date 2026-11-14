@@ -18,9 +18,9 @@ import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import {
 	dayReminders,
 	dayStateFromGame,
-	isOnceOnlyDayAbility,
-	renderReminder
+	isOnceOnlyDayAbility
 } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';

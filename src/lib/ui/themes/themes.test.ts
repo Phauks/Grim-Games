@@ -3,7 +3,8 @@ import { ICON_SETS, ICON_SLOTS, isIconChoice, type IconSlot } from '#lib/ui/icon
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { THEMES } from './registry.ts';
 import { FIXED_COLORS } from './team-colors.ts';
-import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
+import { SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
+import { EDGE_PAIRS } from './types.test-support.ts';
 
 describe('contrast helpers', () => {
 	it('match the WCAG reference values', () => {

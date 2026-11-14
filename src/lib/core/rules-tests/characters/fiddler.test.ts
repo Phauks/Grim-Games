@@ -17,11 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { endCharacters } from '#lib/core/rules/game-end/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import {
 	contestChoosers,
 	contestOpponents,

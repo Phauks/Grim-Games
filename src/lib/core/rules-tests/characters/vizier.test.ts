@@ -19,11 +19,8 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';

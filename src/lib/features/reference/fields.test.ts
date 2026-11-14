@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FIELD_IDS, REFERENCE_FIELDS, tableFieldIds } from './fields.ts';
+import { FIELD_IDS, REFERENCE_FIELDS } from './fields.ts';
+import { tableFieldIds } from './fields.test-support.ts';
 
 describe('reference fields', () => {
 	it('shows every field as a table column', () => {

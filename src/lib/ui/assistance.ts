@@ -27,9 +27,6 @@ export const ASSIST_KEYS = [
 export type AssistKey = (typeof ASSIST_KEYS)[number];
 export type Assistance = Record<AssistKey, boolean>;
 
-/** Switches listed under Storyteller settings; `explainTerms` has its own Rules terms section. */
-export const STORYTELLER_HELP_KEYS = ASSIST_KEYS.filter((key) => key !== 'explainTerms');
-
 export const ASSIST_LABELS: Record<AssistKey, { label: string; description: string }> = {
 	nightWalkthrough: {
 		label: 'Walk me through the night',

@@ -7,11 +7,8 @@ import {
 	testCharacters,
 	warned
 } from '#lib/core/model/fixtures.test-support.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import type { Command } from './commands.ts';
 import { redo, undo } from './log.ts';
 

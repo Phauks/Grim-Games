@@ -13,7 +13,6 @@
  * https://wiki.bloodontheclocktower.com/Spy). So does a neighbour of a seat that may register
  * as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
-import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import type { NeighbourRule, TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -36,13 +35,6 @@ import { rulesFor } from '#lib/core/rules/rules-for.ts';
 export interface CharacterTargets {
 	labels: Readonly<Record<ReminderLabel, TargetRule>>;
 }
-
-/** The official characters' token rules, by character id. */
-export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> = Object.fromEntries(
-	[...OFFICIAL_RULES].flatMap(([id, rules]) =>
-		rules.reminderTargets ? [[id, { labels: rules.reminderTargets }]] : []
-	)
-);
 
 /**
  * Why a seat doesn't fit a token's rule, one code per broken condition:

@@ -6,13 +6,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import {
-	characterReference,
-	fullNightOrder,
-	nightPositions,
-	referenceText,
-	sheetPosition
-} from './reference.ts';
+import { characterReference, nightPositions } from './reference.ts';
+import { fullNightOrder, sheetPosition } from '#lib/core/testing/reference.ts';
+import { referenceText } from '#lib/core/testing/plain-text.ts';
 
 const data = committedGameData();
 const entries = characterReference(data);

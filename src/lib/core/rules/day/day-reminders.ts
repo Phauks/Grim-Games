@@ -199,25 +199,6 @@ function entryOf(state: DayState, characterId: CharacterId, character: Character
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** "poisoned" or "drunk" when a reminder token says so ("Poisoned", "Is The Drunk", "Drunk 2"). */
-export const impairment = impairmentOfLabel;
-
-/** Plain text, for the draft list and tests: "[Witch · Sam] has chosen [Librarian]". */
-export function renderReminder(
-	segments: readonly ReminderSegment[],
-	name: (id: CharacterId) => string = (id) => id
-): string {
-	return segments
-		.map((s) =>
-			s.kind === 'text'
-				? s.text
-				: s.kind === 'value'
-					? `(${s.value ?? s.placeholder})`
-					: `[${name(s.ref.characterId)}${s.ref.playerName ? ` · ${s.ref.playerName}` : ''}]`
-		)
-		.join(' ');
-}
-
 /**
  * The model's game as `DayState` (seats in seating order), with the Storyteller's stored
  * overrides unless `overrides` is given. With `characters`, impairments come from

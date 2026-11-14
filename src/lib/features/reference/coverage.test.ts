@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseRoles } from '#lib/core/data/parse.ts';
-import { CHARACTER_COVERAGE, DERIVED_FIELDS, ENTRY_COVERAGE, type Shown } from './coverage.ts';
+import {
+	CHARACTER_COVERAGE,
+	DERIVED_FIELDS,
+	ENTRY_COVERAGE,
+	type Shown
+} from './coverage.test-support.ts';
 import { FIELD_IDS } from './fields.ts';
 
 const columns = (map: Record<string, Shown>) =>

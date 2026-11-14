@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
 	MOVING_BACKGROUNDS,
 	MOVING_IDS,
-	formatParam,
 	movingDefaults,
 	movingRun,
 	parseMoving,
@@ -11,7 +10,7 @@ import {
 	type MovingParams,
 	type RangeParam
 } from './moving.ts';
-import { matchingPreset, paramPreset } from './params.ts';
+import { formatParam, matchingPreset, paramPreset } from './params.ts';
 
 /** How a device moves a background when nothing is saved. */
 const DEFAULT_MOTION = { fps: 'screen', reduceMotion: 'still', still: false } as const;

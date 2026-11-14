@@ -20,11 +20,8 @@ import {
 	nightSheetPresence,
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { dayTallyOf, tallyKills } from '#lib/core/rules/day/day-tally.ts';
 import { decide } from '#lib/core/engine/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';

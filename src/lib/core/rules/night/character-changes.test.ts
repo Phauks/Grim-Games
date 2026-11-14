@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { plainGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { withCharacterChangeSteps } from './character-changes.ts';
 import type { NightStep } from './night-order.ts';
-import { nightTextPlain, nightTextSegments } from './night-text.ts';
+import { nightTextSegments } from './night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 
 const marker = (id: string, afterDawn = false): NightStep => ({
 	id,

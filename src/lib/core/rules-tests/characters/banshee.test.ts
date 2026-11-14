@@ -18,11 +18,8 @@ import { deathReminder } from '#lib/core/rules/abilities/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { afterDeath, nominationsPerDay } from '#lib/core/rules/day/nominations.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night/night-killers.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { voteWorth } from '#lib/core/rules/day/vote-weights.ts';

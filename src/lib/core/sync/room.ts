@@ -46,7 +46,7 @@ export {
 	setViewers,
 	type SharedGrimoire
 } from './shared-grimoire.ts';
-export { join, markHere, MAX_MEMBERS } from './room-presence.ts';
+export { join, markHere } from './room-presence.ts';
 const MAX_PLAYER_NAME_LENGTH = 40;
 /** A script's own characters (homebrew) carry their text and images, so it can be large. */
 export const MAX_SCRIPT_BYTES = 256 * 1024;

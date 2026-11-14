@@ -1,6 +1,6 @@
 // Kept apart from changelog.ts, which reads the build's injected history when loaded, so the
 // build (build-info.ts) can use it before that history exists.
-import type { Change } from './changelog.ts';
+import type { Change } from '../../src/lib/features/about/changelog.ts';
 
 /**
  * Turns a day's two or more commits made straight on the branch into one line, where the

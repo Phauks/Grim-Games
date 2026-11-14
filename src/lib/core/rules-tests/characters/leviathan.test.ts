@@ -22,11 +22,8 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { nightOrder } from '#lib/core/rules/night/night-order.ts';
-import {
-	nightTextPlain,
-	nightTextSegments,
-	placeholdersFor
-} from '#lib/core/rules/night/night-text.ts';
+import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
+import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
 

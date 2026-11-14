@@ -7,7 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
-import { tallyOf, voteHints, voteNotes, voteWorth } from './vote-weights.ts';
+import { voteHints, voteNotes, voteWorth } from './vote-weights.ts';
+import { tallyOf } from '#lib/core/testing/votes.ts';
 
 type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 

@@ -18,11 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { answerOptions } from '#lib/core/rules/night/info/answers.ts';
 import { nightStepInfo } from '#lib/core/rules/night/info/steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { stepInfoCards } from '#lib/core/rules/night/info-token-characters.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 

@@ -10,11 +10,8 @@ import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { executionSavers, protection } from '#lib/core/rules/abilities/protection.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	renderReminder
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes/jinx-pairs.ts';

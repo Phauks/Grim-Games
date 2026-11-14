@@ -15,14 +15,13 @@ import { rulesFor } from '#lib/core/rules/rules-for.ts';
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
-import type { DayEntry, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
+import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { blockThreshold, votesWithoutToken } from './voting.ts';
 import { uncountedVoteBy } from '#lib/core/rules/jinxes/jinx-effects.ts';
 import { mayVote, tableRule } from './voting-table.ts';
 
-type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 type VoterRule = NonNullable<CharacterRules['voter']>;
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -91,30 +90,6 @@ export function voteWorth(game: Game, seatId: SeatId, characters: CharacterLooku
 		(worth, s) => worth * s.weight,
 		baseVotes(game, seatId, characters)
 	);
-}
-
-/** A nomination's recorded votes added up: each voter's worth, in seat order. */
-export interface VoteTally {
-	total: number;
-	votes: { seatId: SeatId; worth: number }[];
-}
-
-/**
- * The tally of a nomination's recorded votes, or undefined while none are recorded. Each
- * vote counts as it would now (`voteWorth`): a weight that ended since the vote (the Thief
- * died) no longer shows.
- */
-export function tallyOf(
-	game: Game,
-	nomination: Nomination,
-	characters: CharacterLookup
-): VoteTally | undefined {
-	if (!nomination.votes) return undefined;
-	const votes = nomination.votes.voters.map((seatId) => ({
-		seatId,
-		worth: voteWorth(game, seatId, characters)
-	}));
-	return { total: votes.reduce((sum, v) => sum + v.worth, 0), votes };
 }
 
 /** A seat's own character's `voter` rule, while its ability works. */

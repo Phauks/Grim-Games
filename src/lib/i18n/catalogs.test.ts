@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { checkTranslation, type MessageValue } from '#lib/i18n/catalog.ts';
+import { type MessageValue } from '#lib/i18n/catalog.ts';
+import { checkTranslation } from '#lib/i18n/catalog.test-support.ts';
 import { TRANSLATIONS } from '#lib/i18n/catalogs.ts';
 import { LOCALES, matchLocale } from '#lib/i18n/locales.ts';
 import { en } from '#lib/i18n/messages/en.ts';

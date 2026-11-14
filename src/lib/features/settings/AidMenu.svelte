@@ -10,7 +10,7 @@
 	 * over the prompt, which stays open under it.
 	 */
 	interface Props {
-		/** One of Settings › Storyteller's switches (STORYTELLER_HELP_KEYS). */
+		/** One of Settings › Storyteller's switches (every assistance switch but `explainTerms`). */
 		aid: AssistKey;
 	}
 

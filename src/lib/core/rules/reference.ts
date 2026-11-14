@@ -12,17 +12,13 @@ import {
 	type Character,
 	type CharacterId,
 	type CharacterType,
-	type NightMarker,
-	type NightSheet,
 	type ReminderLabel
 } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/parts/day-reminders.ts';
 import { dayRulesOf, detectDayReminders } from '#lib/core/rules/day/day-reminders.ts';
 import { describeImpairable, describeWhen } from './describe.ts';
-import { MAX_DEALT_PLAYERS } from '#lib/core/rules/setup/distribution.ts';
 import { jinxIsExclusive } from '#lib/core/rules/jinxes/jinxes.ts';
-import { nightOrder, type NightOrder } from '#lib/core/rules/night/night-order.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
 import { nightTextOverride } from '#lib/core/rules/night/night-text.ts';
 import { type NightTextOverride } from '#lib/core/data/parts/night-text.ts';
@@ -347,48 +343,4 @@ export function characterReference(data: GameData): ReferenceEntry[] {
 			filters
 		};
 	});
-}
-
-/** Plain text of a reminder sentence: "[Witch] has chosen [player with “Cursed”]". */
-export function referenceText(
-	segments: readonly ReferenceSegment[],
-	name: (id: CharacterId) => string = (id) => id
-): string {
-	return segments
-		.map((s) =>
-			s.kind === 'text'
-				? s.text
-				: s.kind === 'character'
-					? `[${name(s.characterId)}]`
-					: s.kind === 'value'
-						? `(${s.placeholder})`
-						: s.kind === 'nomination'
-							? s.who === 'chosen'
-								? '[the player the nominee chose]'
-								: '[the nominee]'
-							: `[player with “${s.token}”]`
-		)
-		.join(' ');
-}
-
-/**
- * The night order with every official character in play and a full table (15 players),
- * exactly as the night-order engine builds it for a game.
- */
-export function fullNightOrder(data: GameData, night: Night): NightOrder {
-	return nightOrder({
-		night,
-		sheet: data.nightSheet,
-		official: data.byId,
-		inPlay: data.characters,
-		players: MAX_DEALT_PLAYERS,
-		wholeSheet: true
-	});
-}
-
-/** Position of each step on TPI's sheet (Dusk = #1), for the night-order view. */
-export function sheetPosition(sheet: NightSheet, night: Night, id: CharacterId | NightMarker) {
-	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
-	const i = list.indexOf(id);
-	return i >= 0 ? i + 1 : undefined;
 }
