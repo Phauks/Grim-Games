@@ -20,7 +20,6 @@
 		type PlayerReminder,
 		type PlayerReminders
 	} from './player-reminders.ts';
-	import type { SeatNotes } from './seat-notes.ts';
 
 	/**
 	 * The player's own reminders on their grim (Trevor, 2026-10-26), lined up in front of each
@@ -40,8 +39,6 @@
 		reminders: PlayerReminders;
 		/** Each seat's name box, which its reminders keep clear of. */
 		names: readonly { box: Box }[];
-		/** Seats with the player's note mark. */
-		notes: Readonly<SeatNotes>;
 		characterOf: (id: CharacterId) => Character | undefined;
 		/**
 		 * What a finger does with a token: the Storyteller bank's own gestures
@@ -62,7 +59,6 @@
 		size,
 		reminders,
 		names,
-		notes,
 		characterOf,
 		gestures,
 		held = $bindable(),
@@ -90,8 +86,6 @@
 					// Every seat's name is a badge on its rim (SeatDisc).
 					hasFace: true,
 					name: names[i]?.box,
-					dead: seat.dead,
-					note: !!notes[seat.seatId],
 					nameOffset: boardLooks.current.nameOffset
 				})
 			})),

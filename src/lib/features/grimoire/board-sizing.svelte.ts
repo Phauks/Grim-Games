@@ -5,7 +5,6 @@
  * into this; the maths is in seat-layout.ts, board-geometry.ts and reminder-fan.ts.
  */
 import { untrack } from 'svelte';
-import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -19,7 +18,6 @@ import {
 	type SeatLayout,
 	type SeatPoint
 } from '#lib/ui/seating/seat-layout.ts';
-import { isOrphan } from './board.ts';
 import {
 	avoidBoxes,
 	cornerFit,
@@ -49,9 +47,6 @@ export interface BoardSizingContext {
 	spacedFor: number | undefined;
 	/** The night's walk-through is open, so its strip takes part of the board's height. */
 	walking: boolean;
-	offScriptOk: ReadonlySet<CharacterId>;
-	/** Track nominations is on, so every seat shows its nomination marks. */
-	nominations: boolean;
 	/**
 	 * Each seat's place as shown, a dragged seat where it is (seat-arranging.svelte.ts). A
 	 * function, as it is built from `points`: read only once the ring is known.
@@ -166,9 +161,9 @@ export class BoardSizing {
 		)
 	);
 
-	/** What a seat's reminders keep off: its name, skull, note mark and top-rim marks. */
+	/** What a seat's reminders keep off: its name and the space kept for its marks. */
 	#avoidFor(i: number): Box[] {
-		const { game, characters, offScriptOk, nominations } = this.#context();
+		const { game } = this.#context();
 		const shown = this.#context().shown();
 		const seat = game.seats[game.seating[i]];
 		return avoidBoxes({
@@ -176,19 +171,14 @@ export class BoardSizing {
 			size: this.size,
 			hasFace: seat?.characterId !== undefined,
 			name: this.nameBoxes[i]?.box,
-			dead: !!seat?.dead,
-			note: !!seat?.notes?.length,
-			nameOffset: boardLooks.current.nameOffset,
-			nominations,
-			orphan: !!seat && isOrphan(seat, game.script, characters, offScriptOk),
-			avatar: !!seat?.characterId && !!seat.avatar
+			nameOffset: boardLooks.current.nameOffset
 		});
 	}
 
 	/**
-	 * Every seat's reminders, laid out together so one seat's never cover another's (Trevor,
-	 * 2026-10-16) and each stays nearest its own seat (2026-10-17), and every one is shown so
-	 * each can be dragged. They are laid out at the height a finger needs (the tap target),
+	 * Every seat's reminders, laid out together as one group per seat (reminder-fan.ts) so one
+	 * seat's never cover another's (Trevor, 2026-10-16), and every one is shown so each can be
+	 * dragged. They are laid out at the height a finger needs (the tap target),
 	 * which is what a reminder takes up on screen.
 	 */
 	readonly #restFan = $derived.by(() => {

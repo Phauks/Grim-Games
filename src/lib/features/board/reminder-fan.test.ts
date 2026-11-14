@@ -10,15 +10,28 @@ const seat = { x: 300, y: 60 };
 const size = 60;
 const chip = 30;
 
+/** Round reminders that don't overlap. */
 const apart = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-	Math.abs(a.x - b.x) >= chip || Math.abs(a.y - b.y) >= chip;
+	Math.hypot(a.x - b.x, a.y - b.y) >= chip;
 
-describe('reminderFan', () => {
-	it('lines a few reminders up towards the middle', () => {
+const d = (p: { x: number; y: number }, q: { x: number; y: number }) =>
+	Math.hypot(p.x - q.x, p.y - q.y);
+const centre = (points: { x: number; y: number }[]) => ({
+	x: points.reduce((t, p) => t + p.x, 0) / points.length,
+	y: points.reduce((t, p) => t + p.y, 0) / points.length
+});
+
+describe('one seat', () => {
+	it('keeps three reminders together as one triangle, beside the token, facing the middle (Trevor, 2026-11-13)', () => {
 		const at = reminderFan({ seat, middle, count: 3, size, chip });
-		expect(at.map((p) => p.x)).toEqual([300, 300, 300]);
-		expect(at[0].y).toBeGreaterThan(seat.y + size / 2);
-		expect(at[1].y).toBeGreaterThan(at[0].y);
+		// Every pair touches: one group, not spread round the token.
+		for (const p of at) for (const q of at) if (p !== q) expect(d(p, q)).toBeLessThan(chip * 1.2);
+		// Off the token, right beside it.
+		const nearest = Math.min(...at.map((p) => d(p, seat)));
+		expect(nearest).toBeGreaterThanOrEqual(size / 2 + chip / 2);
+		expect(nearest).toBeLessThan(size / 2 + chip);
+		// Inward: the group is between the seat and the middle.
+		expect(centre(at).y).toBeGreaterThan(seat.y);
 	});
 
 	it('shows every reminder, however many, without stacking them', () => {
@@ -26,8 +39,6 @@ describe('reminderFan', () => {
 		expect(at).toHaveLength(14);
 		for (let i = 0; i < at.length; i++)
 			for (let j = i + 1; j < at.length; j++) expect(apart(at[i], at[j])).toBe(true);
-		// Nothing goes past the middle of the table.
-		for (const p of at) expect(p.y).toBeLessThan(middle.y);
 	});
 
 	it('keeps clear of the seat name beneath the token', () => {
@@ -39,6 +50,16 @@ describe('reminderFan', () => {
 				Math.abs(p.y - name.y) >= (chip + name.h) / 2;
 			expect(clear).toBe(true);
 		}
+	});
+
+	it('keeps out of the middle of the table when there is room beside the seat', () => {
+		// A seat near the middle of a big board, with room all round it.
+		const near = { x: 300, y: 200 };
+		const { at } = fitReminders([{ seat: near, middle, count: 2, size, chip }], [], {
+			width: 600,
+			height: 600
+		});
+		for (const p of at[0]) expect(d(p, middle)).toBeGreaterThan(d(near, middle) - size / 2);
 	});
 });
 
@@ -114,7 +135,7 @@ describe('fitReminders', () => {
 		}
 	});
 
-	it('puts each reminder nearer its own seat than any other (Trevor, 2026-10-17)', () => {
+	it('puts each group nearer its own seat than any other (Trevor, 2026-10-17)', () => {
 		// Big tokens on a small table: twelve seats, two or three reminders each.
 		const seats = Array.from({ length: 12 }, (_, i) => {
 			const a = (i / 12) * 2 * Math.PI - Math.PI / 2;
@@ -130,12 +151,12 @@ describe('fitReminders', () => {
 		const d2 = (p: { x: number; y: number }, q: { x: number; y: number }) =>
 			(p.x - q.x) ** 2 + (p.y - q.y) ** 2;
 		at.forEach((points, i) => {
-			for (const p of points)
-				for (let j = 0; j < seats.length; j++)
-					if (j !== i) expect(d2(p, seats[i].seat)).toBeLessThan(d2(p, seats[j].seat));
+			const c = centre(points);
+			for (let j = 0; j < seats.length; j++)
+				if (j !== i) expect(d2(c, seats[i].seat)).toBeLessThan(d2(c, seats[j].seat));
 		});
 	});
-	it('on a crowded phone table, goes over the edge of its own token before leaning towards a neighbour', () => {
+	it("on a crowded phone table, keeps each busy neighbour's group together and nearer its own seat", () => {
 		// Fifteen seats on a phone, neighbours 4 and 5 holding four and three reminders: the
 		// board as the crowded-table e2e test lays it out.
 		const seats = [
@@ -200,8 +221,10 @@ describe('fitReminders', () => {
 			(p.x - q.x) ** 2 + (p.y - q.y) ** 2;
 		expect(at[3]).toHaveLength(4);
 		expect(at[4]).toHaveLength(3);
-		// Each of the two neighbours' reminders is nearer its own seat than the other's.
-		for (const p of at[3]) expect(d2(p, seats[3].seat)).toBeLessThan(d2(p, seats[4].seat));
-		for (const p of at[4]) expect(d2(p, seats[4].seat)).toBeLessThan(d2(p, seats[3].seat));
+		// Each group sits nearer its own seat than the other's, and stays together.
+		expect(d2(centre(at[3]), seats[3].seat)).toBeLessThan(d2(centre(at[3]), seats[4].seat));
+		expect(d2(centre(at[4]), seats[4].seat)).toBeLessThan(d2(centre(at[4]), seats[3].seat));
+		for (const i of [3, 4])
+			for (const p of at[i]) for (const q of at[i]) expect(d(p, q)).toBeLessThan(44 * 2);
 	});
 });

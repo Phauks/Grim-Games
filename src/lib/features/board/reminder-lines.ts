@@ -19,8 +19,8 @@ export function parseReminderLines(raw: unknown): ReminderLines {
 	return REMINDER_LINES.find((l) => l === raw) ?? DEFAULT_REMINDER_LINES;
 }
 
-/** The gap between a seat's token and its first reminder (reminder-fan.ts). */
-const FIRST_GAP = 6;
+/** The gap between a seat's token and its nearest reminder (EDGE in reminder-fan.ts). */
+const FIRST_GAP = 2;
 
 export interface LineInput {
 	/** The seat's centre and the reminder's centre. */

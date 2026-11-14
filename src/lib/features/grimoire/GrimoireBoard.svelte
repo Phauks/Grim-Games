@@ -192,8 +192,6 @@
 		spacedFor: watching ? grimoire.aspect : undefined,
 		// Shown to a player, the board looks as it does with the night closed (Trevor, 2026-10-30).
 		walking: !!nw.walk && !showingGrim,
-		offScriptOk,
-		nominations: nominatedToday !== undefined,
 		shown: () => shown,
 		drag: seatArr.drag,
 		rootFont
