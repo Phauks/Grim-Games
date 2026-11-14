@@ -6,6 +6,7 @@
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { ShownCharacter } from './shown.ts';
+	import { largestFit } from '#lib/ui/largest-fit.ts';
 
 	interface Props {
 		/** Info-token text shown above the characters; `**bold**` is supported. */
@@ -29,7 +30,6 @@
 
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
-	let captionHeight = $state(0);
 
 	/**
 	 * A short answer (a number, Yes/No, True/False, a custom card's choice) fills the space it
@@ -40,15 +40,77 @@
 
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	/**
-	 * The token never fills the screen (Trevor, 2026-10-17): at most three quarters of the
-	 * width and just over half the height, and always leaving room for the name and ability.
+	 * The token never fills the screen (Trevor, 2026-10-17), and leaves most of it to the name
+	 * and ability, which grow to be read from across the table (Trevor, 2026-11-14).
 	 */
-	const size = $derived(
-		Math.max(
-			64,
-			Math.floor(Math.min(areaWidth * 0.75, areaHeight * 0.55, areaHeight - captionHeight - 16))
-		)
-	);
+	const size = $derived(Math.max(64, Math.floor(Math.min(areaWidth * 0.6, areaHeight * 0.32))));
+
+	/**
+	 * The words grow as large as the card has room for, never past it (Trevor, 2026-11-14: "as
+	 * big as the screen", picked B). On a card with characters the title stops at 1.4 times its
+	 * size, so the room goes to what the player reads. A card sharing a box (several cards, or
+	 * an editor's preview) may also shrink, down to 0.3, so long words stay in sight.
+	 */
+	const TITLE_LIMIT = 1.4;
+	const MAX_FIT = 6;
+	const MIN_FIT_SHARED = 0.3;
+
+	let content = $state<HTMLDivElement>();
+	/** Changed when the card's box or the fonts change, so the words are fitted again. */
+	let resized = $state(0);
+
+	/** Nothing runs past the card, its area or a line, and no word is broken to fit. */
+	function fitsNow(box: HTMLElement): boolean {
+		if (box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1) {
+			return false;
+		}
+		for (const area of box.querySelectorAll<HTMLElement>('.area')) {
+			const inner = area.firstElementChild;
+			if (!(inner instanceof HTMLElement)) continue;
+			if (inner.scrollHeight > area.clientHeight + 1) return false;
+			if (inner.scrollWidth > area.clientWidth + 1) return false;
+		}
+		for (const line of box.querySelectorAll<HTMLElement>('.title, .detail, .caption, .rows')) {
+			// No slack here: a word one pixel too wide would be split once the measuring ends.
+			if (line.scrollWidth > line.clientWidth) return false;
+		}
+		return true;
+	}
+
+	function fit(box: HTMLElement) {
+		if (box.clientHeight === 0) return;
+		const titleLimit = characters.length > 0 ? TITLE_LIMIT : MAX_FIT;
+		const apply = (scale: number) => {
+			box.style.setProperty('--fill', String(scale));
+			box.style.setProperty('--title-fill', String(Math.min(scale, titleLimit)));
+		};
+		// Words are measured unbroken, so a long one counts as too wide rather than splitting.
+		box.dataset.measuring = '';
+		const scale = largestFit(
+			(next) => {
+				apply(next);
+				return fitsNow(box);
+			},
+			{ min: compact ? MIN_FIT_SHARED : 1, max: MAX_FIT }
+		);
+		delete box.dataset.measuring;
+		// A step back from the edge, so rounding never tips a word onto a line of its own.
+		apply(Math.max(compact ? MIN_FIT_SHARED : 1, scale * 0.98));
+	}
+
+	$effect(() => {
+		const box = content;
+		if (!box) return;
+		const observer = new ResizeObserver(() => resized++);
+		observer.observe(box);
+		void document.fonts?.ready.then(() => resized++);
+		return () => observer.disconnect();
+	});
+
+	$effect(() => {
+		void [title, detail, characters, asTokens, areaWidth, areaHeight, resized];
+		if (content) fit(content);
+	});
 </script>
 
 {#snippet jinxList(shown: ShownCharacter)}
@@ -65,6 +127,7 @@
 <!-- One card as the player sees it: the card's text, then one big token or a list. -->
 <div
 	class="content"
+	bind:this={content}
 	data-has-title={title ? '' : undefined}
 	data-compact={compact ? '' : undefined}
 >
@@ -109,7 +172,7 @@
 				/>
 				<!-- The name and ability as the Script tab shows them, under the token, as the bag
 				     draw's reveal does (Trevor, 2026-11-02: "the standard way we show characters"). -->
-				<div class="caption" bind:clientHeight={captionHeight}>
+				<div class="caption">
 					<CharacterPiece template="row" character={single} alignment={characters[0].alignment} />
 					{@render jinxList(characters[0])}
 				</div>
@@ -137,41 +200,46 @@
 		padding: var(--space-3);
 		overflow-y: auto;
 	}
-	/* --card-fit shrinks the words to fit an editor's preview (CardEditorLayout). */
+	/* --fill and --title-fill grow (or, sharing a box, shrink) the words to fill the card. */
 	.content[data-compact] .title {
-		font-size: calc(clamp(1.3rem, 5vw, 2.4rem) * var(--card-fit, 1));
+		font-size: calc(clamp(1.3rem, 5vw, 2.4rem) * var(--title-fill, 1));
 	}
 	.content[data-compact] .caption,
 	.content[data-compact] .rows {
-		font-size: 1.05rem;
+		font-size: calc(1.05rem * var(--fill, 1));
 	}
 	.content:not([data-has-title]) {
 		justify-content: center;
 	}
 	.title {
 		margin: 0;
-		max-width: 22ch;
+		max-width: 100%;
 		/* A card's own lines and typed lists (Trevor, 2026-10-31). */
 		white-space: pre-line;
 		font-family: var(--font-heading);
 		font-weight: var(--font-heading-weight);
-		font-size: clamp(2rem, 9vw, 4rem);
+		font-size: calc(clamp(2rem, 9vw, 4rem) * var(--title-fill, 1));
 		line-height: 1.15;
 		color: var(--heading);
 		overflow-wrap: anywhere;
+	}
+	/* Set by fit() while it measures, so it is not in the markup. */
+	.content:global([data-measuring]) .title,
+	.content:global([data-measuring]) .detail:not([data-short]) {
+		overflow-wrap: normal;
 	}
 	.detail {
 		margin: 0;
 		max-width: 22ch;
 		font-family: var(--font-heading);
-		font-size: clamp(2.4rem, 11vw, 5rem);
+		font-size: calc(clamp(2.4rem, 11vw, 5rem) * var(--fill, 1));
 		line-height: 1.1;
 		/* Readable on every theme and sheet background, unlike the accent (Trevor, 2026-10-30). */
 		color: var(--on-surface);
 		overflow-wrap: anywhere;
 	}
 	.content[data-compact] .detail {
-		font-size: calc(clamp(1.6rem, 7vw, 3rem) * var(--card-fit, 1));
+		font-size: calc(clamp(1.6rem, 7vw, 3rem) * var(--fill, 1));
 	}
 	/*
 	 * A short answer: as big as the card allows, each character taking about 0.6em, under the
@@ -211,8 +279,8 @@
 		gap: var(--space-4);
 	}
 	.caption {
-		width: min(100%, 32rem);
-		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+		width: min(100%, calc(32rem * var(--fill, 1)));
+		font-size: calc(clamp(1.1rem, 4.5vw, 1.5rem) * var(--fill, 1));
 		text-align: start;
 	}
 	.jinxes {
@@ -228,14 +296,15 @@
 	.rows-area {
 		overflow-y: auto;
 	}
+	/* Full width: fewer lines lets the words grow larger. */
 	.rows {
 		display: grid;
 		gap: var(--space-3);
-		width: min(100%, 32rem);
+		width: 100%;
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+		font-size: calc(clamp(1.1rem, 4.5vw, 1.5rem) * var(--fill, 1));
 		text-align: start;
 	}
 </style>

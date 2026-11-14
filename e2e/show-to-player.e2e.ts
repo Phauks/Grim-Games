@@ -38,6 +38,54 @@ test('"You are" asks for a character, then shows its token and ability', async (
 	await expect(shown.getByTestId('shown-character').locator('.ring-row')).toHaveCount(1);
 });
 
+test('a shown card fills the screen with its words, never past it', async ({ page }) => {
+	// Trevor (2026-11-14): read from across the table, "as big as the screen", picked B.
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.getByTestId('show-to-player');
+	const caption = shown.getByTestId('shown-character').locator('.caption');
+	await expect(caption).toContainText('Each night, you learn how many');
+	// The ability grows past its old largest size (1.5rem, 24px).
+	await expect
+		.poll(() => caption.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)))
+		.toBeGreaterThan(30);
+	const content = shown.locator('.content');
+	expect(
+		await content.evaluate(
+			(el) => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth
+		)
+	).toBe(true);
+	// The title stays smaller than it would grow alone: the room goes to the ability.
+	const heading = await shown
+		.getByRole('heading')
+		.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+	expect(heading).toBeLessThanOrEqual(64 * 1.4 + 1);
+	await shown.getByRole('button', { name: 'Close' }).tap();
+
+	// A card of words alone fills the screen, and never splits a word to do it.
+	await page.getByRole('button', { name: 'Did you vote today?', exact: true }).tap();
+	const title = shown.getByRole('heading');
+	await expect
+		.poll(() => title.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)))
+		.toBeGreaterThan(64);
+	const lines = await title.evaluate((el) => {
+		const range = document.createRange();
+		const text = el.textContent ?? '';
+		const node = [...el.querySelectorAll('*'), el]
+			.flatMap((n) => [...n.childNodes])
+			.find((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.includes('today?'))!;
+		const at = node.textContent!.indexOf('today?');
+		range.setStart(node, at);
+		range.setEnd(node, at + 'today?'.length);
+		return { rows: new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size, text };
+	});
+	expect(lines.rows).toBe(1);
+	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
 test('a shown token fits the screen at any token size', async ({ page }) => {
 	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
 	// only now, so the player's view fits the token to the screen at the largest size too.
