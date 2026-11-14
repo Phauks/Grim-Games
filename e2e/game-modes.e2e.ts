@@ -1368,7 +1368,8 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 
 	// Every version of the living script is in the Library (Trevor, 2026-10-18).
 	await page.goto('/library');
-	await page.getByTestId('library-sidebar').getByRole('button', { name: 'Campaigns' }).tap();
+	await page.getByTestId('library-sidebar').getByRole('combobox', { name: 'Kinds' }).tap();
+	await page.getByRole('option', { name: 'Campaigns', exact: true }).tap();
 	const campaigns = page.getByTestId('library-campaigns').locator('tbody tr');
 	await expect(campaigns).toHaveCount(1);
 	await expect(campaigns.first()).toContainText('Flesh and Bone');

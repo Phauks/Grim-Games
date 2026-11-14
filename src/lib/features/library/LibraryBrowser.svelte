@@ -564,34 +564,18 @@
 		class:framed
 	>
 		{#if sided.current}
-			<div class="side" data-own-scroll>
-				<LibrarySidebar
-					bind:current={currentFolder}
-					bind:kind={chosenKind}
-					kinds={!onlyKind}
-					bind:place
-					bind:tags={tagFilter}
-					count={(f) => folderSize(items, labels, f)}
-					onnewfolder={newFolder}
-					onmove={move}
-					onrename={renameFolder}
-				/>
-			</div>
+			<div class="side" data-own-scroll>{@render sidebar()}</div>
 		{:else}
-			<!-- On a phone the sidebar folds away under the toolbar, a line between them. -->
+			<!-- On a phone the sidebar folds away under the toolbar, a line between them, folded at
+			     first so the list shows first (Trevor, 2026-11-14: option A). -->
 			<SectionStack edge>
-				<PageSection title={t('library.navigation')} collapsible storageKey="library-navigation">
-					<LibrarySidebar
-						bind:current={currentFolder}
-						bind:kind={chosenKind}
-						kinds={!onlyKind}
-						bind:place
-						bind:tags={tagFilter}
-						count={(f) => folderSize(items, labels, f)}
-						onnewfolder={newFolder}
-						onmove={move}
-						onrename={renameFolder}
-					/>
+				<PageSection
+					title={t('library.navigation')}
+					collapsible
+					defaultOpen={false}
+					storageKey="library-navigation"
+				>
+					{@render sidebar()}
 				</PageSection>
 			</SectionStack>
 		{/if}
@@ -643,6 +627,20 @@
 {#if !onpick && (!previewing || windowOpen)}
 	{@render pane(false)}
 {/if}
+
+{#snippet sidebar()}
+	<LibrarySidebar
+		bind:current={currentFolder}
+		bind:kind={chosenKind}
+		kinds={!onlyKind}
+		bind:place
+		bind:tags={tagFilter}
+		count={(f) => folderSize(items, labels, f)}
+		onnewfolder={newFolder}
+		onmove={move}
+		onrename={renameFolder}
+	/>
+{/snippet}
 
 {#snippet pane(inline: boolean)}
 	{#if openScript}
