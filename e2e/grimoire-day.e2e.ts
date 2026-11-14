@@ -1520,3 +1520,53 @@ test("the Cult Leader's cult vote asks whether every good player joined, then of
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(end.locator('li[data-rule="cult-joined"]')).toBeVisible();
 });
+
+// https://wiki.bloodontheclocktower.com/Ferryman: the Storyteller declares the final day, and
+// every dead player who used their vote token gets it back (Trevor, 2026-11-14: a Final day
+// button on the Ferryman's row, the app never guesses which day it is).
+test("the Ferryman's Final day gives every used vote token back", async ({ page }) => {
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste
+		.getByLabel('Script JSON')
+		.fill(
+			JSON.stringify([
+				{ id: '_meta', name: 'Ferry Crossing' },
+				'chef',
+				'empath',
+				'monk',
+				'soldier',
+				'imp',
+				'ferryman'
+			])
+		);
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await page.goto('/new');
+	await pickScript(page, 'Ferry Crossing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await pickNumber(page, 'Players', 5);
+	await toBoard(page);
+	for (const n of [2, 3]) {
+		const status = await openStatus(page, n);
+		await status.getByRole('option').nth(1).tap();
+		await expect(status).toBeHidden();
+		await closeSeat(page);
+	}
+	const day = await openDay(page);
+	const finalDay = day.getByTestId('final-day');
+	// Nobody has used a vote token yet: nothing to give back.
+	await expect(finalDay).toBeDisabled();
+	await closeDay(page);
+	for (const n of [2, 3]) await toggleGhostVote(page, n);
+	await openDay(page);
+	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
+	await finalDay.tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Final day' });
+	await expect(confirm.getByTestId('player-badge')).toHaveText(['Seat 2', 'Seat 3']);
+	await expect(confirm).toContainText('used their vote token.');
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('ghost-votes')).toHaveText('2');
+	await expect(finalDay).toBeDisabled();
+});
