@@ -29,6 +29,11 @@ describe('pdfLines', () => {
 		expect(lines.map((l) => l.text)).toEqual(['Chef', 'Imp']);
 	});
 
+	it('places each line on the drawn page, y running down', () => {
+		const [line] = pdfLines([run('Chef', 20, 600)], { height: 800, scale: 2 });
+		expect(line.box).toEqual({ x0: 40, x1: 80, y0: 380, y1: 400 });
+	});
+
 	it('skips blank runs', () => {
 		expect(pdfLines([run(' ', 20, 600), run('Monk', 20, 580)])).toEqual([
 			{ text: 'Monk', height: 10 }
