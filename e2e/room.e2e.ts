@@ -8,7 +8,7 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
-import { openPlayerSheet } from './players.ts';
+import { closePane, openPlayerSheet } from './players.ts';
 import { pickNumber } from './number-select.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
@@ -3031,7 +3031,7 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await opened.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
 	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
 	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');

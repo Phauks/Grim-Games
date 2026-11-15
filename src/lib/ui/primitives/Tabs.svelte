@@ -8,6 +8,8 @@
 	import IconButton from './IconButton.svelte';
 	import Popover from './Popover.svelte';
 	import { fillToBottom } from './tabs-fill.ts';
+	import BesidePane from '#lib/ui/layout/BesidePane.svelte';
+	import CountBadge from './CountBadge.svelte';
 	import { fitTabs } from './tabs-fit.ts';
 
 	interface Props {
@@ -16,7 +18,16 @@
 		 * `icon` draws over the label in a bottom bar; with `iconOnly`, in place of the label on
 		 * a top row, the label then only read out (a Search tab beside named ones).
 		 */
-		tabs: { value: T; label: string; icon?: IconSlot; iconOnly?: boolean }[];
+		tabs: {
+			value: T;
+			label: string;
+			icon?: IconSlot;
+			iconOnly?: boolean;
+			/** Things waiting under the tab, as a CountBadge after its name (none at 0). */
+			count?: number;
+			/** The count in the accent colour, when it needs attention. */
+			warn?: boolean;
+		}[];
 		/** Renders the panel for one tab. */
 		panel: Snippet<[T]>;
 		label?: string;
@@ -129,18 +140,14 @@
 
 {#snippet contents()}
 	{#if aside}
-		<!-- The panels stay where they are as the aside comes and goes, so a tab keeps its
-		     scroll and what it holds. -->
-		<div
-			class="with-aside"
-			data-aside={toggle?.pressed ? aside.placement : undefined}
-			style:--bar-height="{barHeight}px"
+		<!-- The aside ends above the bar: its room runs from the top of the tabs to the top of
+		     the bar (--fill-room, from fillToBottom). -->
+		<BesidePane
+			placement={toggle?.pressed ? aside.placement : undefined}
+			label={toggle?.label ?? ''}
+			room="calc(var(--fill-room, 100dvh) - {barHeight}px)"
+			pane={aside.content}>{@render panels()}</BesidePane
 		>
-			<div class="panels">{@render panels()}</div>
-			{#if toggle?.pressed}
-				<aside class="aside" aria-label={toggle.label}>{@render aside.content()}</aside>
-			{/if}
-		</div>
 	{:else}
 		{@render panels()}
 	{/if}
@@ -171,7 +178,9 @@
 						</span>
 					{/if}{#if !bottom && tab.icon && tab.iconOnly}<Icon name={tab.icon} /><span
 							class="visually-hidden">{tab.label}</span
-						>{:else}<span>{tab.label}</span>{/if}
+						>{:else}<span>{tab.label}</span>{/if}{#if tab.count}<span class="tab-count"
+							><CountBadge count={tab.count} warn={tab.warn} /></span
+						>{/if}
 				</Tabs.Trigger>
 			{/each}
 			{#if !bottom}<Tabs.Indicator />{/if}
@@ -203,7 +212,9 @@
 						>{#if bottom && tab.icon}<span class="tab-icon"><Icon name={tab.icon} /></span
 							>{/if}{#if !bottom && tab.icon && tab.iconOnly}<Icon
 								name={tab.icon}
-							/>{:else}{tab.label}{/if}</span
+							/>{:else}{tab.label}{/if}{#if tab.count}<span class="tab-count"
+								><CountBadge count={tab.count} /></span
+							>{/if}</span
 					>{/each}
 				{#if toggle && bottom}<span class="face" data-toggle
 						><span class="tab-icon"><Icon name={toggle.icon} /></span>{toggle.label}</span
@@ -234,6 +245,9 @@
 </Popover>
 
 <style>
+	.tab-count {
+		margin-inline-start: var(--space-1);
+	}
 	.bar {
 		position: relative;
 		display: flex;
@@ -385,49 +399,5 @@
 	}
 	.toggle {
 		cursor: pointer;
-	}
-
-	/* The aside beside the panels. Its room, and the panels' when it sits under them, runs
-	   from the top of the tabs to the top of the bar (--fill-room, from fillToBottom), so
-	   neither reaches under the bar. */
-	.with-aside {
-		--aside-room: calc(var(--fill-room, 100dvh) - var(--bar-height));
-	}
-	.with-aside[data-aside] {
-		display: grid;
-		gap: var(--space-4);
-	}
-	.with-aside[data-aside='side'] {
-		grid-template-columns: minmax(0, 1fr) minmax(18rem, 30%);
-		align-items: start;
-	}
-	.with-aside[data-aside='side'] .aside {
-		position: sticky;
-		top: 0;
-		max-height: var(--aside-room);
-		overflow-y: auto;
-		--pin-top: 0rem;
-		padding-inline-start: var(--space-3);
-		border-inline-start: 1px solid var(--border); /* px-ok: a hairline, as the bar's */
-	}
-	/* Under: the panel takes the top three fifths and scrolls inside; a board drawn there
-	   fits that room (--panel-room). */
-	.with-aside[data-aside='under'] {
-		gap: 0;
-		height: var(--aside-room);
-		grid-template-rows: 3fr 2fr;
-	}
-	.with-aside[data-aside='under'] .panels {
-		--panel-room: calc(0.6 * var(--aside-room) - var(--space-2));
-		/* Headings pin to the top of this box, which scrolls itself, not under a page header. */
-		--pin-top: 0rem;
-		min-height: 0;
-		overflow-y: auto;
-	}
-	.with-aside[data-aside='under'] .aside {
-		--pin-top: 0rem;
-		min-height: 0;
-		overflow-y: auto;
-		border-top: 1px solid var(--border); /* px-ok: a hairline, as the bar's */
 	}
 </style>

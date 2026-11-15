@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
+	import { seatMessages } from '#lib/ui/seating/seat-messages.ts';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { ReminderId, Seat } from '#lib/core/model/index.ts';
@@ -125,6 +126,13 @@
 	const custom = $derived(seat.customAbilities ?? []);
 	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
 	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
+	/** What the seated player has sent that the Storyteller hasn't read (plan M86). */
+	const messages = $derived.by(() => {
+		const host = roomHost();
+		if (!host.code) return undefined;
+		const member = host.members.find((m) => m.seatId === seat.seatId);
+		return seatMessages(host.inbox.waitingFrom(member?.memberId));
+	});
 	// The seat's accessible name, plain text; the board shows the name as its pill.
 	const label = $derived(
 		[
@@ -155,6 +163,7 @@
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			pretends ? `fake ${pretends.name}` : '',
 			...custom.map((words) => `also has ${words}`),
+			messages ? 'new message' : '',
 			seat.notes?.length ? 'has a note' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
@@ -290,7 +299,8 @@
 				reminderId: reminder.reminderId
 			}))}
 			notes={!!seat.notes?.length}
-		/>{:else if seat.notes?.length}<SeatNoteMark />{/if}
+			{messages}
+		/>{:else if seat.notes?.length || messages}<SeatNoteMark {messages} />{/if}
 {/snippet}
 
 <button

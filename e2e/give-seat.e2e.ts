@@ -2,7 +2,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickScript } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
-import { openPlayerSheet, openPlayers } from './players.ts';
+import { closePane, openPlayerSheet, openPlayers, storytellerPane } from './players.ts';
 
 // Give a seat (Trevor, 2026-11-06, option A): the Storyteller seats a spectator from Players,
 // once characters are dealt, in an open seat or one a player has (asking first). The new
@@ -98,10 +98,9 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	await expect(alex.getByTestId('you-row')).toHaveAttribute('data-seat', '5');
 	await expect(alex.getByTestId('your-character')).toBeVisible();
 	await expect(bea.getByTestId('your-character')).toHaveCount(0);
-	const players = page.getByRole('dialog', { name: 'Players', exact: true });
+	const players = storytellerPane(page);
 	await expect(players.getByTestId('room-spectators').getByTestId('room-player')).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(players).toBeHidden();
+	await closePane(page);
 
 	// A seat with a player asks first; Cancel changes nothing.
 	const sam = await joinAs(browser, use, code, 'Sam');
@@ -113,7 +112,8 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	await expect(ask).toBeHidden();
 	await expect(bea.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
 	if (await seats.isVisible()) await page.keyboard.press('Escape');
-	await page.keyboard.press('Escape');
+	await expect(seats).toBeHidden();
+	await closePane(page);
 
 	// Confirm: Sam has Seat 1 and its character, and Bea is a spectator now.
 	seats = await giveSeat(page, 'Sam');

@@ -6,9 +6,6 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { gameNotesDialog } from './game-notes-dialog.svelte.ts';
-	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -39,6 +36,8 @@
 		onHistory: () => void;
 		/** Undefined in a mode where the Demon gets no bluffs (Sushi Buffet, Whale Buffet). */
 		onBluffs?: () => void;
+		/** Info tokens, from the toolbar; in here only on the narrowest phones. */
+		onInfo?: () => void;
 		/**
 		 * The Soundboard (plan U6), a full row in the game's items (Trevor, 2026-11-01: "a full
 		 * button"); not on a spectator's board. Back to town is on the day timer.
@@ -80,6 +79,7 @@
 		ended,
 		onHistory,
 		onBluffs,
+		onInfo,
 		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
@@ -135,27 +135,15 @@
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-game">
 				<h3 id="board-menu-game" class="group-title">Game</h3>
-				<!-- Players, with their notes and messages, here on every screen (Trevor, 2026-10-28: "we
-				     should not have discrepancy"; 2026-10-29: Messages and Notes folded into Players). -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="players"
-					data-testid="menu-players"
-					onclick={() => fromMenu(() => playersDialog.show())}
-				>
-					{t('room.players.title')}
-					{#if host.code && host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
-				</Button>
-				<!-- Beside the grim cover where the toolbar has room; here on narrower phones. -->
+				<!-- The toolbar's Info tokens, here on the narrowest phones so the pane's button stays
+				     by the grim cover (Trevor, 2026-11-15). Players and Game notes are in that pane. -->
 				<span class="narrow-only"
 					><Button
-						disabled={watching}
+						disabled={watching || !onInfo}
 						variant="quiet"
-						icon="notes"
-						data-testid="menu-game-notes"
-						onclick={() => fromMenu(() => (gameNotesDialog.open = true))}
-						>{t('room.players.gameNotes')}</Button
+						icon="info"
+						data-testid="menu-info-tokens"
+						onclick={() => onInfo && fromMenu(onInfo)}>Info tokens</Button
 					></span
 				>
 				<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
@@ -368,7 +356,7 @@
 	.narrow-only {
 		display: none;
 	}
-	/* GameNotesButton's own breakpoint: below it, Game notes are only here. */
+	/* The toolbar's breakpoint for Info tokens: below it, Info tokens are only here. */
 	@media (max-width: 411.98px) {
 		.narrow-only {
 			display: contents;
