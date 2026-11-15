@@ -13,7 +13,7 @@
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { seatPictureOf } from './seat-picture.ts';
 	import type { TrueCharacterMark } from './true-character-marks.ts';
 
 	interface Props {
@@ -124,7 +124,8 @@
 	/** Abilities the Storyteller gave in their own words (Gain ability, M34), in the pill. */
 	const custom = $derived(seat.customAbilities ?? []);
 	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
-	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
+	const pictureOf = seatPictureOf();
+	const picture = $derived(seat.avatar ? pictureOf(seat.seatId) : undefined);
 	// The seat's accessible name, plain text; the board shows the name as its pill.
 	const label = $derived(
 		[

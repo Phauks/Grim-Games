@@ -1,5 +1,6 @@
 import type { LoadedScript } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
+import type { WatchedTable } from './grimoire.svelte.ts';
 import type {
 	PublicCorner,
 	PublicLook,
@@ -26,4 +27,6 @@ export interface BoardPlayerSource {
 	/** The board's own background picture, or the room it comes from. */
 	picture?: Blob;
 	pictureRoom?: string;
+	/** Someone else's board: the table and its end as the room's phones have them. */
+	watched?: WatchedTable;
 }

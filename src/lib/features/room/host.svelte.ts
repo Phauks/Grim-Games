@@ -19,6 +19,7 @@ import type {
 	PublicGameState
 } from '#lib/core/sync/public-projection.ts';
 import { seatChanges } from '#lib/core/sync/room-seating.ts';
+import { seatPictures } from '#lib/core/sync/room-pictures.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -139,6 +140,8 @@ export class RoomHost {
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
 	#published: { gameId: string; state: PublicGameState } | undefined;
+	/** The same, for the grimoire sent to other devices to follow; only #publish writes it. */
+	#table = $state.raw<{ gameId: string; state: PublicGameState }>();
 	#script: Script | undefined;
 
 	constructor() {
@@ -307,7 +310,9 @@ export class RoomHost {
 					...(notes?.() ?? storedNotes(game.game.gameId)),
 					timer: liveDayTimer.shared,
 					...this.lookOf(game.game.gameId),
-					...this.#aspectOf(game.game.gameId)
+					...this.#aspectOf(game.game.gameId),
+					...this.#pictures(),
+					...this.#tableOf(game.game.gameId)
 				});
 			});
 			$effect(() => {
@@ -417,6 +422,23 @@ export class RoomHost {
 			this.#aspect = { gameId, aspect };
 	}
 
+	/** The table phones get and how the game ended, for a grimoire drawn on another device. */
+	#tableOf(gameId: string): { table?: PublicGameState; ended?: object } {
+		const table = this.#table?.gameId === gameId ? this.#table.state : undefined;
+		const over = this.ended?.gameId === gameId ? this.ended : undefined;
+		const ended = over && {
+			...(over.winner ? { winner: over.winner } : {}),
+			...(over.reason ? { reason: over.reason } : {})
+		};
+		return { ...(table ? { table } : {}), ...(ended ? { ended } : {}) };
+	}
+
+	/** The seated players' own pictures, for a grimoire drawn on another device. */
+	#pictures(): { pictures?: Partial<Record<SeatId, string>> } {
+		const pictures = seatPictures(this.members);
+		return Object.keys(pictures).length ? { pictures } : {};
+	}
+
 	#aspectOf(gameId: string): { aspect?: number } {
 		return this.#aspect?.gameId === gameId ? { aspect: this.#aspect.aspect } : {};
 	}
@@ -514,7 +536,9 @@ export class RoomHost {
 				saved: saved as unknown as Record<string, unknown>,
 				...(notes ?? storedNotes(gameId)),
 				...this.lookOf(gameId),
-				...this.#aspectOf(gameId)
+				...this.#aspectOf(gameId),
+				...this.#pictures(),
+				...this.#tableOf(gameId)
 			}
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
@@ -723,6 +747,7 @@ export class RoomHost {
 		// The board's notes change with every reminder moved; the table only when it does.
 		if (JSON.stringify(published) === JSON.stringify(this.#published)) return;
 		this.#published = published;
+		this.#table = published;
 		this.#resend();
 	}
 

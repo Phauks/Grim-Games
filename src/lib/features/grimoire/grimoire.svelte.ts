@@ -1,4 +1,4 @@
-import type { PublicLook } from '#lib/core/sync/public-projection.ts';
+import type { PublicGameState, PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import { becomesOffer, followedAlignmentOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { reincarnatedBy } from '#lib/core/rules/abilities/reincarnation.ts';
@@ -55,6 +55,12 @@ function keepReminders(): { keepReminders?: true } {
 	return preferences.current.reminderRemoval === 'auto' ? {} : { keepReminders: true };
 }
 
+/** The table as a room's phones have it, and how the game ended, sent with a grimoire. */
+export interface WatchedTable {
+	table?: PublicGameState;
+	ended?: { winner?: 'good' | 'evil'; reason?: string };
+}
+
 export class Grimoire {
 	layout = $state.raw<SeatLayout>(DEFAULT_SEAT_LAYOUT);
 	/** Someone else's board: the background its Storyteller shared (Grim view). */
@@ -63,6 +69,10 @@ export class Grimoire {
 	room = $state.raw<string>();
 	/** Someone else's board: its shape (width ÷ height), whose places round the ring it keeps. */
 	aspect = $state.raw<number>();
+	/** Someone else's board: its seated players' own pictures by seat, from `room`. */
+	pictures = $state.raw<Partial<Record<SeatId, string>>>();
+	/** Someone else's board: the table and its end as that room's phones have them. */
+	watched = $state.raw<WatchedTable>();
 
 	constructor(readonly open: OpenGame) {
 		forgetUpsideDownMarks();

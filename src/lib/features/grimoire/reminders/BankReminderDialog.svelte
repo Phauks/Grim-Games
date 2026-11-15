@@ -31,6 +31,7 @@
 	import ReminderEffectFields from './ReminderEffectFields.svelte';
 	import { bankView } from '#lib/features/board/bank-items.ts';
 	import { isGeneric, placedLook } from '#lib/features/board/reminders.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -41,9 +42,14 @@
 		hand: ReminderHand;
 		/** Takes a placed one off the board (ReminderMoveConfirm). */
 		onRemove?: (reminderId: ReminderId) => void;
+		/**
+		 * A watcher's board (Trevor, 2026-11-15: tap a token "to more readily see what those
+		 * tokens say"): the token, its words and its ability, with nothing to change.
+		 */
+		readOnly?: boolean;
 	}
 
-	let { grimoire, hand, onRemove }: Props = $props();
+	let { grimoire, hand, onRemove, readOnly = false }: Props = $props();
 
 	const item = $derived(hand.about?.kind === 'bank' ? hand.about.item : undefined);
 	const reminderId = $derived(hand.about?.kind === 'placed' ? hand.about.reminderId : undefined);
@@ -66,6 +72,14 @@
 	const shown = $derived(placed ?? item);
 	const owner = $derived(
 		shown && !isGeneric(shown) ? characters.get(shown.characterId) : undefined
+	);
+	/** What the Storyteller wrote on it or picked for it, for a watcher to read. */
+	const words = $derived(
+		placed && !isGeneric(placed)
+			? [placed.effect && t(`characters.effect.${placed.effect.kind}`), placed.note?.trim()]
+					.filter(Boolean)
+					.join('. ')
+			: ''
 	);
 	// Gone from the board (removed, undone): nothing left to show.
 	$effect(() => {
@@ -104,7 +118,9 @@
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 	{/if}
-	{#if placed && isGeneric(placed)}<ReminderNoteField
+	{#if readOnly}
+		{#if words}<p class="text" data-testid="reminder-words">{words}</p>{/if}
+	{:else if placed && isGeneric(placed)}<ReminderNoteField
 			{grimoire}
 			reminder={placed}
 		/>{:else if placed && takesNote(game, placed, characters)}<NotedReminderFields
@@ -115,7 +131,7 @@
 			reminder={placed}
 		/>{/if}
 	{#snippet headActions()}
-		{#if placed}
+		{#if placed && !readOnly}
 			<ReminderMoreButton {grimoire} {reminderId} onDone={() => (hand.aboutOpen = false)} />
 			<DeleteButton
 				label="Remove reminder"

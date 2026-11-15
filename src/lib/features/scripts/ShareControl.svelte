@@ -25,10 +25,23 @@
 		target: (() => Promise<ShareTarget>) | undefined;
 		/** The live room this device is in: Share hands on its link and join code instead. */
 		room?: string;
+		/** The share screen is open; bind it to open it from a button elsewhere. */
+		open?: boolean;
+		/** False leaves out the icon, for a screen opened from another button (a spectator's Share). */
+		button?: boolean;
 	}
 
-	let { what, title, author, version, logo, target, room }: Props = $props();
-	let open = $state(false);
+	let {
+		what,
+		title,
+		author,
+		version,
+		logo,
+		target,
+		room,
+		open = $bindable(false),
+		button = true
+	}: Props = $props();
 
 	/**
 	 * The link is made (a share code fetched or created) as soon as the icon is pointed at,
@@ -56,7 +69,7 @@
 	const madeTarget = () => make() ?? Promise.reject(new Error('Nothing to share'));
 </script>
 
-<div class="share">
+{#if button}<div class="share">
 	<IconButton
 		icon="share"
 		label={t(`scripts.share.button.${what}`)}
@@ -69,7 +82,7 @@
 		}}
 		disabled={!target && !room}
 	/>
-</div>
+</div>{/if}
 
 <!-- Just "Share", with the script's logo and name under it (Trevor, 2026-10-27). -->
 <Dialog bind:open title={t('share.share')}>

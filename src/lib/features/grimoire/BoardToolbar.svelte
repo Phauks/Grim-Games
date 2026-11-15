@@ -21,10 +21,8 @@
 	 */
 	interface Props {
 		grimoire: Grimoire;
-		/** A spectator sees every control, disabled. */
+		/** A spectator: no Info tokens, and Share and More open their own read-only parts. */
 		watching: boolean;
-		/** More opens, even on a spectator's board that lets it look through History. */
-		menu: boolean;
 		seatArr: SeatArranging;
 		/** A new seat waits for its place on the board. */
 		placing: boolean;
@@ -46,7 +44,6 @@
 	let {
 		grimoire,
 		watching,
-		menu,
 		seatArr,
 		placing,
 		onCancelPlacing,
@@ -137,23 +134,17 @@
 	{:else}
 		<!-- ☰ and the cover, in the same spot as on the day's sheet (GameLead). -->
 		<GameLead {watching}>{@render lead?.()}</GameLead>
-		<!-- Icons on phones; with their words on wider screens, where there is room. A
-		     spectator's board says what it is in that room (Trevor, 2026-10-19). -->
-		<span class="spacer"
-			>{#if watching}<span class="view-only" data-testid="view-only">View-Only</span>{/if}</span
-		>
-		<!-- A spectator sees every control the Storyteller does, disabled (Trevor, 2026-10-19):
-		     nothing opens, so nothing invites a try. Script only shows the players' copy. -->
-		<Button variant="quiet" icon="day" aria-label="Day" disabled={watching} onclick={onDay}
+		<!-- Icons on phones; with their words on wider screens, where there is room. No
+		     "View-Only" label on a spectator's board (Trevor, 2026-11-15). -->
+		<span class="spacer"></span>
+		<!-- A spectator opens the Day to look at, Script and Share as players do; Info tokens,
+		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). -->
+		<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
 			><span class="tool-label">Day</span></Button
 		>
-		<Button
-			variant="quiet"
-			icon="info"
-			aria-label="Info tokens"
-			disabled={watching}
-			onclick={onInfo}><span class="tool-label">Info tokens</span></Button
-		>
+		{#if !watching}<Button variant="quiet" icon="info" aria-label="Info tokens" onclick={onInfo}
+				><span class="tool-label">Info tokens</span></Button
+			>{/if}
 		<!-- The players' copy of the script, exactly as /play shows it (Trevor, 2026-10-16),
 		     before Share (Trevor, 2026-10-23). -->
 		<Button variant="quiet" icon="script" aria-label="Script" onclick={onScript}
@@ -165,10 +156,9 @@
 			variant="quiet"
 			icon="share"
 			aria-label="Share"
-			disabled={watching}
-			onpointerenter={prepareRoom}
-			onfocus={prepareRoom}
-			onpointerdown={prepareRoom}
+			onpointerenter={watching ? undefined : prepareRoom}
+			onfocus={watching ? undefined : prepareRoom}
+			onpointerdown={watching ? undefined : prepareRoom}
 			onclick={onShare}><span class="tool-label">Share</span></Button
 		>
 		<!-- Players' messages and reported pictures are in More on every screen, which carries
@@ -177,7 +167,6 @@
 			variant="quiet"
 			icon="more"
 			aria-label={unread ? `More, ${t('room.inbox.unread', { count: unread })}` : 'More'}
-			disabled={!menu}
 			onclick={onMore}
 			><span class="tool-label">More</span>{#if unread}<span class="count"
 					><CountBadge count={unread} warn /></span
@@ -227,15 +216,6 @@
 		flex: 1;
 		min-width: 0;
 		text-align: center;
-	}
-	.view-only {
-		display: block;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--evil-text);
-		font-family: var(--font-heading);
-		font-weight: 700;
 	}
 	@media (max-width: 999.98px) {
 		/* Below the width where Seating's words show, its tools need the whole bar; the

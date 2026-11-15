@@ -87,6 +87,11 @@
 	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
+	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
+	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
+	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import { provideSeatPictures } from './seats/seat-picture.ts';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantAsk from '#lib/features/savant/SavantAsk.svelte';
@@ -407,10 +412,11 @@
 	}
 	/**
 	 * A token on the board tapped: held, as one from the bank is (Trevor, 2026-10-30), for the
-	 * seat (or bank) tapped next. With no bank (the game over), its own dialog instead.
+	 * seat (or bank) tapped next. With no bank (the game over), or watching, its own dialog
+	 * instead, read-only for a watcher (Trevor, 2026-11-15: so its words can be read).
 	 */
 	function holdReminder(reminderId: ReminderId, from?: SeatId) {
-		if (bank) hand.toggle({ kind: 'placed', reminderId, from });
+		if (bank && !watching) hand.toggle({ kind: 'placed', reminderId, from });
 		else showReminder(reminderId);
 	}
 	function showReminder(reminderId: ReminderId) {
@@ -662,6 +668,10 @@
 	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
 	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
+	// Players' own pictures on the seats: this room's, or those sent with a watched grimoire.
+	provideSeatPictures(() => (watching ? grimoire : undefined));
+	/** A spectator's Share: the share screen players have, room and script (Trevor, 2026-11-15). */
+	let viewerShareOpen = $state(false);
 	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
 	let ownLook = $state<PublicLook>();
 	let ownPicture = $state.raw<Blob>();
@@ -717,7 +727,8 @@
 		corner: cornerInfo,
 		look,
 		picture: watching ? undefined : ownPicture,
-		pictureRoom: watching ? grimoire.room : undefined
+		pictureRoom: watching ? grimoire.room : undefined,
+		watched: watching ? (grimoire.watched ?? {}) : undefined
 	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
@@ -763,12 +774,12 @@
 		{characters}
 		{tokenSize}
 		{chip}
-		disabled={seatArr.arranging || watching}
+		disabled={seatArr.arranging}
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id, kind) => (id ? rules?.show(id) : rules?.showAll(kind))}
 		onShowAbility={(via) => rules?.showAbility(via)}
 		onHeldTap={(id) => holdReminder(id)}
-		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
+		onHeldDrag={watching ? undefined : (id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
 	/>
 {/snippet}
@@ -790,7 +801,6 @@
 	{#if toolbar}<BoardToolbar
 			{grimoire}
 			{watching}
-			menu={!watching || watchedHistory}
 			{seatArr}
 			placing={!!placing}
 			onCancelPlacing={() => (placing = undefined)}
@@ -803,12 +813,19 @@
 			onDay={() => (dayOpen = true)}
 			onInfo={() => (infoOpen = true)}
 			onScript={() => (scriptOpen = true)}
-			onShare={() => (phonesOpen = true)}
+			onShare={() => (watching ? (viewerShareOpen = true) : (phonesOpen = true))}
 			onMore={() => (menuOpen = true)}
 		>
 			<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
-		     the board and the day (2026-10-27: "so it doesn't move"); the Storyteller's only. -->
+		     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too (Trevor,
+		     2026-11-15), with nothing of the Storyteller's on it. -->
 			{#snippet lead()}
+				{#if watching}<CoverButton
+						gameId={game.gameId}
+						details={coverDetails}
+						timer={coverTimer}
+						outlined
+					/>{/if}
 				{#if !watching}
 					<CoverButton
 						gameId={game.gameId}
@@ -1025,7 +1042,12 @@
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-<BankReminderDialog {grimoire} {hand} onRemove={(id) => moveConfirm?.requestReturn(id)} />
+<BankReminderDialog
+	{grimoire}
+	{hand}
+	readOnly={watching}
+	onRemove={(id) => moveConfirm?.requestReturn(id)}
+/>
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
@@ -1094,6 +1116,20 @@
 {/if}
 
 <BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
+{#if watching && loadedScript}
+	{@const script = loadedScript}
+	<ShareControl
+		what="script"
+		button={false}
+		bind:open={viewerShareOpen}
+		title={script.name}
+		author={script.meta.author}
+		version={scriptVersion(undefined, script.meta)}
+		logo={boardLogo || undefined}
+		target={() => shareTargetFor(gameShareable(script), location.origin)}
+		room={grimoire.room}
+	/>
+{/if}
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
@@ -1158,6 +1194,7 @@
 	bind:open={bluffsOpen}
 	{game}
 	{characters}
+	readOnly={watching}
 	dispatch={(command) => grimoire.open.run(command)}
 />
 

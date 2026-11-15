@@ -16,6 +16,7 @@
 	import YourCharacter from '#lib/features/room/YourCharacter.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
+	import type { WatchedTable } from './grimoire.svelte.ts';
 
 	/**
 	 * What players see on /play, drawn from the Storyteller's game: where the game is up to and
@@ -39,14 +40,27 @@
 		 * gives its table notebook, `tableNotebook`).
 		 */
 		notebook?: string;
+		/** Someone else's board: the table and its end as that room's phones have them. */
+		watched?: WatchedTable;
 	}
 
-	let { game, script, characters, layout, corner, look, picture, pictureRoom, notebook }: Props =
-		$props();
+	let {
+		game,
+		script,
+		characters,
+		layout,
+		corner,
+		look,
+		picture,
+		pictureRoom,
+		notebook,
+		watched
+	}: Props = $props();
 
 	// The very state a phone in the room gets (Trevor, 2026-10-27: "Design it so that these
 	// additions move in automatically"), so the status row and the town show what phones show.
-	const town = $derived(tableState(roomHost(), game, characters, layout, corner));
+	// A spectator's, as the Storyteller's room sent it with the grimoire (Trevor, 2026-11-15).
+	const town = $derived(watched?.table ?? tableState(roomHost(), game, characters, layout, corner));
 	// Who is connected, as the room tells the Storyteller; with no room, nothing to say.
 	const presence = $derived.by(() => {
 		const host = roomHost();
@@ -56,6 +70,7 @@
 	// The end of the game as the room tells phones (Trevor, 2026-10-30): "Game over" over the
 	// tabs, and the final grimoire on the Grim tab once Share grim sends it.
 	const ended = $derived.by(() => {
+		if (watched) return watched.ended;
 		const over = roomHost().ended;
 		return over?.gameId === game.gameId ? over : undefined;
 	});

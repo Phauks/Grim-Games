@@ -3,6 +3,8 @@
 	import { readSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
+	import { parseSeatPictures } from '#lib/core/sync/room-pictures.ts';
+	import { watchedTable } from '#lib/features/grimoire/watched-table.ts';
 	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -84,6 +86,8 @@
 			drawn.look = parsePublicLook(next.look);
 			drawn.room = room;
 			drawn.aspect = parseAspect(next.aspect);
+			drawn.pictures = parseSeatPictures(next.pictures);
+			drawn.watched = watchedTable(next);
 			timer.set(dayTimers.parseSharedTimer(next.timer));
 			board = drawn;
 			onProblem?.(undefined);
