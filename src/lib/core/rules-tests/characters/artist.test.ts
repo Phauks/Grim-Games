@@ -57,10 +57,15 @@ describe('Artist', () => {
 			s.game.seats[s.seat('artist')].reminders.some(
 				(r) => r.characterId === 'artist' && r.label === 'No Ability'
 			);
+		// The Artist's line offers the question until it is used; that day it says it was asked.
 		const mayAsk = (s: Scenario) =>
 			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
 				.groups.flatMap((g) => g.reminders)
-				.some((r) => r.characterId === 'artist');
+				.some(
+					(r) =>
+						r.characterId === 'artist' &&
+						r.segments.some((x) => x.kind === 'text' && x.text === 'may ask a question')
+				);
 
 		it('Example 1: Asks whether the Demon sits in a certain seat', () => {
 			// Wiki: "The Artist asks, "Is the Demon sitting in a brown chair?" The Storyteller answers, "No,”
@@ -100,10 +105,15 @@ describe('Artist', () => {
 	});
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Artist#How_to_Run)', () => {
+		// The Artist's line offers the question until it is used; that day it says it was asked.
 		const mayAsk = (s: Scenario) =>
 			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
 				.groups.flatMap((g) => g.reminders)
-				.some((r) => r.characterId === 'artist');
+				.some(
+					(r) =>
+						r.characterId === 'artist' &&
+						r.segments.some((x) => x.kind === 'text' && x.text === 'may ask a question')
+				);
 
 		it('may ask their question on any day, not only the first', () => {
 			// Wiki: "During any day, the Artist can request a private chat with you."

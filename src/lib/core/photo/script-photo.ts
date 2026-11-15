@@ -28,6 +28,16 @@ export interface PhotoLine {
 	height?: number;
 	/** How sure the reader was of the line, 0 to 100, when it says (for the import log). */
 	confidence?: number;
+	/** Where the line sits in the picture read, in its pixels, to mark it there. */
+	box?: LineBox;
+}
+
+/** A line's corners in a picture, in its pixels. */
+export interface LineBox {
+	x0: number;
+	y0: number;
+	x1: number;
+	y1: number;
 }
 
 export type PhotoMatchKind = 'matched' | 'close';
