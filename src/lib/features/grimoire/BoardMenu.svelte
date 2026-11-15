@@ -47,6 +47,11 @@
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
+		/**
+		 * The draw's Add late player once the draw is done, until Start game (Trevor,
+		 * 2026-11-15): in Session, as it is only there before the game starts.
+		 */
+		onLatePlayer?: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
 		onExport: () => void;
@@ -83,6 +88,7 @@
 		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
+		onLatePlayer,
 		onAddRule,
 		onArrange,
 		onExport,
@@ -253,6 +259,16 @@
 						onclick={() => fromMenu(onCharacterSelection)}
 					>
 						{t('setup.characterSelection')}
+					</Button>
+				{/if}
+				{#if onLatePlayer}
+					<Button
+						variant="quiet"
+						icon="latePlayer"
+						data-testid="menu-late-player"
+						onclick={() => fromMenu(onLatePlayer)}
+					>
+						{t('late-player.button')}
 					</Button>
 				{/if}
 				<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
