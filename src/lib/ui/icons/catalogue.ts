@@ -121,6 +121,8 @@ export const ICON_SLOTS = {
 	choosePhoto: { label: 'Choose a photo', choices: ['ph:image', 'ph:images'] },
 	/** The step-by-step log of a script read from a photo or file (Trevor, 2026-11-06). */
 	importLog: { label: 'Read log', choices: ['ph:list-magnifying-glass', 'ph:scroll'] },
+	/** The pictures a script was read from, with each read line marked (Trevor, 2026-11-15). */
+	scanPictures: { label: 'Pictures read', choices: ['ph:image-square', 'ph:frame-corners'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
 	changeKind: { label: 'Change kind', choices: ['ph:swap', 'ph:arrows-left-right'] },
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },
@@ -158,6 +160,8 @@ export const ICON_SLOTS = {
 	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
 	join: { label: 'Join game', choices: ['ph:sign-in', 'ph:door-open'] },
+	/** Share grim, once the game is over: not Share, which is the room's join link (Trevor, 2026-11-15). */
+	shareGrim: { label: 'Share grim', choices: ['ph:paper-plane-tilt', 'ph:book-open'] },
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
 	/** Reads a QR code with the camera (Join game). */
 	scan: { label: 'Scan a code', choices: ['ph:camera', 'ph:scan'] },

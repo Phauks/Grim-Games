@@ -125,6 +125,7 @@ import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
 import ph_identification_card_thin from '~icons/ph/identification-card-thin';
 import ph_image_thin from '~icons/ph/image-thin';
+import ph_image_square_thin from '~icons/ph/image-square-thin';
 import ph_images_thin from '~icons/ph/images-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_key_thin from '~icons/ph/key-thin';
@@ -160,6 +161,7 @@ import ph_notepad_thin from '~icons/ph/notepad-thin';
 import ph_paint_brush_thin from '~icons/ph/paint-brush-thin';
 import ph_paint_bucket_thin from '~icons/ph/paint-bucket-thin';
 import ph_palette_thin from '~icons/ph/palette-thin';
+import ph_paper_plane_tilt_thin from '~icons/ph/paper-plane-tilt-thin';
 import ph_pause_thin from '~icons/ph/pause-thin';
 import ph_pause_circle_thin from '~icons/ph/pause-circle-thin';
 import ph_pen_nib_thin from '~icons/ph/pen-nib-thin';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-simple-thin': ph_house_simple_thin,
 	'ph:identification-card-thin': ph_identification_card_thin,
 	'ph:image-thin': ph_image_thin,
+	'ph:image-square-thin': ph_image_square_thin,
 	'ph:images-thin': ph_images_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:key-thin': ph_key_thin,
@@ -405,6 +408,7 @@ const icons: IconMap = {
 	'ph:paint-brush-thin': ph_paint_brush_thin,
 	'ph:paint-bucket-thin': ph_paint_bucket_thin,
 	'ph:palette-thin': ph_palette_thin,
+	'ph:paper-plane-tilt-thin': ph_paper_plane_tilt_thin,
 	'ph:pause-thin': ph_pause_thin,
 	'ph:pause-circle-thin': ph_pause_circle_thin,
 	'ph:pen-nib-thin': ph_pen_nib_thin,

@@ -23,7 +23,8 @@
 				],
 				"when": {
 					"noReminder": "May Not Nominate"
-				}
+				},
+				"used": "has nominated"
 			}
 		]
 	},

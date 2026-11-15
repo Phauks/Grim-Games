@@ -141,6 +141,9 @@ export const room = {
 	'room.shareGrim.title': 'Share the grimoire?',
 	'room.shareGrim.body':
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
+	'room.shareGrim.history': 'History',
+	'room.shareGrim.seatNotes': 'Seat notes',
+	'room.shareGrim.gameNotes': 'Game notes',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
 	// Room transfer (Trevor, 2026-10-28).
 	'room.transfer.button': 'Room transfer',
@@ -285,7 +288,7 @@ export const room = {
 	'room.roles.toggle': 'Players can see their character',
 	'room.roles.show': 'Show characters',
 	'room.roles.hideLeft': 'Hide characters, {time} left',
-	'room.roles.hideTime': 'Hide · {time}',
+	'room.roles.showShort': 'Show',
 	'room.roles.noPhoneTitle': 'Players with no phone',
 	'room.roles.gapsTitle': 'Not every player will see a character',
 	'room.roles.timeLeft': 'Players can see theirs for {time} more',

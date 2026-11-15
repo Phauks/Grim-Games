@@ -105,21 +105,28 @@ export function parseStill(raw: unknown): StillChoice | undefined {
 	return { id, params: cleanParams(STILL_BACKGROUNDS[id], params) };
 }
 
-/** Grey noise as an SVG picture: `frequency` sets its grain, `alpha` how strongly it shows. */
+/**
+ * Grey noise as an SVG picture: `frequency` sets its grain, `alpha` how strongly it shows. A
+ * picture that repeats across the board is `tiled`: its noise is stitched to wrap at the
+ * picture's own edges (the filter covers exactly the picture), or every repeat shows as a box
+ * (Trevor, 2026-11-15). One drawn once, stretched over the board, keeps its exact grain.
+ */
 function noise(
 	size: [number, number],
 	frequency: string,
 	octaves: number,
 	seed: number,
 	[red, green, blue]: [number, number, number],
-	[gain, offset]: [number, number]
+	[gain, offset]: [number, number],
+	tiled = true
 ): string {
 	const n = (v: number) => Number(v.toFixed(3));
 	const matrix = `0 0 0 0 ${red}  0 0 0 0 ${green}  0 0 0 0 ${blue}  ${n(gain)} 0 0 0 ${n(offset)}`;
 	const svg =
 		`<svg xmlns='http://www.w3.org/2000/svg' width='${size[0]}' height='${size[1]}'>` +
-		`<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${frequency}' ` +
-		`numOctaves='${octaves}' seed='${seed}'/><feColorMatrix values='${matrix}'/></filter>` +
+		`<filter id='n' x='0' y='0' width='100%' height='100%'>` +
+		`<feTurbulence type='fractalNoise' baseFrequency='${frequency}' ` +
+		`numOctaves='${octaves}' seed='${seed}'${tiled ? ` stitchTiles='stitch'` : ''}/><feColorMatrix values='${matrix}'/></filter>` +
 		`<rect width='100%' height='100%' filter='url(#n)'/></svg>`;
 	return `url("data:image/svg+xml,${encodeURIComponent(svg).replace(/'/g, '%27')}")`;
 }
@@ -136,9 +143,17 @@ const tooth = (strength: number) =>
 /** Old stains on paper. */
 const blotch = (strength: number) =>
 	noise([500, 500], '0.008', 5, 11, [0.35, 0.2, 0.06], [1.6 * strength, -0.62 * strength]);
-/** Velvet's long folds, catching the light. */
+/** Velvet's long folds, catching the light: drawn once over the whole board, never repeated. */
 const folds = (strength: number) =>
-	noise([600, 300], '0.012 0.0015', 3, 9, [1, 0.75, 0.75], [1.3 * strength, -0.5 * strength]);
+	noise(
+		[600, 300],
+		'0.012 0.0015',
+		3,
+		9,
+		[1, 0.75, 0.75],
+		[1.3 * strength, -0.5 * strength],
+		false
+	);
 
 const LAYERS: Record<Surface, (t: number, params: Params) => string[]> = {
 	cloth: (t) => [`${fuzz(t)} 0 0 / 12rem 12rem`, `${mottle(t)} 0 0 / 30rem 30rem`],

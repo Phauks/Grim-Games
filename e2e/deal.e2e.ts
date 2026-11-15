@@ -157,13 +157,13 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	// A minute after it was turned on, it turns itself off and the phone can no longer open it
 	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off"). A button, not a
 	// switch (Trevor, 2026-10-30), beside the ✕, that turns into the timer while players can
-	// look (Trevor, 2026-10-31).
+	// look (Trevor, 2026-10-31), as the standard button reading "Show" (Trevor, 2026-11-15).
 	const toggle = page.getByTestId('roles-show');
 	await expect(toggle).toHaveAttribute('data-shown', 'true');
 	await expect(toggle).toHaveAccessibleName(/^Hide characters, 0:[0-5]\d left$/);
 	// The Storyteller sees how much longer (Trevor, 2026-10-29).
 	const timeLeft = page.getByTestId('roles-time-left');
-	await expect(timeLeft).toHaveText(/^Hide · 0:[0-5]\d$/);
+	await expect(timeLeft).toHaveText(/^0:[0-5]\d$/);
 	await page.clock.fastForward('01:01');
 	await expect(toggle).toHaveAccessibleName('Show characters');
 	await expect(timeLeft).toBeHidden();

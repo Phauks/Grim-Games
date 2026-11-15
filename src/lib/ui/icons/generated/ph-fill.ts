@@ -125,6 +125,7 @@ import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
 import ph_image_fill from '~icons/ph/image-fill';
+import ph_image_square_fill from '~icons/ph/image-square-fill';
 import ph_images_fill from '~icons/ph/images-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_key_fill from '~icons/ph/key-fill';
@@ -160,6 +161,7 @@ import ph_notepad_fill from '~icons/ph/notepad-fill';
 import ph_paint_brush_fill from '~icons/ph/paint-brush-fill';
 import ph_paint_bucket_fill from '~icons/ph/paint-bucket-fill';
 import ph_palette_fill from '~icons/ph/palette-fill';
+import ph_paper_plane_tilt_fill from '~icons/ph/paper-plane-tilt-fill';
 import ph_pause_fill from '~icons/ph/pause-fill';
 import ph_pause_circle_fill from '~icons/ph/pause-circle-fill';
 import ph_pen_nib_fill from '~icons/ph/pen-nib-fill';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
 	'ph:image-fill': ph_image_fill,
+	'ph:image-square-fill': ph_image_square_fill,
 	'ph:images-fill': ph_images_fill,
 	'ph:info-fill': ph_info_fill,
 	'ph:key-fill': ph_key_fill,
@@ -405,6 +408,7 @@ const icons: IconMap = {
 	'ph:paint-brush-fill': ph_paint_brush_fill,
 	'ph:paint-bucket-fill': ph_paint_bucket_fill,
 	'ph:palette-fill': ph_palette_fill,
+	'ph:paper-plane-tilt-fill': ph_paper_plane_tilt_fill,
 	'ph:pause-fill': ph_pause_fill,
 	'ph:pause-circle-fill': ph_pause_circle_fill,
 	'ph:pen-nib-fill': ph_pen_nib_fill,

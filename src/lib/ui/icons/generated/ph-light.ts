@@ -125,6 +125,7 @@ import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
 import ph_image_light from '~icons/ph/image-light';
+import ph_image_square_light from '~icons/ph/image-square-light';
 import ph_images_light from '~icons/ph/images-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_key_light from '~icons/ph/key-light';
@@ -160,6 +161,7 @@ import ph_notepad_light from '~icons/ph/notepad-light';
 import ph_paint_brush_light from '~icons/ph/paint-brush-light';
 import ph_paint_bucket_light from '~icons/ph/paint-bucket-light';
 import ph_palette_light from '~icons/ph/palette-light';
+import ph_paper_plane_tilt_light from '~icons/ph/paper-plane-tilt-light';
 import ph_pause_light from '~icons/ph/pause-light';
 import ph_pause_circle_light from '~icons/ph/pause-circle-light';
 import ph_pen_nib_light from '~icons/ph/pen-nib-light';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-simple-light': ph_house_simple_light,
 	'ph:identification-card-light': ph_identification_card_light,
 	'ph:image-light': ph_image_light,
+	'ph:image-square-light': ph_image_square_light,
 	'ph:images-light': ph_images_light,
 	'ph:info-light': ph_info_light,
 	'ph:key-light': ph_key_light,
@@ -405,6 +408,7 @@ const icons: IconMap = {
 	'ph:paint-brush-light': ph_paint_brush_light,
 	'ph:paint-bucket-light': ph_paint_bucket_light,
 	'ph:palette-light': ph_palette_light,
+	'ph:paper-plane-tilt-light': ph_paper_plane_tilt_light,
 	'ph:pause-light': ph_pause_light,
 	'ph:pause-circle-light': ph_pause_circle_light,
 	'ph:pen-nib-light': ph_pen_nib_light,
