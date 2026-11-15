@@ -23,7 +23,8 @@
 				],
 				"when": {
 					"noReminder": "No Ability"
-				}
+				},
+				"used": "has asked for advice"
 			}
 		]
 	},

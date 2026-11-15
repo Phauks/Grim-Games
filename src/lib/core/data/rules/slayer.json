@@ -27,7 +27,8 @@
 				],
 				"when": {
 					"noReminder": "No Ability"
-				}
+				},
+				"used": "has used their shot"
 			}
 		]
 	},

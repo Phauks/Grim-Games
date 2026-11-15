@@ -54,7 +54,6 @@
 	import DayUseDialog from './DayUseDialog.svelte';
 	import RuleDayControl, { hasRuleDayControl } from './RuleDayControl.svelte';
 	import FinalDay, { hasFinalDay } from './FinalDay.svelte';
-	import { atDayStart } from './day-start.ts';
 	import RuleCharacterUse from './RuleCharacterUse.svelte';
 	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
 	import BorrowedAbilityRows from './BorrowedAbilityRows.svelte';
@@ -226,11 +225,9 @@
 		});
 	}
 
-	// ── Pre-day reminders (atDayStart) ──
+	// ── Pre-day reminders: a line used today keeps its row and says so (rules `used`) ──
 	const reminders = $derived(
-		dayReminders(
-			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
-		)
+		dayReminders(dayStateFromGame(g, (id) => game.characters.get(id), undefined, game.characters))
 	);
 	/** Stopped by a jinx's partner, on the stopped character's first row (the riot, L112). */
 	const stopRows = $derived(jinxStopRows(reminders, g, game.characters));

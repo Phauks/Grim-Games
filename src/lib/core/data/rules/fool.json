@@ -26,7 +26,8 @@
 				],
 				"when": {
 					"noReminder": "No Ability"
-				}
+				},
+				"used": "has survived their first death"
 			}
 		]
 	},

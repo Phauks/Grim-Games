@@ -82,7 +82,8 @@ describe('Fisherman', () => {
 				seatId: at.seat('fisherman'),
 				characterId: 'fisherman'
 			}));
-			expect(linesOf(used)).toEqual([]);
+			// The row stays that day and says so (no reflow); from the next day it is gone.
+			expect(linesOf(used)).toEqual(['[fisherman · Ana] has asked for advice']);
 		});
 		it('Example 2: Advice: protect players claiming Outsider', () => {
 			// Wiki: "The Fisherman learns “Keep the players claiming to be Outsiders alive”. These players
