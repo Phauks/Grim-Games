@@ -26,6 +26,8 @@ export const modes = {
 	'modes.preview': 'Script preview',
 	'modes.scriptSearch.label': 'Find a script',
 	'modes.scriptSearch.custom': 'Custom',
+	'modes.scriptKind.label': 'Script kind',
+	'modes.scriptKind.official': 'Official',
 	'modes.scriptSearch.version': 'Script version',
 	'modes.scriptSearch.loadingVersion': 'Loading this version…',
 	'modes.scriptSearch.noVersion': 'N/A',

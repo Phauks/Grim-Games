@@ -1,6 +1,6 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
-import { toBoard } from './new-game.ts';
+import { openCustomSheet, toBoard } from './new-game.ts';
 
 /**
  * The Choose a script sheet (Trevor, 2026-11-06, option B of "Custom script picker"): one
@@ -40,11 +40,10 @@ test('New game finds an online script in the sheet without leaving the screen', 
 	page
 }) => {
 	await page.goto('/new');
-	const custom = page.getByRole('radiogroup', { name: 'Script' }).getByRole('radio', {
+	const custom = page.getByRole('radiogroup', { name: 'Script kind' }).getByRole('radio', {
 		name: 'Custom'
 	});
-	const field = page.getByTestId('custom-script');
-	await field.tap();
+	const field = await openCustomSheet(page);
 	// This device's scripts first: none saved yet.
 	await expect(sheet(page).getByRole('combobox', { name: 'Where' })).toHaveText(/On this device/);
 	await expect(sheet(page)).toContainText('None');
@@ -72,7 +71,7 @@ test('New game finds an online script in the sheet without leaving the screen', 
 
 test('Add script opens from the sheet', async ({ page }) => {
 	await page.goto('/new');
-	await page.getByTestId('custom-script').tap();
+	await openCustomSheet(page);
 	await page
 		.getByRole('dialog', { name: 'Choose a script' })
 		.getByRole('button', { name: 'Add script' })
