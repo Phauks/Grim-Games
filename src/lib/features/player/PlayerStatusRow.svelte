@@ -16,7 +16,7 @@
 	 * its room's copy; the board's Script and the grim cover's Player view feed it the state
 	 * the room would get (`tableState`), so whatever is added here shows on both
 	 * (Trevor, 2026-10-27: "Design it so that these additions move in automatically"). What
-	 * only a phone in a room has (its character, Rate) comes in `after`.
+	 * only a phone in a room has (its character, Rate this game) comes in props or `after`.
 	 */
 	interface Props {
 		/** The game's public state as players' phones get it. */
@@ -34,13 +34,21 @@
 		 * empty takes no room. A phone also says it is joining or offline here.
 		 */
 		status?: string;
+		/**
+		 * Makes the status a button that opens something, such as the Game over sheet
+		 * (Trevor, 2026-11-15: rating lives in the status box, no separate button).
+		 */
+		onStatus?: () => void;
+		/** What tapping the status does, in a second, quieter line under it ("Rate this game"). */
+		statusAction?: string;
 		/** The team that won, once the game is over: the status takes its colour. */
 		winner?: 'good' | 'evil';
 		/** This phone's seat number, for tests to read; the screen doesn't say it. */
 		seatNumber?: number;
 		/**
 		 * Opens Your character (Trevor, 2026-11-03): while players may see theirs, the game's
-		 * status gives its place to it, the same box, so nothing moves.
+		 * status gives its place to it, the same box, so nothing moves. Never once the game is
+		 * over (Trevor, 2026-11-15: Game over and Your character never show together).
 		 */
 		character?: () => void;
 		/**
@@ -58,6 +66,8 @@
 		mySeat,
 		unseatedNames,
 		status,
+		onStatus,
+		statusAction,
 		winner,
 		seatNumber,
 		character,
@@ -65,7 +75,8 @@
 		after
 	}: Props = $props();
 
-	const characterLeft = timeLeft(() => (character ? characterUntil : undefined));
+	const yours = $derived(ended ? undefined : character);
+	const characterLeft = timeLeft(() => (yours ? characterUntil : undefined));
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
 	const timer = $derived(ended ? undefined : dayTimers.parsePublicTimer(table?.timer));
@@ -78,26 +89,40 @@
 	);
 </script>
 
-{#if status !== undefined || after || phase || character}
+{#snippet said()}
+	<span class="summary" role="status" data-testid="join-status">{status}</span>
+	{#if statusAction}<span class="action">{statusAction}</span>{/if}
+{/snippet}
+
+{#if status !== undefined || after || phase || yours}
 	<div class="status-row" data-testid="player-status-row">
 		{#if status !== undefined}
 			<!-- With nothing to say the box takes no room, so the game's status starts the row
 			     (Trevor, 2026-10-26: "remove the empty space next to the game state tracker"). -->
-			<p
-				class="you"
-				class:quiet={!status}
-				data-testid="you-row"
-				data-seat={seatNumber}
-				data-team={winner}
-			>
-				<span class="summary" role="status" data-testid="join-status">{status}</span>
-			</p>
+			{#if onStatus}<button
+					type="button"
+					class="you"
+					class:quiet={!status}
+					aria-haspopup="dialog"
+					data-testid="you-row"
+					data-seat={seatNumber}
+					data-team={winner}
+					onclick={onStatus}>{@render said()}</button
+				>{:else}<p
+					class="you"
+					class:quiet={!status}
+					data-testid="you-row"
+					data-seat={seatNumber}
+					data-team={winner}
+				>
+					{@render said()}
+				</p>{/if}
 		{/if}
 		<!-- Where the game is up to, with the day's timer; it shares the row's height, so
 		     nothing below moves. -->
 		<!-- While players may see theirs, Your character covers the game's status, the same box,
 		     so nothing moves (Trevor, 2026-11-03). -->
-		{#if phase || character}<div class="game" data-covered={character ? '' : undefined}>
+		{#if phase || yours}<div class="game" data-covered={yours ? '' : undefined}>
 				{#if phase}<PlayersDayStatus
 						{phase}
 						{timer}
@@ -109,13 +134,13 @@
 						{connections}
 						{unseatedNames}
 					/>{/if}
-				{#if character}<button
+				{#if yours}<button
 						type="button"
 						class="character"
 						class:over={!!phase}
 						aria-haspopup="dialog"
 						data-testid="your-character"
-						onclick={character}
+						onclick={yours}
 						><Icon name="yourCharacter" />{characterLeft.ms === undefined
 							? t('room.role.open')
 							: t('room.role.openTime', { time: clock(characterLeft.ms) })}</button
@@ -202,6 +227,35 @@
 		border-color: var(--evil);
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	button.you {
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: center;
+		gap: 0;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	/* The game's end in the theme's display face (Trevor, 2026-11-15: "game over font should
+	   be better"); what tapping does under it, in the body face, smaller. */
+	.you[data-team] .summary,
+	button.you .summary {
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
+		font-size: 1.2rem;
+		letter-spacing: 0.04em;
+	}
+	button.you .summary {
+		min-height: 0;
+	}
+	.action {
+		font-family: var(--font-body);
+		font-size: 0.85rem;
+		font-style: italic;
+		opacity: 0.85;
 	}
 	.you.quiet {
 		display: none;
