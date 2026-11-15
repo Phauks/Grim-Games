@@ -7,7 +7,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { revivedToday, tonightFromLog } from '#lib/features/grimoire/night/night-steps.ts';
 	import { boardNightSteps, stepWakes } from '#lib/core/rules/night/board-steps.ts';
-	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
+	import { changedCharacters, diedToday, type ShareChoices } from '#lib/core/engine/index.ts';
 	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from '#lib/features/grimoire/seats/AlignmentDraw.svelte';
 	import { endedGames, type EndedGame } from '#lib/features/board/device-notes.ts';
@@ -125,6 +125,7 @@
 	import GameFeedbackSheet from '#lib/features/grimoire/hosting/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
 	import EndGameDialogs from './EndGameDialogs.svelte';
+	import GameOverMenu from './GameOverMenu.svelte';
 	import StarPassPrompt from '#lib/features/grimoire/night/StarPassPrompt.svelte';
 	import FirstDeathAsk from '#lib/features/grimoire/night/FirstDeathAsk.svelte';
 	import DawnDuskAsks from '#lib/features/grimoire/night/DawnDuskAsks.svelte';
@@ -429,6 +430,8 @@
 	});
 
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
+	/** Add late player over the board: its ⋯ item until Start game. */
+	let latePlayer = $state<ReturnType<typeof LateSeatOnBoard>>();
 	let placing = $state<((position: number) => void) | undefined>();
 	/** Seats already placed but not added yet (late players), shown at their spots. */
 	let pendingSeats = $state<readonly { position: number; name: string }[]>([]);
@@ -628,6 +631,16 @@
 			: ended?.winner === 'evil'
 				? 'Evil won'
 				: 'Winner not recorded'
+	);
+	/** Share grim (R5), while the room is connected and before the phones have the grimoire. */
+	const shareGrim = $derived(
+		!watching &&
+			roomHost().status === 'open' &&
+			roomHost().ended?.gameId === game.gameId &&
+			roomHost().revealed?.gameId !== game.gameId
+			? (choices: ShareChoices) =>
+					roomHost().reveal(grimoire.open, choices) || toast(t('room.shareGrim.failed'))
+			: undefined
 	);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
 	const showTimer = $derived(!ended);
@@ -868,16 +881,6 @@
 				height={sizing.sizingHeight > 0 ? `${Math.round(0.42 * sizing.sizingHeight)}px` : undefined}
 			/>
 		{/if}
-		{#if ended}
-			<!-- In the middle of the seat ring, over the script's logo: the ring's middle never
-			     holds a seat, so ending the game moves nothing and covers nothing (Trevor,
-			     2026-11-06, after it sat over the bottom seats in the corner). Out of History's
-			     strip so the strip keeps its room (2026-10-25). Only a label: Reopen game is in ⋯
-			     (2026-11-01). It says the same while History steps back (2026-11-02). -->
-			<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
-				Game over: {endedText}
-			</span>
-		{/if}
 		<BoardSeats
 			{grimoire}
 			{shown}
@@ -980,6 +983,19 @@
 					{town}
 				/>
 			</div>
+			<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
+			{#if ended}
+				<div class="game-over-slot">
+					<GameOverMenu
+						winner={ended.winner}
+						text={endedText}
+						{watching}
+						onExport={() => (exportOpen = true)}
+						onFeedback={watching ? undefined : () => (feedbackOpen = true)}
+						onShareGrim={shareGrim}
+					/>
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -1009,19 +1025,14 @@
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
+	onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !watching
+		? () => latePlayer?.start()
+		: undefined}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
-	onExport={() => (exportOpen = true)}
-	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
 	newGame={watching ? undefined : newGameSheet}
 	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
-	onShareGrim={!watching &&
-	roomHost().status === 'open' &&
-	roomHost().ended?.gameId === game.gameId &&
-	roomHost().revealed?.gameId !== game.gameId
-		? () => roomHost().reveal(grimoire.open) || toast(t('room.shareGrim.failed'))
-		: undefined}
 	onEnd={() => (endOpen = true)}
 />
 {#if !watching}<NewGameSheet
@@ -1108,7 +1119,7 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
-{#if !watching}<LateSeatOnBoard {grimoire} place={startPlacing} />{/if}
+{#if !watching}<LateSeatOnBoard bind:this={latePlayer} {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}
@@ -1270,37 +1281,6 @@
 		height: var(--tap-target);
 		pointer-events: none;
 	}
-	/* Dimmed so seats and reminders stay clear over any image. */
-	.game-over {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		translate: -50% -50%;
-		max-width: 42%;
-		min-height: var(--tap-target);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		padding: 0 var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font-family: var(--font-heading);
-		font-size: 0.9rem;
-		/* A label, not a button: its line is the tap target's height, as the button's was. */
-		display: block;
-		box-sizing: border-box;
-		line-height: calc(var(--tap-target) - 2px); /* px-ok: the border's two hairlines */
-	}
-	.game-over[data-team='good'] {
-		background: var(--good);
-		color: var(--on-good);
-	}
-	.game-over[data-team='evil'] {
-		background: var(--evil);
-		color: var(--on-evil);
-	}
 	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
 	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
 	.board.showing .board-timer {
@@ -1321,6 +1301,12 @@
 	}
 	.timer-slot.gone {
 		visibility: hidden;
+	}
+	/* Over the hidden timer, right-aligned, so the board's sizes don't change. */
+	.game-over-slot {
+		position: absolute;
+		top: 0;
+		right: 0;
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {

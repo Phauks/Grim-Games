@@ -167,6 +167,31 @@ describe('state-based reminders', () => {
 		expect(texts({ seats: [drunk] })).toEqual(['[Slayer] is really the [Drunk]']);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Slayer
+	// Wiki: "Once per game, during the day, publicly choose a player: if they are the Demon, they die."
+	it('says the Slayer has used their shot on the day they used it, and drops it after', () => {
+		const shot = { reminderId: 'r1', characterId: 'slayer', label: 'No Ability' };
+		const slayer = seat('slayer', { reminders: [shot] });
+		const recluse = seat('recluse');
+		expect(texts({ seats: [slayer, recluse], usedToday: ['r1'] })).toEqual([
+			'[Slayer] has used their shot'
+		]);
+		expect(texts({ seats: [slayer, recluse], usedToday: [] })).toEqual([]);
+	});
+
+	it('gives every line hidden by the token Used places its used words, so the row stays put', () => {
+		const missing = DAY_REMINDER_ENTRIES.flatMap(({ id, reminders }) => {
+			const rules = OFFICIAL_RULES.get(id);
+			const spent = rules?.dayUse?.spentToken ?? 'No Ability';
+			const hasUsed =
+				rules?.dayUse !== undefined || isOnceOnlyDayAbility(id, committedCharacters());
+			return reminders.some((r) => hasUsed && r.when?.noReminder === spent && r.used === undefined)
+				? [id]
+				: [];
+		});
+		expect(missing).toEqual([]);
+	});
+
 	it('reads Poisoned and Drunk tokens from any source', () => {
 		expect(impairmentOfLabel('Poisoned')).toBe('poisoned');
 		expect(impairmentOfLabel('Drunk 2')).toBe('drunk');

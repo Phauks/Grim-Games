@@ -10,7 +10,7 @@
  */
 import type { Script } from '#lib/core/data/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
-import { toSavedGame } from '#lib/core/engine/index.ts';
+import { sharedSave, toSavedGame, type ShareChoices } from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import type {
@@ -524,11 +524,12 @@ export class RoomHost {
 
 	/**
 	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
-	 * False when it is too large or the room is offline.
+	 * False when it is too large or the room is offline. `choices` picks what else goes
+	 * (`sharedSave`; Trevor, 2026-11-15: "we don't always want to share everything").
 	 */
-	reveal(game: OpenGame, notes?: BoardNotes): boolean {
+	reveal(game: OpenGame, choices: ShareChoices, notes?: BoardNotes): boolean {
 		const gameId = game.game.gameId;
-		const saved = toSavedGame(game.session, Date.now());
+		const saved = sharedSave(toSavedGame(game.session, Date.now()), choices);
 		const message = {
 			type: 'reveal',
 			gameId,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { usePortalTarget } from './portal-target.ts';
@@ -14,6 +15,7 @@
 	interface Item {
 		value: string;
 		label: string;
+		icon?: IconSlot;
 		/** Shown but not usable now (Grim view before the room has a password). */
 		disabled?: boolean;
 		onSelect: () => void;
@@ -28,6 +30,13 @@
 		open?: boolean;
 		/** Where the list opens from the button: below it, or above it near a screen's foot. */
 		placement?: 'bottom-end' | 'top';
+		/**
+		 * The button's face in place of the icon, as wide as it needs (Game over's pill,
+		 * Trevor 2026-11-15); `label` stays its accessible name.
+		 */
+		trigger?: Snippet;
+		/** Attributes for the button, such as a test id. */
+		triggerAttrs?: Record<string, string | undefined>;
 	}
 
 	let {
@@ -35,7 +44,9 @@
 		icon = 'more',
 		items,
 		open = $bindable(false),
-		placement = 'bottom-end'
+		placement = 'bottom-end',
+		trigger,
+		triggerAttrs
 	}: Props = $props();
 	/**
 	 * The list goes to the body (or a full-screen view, portal-target.ts), so no stacking
@@ -58,12 +69,20 @@
 	lazyMount
 	unmountOnExit
 >
-	<Menu.Trigger aria-label={label} title={label}><Icon name={icon} /></Menu.Trigger>
+	<Menu.Trigger
+		aria-label={label}
+		title={label}
+		data-wide={trigger ? '' : undefined}
+		{...triggerAttrs}
+		>{#if trigger}{@render trigger()}{:else}<Icon name={icon} />{/if}</Menu.Trigger
+	>
 	<Portal container={portalTarget()}
 		><Menu.Positioner>
 			<Menu.Content>
 				{#each items as item (item.value)}
-					<Menu.Item value={item.value} disabled={item.disabled}>{item.label}</Menu.Item>
+					<Menu.Item value={item.value} disabled={item.disabled}
+						>{#if item.icon}<Icon name={item.icon} />{/if}{item.label}</Menu.Item
+					>
 				{/each}
 			</Menu.Content>
 		</Menu.Positioner></Portal
@@ -84,6 +103,11 @@
 		color: var(--on-surface);
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	:global([data-scope='menu'][data-part='trigger'][data-wide]) {
+		display: flex;
+		align-items: center;
+		width: auto;
 	}
 	:global([data-scope='menu'][data-part='trigger']:is(:active, [data-state='open'])) {
 		background: var(--surface-selected);
@@ -110,6 +134,7 @@
 		display: flex;
 		align-items: center;
 		min-height: var(--tap-target);
+		gap: var(--space-2);
 		padding: var(--space-1) var(--space-3);
 		border-radius: var(--radius-sm);
 		font-family: var(--font-control);

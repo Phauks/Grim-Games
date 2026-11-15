@@ -36,7 +36,10 @@
 		watching?: boolean;
 		/** Game info is here only while the board's corner is hidden. */
 		gameInfo: boolean;
-		/** An ended game offers Export and Reopen in place of End game. */
+		/**
+		 * An ended game offers Reopen and New game in place of End game; Share grim, Export
+		 * and Player feedback are on the board's Game over (Trevor, 2026-11-15).
+		 */
 		ended: boolean;
 		onHistory: () => void;
 		/** Undefined in a mode where the Demon gets no bluffs (Sushi Buffet, Whale Buffet). */
@@ -49,11 +52,13 @@
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
+		/**
+		 * The draw's Add late player once the draw is done, until Start game (Trevor,
+		 * 2026-11-15): in Session, as it is only there before the game starts.
+		 */
+		onLatePlayer?: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
-		onExport: () => void;
-		/** Players' feedback on the ended game; not for a spectator's board. */
-		onFeedback?: () => void;
 		onReopen: () => void;
 		/**
 		 * The board's New game sheet, not on a spectator's board: New game, which asks to end
@@ -66,12 +71,6 @@
 		 * deletes the room and sends every phone out. Asks first.
 		 */
 		onCloseRoom?: () => void;
-		/**
-		 * Share grim (plan R5), once the game has ended while its room is connected and before
-		 * the grimoire has gone to the phones (Trevor, 2026-10-31: off Share, "totally
-		 * misplaced"). Asks first; End game's own switch is the usual way.
-		 */
-		onShareGrim?: () => void;
 		onEnd: () => void;
 	}
 
@@ -85,18 +84,15 @@
 		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
+		onLatePlayer,
 		onAddRule,
 		onArrange,
-		onExport,
-		onFeedback,
 		onReopen,
 		newGame,
 		onCloseRoom,
-		onShareGrim,
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
-	let shareGrimOpen = $state(false);
 	/** Opens the transfer's codes, starting a transfer when none is open. */
 	let transferOpen = $state(false);
 	async function openTransfer() {
@@ -243,26 +239,18 @@
 							{t('setup.characterSelection')}
 						</Button>
 					{/if}
+					{#if onLatePlayer}
+						<Button
+							variant="quiet"
+							icon="latePlayer"
+							data-testid="menu-late-player"
+							onclick={() => fromMenu(onLatePlayer)}
+						>
+							{t('late-player.button')}
+						</Button>
+					{/if}
 					<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
 					{#if ended}
-						<Button variant="quiet" icon="download" onclick={() => fromMenu(onExport)}>
-							Export game
-						</Button>
-						{#if onFeedback}
-							<Button variant="quiet" icon="feedback" onclick={() => fromMenu(onFeedback)}>
-								{t('room.feedback.view')}
-							</Button>
-						{/if}
-						{#if onShareGrim}
-							<Button
-								variant="quiet"
-								icon="share"
-								data-testid="menu-share-grim"
-								onclick={() => fromMenu(() => (shareGrimOpen = true))}
-							>
-								{t('room.shareGrim.button')}
-							</Button>
-						{/if}
 						<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
 							>Reopen game</Button
 						>
@@ -312,14 +300,6 @@
 	onConfirm={() => onCloseRoom?.()}
 >
 	<p class="dialog-text">{t('room.closeRoomText')}</p>
-</ConfirmDialog>
-
-<ConfirmDialog
-	bind:open={shareGrimOpen}
-	title={t('room.shareGrim.title')}
-	onConfirm={() => onShareGrim?.()}
->
-	<p class="dialog-text">{t('room.shareGrim.body')}</p>
 </ConfirmDialog>
 
 <style>

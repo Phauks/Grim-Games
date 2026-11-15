@@ -6,6 +6,7 @@ export * from './reducer.ts';
 export * from './log.ts';
 export * from './applied-entries.ts';
 export * from './persistence.ts';
+export * from './shared-save.ts';
 export * from './changed-characters.ts';
 export * from './dawns.ts';
 export * from './recent-deaths.ts';
