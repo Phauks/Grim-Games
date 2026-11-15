@@ -1503,15 +1503,14 @@ test('New game shows each script’s author under its name, and its versions in 
 	});
 	await page.goto('/new');
 	const custom = page
-		.getByRole('radiogroup', { name: 'Script kind' })
+		.getByRole('radiogroup', { name: 'Official or custom' })
 		.getByText('Custom', { exact: true });
 	// Under the picker once chosen, on a line that was already there (Trevor, 2026-10-19):
-	// Custom chooses the most recent custom script. Its version is a drop-down, empty and
-	// disabled until then.
+	// Custom chooses the most recent custom script. Its version is a drop-down, kept in
+	// place but hidden while an official script is chosen (Trevor, 2026-11-15).
 	const line = page.getByTestId('chosen-script');
 	const version = page.getByRole('combobox', { name: 'Script version' });
-	await expect(version).toBeDisabled();
-	await expect(version).not.toContainText('v');
+	await expect(version).toBeHidden();
 	const before = await line.boundingBox();
 	await custom.tap();
 	await expect(page.getByTestId('chosen-script').getByTestId('script-byline')).toHaveText(
@@ -1575,7 +1574,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	);
 	await page.goto('/new');
 	await page
-		.getByRole('radiogroup', { name: 'Script kind' })
+		.getByRole('radiogroup', { name: 'Official or custom' })
 		.getByText('Custom', { exact: true })
 		.tap();
 	const version = page.getByRole('combobox', { name: 'Script version' });
@@ -1691,9 +1690,9 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	});
 	await page.goto('/new');
 	const version = page.getByRole('combobox', { name: 'Script version' });
-	await expect(version).not.toContainText('N/A');
+	await expect(version).toBeHidden();
 	await page
-		.getByRole('radiogroup', { name: 'Script kind' })
+		.getByRole('radiogroup', { name: 'Official or custom' })
 		.getByText('Custom', { exact: true })
 		.tap();
 	await expect(page.getByTestId('custom-script')).toHaveText('No Version Test');
@@ -1712,7 +1711,7 @@ test('Official or Custom: only one kind of script is shown, and the sheet finds 
 	// can be selected"; 2026-11-06, option B: one sheet with this device's scripts, online
 	// sources and Add script, never leaving New game.
 	await page.goto('/new');
-	const kinds = page.getByRole('radiogroup', { name: 'Script kind' });
+	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
 	await expect(kinds.getByRole('radio')).toHaveCount(2);
 	const official = kinds.getByRole('radio', { name: 'Official' });
 	const custom = kinds.getByRole('radio', { name: 'Custom' });

@@ -40,7 +40,7 @@ test('New game finds an online script in the sheet without leaving the screen', 
 	page
 }) => {
 	await page.goto('/new');
-	const custom = page.getByRole('radiogroup', { name: 'Script kind' }).getByRole('radio', {
+	const custom = page.getByRole('radiogroup', { name: 'Official or custom' }).getByRole('radio', {
 		name: 'Custom'
 	});
 	const field = await openCustomSheet(page);

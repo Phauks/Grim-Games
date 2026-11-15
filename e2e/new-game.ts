@@ -28,7 +28,7 @@ export async function pickScript(page: Page, name: string): Promise<void> {
  * tapped.
  */
 export async function chooseScriptKind(page: Page, kind: 'Official' | 'Custom'): Promise<void> {
-	const kinds = page.getByRole('radiogroup', { name: 'Script kind' });
+	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
 	await kinds.getByText(kind, { exact: true }).tap();
 	await expect(kinds.getByRole('radio', { name: kind })).toBeChecked();
 }
