@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
@@ -66,17 +67,16 @@
 		onOpenNight?: () => void;
 		/** Opens the Savant information sheet for a seat (the grimoire's); none in the spike. */
 		onSavant?: (seatId: SeatId) => void;
-		/**
-		 * A mad player broke madness that executes (L84): the grimoire's Execution asks, with them
-		 * chosen and executed by `cause`. Without it, they are executed here.
-		 */
+		/** A mad player broke madness that executes (L84): the grimoire's Execution asks, with them
+		 * chosen and executed by `cause`. Without it, they are executed here. */
 		onExecute?: (seatId: SeatId, cause: CharacterId) => void;
 		/** Back to town on the timer (the grimoire's, Trevor 2026-11-01); none in the spike. */
 		town?: { can: boolean; called: boolean };
+		side?: Snippet;
 	}
 
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one History entry.
-	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
+	let { game, assistance, onOpenNight, onSavant, onExecute, town, side }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
 
@@ -435,14 +435,15 @@
 {/snippet}
 
 <div class="panel">
-	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17); the section headers pin
-	     under it (pinnedRow). -->
+	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), section headers under it (pinnedRow);
+	     a wide day's left column, with the day sheet's mini grimoire under the counts (side). -->
 	<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
 		<DayTimer alive={block.alive} {quiet} {town} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
 		<DayCounts {game} />
+		{@render side?.()}
 	</div>
 	<!-- Beside the toolbar on a wide screen (Trevor, 2026-10-23: L45), under it on a phone. -->
 	<div class="sections">
