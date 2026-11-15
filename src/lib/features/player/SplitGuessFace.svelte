@@ -8,7 +8,8 @@
 	 * A seat's two or three guesses at once on the player's grim, its token split into halves or
 	 * thirds (Trevor, 2026-11-13, picked from mockups: "That fourth guess looks super good!").
 	 * Each guess's icon sits in the middle of its own slice, so no slice shows only an edge of
-	 * the art. The newest guess takes the first slice: the left half, or the top third.
+	 * the art; a type or alignment guess is its word alone, with no token round it (Trevor,
+	 * 2026-11-14). The newest guess takes the first slice: the left half, or the top third.
 	 */
 	interface Props {
 		/** Two or three guesses, newest first. */
@@ -59,6 +60,7 @@
 						guess={entry.generic}
 						label={entry.label}
 						size={icon}
+						face={false}
 					/>{:else if entry.character}<span
 						class="art"
 						style:width="{icon}px"
