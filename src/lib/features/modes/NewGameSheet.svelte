@@ -39,10 +39,10 @@
 		else asking = true;
 	}
 	/**
-	 * Room vote, on the game screen (Trevor, 2026-11-01): from the board's ⋯ once the game is
-	 * over, or from this sheet's own Room vote.
+	 * Room vote, on the game screen (Trevor, 2026-11-01), from this sheet's own Room vote (only
+	 * there, Trevor 2026-11-15: the board's ⋯ has no item for it).
 	 */
-	export function vote() {
+	function vote() {
 		voting = true;
 	}
 	/** Play from the vote: into the open sheet, or opening it with the winner chosen. */
