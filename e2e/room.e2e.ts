@@ -549,39 +549,55 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(menu.getByTestId('menu-share-grim')).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
-	// The phone shows it on the Grim tab in place of the town (Trevor, 2026-10-24): the whole
-	// board, every seat; the switch puts the town and its guesses back.
-	const final = phone.getByTestId('final-grimoire');
+	// The phone shows it over its Grim tab, full screen (Trevor, 2026-11-15): the whole board,
+	// every seat, with no Storyteller's toolbar; the town and its guesses stay under it.
+	const finalDialog = phone.getByRole('dialog', { name: 'Final grimoire' });
+	const final = finalDialog.getByTestId('final-grimoire');
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
-	await expect(finalSwitch).toBeChecked();
-	await phone.getByText('Final grimoire', { exact: true }).tap();
-	await expect(final).toHaveCount(0);
+	await expect(final.getByTestId('view-only')).toHaveCount(0);
+	await expect(final.getByTestId('history-strip')).toBeVisible();
+	// Nothing is secret once the game is over.
+	await expect(final.getByTestId('fair-play')).toHaveCount(0);
+	// The same as the Storyteller's own board shows it on a phone, where the game's name
+	// reaches the bottom seat's box too (known there, not from this dialog).
+	await expectNothingCovered(
+		phone,
+		final,
+		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
+			() => testInfo.project.name === 'phone'
+		)
+	);
+	// Its close puts the town back, guesses and all; the switch opens it again.
+	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(finalDialog).toHaveCount(0);
 	await expect(phone.getByTestId('player-grim')).toBeVisible();
-	// A phone coming back still has it, and turns to the Grim tab for it.
-	await phone.reload();
-	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	await expect(finalSwitch).not.toBeChecked();
+	await phone.getByText('Final grimoire', { exact: true }).tap();
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
-	// The page still scrolls with the board on it: only the Storyteller's board page holds
-	// its page still (2026-10-31).
-	const scroll = await phone.evaluate(() => {
-		const root = document.documentElement;
-		window.scrollTo(0, root.scrollHeight);
-		return {
-			overflow: getComputedStyle(root).overflowY,
-			room: root.scrollHeight - window.innerHeight,
-			at: window.scrollY
-		};
-	});
-	expect(scroll.overflow).not.toBe('hidden');
-	expect(scroll.room > 1 ? scroll.at : 1).toBeGreaterThan(0);
-	await phone.evaluate(() => window.scrollTo(0, 0));
+	// A phone coming back still has it, on the Grim tab.
+	await phone.reload();
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(finalDialog).toHaveCount(0);
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 
 	// The Storyteller's player view shows the end as phones do (Trevor, 2026-10-30).
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const view = page.getByTestId('script-scroll');
 	await expect(view.getByTestId('join-status')).toHaveText('Game over: Evil won');
 	await view.getByRole('tab', { name: 'Grim' }).tap();
-	await expect(view.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	const viewFinal = page.getByRole('dialog', { name: 'Final grimoire' });
+	await expect(viewFinal.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	await expectNothingCovered(
+		page,
+		viewFinal.getByTestId('final-grimoire'),
+		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
+			() => testInfo.project.name === 'phone'
+		)
+	);
+	// Escape closes the grimoire first, then the player view.
+	await page.keyboard.press('Escape');
+	await expect(viewFinal).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(view).toBeHidden();
 
@@ -644,9 +660,8 @@ test('Share grim after End game lets each phone step through the History in the 
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 
-	// The phone turns to its Grim tab, where the finished board shows with its History.
-	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
-	const final = phone.getByTestId('final-grimoire');
+	// The finished board opens over the phone's Grim tab with its History.
+	const final = phone.getByRole('dialog', { name: 'Final grimoire' }).getByTestId('final-grimoire');
 	const steps = final.getByTestId('history-strip');
 	await expect(steps).toBeVisible();
 	const count = steps.locator('.count');

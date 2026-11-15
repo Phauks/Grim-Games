@@ -40,9 +40,20 @@
 		history?: boolean;
 		/** Beside ☰: Grim view's message to the Storyteller. */
 		lead?: Snippet;
+		/** False leaves out the board's toolbar, for a board in a dialog of its own (the final grimoire). */
+		toolbar?: boolean;
 	}
 
-	let { shared, onReady, onProblem, over, room, history = false, lead }: Props = $props();
+	let {
+		shared,
+		onReady,
+		onProblem,
+		over,
+		room,
+		history = false,
+		lead,
+		toolbar = true
+	}: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -94,6 +105,7 @@
 			{over}
 			watchedHistory={history}
 			watchLead={lead}
+			{toolbar}
 		/>
 	</ErrorBoundary>
 {/if}

@@ -146,6 +146,11 @@
 		 * nothing to share or change, and leaving needs no asking.
 		 */
 		watching?: boolean;
+		/**
+		 * False leaves out the toolbar and fills the box it is in: the final grimoire in its own
+		 * dialog, whose title and close stand in for it (Trevor, 2026-11-15).
+		 */
+		toolbar?: boolean;
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
 		/**
@@ -166,6 +171,7 @@
 	let {
 		grimoire,
 		watching = false,
+		toolbar = true,
 		watchedTimer,
 		over,
 		watchedHistory = false,
@@ -767,7 +773,7 @@
 	/>
 {/snippet}
 
-<div class="grimoire" bind:this={grimoireEl}>
+<div class="grimoire" class:in-box={!toolbar} bind:this={grimoireEl}>
 	<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
 	<div
 		class="strip-measure"
@@ -781,45 +787,45 @@
 		watched={watching ? { look: grimoire.look, room: grimoire.room } : undefined}
 		onlook={shareLook}
 	/>
-	<BoardToolbar
-		{grimoire}
-		{watching}
-		menu={!watching || watchedHistory}
-		{seatArr}
-		placing={!!placing}
-		onCancelPlacing={() => (placing = undefined)}
-		{onAddSeat}
-		showing={showingGrim}
-		onStopShowing={() => {
-			showingGrim = false;
-			nw.guideOpen = true;
-		}}
-		onDay={() => (dayOpen = true)}
-		onInfo={() => (infoOpen = true)}
-		onScript={() => (scriptOpen = true)}
-		onShare={() => (phonesOpen = true)}
-		onMore={() => (menuOpen = true)}
-	>
-		<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
+	{#if toolbar}<BoardToolbar
+			{grimoire}
+			{watching}
+			menu={!watching || watchedHistory}
+			{seatArr}
+			placing={!!placing}
+			onCancelPlacing={() => (placing = undefined)}
+			{onAddSeat}
+			showing={showingGrim}
+			onStopShowing={() => {
+				showingGrim = false;
+				nw.guideOpen = true;
+			}}
+			onDay={() => (dayOpen = true)}
+			onInfo={() => (infoOpen = true)}
+			onScript={() => (scriptOpen = true)}
+			onShare={() => (phonesOpen = true)}
+			onMore={() => (menuOpen = true)}
+		>
+			<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
 		     the board and the day (2026-10-27: "so it doesn't move"); the Storyteller's only. -->
-		{#snippet lead()}
-			{#if !watching}
-				<CoverButton
-					gameId={game.gameId}
-					details={coverDetails}
-					timer={coverTimer}
-					actions={coverActions}
-					outlined
-				/>
-				<GameNotesButton
-					game={grimoire.open}
-					run={(command) => grimoire.run(command)}
-					outlined
-					board
-				/>
-			{:else}{@render watchLead?.()}{/if}
-		{/snippet}
-	</BoardToolbar>
+			{#snippet lead()}
+				{#if !watching}
+					<CoverButton
+						gameId={game.gameId}
+						details={coverDetails}
+						timer={coverTimer}
+						actions={coverActions}
+						outlined
+					/>
+					<GameNotesButton
+						game={grimoire.open}
+						run={(command) => grimoire.run(command)}
+						outlined
+						board
+					/>
+				{:else}{@render watchLead?.()}{/if}
+			{/snippet}
+		</BoardToolbar>{/if}
 
 	<div
 		class="board"
@@ -942,7 +948,8 @@
 			bind:room={corner}
 		></BoardCorner>
 		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
-		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
+		<!-- Not once the game is over: nothing is secret then (Trevor, 2026-11-15). -->
+		{#if watching && !ended}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
 		<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
 		     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
 		<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
@@ -1167,6 +1174,10 @@
 		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
+	}
+	/* In a dialog's body (the final grimoire): that body's height, not the screen's. */
+	.grimoire.in-box {
+		height: 100%;
 	}
 	/* The board page's scroll lock is in GrimoirePage: a board inside a scrolling page (the
 	   final grimoire on a phone, Public Town) leaves that page free to scroll. */
