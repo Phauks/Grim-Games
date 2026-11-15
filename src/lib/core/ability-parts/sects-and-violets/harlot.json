@@ -1,0 +1,46 @@
+{
+	"clauses": [
+		{
+			"id": "visit",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"if": [
+				{
+					"choice": "they-agree"
+				}
+			],
+			"storytellerMay": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "chosen"
+					}
+				},
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "kill",
+							"who": "chosen"
+						},
+						{
+							"do": "kill",
+							"who": "self"
+						}
+					]
+				}
+			]
+		}
+	]
+}

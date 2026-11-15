@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "something-bad",
+			"when": {
+				"at": "day"
+			},
+			"storytellerMay": true,
+			"marks": "Something Bad",
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Someone talked after the Storyteller asked for silence."
+				},
+				{
+					"do": "kill",
+					"who": "another-player"
+				}
+			]
+		}
+	],
+	"hatches": ["whether someone talked during a silence is the Storyteller's call"]
+}

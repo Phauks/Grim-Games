@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "extra-day",
+			"when": {
+				"at": "event",
+				"event": "demon-executed"
+			},
+			"effects": [
+				{
+					"do": "hold-game",
+					"extraDay": true
+				}
+			]
+		}
+	]
+}

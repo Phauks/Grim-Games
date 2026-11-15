@@ -1,0 +1,32 @@
+{
+	"clauses": [
+		{
+			"id": "hidden",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Is The Drunk",
+			"effects": [
+				{
+					"do": "believe",
+					"who": "self",
+					"isA": "townsfolk"
+				},
+				{
+					"do": "impair",
+					"who": "self",
+					"as": "drunk",
+					"until": "always"
+				},
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Shown a Townsfolk",
+						"ops": [],
+						"notes": ["Put a Townsfolk in the bag instead of the Drunk."]
+					}
+				}
+			]
+		}
+	]
+}

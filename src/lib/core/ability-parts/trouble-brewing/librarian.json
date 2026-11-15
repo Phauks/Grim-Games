@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "pair-of-type",
+						"type": "outsider",
+						"reminders": {
+							"target": "Outsider",
+							"other": "Wrong"
+						},
+						"noneWhenAbsent": true
+					}
+				}
+			]
+		}
+	]
+}

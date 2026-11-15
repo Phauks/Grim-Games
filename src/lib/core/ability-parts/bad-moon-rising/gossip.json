@@ -1,0 +1,44 @@
+{
+	"clauses": [
+		{
+			"id": "statement",
+			"when": {
+				"at": "day"
+			},
+			"optional": true,
+			"publicly": true,
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"if": [
+						{
+							"today": "statement-true"
+						}
+					],
+					"effects": [
+						{
+							"do": "kill",
+							"who": "another-player"
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "answer",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"question": "statement-true"
+					}
+				}
+			]
+		}
+	]
+}

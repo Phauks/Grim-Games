@@ -1,0 +1,35 @@
+{
+	"clauses": [
+		{
+			"id": "join",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "self",
+					"into": "alignment-of-neighbour"
+				}
+			]
+		},
+		{
+			"id": "cult",
+			"when": {
+				"at": "day"
+			},
+			"if": [
+				{
+					"today": "all-good-join"
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "own-team"
+				}
+			]
+		}
+	]
+}

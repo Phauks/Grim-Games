@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "hat",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Hat",
+			"effects": [
+				{
+					"do": "vote-weight",
+					"who": "marked",
+					"counts": 2
+				},
+				{
+					"do": "storyteller",
+					"note": "The hat wearer speaks one sound at a time; if they slip, the hat passes on."
+				}
+			]
+		}
+	],
+	"hatches": ["whether the wearer slipped, and where the hat goes, is the Storyteller's call"]
+}

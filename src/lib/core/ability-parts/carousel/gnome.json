@@ -1,0 +1,44 @@
+{
+	"clauses": [
+		{
+			"id": "amigo",
+			"when": {
+				"at": "setup"
+			},
+			"publicly": true,
+			"marks": "Amigo",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "player-of",
+						"who": "allied-player"
+					},
+					"to": "each-player"
+				}
+			]
+		},
+		{
+			"id": "guard",
+			"when": {
+				"at": "event",
+				"event": "nomination"
+			},
+			"optional": true,
+			"if": [
+				{
+					"hasToken": {
+						"who": "nominee",
+						"token": "Amigo"
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "nominator"
+				}
+			]
+		}
+	]
+}

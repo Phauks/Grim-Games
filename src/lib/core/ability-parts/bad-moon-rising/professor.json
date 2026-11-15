@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "revive",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"dead": true
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"types": ["townsfolk"]
+					}
+				}
+			],
+			"marks": "Alive",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "resurrect",
+					"who": "chosen"
+				}
+			]
+		}
+	]
+}

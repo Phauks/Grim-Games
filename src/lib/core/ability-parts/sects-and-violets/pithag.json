@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "change",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player-and-character",
+				"notInPlay": true
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "chosen",
+					"into": "chosen-character"
+				},
+				{
+					"do": "storyteller",
+					"note": "If a Demon is made, deaths tonight are arbitrary."
+				}
+			]
+		}
+	],
+	"hatches": ["arbitrary deaths after a new Demon: Storyteller note"]
+}

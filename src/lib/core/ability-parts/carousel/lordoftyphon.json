@@ -1,0 +1,79 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "line",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Seat the evil players in a line with the Lord of Typhon inside it, not at an end."
+				},
+				{
+					"do": "become",
+					"who": "alive-neighbours",
+					"into": "minion",
+					"evil": true
+				},
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "alive-neighbours"
+					},
+					"to": "alive-neighbours"
+				}
+			]
+		},
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+1 Minion; −? to +? Outsiders",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "minion",
+								"values": [1]
+							},
+							{
+								"kind": "any",
+								"type": "outsider"
+							}
+						],
+						"notes": [
+							"Seat all evil players in a row with the Lord of Typhon inside it, not at an end."
+						]
+					}
+				}
+			]
+		}
+	],
+	"hatches": [
+		"Seating: the evil players sit in a line with it in the middle; parts have no word for where players sit."
+	]
+}

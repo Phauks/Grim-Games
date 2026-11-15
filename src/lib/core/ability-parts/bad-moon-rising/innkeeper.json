@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "protect",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 2,
+				"what": "player"
+			},
+			"marks": "Safe",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "chosen",
+					"from": "any",
+					"until": "tonight"
+				},
+				{
+					"do": "impair",
+					"who": "one-of-chosen",
+					"as": "drunk",
+					"until": "dusk",
+					"marks": "Drunk"
+				}
+			]
+		}
+	]
+}

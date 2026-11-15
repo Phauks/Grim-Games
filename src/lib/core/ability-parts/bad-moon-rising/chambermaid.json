@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 2,
+				"what": "player",
+				"alive": true,
+				"notSelf": true
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "woke-tonight"
+					}
+				}
+			]
+		}
+	]
+}

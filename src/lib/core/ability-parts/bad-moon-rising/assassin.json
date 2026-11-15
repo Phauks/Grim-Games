@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen",
+					"ignoresProtection": true
+				}
+			]
+		}
+	]
+}

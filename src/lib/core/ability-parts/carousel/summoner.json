@@ -1,0 +1,65 @@
+{
+	"clauses": [
+		{
+			"id": "no-demon",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "No Demon",
+						"ops": [
+							{
+								"kind": "set",
+								"type": "demon",
+								"values": [0]
+							}
+						],
+						"notes": ["Put a Townsfolk in the bag instead of the Demon."]
+					}
+				}
+			]
+		},
+		{
+			"id": "bluffs",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "bluffs"
+					}
+				}
+			]
+		},
+		{
+			"id": "summon",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"if": [
+				{
+					"onNight": 3
+				}
+			],
+			"choose": {
+				"count": 1,
+				"what": "player-and-character",
+				"type": "demon"
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "chosen",
+					"into": "chosen-character",
+					"evil": true
+				}
+			]
+		}
+	]
+}

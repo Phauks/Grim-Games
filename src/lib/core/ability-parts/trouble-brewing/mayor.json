@@ -1,0 +1,42 @@
+{
+	"clauses": [
+		{
+			"id": "win",
+			"when": {
+				"at": "dusk"
+			},
+			"if": [
+				{
+					"alive": {
+						"exactly": 3
+					}
+				},
+				{
+					"noExecutionToday": true
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "own-team"
+				}
+			]
+		},
+		{
+			"id": "bounce",
+			"when": {
+				"at": "death",
+				"by": "demon",
+				"phase": "night",
+				"would": true
+			},
+			"storytellerMay": true,
+			"effects": [
+				{
+					"do": "redirect-death",
+					"to": "another-player"
+				}
+			]
+		}
+	]
+}

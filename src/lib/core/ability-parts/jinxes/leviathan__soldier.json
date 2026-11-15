@@ -1,0 +1,27 @@
+{
+	"characters": ["leviathan", "soldier"],
+	"patches": [
+		{
+			"op": "add",
+			"character": "soldier",
+			"clause": {
+				"id": "leviathan-jinx",
+				"when": {
+					"at": "death",
+					"by": "execution"
+				},
+				"if": [
+					{
+						"partnerIs": "nominator"
+					}
+				],
+				"effects": [
+					{
+						"do": "end-game",
+						"winner": "good"
+					}
+				]
+			}
+		}
+	]
+}

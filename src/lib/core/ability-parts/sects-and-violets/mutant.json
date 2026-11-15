@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "mad",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "madness",
+					"who": "self",
+					"as": "outsider"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,68 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "jump",
+			"when": {
+				"at": "event",
+				"event": "killed-outsider"
+			},
+			"if": [
+				{
+					"firstTime": true
+				}
+			],
+			"spent": "Once",
+			"effects": [
+				{
+					"do": "become",
+					"who": "killed",
+					"into": "this-character",
+					"evil": true
+				},
+				{
+					"do": "kill",
+					"who": "self"
+				}
+			]
+		},
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+1 Outsider",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [1]
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}

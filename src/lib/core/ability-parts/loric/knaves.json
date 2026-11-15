@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "two-storytellers",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Two Storytellers run the game: one lies and one tells the truth."
+				}
+			]
+		},
+		{
+			"id": "switch",
+			"when": {
+				"at": "dusk"
+			},
+			"limit": "once-per-game",
+			"storytellerMay": true,
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "The two Storytellers might switch."
+				}
+			]
+		}
+	],
+	"hatches": ["two Storytellers, one lying, is outside anything the app runs"]
+}

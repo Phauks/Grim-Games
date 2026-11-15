@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "shoot",
+			"when": {
+				"at": "day",
+				"after": "first-vote-tallied"
+			},
+			"optional": true,
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"from": "voted-today"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		}
+	]
+}

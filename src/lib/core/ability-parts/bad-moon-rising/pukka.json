@@ -1,0 +1,29 @@
+{
+	"clauses": [
+		{
+			"id": "poison",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Poisoned",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "chosen",
+					"as": "poisoned",
+					"until": "always",
+					"whileWorks": true
+				},
+				{
+					"do": "kill",
+					"who": "last-chosen"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "wish",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"optional": true,
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Whether the wish is granted, its price and its clue are the Storyteller’s."
+				}
+			]
+		}
+	],
+	"hatches": ["a wish is anything the Storyteller grants: Storyteller note"]
+}

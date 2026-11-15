@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "drunk",
+			"when": {
+				"at": "event",
+				"event": "minion-executed"
+			},
+			"marks": "Everyone Is Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "each-player",
+					"as": "drunk",
+					"until": "dusk-tomorrow"
+				}
+			]
+		}
+	]
+}

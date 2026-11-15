@@ -1,0 +1,69 @@
+{
+	"clauses": [
+		{
+			"id": "drunk",
+			"when": {
+				"at": "setup"
+			},
+			"evenIfDead": true,
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "another-player",
+					"as": "drunk",
+					"until": "always"
+				}
+			]
+		},
+		{
+			"id": "guess-right",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-game",
+			"spent": "Guess Used",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"if": [
+				{
+					"choice": "guess-right"
+				}
+			],
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "player-of",
+						"who": "the-demon"
+					}
+				}
+			]
+		},
+		{
+			"id": "guess-wrong",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-game",
+			"spent": "Guess Used",
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"if": [
+				{
+					"choice": "guess-wrong"
+				}
+			],
+			"effects": [
+				{
+					"do": "falsify-info",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,49 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"if": [
+				{
+					"today": "no-death"
+				}
+			],
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Died Today",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "undead",
+			"when": {
+				"at": "death",
+				"would": true
+			},
+			"limit": "first-time",
+			"evenIfDead": true,
+			"spent": "Dead",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "any",
+					"once": true
+				},
+				{
+					"do": "register-dead",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 2,
+				"what": "player",
+				"notSelf": true
+			},
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "same-alignment"
+					}
+				}
+			]
+		}
+	]
+}

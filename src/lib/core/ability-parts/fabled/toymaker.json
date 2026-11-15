@@ -1,0 +1,45 @@
+{
+	"clauses": [
+		{
+			"id": "must-skip",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Final Night: No Attack",
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "demon-must-skip-attack-once"
+				}
+			]
+		},
+		{
+			"id": "evil-info",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "evil-info-any-count"
+				}
+			]
+		},
+		{
+			"id": "skip",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"actor": "the-demon",
+			"optional": true,
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "demon-may-skip-attack"
+				}
+			]
+		}
+	]
+}

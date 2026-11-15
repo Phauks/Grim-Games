@@ -1,0 +1,32 @@
+{
+	"clauses": [
+		{
+			"id": "guess",
+			"when": {
+				"at": "day",
+				"days": "first"
+			},
+			"publicly": true,
+			"choose": {
+				"count": 5,
+				"upTo": true,
+				"what": "player-and-character"
+			},
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "learn",
+							"info": {
+								"question": "correct-guesses",
+								"records": ["Correct"]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

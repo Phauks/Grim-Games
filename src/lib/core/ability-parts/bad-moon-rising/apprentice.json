@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "gain",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"marks": "Is The Apprentice",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "a-townsfolk-or-minion"
+				}
+			]
+		}
+	]
+}

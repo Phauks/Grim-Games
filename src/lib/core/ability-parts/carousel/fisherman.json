@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "advice",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-game",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Give them advice to help their team win."
+				}
+			]
+		}
+	],
+	"hatches": ["the advice is Storyteller judgement"]
+}

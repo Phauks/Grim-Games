@@ -1,0 +1,34 @@
+{
+	"clauses": [
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "No setup change",
+						"ops": [],
+						"notes": ["Plan the mistake you will make and admit to."]
+					}
+				}
+			]
+		},
+		{
+			"id": "mistake",
+			"when": {
+				"at": "always"
+			},
+			"marks": "Whoopsie",
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "Make a mistake at least once, correct it and admit it publicly."
+				}
+			]
+		}
+	],
+	"hatches": ["the mistake itself is the Storyteller's"]
+}

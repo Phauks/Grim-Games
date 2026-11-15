@@ -1,0 +1,38 @@
+{
+	"clauses": [
+		{
+			"id": "exorcise",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notRepeated": true
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"types": ["demon"]
+					}
+				}
+			],
+			"marks": "Chosen",
+			"effects": [
+				{
+					"do": "learn",
+					"to": "the-demon",
+					"info": {
+						"kind": "who-chose"
+					}
+				},
+				{
+					"do": "skip-waking",
+					"who": "the-demon"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,44 @@
+{
+	"clauses": [
+		{
+			"id": "fear",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Fear",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "chose-new-player"
+					},
+					"to": "each-player"
+				}
+			]
+		},
+		{
+			"id": "lose",
+			"when": {
+				"at": "event",
+				"event": "marked-executed"
+			},
+			"if": [
+				{
+					"nominatedBy": "self"
+				}
+			],
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "other-team",
+					"of": "executed"
+				}
+			]
+		}
+	]
+}

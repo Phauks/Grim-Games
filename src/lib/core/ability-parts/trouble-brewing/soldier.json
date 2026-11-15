@@ -1,0 +1,17 @@
+{
+	"clauses": [
+		{
+			"id": "safe",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "demon"
+				}
+			]
+		}
+	]
+}

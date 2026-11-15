@@ -1,0 +1,21 @@
+{
+	"clauses": [
+		{
+			"id": "final-day",
+			"when": {
+				"at": "day"
+			},
+			"if": [
+				{
+					"today": "final-day"
+				}
+			],
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "dead-regain-vote"
+				}
+			]
+		}
+	]
+}

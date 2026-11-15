@@ -1,0 +1,64 @@
+{
+	"clauses": [
+		{
+			"id": "no-evil",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "No evil characters",
+						"ops": [
+							{
+								"kind": "set",
+								"type": "minion",
+								"values": [0]
+							},
+							{
+								"kind": "set",
+								"type": "demon",
+								"values": [0]
+							},
+							{
+								"kind": "any",
+								"type": "outsider"
+							}
+						],
+						"notes": [
+							"Take out every Minion and Demon; fill with any mix of Townsfolk and Outsiders."
+						]
+					}
+				}
+			]
+		},
+		{
+			"id": "break-rules",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "You can break the game rules."
+				}
+			]
+		},
+		{
+			"id": "executed",
+			"when": {
+				"at": "death",
+				"by": "execution"
+			},
+			"evenIfDead": true,
+			"effects": [
+				{
+					"do": "end-game",
+					"winner": "good"
+				}
+			]
+		}
+	],
+	"hatches": ["breaking the game rules is Storyteller judgement"]
+}

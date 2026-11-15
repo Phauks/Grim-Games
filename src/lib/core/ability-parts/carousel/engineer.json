@@ -1,0 +1,30 @@
+{
+	"clauses": [
+		{
+			"id": "choose",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "character",
+				"notInPlay": true
+			},
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "become",
+					"who": "the-demon",
+					"into": "chosen-character"
+				},
+				{
+					"do": "storyteller",
+					"note": "Or choose a Minion character for each Minion, and they become those."
+				}
+			]
+		}
+	],
+	"hatches": ["choosing for every Minion at once: no subject or choice count for 'each Minion'"]
+}

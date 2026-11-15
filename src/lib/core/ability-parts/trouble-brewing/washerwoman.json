@@ -1,0 +1,24 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "pair-of-type",
+						"type": "townsfolk",
+						"reminders": {
+							"target": "Townsfolk",
+							"other": "Wrong"
+						}
+					}
+				}
+			]
+		}
+	]
+}

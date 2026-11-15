@@ -1,0 +1,37 @@
+{
+	"clauses": [
+		{
+			"id": "grimoire",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "grimoire"
+					}
+				}
+			]
+		},
+		{
+			"id": "register",
+			"when": {
+				"at": "always"
+			},
+			"storytellerMay": true,
+			"evenIfDead": true,
+			"effects": [
+				{
+					"do": "register",
+					"who": "self",
+					"as": {
+						"alignments": ["good"],
+						"types": ["townsfolk", "outsider"]
+					}
+				}
+			]
+		}
+	]
+}

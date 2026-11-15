@@ -1,0 +1,28 @@
+{
+	"clauses": [
+		{
+			"id": "swap",
+			"when": {
+				"at": "day"
+			},
+			"optional": true,
+			"choose": {
+				"count": 6,
+				"upTo": true,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "swap",
+					"who": "chosen",
+					"with": "chosen",
+					"what": "seats"
+				},
+				{
+					"do": "game-rule",
+					"rule": "no-private-chats"
+				}
+			]
+		}
+	]
+}

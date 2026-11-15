@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "outsiders",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+2 Outsiders",
+						"ops": [
+							{
+								"kind": "delta",
+								"type": "outsider",
+								"values": [2]
+							}
+						]
+					}
+				}
+			]
+		}
+	]
+}

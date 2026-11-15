@@ -1,0 +1,29 @@
+{
+	"clauses": [
+		{
+			"id": "spare",
+			"when": {
+				"at": "day",
+				"days": "first"
+			},
+			"if": [
+				{
+					"today": "own-nominee-executed"
+				}
+			],
+			"marks": "Doesn't Kill",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "stop-kills",
+							"who": "the-demon"
+						}
+					]
+				}
+			]
+		}
+	]
+}

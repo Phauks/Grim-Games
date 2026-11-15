@@ -1,0 +1,51 @@
+{
+	"clauses": [
+		{
+			"id": "known",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					},
+					"to": "each-player"
+				}
+			]
+		},
+		{
+			"id": "safe",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "protect",
+					"who": "self",
+					"from": "day"
+				}
+			]
+		},
+		{
+			"id": "execute",
+			"when": {
+				"at": "day"
+			},
+			"optional": true,
+			"if": [
+				{
+					"today": "good-voted"
+				}
+			],
+			"effects": [
+				{
+					"do": "execute",
+					"who": "nominee"
+				}
+			]
+		}
+	]
+}

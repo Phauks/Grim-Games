@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "drunk",
+			"when": {
+				"at": "event",
+				"event": "chosen-by-ability"
+			},
+			"if": [
+				{
+					"firstTime": true
+				}
+			],
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "nominator",
+					"as": "drunk",
+					"until": "dusk"
+				},
+				{
+					"do": "become",
+					"who": "self",
+					"into": "alignment-of-chooser"
+				}
+			]
+		}
+	],
+	"hatches": [
+		"'nominator' stands in for 'the player who chose you': no subject for an ability's chooser yet"
+	]
+}

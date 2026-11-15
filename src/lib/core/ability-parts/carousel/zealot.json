@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "vote",
+			"when": {
+				"at": "always"
+			},
+			"if": [
+				{
+					"alive": {
+						"atLeast": 5
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "must-vote",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

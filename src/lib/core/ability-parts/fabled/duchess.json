@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "visit",
+			"when": {
+				"at": "day"
+			},
+			"actor": "each-player",
+			"optional": true,
+			"marks": "Visitor",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "learn",
+							"to": "marked",
+							"info": {
+								"kind": "evil-among-marked"
+							}
+						},
+						{
+							"do": "falsify-info",
+							"who": "one-of-marked",
+							"marks": "False Info"
+						}
+					]
+				}
+			]
+		}
+	]
+}

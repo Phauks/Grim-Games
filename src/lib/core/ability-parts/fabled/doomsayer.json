@@ -1,0 +1,27 @@
+{
+	"clauses": [
+		{
+			"id": "doom",
+			"when": {
+				"at": "day"
+			},
+			"actor": "each-player",
+			"limit": "once-per-game",
+			"publicly": true,
+			"optional": true,
+			"if": [
+				{
+					"alive": {
+						"atLeast": 4
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "an-ally"
+				}
+			]
+		}
+	]
+}

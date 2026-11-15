@@ -1,0 +1,16 @@
+{
+	"clauses": [
+		{
+			"id": "inverted",
+			"when": {
+				"at": "always"
+			},
+			"evenIfDead": true,
+			"effects": [
+				{
+					"do": "invert-winner"
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,30 @@
+{
+	"clauses": [
+		{
+			"id": "serve",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"marks": "Sober & Healthy",
+			"effects": [
+				{
+					"do": "boost",
+					"who": "another-player",
+					"how": "sober-and-true",
+					"until": "dusk"
+				},
+				{
+					"do": "learn",
+					"to": "another-player",
+					"info": {
+						"kind": "which-effect"
+					}
+				}
+			]
+		}
+	],
+	"hatches": [
+		"the Storyteller picks one of two effects: parts list both as alternatives only in the note"
+	]
+}

@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "pass",
+			"when": {
+				"at": "death",
+				"by": "any",
+				"phase": "night"
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "a-good-player",
+					"into": "this-character"
+				}
+			]
+		}
+	]
+}

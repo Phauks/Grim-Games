@@ -1,0 +1,29 @@
+{
+	"clauses": [
+		{
+			"id": "hit",
+			"when": {
+				"at": "day"
+			},
+			"limit": "once-per-day",
+			"optional": true,
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true,
+				"neighbour": true
+			},
+			"if": [
+				{
+					"choice": "they-agree"
+				}
+			],
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		}
+	]
+}

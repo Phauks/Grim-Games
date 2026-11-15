@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "nominate",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "only-storyteller-nominates"
+				},
+				{
+					"do": "game-rule",
+					"rule": "opposing-nominee-each-day"
+				}
+			]
+		}
+	]
+}
