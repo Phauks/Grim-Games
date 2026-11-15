@@ -17,8 +17,10 @@ type DayTimer = dayTimers.DayTimer;
  * (`DayTimer.svelte`, or read `clock`, `running`, `done`). Until it is started or changed by
  * hand its length follows the living players (`follow`). It counts down, stopping at 0:00,
  * or up past the target, by the `timerMode` setting. When the target is reached the device
- * vibrates where it can, plays the chosen sound (`timerSound`), and `done` turns on. While it
- * runs the screen stays on (`timerKeepAwake`), so the phone doesn't lock mid-day.
+ * vibrates where it can, the room plays the chosen sound (`timerSound`, unless `timerSoundOn` is
+ * off), and `done` turns on. Counting down to 0:00, by running out or by taking time off, also
+ * calls Back to town (`onTimeUp`). While it runs the screen stays on (`timerKeepAwake`), so the
+ * phone doesn't lock mid-day.
  */
 class LiveDayTimer {
 	#timer = $state<DayTimer>(dayTimer(0));
@@ -30,6 +32,8 @@ class LiveDayTimer {
 	#adjusted = false;
 	/** Which game and day the timer is for (`newDay`). */
 	#day: string | undefined;
+	/** What reaching 0:00 counting down does (`onTimeUp`). */
+	#timeUp: (() => void) | undefined;
 
 	get mode(): dayTimers.DayTimerMode {
 		return preferences.current.timerMode;
@@ -120,8 +124,19 @@ class LiveDayTimer {
 	adjust(steps: number): void {
 		this.now = Date.now();
 		this.#adjusted = true;
+		const wasDone = this.done;
 		this.#timer = adjust(this.#timer, steps, this.now, this.mode);
 		this.#signalled = this.done;
+		if (this.mode === 'down' && this.done && !wasDone) this.#timeUp?.();
+	}
+
+	/**
+	 * Runs `timeUp` whenever counting down reaches 0:00, whether the time runs out or is taken
+	 * off by hand (Trevor, 2026-11-15: "If timer goes down to 0, should activate back to town.
+	 * Such as subtracting"). Set by Back to town (`call-town.ts`), which this can't import.
+	 */
+	onTimeUp(timeUp: () => void): void {
+		this.#timeUp = timeUp;
 	}
 
 	/** Turns `timerKeepAwake` on or off, taking effect at once if the timer is running. */
@@ -143,6 +158,7 @@ class LiveDayTimer {
 			// Silent here: the Public Town and phones ring (room-sounds.svelte.ts), so the sound never
 			// gives away where the Storyteller sits (Trevor, 2026-10-30).
 			if (preferences.current.timerVibrate) vibrate();
+			if (this.mode === 'down') this.#timeUp?.();
 		}
 	}
 

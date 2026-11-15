@@ -4,7 +4,7 @@
 	import type { QuietStart } from '#lib/core/data/parts/quiet-start.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
+	import { TIMER_END_SOUNDS, type TimerSound, type TimerEndSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -14,6 +14,7 @@
 	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import VibrateToggle from '#lib/features/sound/VibrateToggle.svelte';
+	import TimerSoundToggle from '#lib/features/sound/TimerSoundToggle.svelte';
 	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
@@ -22,9 +23,10 @@
 	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player (a setting since
 	 * 2026-10-19), started by hand,
 	 * counting down or up (a setting). At the target the device vibrates, plays the chosen
-	 * sound and the clock flashes. `full` has every control (the day view); `compact` is the
-	 * clock with Start/Pause, for the board. Tapping its clock opens the full timer and its
-	 * settings over the board, without the day view (Trevor, 2026-10-17). Holding the clock
+	 * sound and the clock turns red, held still (no flashing: Trevor, 2026-11-15). `full` has
+	 * every control (the day view); `compact` is the clock with Start/Pause, for the board.
+	 * Tapping its clock opens the full timer and its settings over the board, without the day
+	 * view (Trevor, 2026-10-17). Holding the clock
 	 * resets it to the time per living player (Trevor, 2026-10-19).
 	 *
 	 * With `town`, Back to town is part of the timer (Trevor, 2026-11-01): its front, on the
@@ -95,8 +97,12 @@
 	const opens = $derived(!inSheet && (variant === 'compact' || !!town));
 	const clock = $derived(town?.called ? t('day.town') : timer.clock);
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
+	/** The Timer sound is off while counting up or while the end sound is switched off. */
+	const soundOff = $derived(
+		preferences.current.timerMode === 'up' || !preferences.current.timerSoundOn
+	);
 	// Not played here: the board is the Storyteller's device (Trevor, 2026-10-30).
-	function chooseSound(sound: TimerSound) {
+	function chooseSound(sound: TimerEndSound) {
 		preferences.update({ timerSound: sound });
 	}
 </script>
@@ -209,7 +215,11 @@
 		{#if !inSheet && !town}
 			<IconButton
 				icon="sound"
-				label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
+				label={t('day.timerSoundButton', {
+					sound: soundLabel(
+						preferences.current.timerSoundOn ? preferences.current.timerSound : 'none'
+					)
+				})}
 				onclick={() => (soundOpen = true)}
 			/>
 		{/if}
@@ -222,13 +232,14 @@
 {#if !inSheet && variant === 'full' && !opens}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
 		<div class="controls">
+			<TimerSoundToggle />
 			<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
 			<Select
 				label={t('day.timerSoundTitle')}
 				hideLabel
 				value={preferences.current.timerSound}
-				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
-				disabled={preferences.current.timerMode === 'up'}
+				options={TIMER_END_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				disabled={soundOff}
 				onChange={chooseSound}
 			/>
 			<VibrateToggle />
@@ -241,11 +252,12 @@
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
 			<DayTimer {alive} inSheet {quiet} {town} {readOnly} />
+			<TimerSoundToggle />
 			<Select
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}
-				options={TIMER_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
-				disabled={preferences.current.timerMode === 'up'}
+				options={TIMER_END_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
+				disabled={soundOff}
 				onChange={chooseSound}
 			/>
 			<VibrateToggle />
@@ -375,18 +387,8 @@
 	.timer[data-done] {
 		border-color: var(--evil);
 	}
+	/* Time's up shows in red, held still: no flashing (Trevor, 2026-11-15: "annoying"). */
 	.timer[data-done] .clock {
 		color: var(--evil-text);
-		animation: time-up 1s steps(2, jump-none) infinite;
-	}
-	@keyframes time-up {
-		to {
-			opacity: 0.3;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.timer[data-done] .clock {
-			animation: none;
-		}
 	}
 </style>

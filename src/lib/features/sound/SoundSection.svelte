@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { SOUND_VOLUME, TIMER_SOUNDS } from '#lib/ui/preferences.ts';
+	import { SOUND_VOLUME, TIMER_END_SOUNDS } from '#lib/ui/preferences.ts';
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
@@ -11,6 +11,7 @@
 	import AmbienceSettings from './AmbienceSettings.svelte';
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
+	import TimerSoundToggle from './TimerSoundToggle.svelte';
 	import CallTownPushToggle from '#lib/features/room/CallTownPushToggle.svelte';
 	import StorytellerSoundsToggle from './StorytellerSoundsToggle.svelte';
 
@@ -23,8 +24,7 @@
 		preferences.update({ soundVolume });
 		clearTimeout(hearTimer);
 		hearTimer = setTimeout(() => {
-			const sound = preferences.current.timerSound;
-			playSound(sound === 'none' ? 'bell' : sound);
+			playSound(preferences.current.timerSound);
 		}, 300);
 	}
 </script>
@@ -48,13 +48,17 @@
 <VibrateToggle />
 
 <SettingHeading title={t('day.timer')} />
+<TimerSoundToggle />
 <!-- Each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
 <SettingSelect
 	label={t('day.timerSoundTitle')}
 	value={preferences.current.timerSound}
-	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
+	options={TIMER_END_SOUNDS.map((sound) => ({
+		value: sound,
+		label: t(`day.timerSound.${sound}`)
+	}))}
 	defaultValue="bell"
-	disabled={preferences.current.timerMode === 'up'}
+	disabled={preferences.current.timerMode === 'up' || !preferences.current.timerSoundOn}
 	onChange={(timerSound) => {
 		preferences.update({ timerSound });
 		playSound(timerSound);
