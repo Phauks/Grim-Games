@@ -4,6 +4,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import AccoladeBadge from './AccoladeBadge.svelte';
 
 	/**
 	 * Players' feedback, as the Storyteller reads it (Trevor, 2026-10-25): the totals, then each
@@ -39,9 +40,9 @@
 		{#if given.length === 0}
 			<p>{t('common.none')}</p>
 		{:else}
-			<ul data-testid="feedback-accolade-counts">
+			<ul class="badges" data-testid="feedback-accolade-counts">
 				{#each given as { id, count } (id)}
-					<li>{t('room.feedback.accoladeCount', { accolade: accoladeText(id), count })}</li>
+					<li><AccoladeBadge {id} {count} /></li>
 				{/each}
 			</ul>
 		{/if}
@@ -100,6 +101,11 @@
 	}
 	.entries {
 		gap: var(--space-3);
+	}
+	.badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3) var(--space-2);
 	}
 	.entries li {
 		display: grid;

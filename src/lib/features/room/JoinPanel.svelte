@@ -522,20 +522,13 @@
 		presence={parseSeatPresence(view?.presence)}
 		mySeat={mine}
 		status={summary}
+		onStatus={view?.endedGameId ? () => (rating = true) : undefined}
+		statusAction={view?.endedGameId ? t('room.feedback.rate') : undefined}
 		winner={view && !view.choosing ? view.ended?.winner : undefined}
 		seatNumber={mySeat}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
 		characterUntil={view?.roleUntil}
-	>
-		{#snippet after()}
-			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
-			{#if view?.endedGameId}
-				<Button aria-haspopup="dialog" onclick={() => (rating = true)}
-					>{t('room.feedback.open')}</Button
-				>
-			{/if}
-		{/snippet}
-	</PlayerStatusRow>
+	/>
 	{#if player}<YourCharacter
 			bind:this={yourCharacter}
 			role={view?.role}

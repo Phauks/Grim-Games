@@ -125,6 +125,7 @@ import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
 import ph_image_bold from '~icons/ph/image-bold';
+import ph_image_square_bold from '~icons/ph/image-square-bold';
 import ph_images_bold from '~icons/ph/images-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_key_bold from '~icons/ph/key-bold';
@@ -160,6 +161,7 @@ import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
 import ph_paint_bucket_bold from '~icons/ph/paint-bucket-bold';
 import ph_palette_bold from '~icons/ph/palette-bold';
+import ph_paper_plane_tilt_bold from '~icons/ph/paper-plane-tilt-bold';
 import ph_pause_bold from '~icons/ph/pause-bold';
 import ph_pause_circle_bold from '~icons/ph/pause-circle-bold';
 import ph_pen_nib_bold from '~icons/ph/pen-nib-bold';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
 	'ph:image-bold': ph_image_bold,
+	'ph:image-square-bold': ph_image_square_bold,
 	'ph:images-bold': ph_images_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:key-bold': ph_key_bold,
@@ -405,6 +408,7 @@ const icons: IconMap = {
 	'ph:paint-brush-bold': ph_paint_brush_bold,
 	'ph:paint-bucket-bold': ph_paint_bucket_bold,
 	'ph:palette-bold': ph_palette_bold,
+	'ph:paper-plane-tilt-bold': ph_paper_plane_tilt_bold,
 	'ph:pause-bold': ph_pause_bold,
 	'ph:pause-circle-bold': ph_pause_circle_bold,
 	'ph:pen-nib-bold': ph_pen_nib_bold,

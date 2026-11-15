@@ -1,4 +1,4 @@
-import type { PhotoLine } from './script-photo.ts';
+import type { LineBox, PhotoLine } from './script-photo.ts';
 
 /** One run of text from a PDF page, in page units with y measured up from the bottom. */
 export interface PdfText {
@@ -19,7 +19,11 @@ const COLUMN_GAP = 3;
  * are joined, and a wide gap splits a row in two, so a sheet printed in two columns gives
  * each character its own line.
  */
-export function pdfLines(items: readonly PdfText[]): PhotoLine[] {
+export function pdfLines(
+	items: readonly PdfText[],
+	/** The page's height and its drawing's scale, to place each line on the drawn page. */
+	drawn?: { height: number; scale: number }
+): PhotoLine[] {
 	const runs = items
 		.filter((i) => i.text.trim() !== '' && i.height > 0)
 		.toSorted((a, b) => b.y - a.y || a.x - b.x);
@@ -43,7 +47,19 @@ export function pdfLines(items: readonly PdfText[]): PhotoLine[] {
 				.map((r) => r.text.trim())
 				.join(' ')
 				.replace(/\s+/g, ' '),
-			height: Math.max(...line.map((r) => r.height))
+			height: Math.max(...line.map((r) => r.height)),
+			...(drawn && { box: placed(line, drawn) })
 		}));
 	});
+}
+
+/** A line's box on the drawn page: PDF y runs up from the bottom, a picture's runs down. */
+function placed(line: readonly PdfText[], drawn: { height: number; scale: number }): LineBox {
+	const { height, scale } = drawn;
+	return {
+		x0: Math.min(...line.map((r) => r.x)) * scale,
+		x1: Math.max(...line.map((r) => r.x + r.width)) * scale,
+		y0: (height - Math.max(...line.map((r) => r.y + r.height))) * scale,
+		y1: (height - Math.min(...line.map((r) => r.y))) * scale
+	};
 }
