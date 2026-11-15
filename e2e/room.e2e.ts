@@ -2479,6 +2479,19 @@ test("a seat's three guesses share its token in thirds, and a tap on it opens th
 	// No pill to cycle: a tap anywhere on the token opens the sheet, listing every guess.
 	await seat.tap();
 	await expect(sheet.getByTestId('seat-guesses').getByRole('button')).toHaveCount(3);
+
+	// A type or alignment guess in a slice is its word alone, with no token circle round it,
+	// as a character there is its icon alone (Trevor, 2026-11-14).
+	await sheet.getByTestId('seat-guesses').getByRole('button', { name: 'Spy' }).tap();
+	await sheet.locator('[data-guess-key="type:townsfolk"]').tap();
+	await phone.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	const word = slices.first().getByRole('img', { name: 'Townsfolk' });
+	await expect(word).toBeVisible();
+	await expect(slices.first().locator('[data-token-face]')).toHaveCount(0);
+	const wordBox = (await word.boundingBox())!;
+	expect(wordBox.x).toBeGreaterThanOrEqual(token.x);
+	expect(wordBox.x + wordBox.width).toBeLessThanOrEqual(token.x + token.width);
 	await phoneContext.close();
 });
 

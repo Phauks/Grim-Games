@@ -6,19 +6,34 @@
 	/**
 	 * A player's guess of a seat by its character type or alignment alone (Trevor, 2026-10-24:
 	 * "a generic minion, demon, outsider, or townsfolk", "or just good or evil"): a blank token
-	 * with the word across its middle, in its alignment's colour.
+	 * with the word across its middle, in its alignment's colour. Beside other guesses in a split
+	 * seat it is the word alone, with no token round it, as a character there is its icon alone
+	 * (Trevor, 2026-11-14).
 	 */
 	interface Props {
 		guess: GenericGuess;
 		label: string;
 		size: number;
+		/** The blank token behind the word; off, the word alone fills `size`. */
+		face?: boolean;
 	}
 
-	let { guess, label, size }: Props = $props();
+	let { guess, label, size, face = true }: Props = $props();
 </script>
 
-<span class="generic" data-team={guess.team} style:--token-size="{size}px">
-	<TokenFace {label} leaves={{ firstNight: false, otherNight: false, reminders: 0 }} {size} />
+<span
+	class="generic"
+	class:bare={!face}
+	data-team={guess.team}
+	style:--token-size="{size}px"
+	role={face ? undefined : 'img'}
+	aria-label={face ? undefined : label}
+>
+	{#if face}<TokenFace
+			{label}
+			leaves={{ firstNight: false, otherNight: false, reminders: 0 }}
+			{size}
+		/>{/if}
 	<span class="room"
 		><span class="word" aria-hidden="true" {@attach fitWords(label)}>{label}</span></span
 	>
@@ -53,6 +68,13 @@
 		font-weight: 700;
 		line-height: 1.3;
 		white-space: nowrap;
+	}
+	/* The word alone, inside the room an icon in its place would have, shrunk to fit it. */
+	.bare .room {
+		width: 80%;
+	}
+	.bare .word {
+		font-size: calc(var(--token-size) * 0.17 * var(--fit, 1));
 	}
 	.generic[data-team='good'] .word {
 		background: var(--good);
