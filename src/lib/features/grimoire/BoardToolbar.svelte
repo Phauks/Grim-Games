@@ -7,7 +7,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import type { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import {
 		countOff,
 		leaveSeating,
