@@ -14,7 +14,14 @@
 import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import type { DeathCause, Game, Reminder, ReminderEffect, SeatId } from '#lib/core/model/types.ts';
+import type {
+	DeathCause,
+	Game,
+	Reminder,
+	ReminderEffect,
+	ReminderId,
+	SeatId
+} from '#lib/core/model/types.ts';
 import type { DayReminderOverride } from '#lib/core/model/overrides.ts';
 import {
 	abilityState,
@@ -54,7 +61,7 @@ export interface DaySeat {
 	keepsAbility?: boolean;
 	deathCause?: DeathCause;
 	/** With the effect the Storyteller picked for it, if any (`reminder-effects.ts`). */
-	reminders: readonly (Reminder & { effect?: ReminderEffect })[];
+	reminders: readonly (Reminder & { reminderId?: ReminderId; effect?: ReminderEffect })[];
 }
 
 export interface DayState {
@@ -90,6 +97,8 @@ export interface DayState {
 	 * with the Alsaahir or the Investigator), whose `announcement` lines are left out.
 	 */
 	notDeclared?: readonly CharacterId[];
+	/** Reminders placed today by an ability use (`UseAbility`), for a line's `used` words. */
+	usedToday?: readonly ReminderId[];
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -231,6 +240,9 @@ export function dayStateFromGame(
 		notDeclared: [...new Set(game.seating.flatMap((s) => game.seats[s]?.characterId ?? []))].filter(
 			(id) => notDeclared(game, id, characters)
 		),
+		usedToday: game.today.entries.flatMap((e) =>
+			e.kind === 'ability' && e.reminderId ? [e.reminderId] : []
+		),
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
@@ -357,6 +369,20 @@ function placed(state: DayState, source: CharacterId, label: string): boolean {
 	return state.ruleReminders?.[source]?.some((r) => same(r.label, label)) ?? false;
 }
 
+/** Whether every one of `source`'s `label` tokens on a seat was placed by today's ability use. */
+function placedToday(state: DayState, source: CharacterId, label: string): boolean {
+	const today = state.usedToday ?? [];
+	if (state.ruleReminders?.[source]?.some((r) => same(r.label, label))) return false;
+	return state.seats.every((s) =>
+		s.reminders.every(
+			(r) =>
+				r.characterId !== source ||
+				!same(r.label, label) ||
+				(r.reminderId !== undefined && today.includes(r.reminderId))
+		)
+	);
+}
+
 function carriers(state: DayState, source: CharacterId, label: string): DaySeat[] {
 	return state.seats.filter((s) =>
 		s.reminders.some((r) => r.characterId === source && same(r.label, label))
@@ -436,7 +462,11 @@ function curated(
 		if (impaired.length > 0 && (when.self ?? 'alive') === 'alive') return;
 		const holds = conditionHolds(when, seat, state, alive);
 		if (holds === false) return;
-		if (when.noReminder && placed(state, entry.id, when.noReminder)) return;
+		const spent = when.noReminder && placed(state, entry.id, when.noReminder);
+		// Used today: the row stays and says so (no reflow), if its rules word it.
+		const usedNow =
+			spent && spec.used !== undefined && placedToday(state, entry.id, when.noReminder!);
+		if (spent && !usedNow) return;
 		if (when.noWish && seat && state.grantedWishes?.includes(seat.seatId)) return;
 		const base = {
 			characterId: entry.id,
@@ -475,6 +505,10 @@ function curated(
 			} else if (targets.length > 0) {
 				out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
 			}
+		} else if (usedNow) {
+			const head = spec.template[0] && 'self' in spec.template[0] ? [spec.template[0]] : [];
+			const words = { ...spec, template: [...head, { text: spec.used! }] };
+			out.push({ ...base, key, segments: fill(words, selfRef, undefined, state.prepValues) });
 		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
 	});
 	if (impaired.length > 0 && seat) {
