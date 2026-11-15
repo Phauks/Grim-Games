@@ -4,7 +4,7 @@
  * Web Worker from our own `/ocr/` files (vite.config.ts `ocrFiles`), loaded the first time a
  * photo is read and kept by the service worker after that, so it works offline from then on.
  */
-import type { PhotoLine } from '#lib/core/photo/script-photo.ts';
+import type { LineBox, PhotoLine } from '#lib/core/photo/script-photo.ts';
 
 /** Photos are shrunk to this long side first: phone photos are far larger than reading needs. */
 const LONG_SIDE = 2400;
@@ -25,7 +25,7 @@ export async function photoCanvas(photo: Blob): Promise<HTMLCanvasElement> {
 
 /** A line of text and where it sits in the picture read, in that picture's pixels. */
 export interface PlacedLine extends PhotoLine {
-	box: { x0: number; y0: number; x1: number; y1: number };
+	box: LineBox;
 }
 
 /** A text reader kept open, for reading many pictures (the live scan spike) without reloading. */
@@ -93,7 +93,7 @@ export async function readPhotoLines(
 	photo: HTMLCanvasElement,
 	onProgress?: (share: number) => void,
 	log?: (text: string) => void
-): Promise<PhotoLine[]> {
+): Promise<PlacedLine[]> {
 	const reader = await openTextReader(onProgress, log);
 	try {
 		return await reader.read(photo);

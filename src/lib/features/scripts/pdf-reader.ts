@@ -61,7 +61,8 @@ export async function readPdfPages(file: Blob): Promise<PdfPage[]> {
 					: []
 			);
 			const letters = items.reduce((sum, i) => sum + i.text.replace(/\W/g, '').length, 0);
-			pages.push({ canvas, lines: letters >= SCANNED ? pdfLines(items) : undefined });
+			const drawn = { height: flat.height, scale: viewport.scale };
+			pages.push({ canvas, lines: letters >= SCANNED ? pdfLines(items, drawn) : undefined });
 			page.cleanup();
 		}
 		return pages;
