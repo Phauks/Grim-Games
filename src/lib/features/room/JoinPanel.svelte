@@ -593,8 +593,13 @@
 		background: var(--surface-raised);
 		text-align: center;
 	}
+	/* Styled as the section titles below it, As player and Players only (Trevor, 2026-11-15). */
 	.code-form label {
-		font-size: 1.1rem;
+		color: var(--heading);
+		font-family: var(--font-heading);
+		font-weight: var(--font-heading-weight);
+		font-size: var(--section-title-size);
+		letter-spacing: 0.04em;
 	}
 	.entry-column {
 		display: grid;
