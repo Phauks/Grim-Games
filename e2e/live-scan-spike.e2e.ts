@@ -17,6 +17,11 @@ test('a shaky sheet is grabbed once, straightened and read, then held for review
 		timeout: 90_000
 	});
 	await expect(review).toContainText('Washerwoman');
+	// The picture grabbed, with each line read marked on it (Trevor, 2026-11-15).
+	await review.getByRole('button', { name: 'Pictures Read' }).tap();
+	const shown = page.getByRole('dialog', { name: 'Pictures Read' });
+	await expect(shown.locator('rect[data-mark="character"]').first()).toBeAttached();
+	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByTestId('live-scan-page')).toBeVisible();
 	// Held, and said so, so the phone can move (Trevor, 2026-11-10).
 	await expect(page.getByTestId('live-scan-taken')).toContainText('Picture taken. You can move.');

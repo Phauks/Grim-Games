@@ -11,7 +11,8 @@
 	import {
 		photoScriptJson,
 		readScriptLines,
-		type PhotoLine
+		type PhotoLine,
+		type PhotoLineTrace
 	} from '#lib/core/photo/script-photo.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
@@ -34,6 +35,7 @@
 	import { reloadSavedScript } from './saved-scripts.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ImportLogDialog from './ImportLogDialog.svelte';
+	import ScanPicturesDialog, { type LineMark, type ScanPicture } from './ScanPicturesDialog.svelte';
 	import ScriptNameFields from './ScriptNameFields.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { describeFile, failureText, importLog, logLine } from './import-log.svelte.ts';
@@ -68,6 +70,9 @@
 	let picks = $state<Record<number, string>>({});
 	let fileInput: HTMLInputElement | undefined = $state();
 	let logOpen = $state(false);
+	let picturesOpen = $state(false);
+	/** Each picture read, and which of `lines` it gave. */
+	let read = $state.raw<(Omit<ScanPicture, 'marks'> & { from: number; count: number })[]>([]);
 	/** The name, author and version as typed over what was read (Trevor, 2026-11-10). */
 	let typed = $state<{ name?: string; author?: string; version?: string }>({});
 	/**
@@ -78,6 +83,18 @@
 	let customOn = $state(false);
 
 	const LEAVE_OUT = '';
+	/** How each way a line was read is marked on its picture; blank lines are not. */
+	const MARKS: Record<PhotoLineTrace['outcome'], LineMark | undefined> = {
+		name: 'character',
+		ability: 'character',
+		close: 'close',
+		title: 'title',
+		author: 'title',
+		unmatched: 'unknown',
+		unnamed: 'unused',
+		tail: 'unused',
+		empty: undefined
+	};
 
 	/** The user's own scripts, whose custom characters a line may also name. */
 	const own = $derived.by((): LoadedScript[] => {
@@ -95,7 +112,25 @@
 		return all.filter((c, i) => all.findIndex((o) => o.id === c.id) === i);
 	});
 
+	const traces = $derived.by(() => {
+		const all: PhotoLineTrace[] = [];
+		readScriptLines(lines, pool, (t) => all.push(t));
+		return all;
+	});
 	const result = $derived(readScriptLines(lines, pool));
+	/** The pictures with each line read marked by how it was used. */
+	const pictures = $derived(
+		read.map(({ from, count, ...picture }) => ({
+			...picture,
+			marks: traces.flatMap((t) => {
+				const box = lines[t.index]?.box;
+				const mark = MARKS[t.outcome];
+				return box && mark && t.index >= from && t.index < from + count
+					? [{ box, mark, text: t.text }]
+					: [];
+			})
+		}))
+	);
 	const name = $derived(typed.name ?? result.title);
 	const author = $derived(typed.author ?? result.author);
 	const version = $derived(typed.version ?? '');
@@ -130,19 +165,35 @@
 			.map((c) => ({ value: c.id as string, label: c.name }))
 	]);
 
-	/**
-	 * Reads one more photo, or a PDF of the sheet, and adds its lines to what was read. A PDF's
-	 * own text is used as it is; a scanned page is read like a photo.
-	 */
 	/** Adds lines another reader read (a live scan's picture) to what was read. */
-	export async function addLines(read: readonly PhotoLine[]): Promise<void> {
+	export async function addLines(
+		read: readonly PhotoLine[],
+		/** The picture they were read from, shown with each line marked. */
+		picture?: HTMLCanvasElement
+	): Promise<void> {
 		if (lines.length === 0) importLog.start(`Live scan: ${read.length} lines read`);
 		else importLog.add(`Another live scan: ${read.length} lines read`);
 		data ??= await loadOfficialData();
+		if (picture) await keepPicture(picture, read.length);
 		lines = [...lines, ...read];
 		logReading();
 	}
 
+	/**
+	 * Keeps a picture read, to show with its lines marked (Trevor, 2026-11-15): the next
+	 * `count` lines after those already read are its own.
+	 */
+	async function keepPicture(canvas: HTMLCanvasElement, count: number, from = lines.length) {
+		const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, 'image/jpeg', 0.85));
+		if (!blob) return;
+		const { width, height } = canvas;
+		read = [...read, { url: URL.createObjectURL(blob), width, height, from, count }];
+	}
+
+	/**
+	 * Reads one more photo, or a PDF of the sheet, and adds its lines to what was read. A PDF's
+	 * own text is used as it is; a scanned page is read like a photo.
+	 */
 	export async function addPhoto(photo: Blob): Promise<void> {
 		reading = true;
 		failed = false;
@@ -190,7 +241,7 @@
 				await goto(`${resolve('/play')}${hash}`);
 				return;
 			}
-			const read: PhotoLine[] = [];
+			const added: PhotoLine[] = [];
 			for (const [i, page] of pages.entries()) {
 				const share = (s: number) => (progress = Math.max(progress, (i + s) / pages.length));
 				const started = Date.now();
@@ -200,9 +251,10 @@
 					const took = ((Date.now() - started) / 1000).toFixed(1);
 					importLog.add(`Page ${i + 1}: ${pageLines.length} lines read in ${took}s`);
 				}
-				read.push(...pageLines);
+				await keepPicture(page.canvas, pageLines.length, lines.length + added.length);
+				added.push(...pageLines);
 			}
-			lines = [...lines, ...read];
+			lines = [...lines, ...added];
 			logReading();
 		} catch (e) {
 			failed = true;
@@ -234,6 +286,8 @@
 
 	/** Starts again with no photos read. */
 	export function reset(): void {
+		for (const p of read) URL.revokeObjectURL(p.url);
+		read = [];
 		lines = [];
 		left.clear();
 		picks = {};
@@ -304,6 +358,13 @@
 			<p class="name">{heading}</p>
 		</div>
 		<!-- What happened, step by step (Trevor, 2026-11-06), in a window of its own. -->
+		<!-- The pictures with each line read marked (Trevor, 2026-11-15), in a window of their own. -->
+		<IconButton
+			icon="scanPictures"
+			label={t('scripts.photo.pictures')}
+			disabled={read.length === 0}
+			onclick={() => (picturesOpen = true)}
+		/>
 		<IconButton
 			icon="importLog"
 			label={t('scripts.photo.log')}
@@ -406,6 +467,7 @@
 </Dialog>
 
 <ImportLogDialog bind:open={logOpen} />
+<ScanPicturesDialog bind:open={picturesOpen} {pictures} />
 
 <style>
 	.file {
