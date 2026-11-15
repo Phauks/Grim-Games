@@ -55,10 +55,10 @@
 		onReopen: () => void;
 		/**
 		 * The board's New game sheet, not on a spectator's board: New game, which asks to end
-		 * this one first, and the room's vote on the next game once this one has ended, without
-		 * leaving the board (Trevor, 2026-11-01).
+		 * this one first. The room's vote on the next game is New game's own Room vote, not an
+		 * item here (Trevor, 2026-11-15: it "is already in the new game area").
 		 */
-		newGame?: { begin(): void; vote(): void };
+		newGame?: { begin(): void };
 		/**
 		 * Close room, once the game has ended and while its room is open (Trevor, 2026-10-26):
 		 * deletes the room and sends every phone out. Asks first.
@@ -299,18 +299,6 @@
 						onclick={() => fromMenu(() => void openTransfer())}
 					>
 						{t('room.transfer.button')}
-					</Button>
-				{/if}
-				<!-- The room votes on the next game from here (Trevor, 2026-11-01: it "should not
-				     require leaving the game screen"); Play opens New game with the winner. -->
-				{#if ended && newGame}
-					<Button
-						variant="quiet"
-						icon="vote"
-						data-testid="menu-room-vote"
-						onclick={() => fromMenu(() => newGame.vote())}
-					>
-						{t('room.scriptVote.button')}
 					</Button>
 				{/if}
 				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
