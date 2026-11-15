@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openCustomSheet } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 
 // The Script builder in Prepare (Trevor, 2026-10-16): pick official characters, see the
@@ -35,7 +36,7 @@ test('builds, checks and saves a script that New game can use', async ({ page })
 	await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Builder test');
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
 	await page.goto('/new');
-	await page.getByTestId('custom-script').tap();
+	await openCustomSheet(page);
 	await expect(
 		page.getByTestId('script-sheet').getByRole('button').filter({ hasText: 'Builder test' })
 	).toBeVisible();
