@@ -88,6 +88,7 @@ import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_paint_bucket from '~icons/ph/paint-bucket';
 import ph_palette from '~icons/ph/palette';
+import ph_paper_plane_tilt from '~icons/ph/paper-plane-tilt';
 import ph_pause from '~icons/ph/pause';
 import ph_pen_nib from '~icons/ph/pen-nib';
 import ph_pencil_simple from '~icons/ph/pencil-simple';
@@ -222,6 +223,7 @@ const icons: IconMap = {
 	'ph:note-pencil': ph_note_pencil,
 	'ph:paint-bucket': ph_paint_bucket,
 	'ph:palette': ph_palette,
+	'ph:paper-plane-tilt': ph_paper_plane_tilt,
 	'ph:pause': ph_pause,
 	'ph:pen-nib': ph_pen_nib,
 	'ph:pencil-simple': ph_pencil_simple,

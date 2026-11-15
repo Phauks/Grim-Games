@@ -31,7 +31,8 @@
 				],
 				"when": {
 					"noReminder": "No Ability"
-				}
+				},
+				"used": "has been nominated"
 			}
 		]
 	},

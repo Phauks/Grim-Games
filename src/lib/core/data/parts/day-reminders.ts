@@ -63,7 +63,12 @@ const CONDITION = optObj({
 });
 export type DayCondition = SpecValue<typeof CONDITION>;
 
-const REMINDER = obj({ group: oneOf(DAY_GROUPS), template: list(SEGMENT), when: opt(CONDITION) });
+const REMINDER = obj({
+	group: oneOf(DAY_GROUPS),
+	template: list(SEGMENT),
+	when: opt(CONDITION),
+	used: opt(ownWords(STR))
+});
 export type DayReminderSpec = SpecValue<typeof REMINDER>;
 
 /**
@@ -116,6 +121,10 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  * - `noWish: true`: only while no wish of its player's has been granted (`rules/abilities/wishes.ts`);
  *   a declined wish leaves it.
  *
+ * `used`, with `when.noReminder`: the words that replace the template's after its player once
+ * that token was placed today by its player's ability use ("[Slayer] has used their shot"),
+ * so the row stays put and says so; from the next day the line is gone.
+ *
  * Text here is our own summary, never wiki prose.
  */
 export const dayReminders = partWords(
@@ -140,6 +149,8 @@ export const dayReminders = partWords(
 					issues.add(`${at}.when.nomineeChose`, 'a reminder or nomineeChose, not both');
 				if (template.some((p) => 'target' in p) && !when?.reminder && !when?.nomineeChose)
 					issues.add(`${at}.when.reminder`, 'a target segment needs the reminder that marks them');
+				if (value.reminders?.[i]?.used !== undefined && !when?.noReminder)
+					issues.add(`${at}.used`, 'used words need the noReminder token that marks it used');
 				if (template.some((p) => 'nominee' in p) && !when?.nomineeChose)
 					issues.add(`${at}.when.nomineeChose`, 'a nominee segment needs nomineeChose');
 			});
@@ -217,6 +228,10 @@ export const dayReminders = partWords(
 		},
 		'reminders.*.when.day': {
 			label: 'Only on day'
+		},
+		'reminders.*.used': {
+			label: 'Once used today',
+			about: 'Words after its player once the token above was placed today.'
 		},
 		interactions: {
 			label: 'May set off another’s ability',

@@ -99,8 +99,11 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await confirm.screenshot({ path: `test-results/day-use-on-${test.info().project.name}.png` });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
-	// The reminder stays where it was, pressed, so the list does not jump.
+	// The reminder stays where it was, pressed, so the list does not jump, and now says so.
 	expect(await place(used)).toEqual(before);
+	const row = page.locator('li[data-character="slayer"]').filter({ has: used });
+	await expect(row).toContainText('Has used their shot.');
+	await expect(row).not.toContainText('unused shot');
 	// Tapping it again unmarks it, after its own confirm (Trevor, 2026-10-17).
 	await used.tap();
 	const undo = page.getByRole('alertdialog', { name: /^Mark\s+Slayer\s+Ben\s+as not used\?$/ });
@@ -108,6 +111,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await undo.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'false');
 	await expect(undo).toBeHidden();
+	await expect(row).toContainText('Has an unused shot.');
 	await used.tap();
 	await chooser.getByRole('button', { name: /Gus/ }).tap();
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
