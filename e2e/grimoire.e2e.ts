@@ -5661,8 +5661,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-27): named groups ("the delineation is nice"), and all of Settings from
-	// one item. Character selection and End game sit under Session (2026-10-30), last, below App (2026-11-03). Players holds the notes (2026-10-29), so it is
-	// there in every game, room or not.
+	// one item. Character selection and End game sit under Session (2026-10-30), last, below App (2026-11-03).
 	const group = (name: string) => menu.getByRole('region', { name, exact: true });
 	const names = (name: string) =>
 		group(name)
@@ -5670,9 +5669,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 			.evaluateAll((els) =>
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
-	// Game notes are here only on a phone too narrow for their toolbar button (2026-11-01).
+	// Players and Game notes are in the pane by the grim cover (plan M86); Info tokens is here
+	// only on a phone too narrow for its toolbar button (Trevor, 2026-11-15).
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players( Game notes)? History Demon bluffs Soundboard( Game info)? Game settings$/
+		/^(Info tokens )?History Demon bluffs Soundboard( Game info)? Game settings$/
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;

@@ -968,20 +968,20 @@
 						{town}
 					/>
 				</div>
+				<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
+				{#if ended}
+					<div class="game-over-slot">
+						<GameOverMenu
+							winner={ended.winner}
+							text={endedText}
+							{watching}
+							onExport={() => (exportOpen = true)}
+							onFeedback={watching ? undefined : () => (feedbackOpen = true)}
+							onShareGrim={shareGrim}
+						/>
+					</div>
+				{/if}
 			</div>
-			<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
-			{#if ended}
-				<div class="game-over-slot">
-					<GameOverMenu
-						winner={ended.winner}
-						text={endedText}
-						{watching}
-						onExport={() => (exportOpen = true)}
-						onFeedback={watching ? undefined : () => (feedbackOpen = true)}
-						onShareGrim={shareGrim}
-					/>
-				</div>
-			{/if}
 		</div>
 	</div>
 </BoardPane>
