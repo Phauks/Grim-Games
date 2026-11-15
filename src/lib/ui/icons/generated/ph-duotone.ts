@@ -123,6 +123,7 @@ import ph_hexagon_duotone from '~icons/ph/hexagon-duotone';
 import ph_hourglass_duotone from '~icons/ph/hourglass-duotone';
 import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
+import ph_identification_badge_duotone from '~icons/ph/identification-badge-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
 import ph_image_duotone from '~icons/ph/image-duotone';
 import ph_image_square_duotone from '~icons/ph/image-square-duotone';
@@ -230,6 +231,7 @@ import ph_umbrella_duotone from '~icons/ph/umbrella-duotone';
 import ph_upload_simple_duotone from '~icons/ph/upload-simple-duotone';
 import ph_user_duotone from '~icons/ph/user-duotone';
 import ph_user_circle_duotone from '~icons/ph/user-circle-duotone';
+import ph_user_focus_duotone from '~icons/ph/user-focus-duotone';
 import ph_user_gear_duotone from '~icons/ph/user-gear-duotone';
 import ph_user_list_duotone from '~icons/ph/user-list-duotone';
 import ph_user_plus_duotone from '~icons/ph/user-plus-duotone';
@@ -369,6 +371,7 @@ const icons: IconMap = {
 	'ph:hourglass-duotone': ph_hourglass_duotone,
 	'ph:house-duotone': ph_house_duotone,
 	'ph:house-simple-duotone': ph_house_simple_duotone,
+	'ph:identification-badge-duotone': ph_identification_badge_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,
 	'ph:image-duotone': ph_image_duotone,
 	'ph:image-square-duotone': ph_image_square_duotone,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:upload-simple-duotone': ph_upload_simple_duotone,
 	'ph:user-duotone': ph_user_duotone,
 	'ph:user-circle-duotone': ph_user_circle_duotone,
+	'ph:user-focus-duotone': ph_user_focus_duotone,
 	'ph:user-gear-duotone': ph_user_gear_duotone,
 	'ph:user-list-duotone': ph_user_list_duotone,
 	'ph:user-plus-duotone': ph_user_plus_duotone,

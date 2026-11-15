@@ -123,6 +123,7 @@ import ph_hexagon_bold from '~icons/ph/hexagon-bold';
 import ph_hourglass_bold from '~icons/ph/hourglass-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
+import ph_identification_badge_bold from '~icons/ph/identification-badge-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
 import ph_image_bold from '~icons/ph/image-bold';
 import ph_image_square_bold from '~icons/ph/image-square-bold';
@@ -230,6 +231,7 @@ import ph_umbrella_bold from '~icons/ph/umbrella-bold';
 import ph_upload_simple_bold from '~icons/ph/upload-simple-bold';
 import ph_user_bold from '~icons/ph/user-bold';
 import ph_user_circle_bold from '~icons/ph/user-circle-bold';
+import ph_user_focus_bold from '~icons/ph/user-focus-bold';
 import ph_user_gear_bold from '~icons/ph/user-gear-bold';
 import ph_user_list_bold from '~icons/ph/user-list-bold';
 import ph_user_plus_bold from '~icons/ph/user-plus-bold';
@@ -369,6 +371,7 @@ const icons: IconMap = {
 	'ph:hourglass-bold': ph_hourglass_bold,
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
+	'ph:identification-badge-bold': ph_identification_badge_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
 	'ph:image-bold': ph_image_bold,
 	'ph:image-square-bold': ph_image_square_bold,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:upload-simple-bold': ph_upload_simple_bold,
 	'ph:user-bold': ph_user_bold,
 	'ph:user-circle-bold': ph_user_circle_bold,
+	'ph:user-focus-bold': ph_user_focus_bold,
 	'ph:user-gear-bold': ph_user_gear_bold,
 	'ph:user-list-bold': ph_user_list_bold,
 	'ph:user-plus-bold': ph_user_plus_bold,

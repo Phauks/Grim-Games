@@ -27,6 +27,7 @@
 		type NavItem
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
+	import { profileDialog } from '#lib/features/player/profile-dialog.svelte.ts';
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { buildSwitch } from '#lib/features/about/build-switch.ts';
@@ -56,6 +57,8 @@
 	}
 
 	const actions = $derived<NavAction[]>([
+		// The player's own Profile dialog, above Settings (Trevor, 2026-11-15).
+		{ id: 'profile', label: t('player.profile'), icon: 'profile', run: () => profileDialog.show() },
 		{ id: 'settings', label: t('shell.settings'), icon: 'settings', run: openSettings },
 		{
 			id: 'report',
