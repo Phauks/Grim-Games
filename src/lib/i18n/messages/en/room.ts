@@ -141,6 +141,9 @@ export const room = {
 	'room.shareGrim.title': 'Share the grimoire?',
 	'room.shareGrim.body':
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
+	'room.shareGrim.history': 'History',
+	'room.shareGrim.seatNotes': 'Seat notes',
+	'room.shareGrim.gameNotes': 'Game notes',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
 	// Room transfer (Trevor, 2026-10-28).
 	'room.transfer.button': 'Room transfer',
@@ -253,7 +256,7 @@ export const room = {
 	'room.nameSharedDetail': 'The Storyteller sees you as {name} until you change your name.',
 	'room.vote.title': 'Spectators’ vote',
 	// After the game (plan R4); accolades approved by Trevor, 2026-10-22.
-	'room.feedback.open': 'Game over',
+	'room.feedback.rate': 'Rate this game',
 	'room.feedback.title': 'Game over',
 	'room.result.won': 'You won as',
 	'room.result.lost': 'You lost as',

@@ -33,7 +33,8 @@
 				],
 				"when": {
 					"noReminder": "Guess Used"
-				}
+				},
+				"used": "has been guessed"
 			}
 		]
 	},

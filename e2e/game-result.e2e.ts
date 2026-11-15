@@ -52,6 +52,7 @@ test('after End game a seated phone shares its result, and the page names nobody
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByRole('button', { name: 'Deal' })).toBeDisabled();
+	await expect(phone.getByTestId('your-character')).toBeVisible();
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -64,8 +65,11 @@ test('after End game a seated phone shares its result, and the page names nobody
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(phone.getByTestId('join-status')).toHaveText('Game over: Good won');
+	// Game over takes the status box: Your character goes, and the box says what a tap does.
+	await expect(phone.getByTestId('your-character')).toHaveCount(0);
+	await expect(phone.getByTestId('you-row')).toHaveText(/^Game over: Good won\s*Rate this game$/);
 
-	await phone.getByRole('button', { name: 'Game over', exact: true }).tap();
+	await phone.getByRole('button', { name: /Rate this game/ }).tap();
 	const over = phone.getByRole('dialog', { name: 'Game over' });
 	const line = over.getByTestId('game-result-line');
 	// Good won: a good character won, an evil one lost.

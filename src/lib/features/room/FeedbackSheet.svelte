@@ -10,12 +10,12 @@
 		type GameFeedback
 	} from '#lib/core/feedback/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
+	import AccoladeBadge from './AccoladeBadge.svelte';
 	import GameResult from './GameResult.svelte';
 
 	/**
@@ -88,12 +88,11 @@
 			<legend>{t('room.feedback.accolades')}</legend>
 			<div class="accolades">
 				{#each ACCOLADES as accolade (accolade.id)}
-					<Chip
-						type="button"
+					<AccoladeBadge
+						id={accolade.id}
 						pressed={draft.accolades.includes(accolade.id)}
 						onclick={() => (draft = toggleAccolade(draft, accolade.id))}
-						>{accolade.emoji} {t(`room.feedback.accolade.${accolade.id}`)}</Chip
-					>
+					/>
 				{/each}
 			</div>
 		</fieldset>
@@ -159,6 +158,7 @@
 	.accolades {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-2);
+		justify-content: center;
+		gap: var(--space-3) var(--space-2);
 	}
 </style>
