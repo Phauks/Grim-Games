@@ -393,9 +393,9 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	// Share grim is in ⋯ once the game is over, not on End game (Trevor, 2026-11-01).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByTestId('menu-share-grim').tap();
+	// Share grim is on Game over once the game is over, not on End game (Trevor, 2026-11-15).
+	await page.getByTestId('game-over').tap();
+	await page.getByRole('menuitem', { name: 'Share grim' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Share the grimoire?' })
 		.getByRole('button', { name: 'Confirm', exact: true })

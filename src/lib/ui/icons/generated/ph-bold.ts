@@ -160,6 +160,7 @@ import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
 import ph_paint_bucket_bold from '~icons/ph/paint-bucket-bold';
 import ph_palette_bold from '~icons/ph/palette-bold';
+import ph_paper_plane_tilt_bold from '~icons/ph/paper-plane-tilt-bold';
 import ph_pause_bold from '~icons/ph/pause-bold';
 import ph_pause_circle_bold from '~icons/ph/pause-circle-bold';
 import ph_pen_nib_bold from '~icons/ph/pen-nib-bold';
@@ -405,6 +406,7 @@ const icons: IconMap = {
 	'ph:paint-brush-bold': ph_paint_brush_bold,
 	'ph:paint-bucket-bold': ph_paint_bucket_bold,
 	'ph:palette-bold': ph_palette_bold,
+	'ph:paper-plane-tilt-bold': ph_paper_plane_tilt_bold,
 	'ph:pause-bold': ph_pause_bold,
 	'ph:pause-circle-bold': ph_pause_circle_bold,
 	'ph:pen-nib-bold': ph_pen_nib_bold,

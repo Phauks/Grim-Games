@@ -160,6 +160,7 @@ import ph_notepad_fill from '~icons/ph/notepad-fill';
 import ph_paint_brush_fill from '~icons/ph/paint-brush-fill';
 import ph_paint_bucket_fill from '~icons/ph/paint-bucket-fill';
 import ph_palette_fill from '~icons/ph/palette-fill';
+import ph_paper_plane_tilt_fill from '~icons/ph/paper-plane-tilt-fill';
 import ph_pause_fill from '~icons/ph/pause-fill';
 import ph_pause_circle_fill from '~icons/ph/pause-circle-fill';
 import ph_pen_nib_fill from '~icons/ph/pen-nib-fill';
@@ -405,6 +406,7 @@ const icons: IconMap = {
 	'ph:paint-brush-fill': ph_paint_brush_fill,
 	'ph:paint-bucket-fill': ph_paint_bucket_fill,
 	'ph:palette-fill': ph_palette_fill,
+	'ph:paper-plane-tilt-fill': ph_paper_plane_tilt_fill,
 	'ph:pause-fill': ph_pause_fill,
 	'ph:pause-circle-fill': ph_pause_circle_fill,
 	'ph:pen-nib-fill': ph_pen_nib_fill,

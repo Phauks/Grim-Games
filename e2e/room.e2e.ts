@@ -468,11 +468,8 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	// device, so it is still there after a reload (Trevor, 2026-10-25).
 	const feedback = page.getByTestId('game-feedback');
 	async function openFeedback() {
-		await page.getByRole('button', { name: 'More', exact: true }).tap();
-		await page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByRole('button', { name: 'Player feedback' })
-			.tap();
+		await page.getByTestId('game-over').tap();
+		await page.getByRole('menuitem', { name: 'Player feedback' }).tap();
 		await expect(feedback).toBeVisible();
 	}
 	await openFeedback();
@@ -535,20 +532,33 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(status).toHaveText('Game over: Evil won');
 
-	// Not on End game: ⋯ > Session offers Share grim once the game is over, and asks first.
+	// Not on End game: Game over, in the day timer's place, offers Share grim once the game is
+	// over (Trevor, 2026-11-15), with its own icon, and asks what goes with it: History on,
+	// the notes off. Reopen game and New game stay in ⋯ only, and Share grim leaves ⋯.
 	const seats = await page.getByTestId('seat').count();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await menu.getByTestId('menu-share-grim').tap();
-	await page
-		.getByRole('alertdialog', { name: 'Share the grimoire?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
-	// Once sent it leaves the menu.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(menu.getByRole('button', { name: 'Reopen game' })).toBeVisible();
-	await expect(menu.getByTestId('menu-share-grim')).toHaveCount(0);
+	await expect(
+		menu.getByRole('button', { name: /Share grim|Export game|Player feedback/ })
+	).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
+	await page.getByTestId('game-over').tap();
+	await expect(page.getByRole('menuitem')).toHaveText([
+		'Share grim',
+		'Export game',
+		'Player feedback'
+	]);
+	await page.getByRole('menuitem', { name: 'Share grim' }).tap();
+	const share = page.getByRole('alertdialog', { name: 'Share the grimoire?' });
+	await expect(share.getByRole('checkbox', { name: 'History' })).toBeChecked();
+	await expect(share.getByRole('checkbox', { name: 'Seat notes' })).not.toBeChecked();
+	await expect(share.getByRole('checkbox', { name: 'Game notes' })).not.toBeChecked();
+	await share.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// Once sent it leaves the menu.
+	await page.getByTestId('game-over').tap();
+	await expect(page.getByRole('menuitem', { name: 'Share grim' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	// The phone shows it on the Grim tab in place of the town (Trevor, 2026-10-24): the whole
 	// board, every seat; the switch puts the town and its guesses back.
 	const final = phone.getByTestId('final-grimoire');
@@ -636,9 +646,9 @@ test('Share grim after End game lets each phone step through the History in the 
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
 	await expect(end.getByRole('checkbox')).toHaveCount(0);
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	// Share grim is in ⋯ once the game is over, not on End game (Trevor, 2026-11-01).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByTestId('menu-share-grim').tap();
+	// Share grim is on Game over once the game is over, not on End game (Trevor, 2026-11-15).
+	await page.getByTestId('game-over').tap();
+	await page.getByRole('menuitem', { name: 'Share grim' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Share the grimoire?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
