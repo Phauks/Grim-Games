@@ -184,3 +184,68 @@ test('Add late player can seat a phone in the room, as the bag draw does', async
 	await expect(zed.getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
 	await expect(zed).not.toContainText('No seat');
 });
+
+test('Add late player is in the ⋯ menu once the draw is done, until Start game', async ({
+	page
+}) => {
+	// Trevor, 2026-11-15: every player has a character but the first night hasn't started.
+	// In Session, beside the game's other before-and-after items.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await pickNumber(page, 'Players', 5);
+	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
+		await choice(page, name).tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const draw = page.url();
+	await page.getByRole('button', { name: 'Deal' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Deal at random?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#.*)?$/);
+	await page.keyboard.press('Escape');
+
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(
+		menu.locator('section', { has: page.getByTestId('menu-late-player') })
+	).toHaveAttribute('aria-labelledby', 'board-menu-session');
+	await menu.getByTestId('menu-late-player').tap();
+	const sheet = page.getByRole('dialog', { name: 'Add late player' });
+	await sheet.getByRole('combobox', { name: 'Name' }).fill('Max');
+	await sheet.getByTestId('late-roll').tap();
+	await sheet.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(page.getByRole('button', { name: /^Seat 6: Max/ })).toBeVisible();
+	// Max draws the one tile back in the bag.
+	await page.goto(draw);
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
+	await expect(page.getByRole('button', { name: /^Tile \d$/ })).toHaveCount(1);
+	await page.getByRole('button', { name: 'Deal' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Deal at random?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(6);
+
+	// Gone once the first night starts: a late arrival is then a Traveller
+	// (https://wiki.bloodontheclocktower.com/Travellers).
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.keyboard.press('Escape');
+	await page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'Start game', exact: true })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	await expect(page.getByTestId('night-strip').or(ask)).toBeVisible();
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'End game' })).toBeVisible();
+	await expect(menu.getByTestId('menu-late-player')).toHaveCount(0);
+});

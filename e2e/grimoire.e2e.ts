@@ -75,6 +75,12 @@ async function menu(page: Page, action: string) {
 		.tap();
 }
 
+/** Runs an action from Game over's menu, in the day timer's place once the game ends. */
+async function gameOver(page: Page, action: string) {
+	await page.getByTestId('game-over').tap();
+	await page.getByRole('menuitem', { name: action, exact: true }).tap();
+}
+
 /** ⋯ > Settings, which opens all of Settings at its root, then the section asked for. */
 async function boardSettings(page: Page, section: string) {
 	await menu(page, 'Settings');
@@ -3502,14 +3508,11 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
 	// Read-only: nothing pops up (Trevor, 2026-10-18). The game over line is out of
-	// History's strip, leaving it its room (2026-10-25), and sits in the middle of the seat
-	// ring, over the script's logo, where no seat ever is (2026-11-06).
+	// History's strip, leaving it its room (2026-10-25), and sits in the day timer's place,
+	// top right, clear of the script's logo (2026-11-15).
+	await expect(page.locator('.board-timer').getByTestId('game-over')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	await expect(steps.getByTestId('game-over')).toHaveCount(0);
-	const over = (await page.getByTestId('game-over').boundingBox())!;
-	const ring = (await page.getByTestId('game-over').locator('xpath=..').boundingBox())!;
-	expect(Math.abs(over.x + over.width / 2 - (ring.x + ring.width / 2))).toBeLessThan(2);
-	expect(Math.abs(over.y + over.height / 2 - (ring.y + ring.height / 2))).toBeLessThan(2);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
@@ -3519,8 +3522,12 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
-	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
+	// Game over's menu is about this game; Reopen game and New game are in ⋯ only (Trevor,
+	// 2026-11-15: "perhaps we don't include them here, and only in the ...?").
+	await page.getByTestId('game-over').tap();
+	await expect(page.getByRole('menuitem', { name: 'Export game' })).toBeVisible();
+	await expect(page.getByRole('menuitem', { name: /Reopen game|New game/ })).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	// Reopening from ⋯ puts it back in Join game.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
@@ -3617,7 +3624,7 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	await endWithNote(page);
 
 	// Trevor, 2026-10-19: the history log, the final grimoire and the Storyteller's notes.
-	await menu(page, 'Export game');
+	await gameOver(page, 'Export game');
 	const dialog = page.getByRole('dialog', { name: 'Export game' });
 	const read = async (button: string) => {
 		const download = page.waitForEvent('download');
@@ -3688,7 +3695,7 @@ test("a finished game is shared to the players' phones, without the notes", asyn
 	// A whole game, a recap shared to a phone and taken back: longer than the default.
 	test.setTimeout(60_000);
 	await endWithNote(page);
-	await menu(page, 'Export game');
+	await gameOver(page, 'Export game');
 	await page
 		.getByRole('dialog', { name: 'Export game' })
 		.getByRole('button', { name: 'Share', exact: true })
@@ -3725,7 +3732,7 @@ test("a finished game is shared to the players' phones, without the notes", asyn
 
 	// Reopening the dialog finds the same share; Stop sharing deletes it.
 	await page.keyboard.press('Escape');
-	await menu(page, 'Export game');
+	await gameOver(page, 'Export game');
 	await page
 		.getByRole('dialog', { name: 'Export game' })
 		.getByRole('button', { name: 'Share', exact: true })
