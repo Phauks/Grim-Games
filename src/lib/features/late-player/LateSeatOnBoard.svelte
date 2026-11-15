@@ -2,7 +2,7 @@
 	/*
 	 * Add late player on the grimoire (Trevor, 2026-10-30): the modal's Choose seat brings the
 	 * Storyteller here to tap where that late player sits, and the modal opens again over the
-	 * board with everything kept.
+	 * board with everything kept. Once the draw is done, the ⋯ menu starts it here (`start`).
 	 */
 	import { fromScript } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -37,6 +37,12 @@
 	);
 	const lookup = (id: string) =>
 		grimoire.open.characters.get(id) ?? officialData.current?.byId.get(id);
+
+	/** A new draft, from the board's ⋯ menu once the draw is done (Trevor, 2026-11-15). */
+	export function start() {
+		lateDraft.start();
+		open = true;
+	}
 
 	function choose(index: number) {
 		open = false;

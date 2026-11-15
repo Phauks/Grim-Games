@@ -418,6 +418,8 @@
 	});
 
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
+	/** Add late player over the board: its ⋯ item until Start game. */
+	let latePlayer = $state<ReturnType<typeof LateSeatOnBoard>>();
 	let placing = $state<((position: number) => void) | undefined>();
 	/** Seats already placed but not added yet (late players), shown at their spots. */
 	let pendingSeats = $state<readonly { position: number; name: string }[]>([]);
@@ -999,6 +1001,9 @@
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
+	onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !watching
+		? () => latePlayer?.start()
+		: undefined}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onReopen={() => (reopenOpen = true)}
@@ -1085,7 +1090,7 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
-{#if !watching}<LateSeatOnBoard {grimoire} place={startPlacing} />{/if}
+{#if !watching}<LateSeatOnBoard bind:this={latePlayer} {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}
