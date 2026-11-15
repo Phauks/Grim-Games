@@ -161,6 +161,7 @@ import ph_notepad_thin from '~icons/ph/notepad-thin';
 import ph_paint_brush_thin from '~icons/ph/paint-brush-thin';
 import ph_paint_bucket_thin from '~icons/ph/paint-bucket-thin';
 import ph_palette_thin from '~icons/ph/palette-thin';
+import ph_paper_plane_tilt_thin from '~icons/ph/paper-plane-tilt-thin';
 import ph_pause_thin from '~icons/ph/pause-thin';
 import ph_pause_circle_thin from '~icons/ph/pause-circle-thin';
 import ph_pen_nib_thin from '~icons/ph/pen-nib-thin';
@@ -407,6 +408,7 @@ const icons: IconMap = {
 	'ph:paint-brush-thin': ph_paint_brush_thin,
 	'ph:paint-bucket-thin': ph_paint_bucket_thin,
 	'ph:palette-thin': ph_palette_thin,
+	'ph:paper-plane-tilt-thin': ph_paper_plane_tilt_thin,
 	'ph:pause-thin': ph_pause_thin,
 	'ph:pause-circle-thin': ph_pause_circle_thin,
 	'ph:pen-nib-thin': ph_pen_nib_thin,
