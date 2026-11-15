@@ -125,6 +125,7 @@ import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
 import ph_image_fill from '~icons/ph/image-fill';
+import ph_image_square_fill from '~icons/ph/image-square-fill';
 import ph_images_fill from '~icons/ph/images-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_key_fill from '~icons/ph/key-fill';
@@ -370,6 +371,7 @@ const icons: IconMap = {
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
 	'ph:image-fill': ph_image_fill,
+	'ph:image-square-fill': ph_image_square_fill,
 	'ph:images-fill': ph_images_fill,
 	'ph:info-fill': ph_info_fill,
 	'ph:key-fill': ph_key_fill,

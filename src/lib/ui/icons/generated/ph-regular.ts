@@ -65,6 +65,7 @@ import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_house from '~icons/ph/house';
 import ph_identification_card from '~icons/ph/identification-card';
 import ph_image from '~icons/ph/image';
+import ph_image_square from '~icons/ph/image-square';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_lightning from '~icons/ph/lightning';
@@ -198,6 +199,7 @@ const icons: IconMap = {
 	'ph:house': ph_house,
 	'ph:identification-card': ph_identification_card,
 	'ph:image': ph_image,
+	'ph:image-square': ph_image_square,
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:lightning': ph_lightning,

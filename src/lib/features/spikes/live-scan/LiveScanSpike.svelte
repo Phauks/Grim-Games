@@ -115,7 +115,7 @@
 	const found = new SvelteMap<CharacterId, Character>();
 	let unknown = $state.raw<string[]>([]);
 	/** The grab's lines, reviewed as a photo's are (Trevor, 2026-11-14). */
-	let grabLines: PlacedLine[] = [];
+	let lastRead: { lines: PlacedLine[]; frame?: HTMLCanvasElement } = { lines: [] };
 	let review: PhotoScriptDialog | undefined = $state();
 	let upload: HTMLInputElement | undefined = $state();
 
@@ -197,7 +197,7 @@
 		if (!review) return;
 		review.reset();
 		reviewOpen = true;
-		void review.addLines(grabLines);
+		void review.addLines(lastRead.lines, lastRead.frame);
 	}
 
 	function useDemo() {
@@ -254,7 +254,7 @@
 		const begun = round;
 		const lines: PlacedLine[] = await reader.read(frame);
 		if (begun !== round) return;
-		grabLines = lines;
+		lastRead = { lines, frame };
 		readMs = performance.now() - started;
 		reads++;
 		const traces: PhotoLineTrace[] = [];

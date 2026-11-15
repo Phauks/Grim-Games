@@ -858,9 +858,7 @@ test('after a game the room vote runs over the board, without leaving the game s
 	await page.goto(board);
 	const more = page.getByRole('button', { name: 'More', exact: true });
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Only once the game is over.
 	await more.tap();
-	await expect(menu.getByTestId('menu-room-vote')).toHaveCount(0);
 	await menu.getByRole('button', { name: 'End game' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'End game?' })
@@ -868,8 +866,14 @@ test('after a game the room vote runs over the board, without leaving the game s
 		.tap();
 	await expect(status).toHaveText('Game over');
 
+	// From New game's own Room vote; the ⋯ menu has no item for it (Trevor, 2026-11-15: it
+	// "is already in the new game area").
 	await more.tap();
-	await menu.getByTestId('menu-room-vote').tap();
+	await expect(menu.getByRole('button', { name: 'Room vote' })).toHaveCount(0);
+	await menu.getByRole('button', { name: 'New game' }).tap();
+	const newGame = page.getByRole('dialog', { name: 'New game' });
+	const roomVote = newGame.getByRole('button', { name: 'Room vote' });
+	await roomVote.tap();
 	const sheet = page.getByRole('dialog', { name: 'Room vote' });
 	await expect(sheet.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
 	// Still the game screen, with the room's code for the table and no Back (X closes it).
@@ -888,17 +892,15 @@ test('after a game the room vote runs over the board, without leaving the game s
 	const ballot = phone.getByTestId('ballot-screen');
 	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
 	await ballot.getByRole('button', { name: 'Vote', exact: true }).tap();
-	await more.tap();
-	await menu.getByTestId('menu-room-vote').tap();
+	await roomVote.tap();
 	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
 
 	await sheet.getByRole('button', { name: 'End vote' }).tap();
 	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
-	// Play opens the board's own New game with the winner chosen, the seats carried over.
+	// Play chooses the winner in the board's own New game, the seats carried over.
 	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
 	await expect(sheet).toHaveCount(0);
 	await expect(ballot).toHaveCount(0);
-	const newGame = page.getByRole('dialog', { name: 'New game' });
 	await expect(
 		newGame.getByRole('radiogroup', { name: 'Script' }).getByRole('radio', { checked: true })
 	).toHaveAccessibleName('Bad Moon Rising');
