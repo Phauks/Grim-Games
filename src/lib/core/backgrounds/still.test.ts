@@ -46,4 +46,19 @@ describe('still backgrounds (M72)', () => {
 		const flat = stillCss({ id: 'felt', params: { ...stillDefaults('felt'), texture: 0 } });
 		expect(flat).toContain(encodeURIComponent('0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0 0'));
 	});
+
+	// Trevor, 2026-11-15: boxes showed in Stone behind the script logo and round a seat, where
+	// one repeat of a noise picture met the next.
+	it('wraps the noise of every repeating picture at its own edges, so no repeat shows as a box', () => {
+		for (const id of STILL_IDS) {
+			const layers = stillCss({ id, params: stillDefaults(id) }).match(/url\("[^"]+"\)[^,]*/g);
+			expect(layers?.length).toBeGreaterThan(0);
+			for (const layer of layers ?? []) {
+				const svg = decodeURIComponent(layer.slice(layer.indexOf(',') + 1, layer.indexOf('")')));
+				expect(svg).toContain("<filter id='n' x='0' y='0' width='100%' height='100%'>");
+				const repeats = !layer.endsWith('/ 100% 100%');
+				expect(svg.includes("stitchTiles='stitch'"), `${id}: ${layer.slice(-20)}`).toBe(repeats);
+			}
+		}
+	});
 });

@@ -121,6 +121,8 @@ export const ICON_SLOTS = {
 	choosePhoto: { label: 'Choose a photo', choices: ['ph:image', 'ph:images'] },
 	/** The step-by-step log of a script read from a photo or file (Trevor, 2026-11-06). */
 	importLog: { label: 'Read log', choices: ['ph:list-magnifying-glass', 'ph:scroll'] },
+	/** The pictures a script was read from, with each read line marked (Trevor, 2026-11-15). */
+	scanPictures: { label: 'Pictures read', choices: ['ph:image-square', 'ph:frame-corners'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
 	changeKind: { label: 'Change kind', choices: ['ph:swap', 'ph:arrows-left-right'] },
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },

@@ -182,6 +182,12 @@ test("a script sheet's PDF is read from its own text, through Upload File", asyn
 		timeout: 60_000
 	});
 	for (const r of tb) await expect(dialog.locator(`[data-character="${r.id}"]`)).toBeVisible();
+	// The page is shown with each line of its own text marked where it sits (Trevor, 2026-11-15).
+	await dialog.getByRole('button', { name: 'Pictures Read' }).tap();
+	const shown = page.getByRole('dialog', { name: 'Pictures Read' });
+	await expect(shown.getByTestId('scan-picture')).toHaveCount(1);
+	await expect(shown.locator('rect[data-mark="character"]').first()).toBeAttached();
+	await expect(shown.locator('rect[data-mark="title"]')).toHaveCount(1);
 });
 
 test('Choose a Photo reads a saved picture, and Read Log tells each step', async ({
@@ -229,6 +235,13 @@ test('Choose a Photo reads a saved picture, and Read Log tells each step', async
 		.getByRole('button', { name: 'Close' })
 		.tap();
 	await expect(dialog).toBeVisible();
+	// The picture as it was read, each line marked by how it was used (Trevor, 2026-11-15:
+	// "show the picture to the users, so that they can see what issues may arise").
+	await dialog.getByRole('button', { name: 'Pictures Read' }).tap();
+	const shown = page.getByRole('dialog', { name: 'Pictures Read' });
+	await expect(shown.getByRole('img', { name: 'Picture 1 as it was read' })).toBeVisible();
+	await expect(shown.locator('rect[data-mark="character"]')).toHaveCount(tb.length);
+	await expect(shown.getByText('Not matched', { exact: true })).toBeVisible();
 });
 
 test('a picture of a sheet given to Upload File is read like a photo', async ({

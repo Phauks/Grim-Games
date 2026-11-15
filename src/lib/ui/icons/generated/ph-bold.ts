@@ -125,6 +125,7 @@ import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
 import ph_image_bold from '~icons/ph/image-bold';
+import ph_image_square_bold from '~icons/ph/image-square-bold';
 import ph_images_bold from '~icons/ph/images-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_key_bold from '~icons/ph/key-bold';
@@ -371,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
 	'ph:image-bold': ph_image_bold,
+	'ph:image-square-bold': ph_image_square_bold,
 	'ph:images-bold': ph_images_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:key-bold': ph_key_bold,
