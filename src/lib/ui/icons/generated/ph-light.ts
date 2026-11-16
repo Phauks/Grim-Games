@@ -62,6 +62,7 @@ import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-
 import ph_club_light from '~icons/ph/club-light';
 import ph_coffee_light from '~icons/ph/coffee-light';
 import ph_coin_light from '~icons/ph/coin-light';
+import ph_compass_light from '~icons/ph/compass-light';
 import ph_copy_light from '~icons/ph/copy-light';
 import ph_copy_simple_light from '~icons/ph/copy-simple-light';
 import ph_corners_in_light from '~icons/ph/corners-in-light';
@@ -82,6 +83,7 @@ import ph_download_simple_light from '~icons/ph/download-simple-light';
 import ph_drop_light from '~icons/ph/drop-light';
 import ph_envelope_simple_light from '~icons/ph/envelope-simple-light';
 import ph_eraser_light from '~icons/ph/eraser-light';
+import ph_export_light from '~icons/ph/export-light';
 import ph_eye_light from '~icons/ph/eye-light';
 import ph_eye_closed_light from '~icons/ph/eye-closed-light';
 import ph_eye_slash_light from '~icons/ph/eye-slash-light';
@@ -173,6 +175,7 @@ import ph_play_light from '~icons/ph/play-light';
 import ph_play_circle_light from '~icons/ph/play-circle-light';
 import ph_plus_light from '~icons/ph/plus-light';
 import ph_plus_circle_light from '~icons/ph/plus-circle-light';
+import ph_plus_square_light from '~icons/ph/plus-square-light';
 import ph_poker_chip_light from '~icons/ph/poker-chip-light';
 import ph_printer_light from '~icons/ph/printer-light';
 import ph_prohibit_light from '~icons/ph/prohibit-light';
@@ -311,6 +314,7 @@ const icons: IconMap = {
 	'ph:club-light': ph_club_light,
 	'ph:coffee-light': ph_coffee_light,
 	'ph:coin-light': ph_coin_light,
+	'ph:compass-light': ph_compass_light,
 	'ph:copy-light': ph_copy_light,
 	'ph:copy-simple-light': ph_copy_simple_light,
 	'ph:corners-in-light': ph_corners_in_light,
@@ -331,6 +335,7 @@ const icons: IconMap = {
 	'ph:drop-light': ph_drop_light,
 	'ph:envelope-simple-light': ph_envelope_simple_light,
 	'ph:eraser-light': ph_eraser_light,
+	'ph:export-light': ph_export_light,
 	'ph:eye-light': ph_eye_light,
 	'ph:eye-closed-light': ph_eye_closed_light,
 	'ph:eye-slash-light': ph_eye_slash_light,
@@ -422,6 +427,7 @@ const icons: IconMap = {
 	'ph:play-circle-light': ph_play_circle_light,
 	'ph:plus-light': ph_plus_light,
 	'ph:plus-circle-light': ph_plus_circle_light,
+	'ph:plus-square-light': ph_plus_square_light,
 	'ph:poker-chip-light': ph_poker_chip_light,
 	'ph:printer-light': ph_printer_light,
 	'ph:prohibit-light': ph_prohibit_light,

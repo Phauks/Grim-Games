@@ -168,6 +168,10 @@ export const ICON_SLOTS = {
 	/** Reads a QR code with the camera (Join game). */
 	scan: { label: 'Scan a code', choices: ['ph:camera', 'ph:scan'] },
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
+	iosShare: { label: 'Share (iPhone)', choices: ['ph:export'] },
+	addToHome: { label: 'Add to Home Screen', choices: ['ph:plus-square'] },
+	openBrowser: { label: 'Open in browser', choices: ['ph:compass'] },
+	browserMenu: { label: 'Browser menu', choices: ['ph:dots-three-vertical'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	/** The scratch pad's drawing tool only; an edit button is `edit` (grim/icon-meaning). */
 	pen: { label: 'Pen', choices: ['ph:pen-nib', 'ph:pencil-simple-line'] },
