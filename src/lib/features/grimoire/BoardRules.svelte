@@ -37,7 +37,7 @@
 		/** Opens an ability the Storyteller holds, by the character that gave it. */
 		onShowAbility: (via: CharacterId) => void;
 		onHeldTap: (reminderId: ReminderId) => void;
-		onHeldDrag: (reminderId: ReminderId, x: number, y: number, end: boolean) => void;
+		onHeldDrag?: (reminderId: ReminderId, x: number, y: number, end: boolean) => void;
 		onCancel: () => void;
 	}
 
@@ -87,7 +87,7 @@
 					size={Math.round(chip * 0.7)}
 					{disabled}
 					onTap={() => onHeldTap(last.reminderId)}
-					onDrag={(x, y, end) => onHeldDrag(last.reminderId, x, y, end)}
+					onDrag={onHeldDrag && ((x, y, end) => onHeldDrag(last.reminderId, x, y, end))}
 					{onCancel}
 				/>
 			</span>

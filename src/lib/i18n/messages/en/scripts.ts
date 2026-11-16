@@ -126,6 +126,7 @@ export const scripts = {
 	'scripts.details.removeBody': '{name} is removed from your saved scripts on this device.',
 	'scripts.details.confirm': 'Confirm',
 	'scripts.details.version': 'Version',
+	'scripts.details.rating': 'Rating',
 	'scripts.details.latestVersion': '{version} (latest)',
 	'scripts.details.savedVersion': '{version} (saved)',
 	'scripts.details.newerVersion': 'Newer: {version}',

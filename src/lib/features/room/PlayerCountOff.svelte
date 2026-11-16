@@ -5,6 +5,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CountOffTokens from './CountOffTokens.svelte';
+	import PlayerNameDialog from './PlayerNameDialog.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 
 	/**
@@ -28,15 +29,39 @@
 	/** A number someone else holds, waiting for Confirm before it is taken. */
 	let taking = $state<{ number: number; name: string }>();
 	let confirming = $state(false);
+	/**
+	 * The number a phone with no name tapped, taken once it has one: the room counts only named
+	 * players, so the tap did nothing (Trevor, 2026-11-16: "tried clicking the button and it
+	 * never worked").
+	 */
+	let naming = $state<number>();
+	let nameOpen = $state(false);
 	function tap(number: number) {
 		const holder = view?.tokens.find((token) => token.number === number);
-		if (holder?.mine) return;
+		// Tap again to let it go (Trevor, 2026-11-16: "they couldn't unselect a seat").
+		if (holder?.mine) {
+			player.count(null);
+			return;
+		}
+		if (!player.view?.me.name) {
+			naming = number;
+			nameOpen = true;
+			return;
+		}
+		take(number);
+	}
+	function take(number: number) {
+		const holder = view?.tokens.find((token) => token.number === number);
 		if (!holder) {
 			player.count(number);
 			return;
 		}
 		taking = holder;
 		confirming = true;
+	}
+	function named() {
+		if (naming !== undefined) take(naming);
+		naming = undefined;
 	}
 </script>
 
@@ -51,6 +76,8 @@
 		</div>
 	</Dialog>
 {/if}
+
+<PlayerNameDialog bind:open={nameOpen} {player} onSaved={named} />
 
 <ConfirmDialog
 	bind:open={confirming}

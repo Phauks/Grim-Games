@@ -256,6 +256,12 @@
 				can stop a device syncing it in Settings, Data.
 			</li>
 			<li>
+				Script ratings are public: when players rate a game told by a signed-in Storyteller, the
+				ratings and accolade counts of players in a seat are added to that script's rating, which
+				anyone can see in the script's details. Only the numbers are kept, under a code made from
+				the script's name and author; never a comment, a name or an account.
+			</li>
+			<li>
 				Your settings: theme, fonts, icons, board, token, Storyteller and sound settings, from the
 				first device you sign in on. Sizes, such as text and token sizes, stay on each device. A
 				background picture you add is not synced; it leaves the device only for a live room you
