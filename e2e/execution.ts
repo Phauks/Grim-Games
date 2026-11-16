@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { tapStartGame } from './start-game.ts';
 
 /**
  * Answers the day's Execution, already asked: on the board's bar (Trevor, 2026-11-06: the
@@ -52,23 +53,34 @@ export const bankExecution = (page: Page) =>
  */
 export async function startExecution(page: Page): Promise<void> {
 	const sheet = page.getByRole('dialog', { name: 'Game', exact: true });
-	if (await sheet.isVisible()) {
+	const closeSheet = async () => {
+		if (!(await sheet.isVisible())) return;
 		await page.keyboard.press('Escape');
 		await expect(sheet).toBeHidden();
-	}
+	};
+	await closeSheet();
 	// Before Day 1 the bank ends the first night instead: ended here, as the Day's Execution
-	// used to skip it.
+	// used to skip it. Dawn opens the Day, over the board on a phone.
 	const endNight = page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
 		.getByRole('button', { name: 'End night', exact: true });
-	await expect(bankExecution(page).or(endNight)).toBeVisible();
+	const start = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'Start game', exact: true });
+	await expect(bankExecution(page).or(endNight).or(start)).toBeVisible();
+	if (await start.isVisible()) {
+		await tapStartGame(page, start);
+		await expect(endNight).toBeVisible();
+	}
 	if (await endNight.isVisible()) {
 		await endNight.tap();
 		const ask = page.getByRole('alertdialog', { name: 'End the night?' });
-		if (await ask.isVisible({ timeout: 2000 }).catch(() => false))
-			await ask.getByRole('button', { name: 'Confirm' }).tap();
-		await expect(bankExecution(page)).toBeVisible();
+		await expect(ask.or(bankExecution(page)).or(sheet).first()).toBeVisible();
+		if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm' }).tap();
+		await expect(bankExecution(page).or(sheet).first()).toBeVisible();
+		await closeSheet();
 	}
 	await bankExecution(page).tap();
 }

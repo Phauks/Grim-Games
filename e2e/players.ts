@@ -69,3 +69,21 @@ export async function openPlayerSheet(page: Page, name: string) {
 	await expect(sheet).toBeVisible();
 	return sheet;
 }
+
+/**
+ * The day timer's full controls: the board's timer, the only one since the Day moved into the
+ * pane (Trevor, 2026-11-16), opened as its sheet. A phone's pane closes first.
+ */
+export async function boardTimer(page: Page): Promise<Locator> {
+	const sheet = page.getByTestId('timer-sheet');
+	if (!(await sheet.isVisible())) {
+		await closePane(page);
+		await page
+			.locator('.board-timer')
+			.getByTestId('day-timer')
+			.getByRole('button', { name: /open its controls$/ })
+			.tap();
+	}
+	await expect(sheet).toBeVisible();
+	return sheet.getByTestId('day-timer');
+}

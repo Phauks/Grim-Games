@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, boardTimer } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
@@ -453,7 +453,7 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	});
 	await startGame(page);
 	await paneDay(page);
-	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const timer = await boardTimer(page);
 	const clock = timer.getByRole('timer');
 	// 8 players alive: 4 minutes.
 	await expect(clock).toHaveText('4:00');
@@ -561,7 +561,7 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await page.clock.install();
 	await startGame(page);
 	await paneDay(page);
-	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const timer = await boardTimer(page);
 	const clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('4:00');
 	// The mode is named on the timer (Trevor, 2026-10-17). The day's clock opens the Timer
@@ -593,7 +593,7 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	// The choice is kept.
 	await page.reload();
 	await paneDay(page);
-	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
+	await expect((await boardTimer(page)).getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
 // A script's homebrew character shows its own name in the day view, never its id (Trevor,
@@ -665,7 +665,7 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await page.clock.install();
 	await startGame(page);
 	await paneDay(page);
-	await page.getByTestId('day-toolbar').getByRole('button', { name: 'Start timer' }).tap();
+	await (await boardTimer(page)).getByRole('button', { name: 'Start timer' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('pane-day')).toBeHidden();
 
@@ -701,7 +701,7 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await expect(board).toBeVisible();
 	// The choices are the same settings the day view uses.
 	await paneDay(page);
-	await expect(page.getByTestId('day-toolbar').getByTestId('timer-mode')).toHaveText('Stopwatch');
+	await expect((await boardTimer(page)).getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
 test('the time per living player is set on the timer and starts it at that much', async ({
@@ -709,7 +709,7 @@ test('the time per living player is set on the timer and starts it at that much'
 }) => {
 	await startGame(page);
 	await paneDay(page);
-	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const timer = await boardTimer(page);
 	await expect(timer.getByRole('timer')).toHaveText('4:00');
 	// Trevor (2026-10-19): a setting, 30 seconds by default, on the timer and in Settings.
 	await timer.getByRole('button', { name: 'Day timer, 4:00; open its controls' }).tap();
@@ -1105,7 +1105,7 @@ test('holding the day timer or a new day resets it to the time per living player
 	await startGame(page);
 	await paneDay(page);
 	let day = page.getByTestId('pane-day');
-	const clock = day.getByTestId('day-toolbar').getByRole('timer');
+	const clock = (await boardTimer(page)).getByRole('timer');
 	await expect(clock).toHaveText('4:00');
 	// Changed by hand: that lasts for this day only.
 	await day.getByRole('button', { name: '30 seconds less' }).tap();
@@ -1134,7 +1134,7 @@ test('holding the day timer or a new day resets it to the time per living player
 		.tap();
 	// The day opens after End night; the timer starts again at 8 players' time (Trevor, 2026-10-19).
 	day = page.getByRole('dialog', { name: 'Day 1' });
-	await expect(day.getByTestId('day-toolbar').getByRole('timer')).toHaveText('4:00');
+	await expect((await boardTimer(page)).getByRole('timer')).toHaveText('4:00');
 	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
 	// Nobody dies on the first night as a rule, so Day 1 doesn't say "Nobody died" (Trevor,
 	// 2026-11-04); that announcement starts on Day 2 (the revival test).
@@ -1383,7 +1383,7 @@ test('with the Buddhist in play the day timer counts down the veterans’ quiet'
 		page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', { name: 'Buddhist' })
 	).toBeVisible();
 	await openDay(page);
-	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const timer = await boardTimer(page);
 	const quiet = timer.getByTestId('timer-quiet');
 	await expect(quiet).toHaveText('Veterans quiet 2:00');
 	await expect(timer.getByTestId('timer-mode')).toHaveCount(0);

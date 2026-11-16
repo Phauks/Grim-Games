@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { chooseExecution, startExecution } from './execution.ts';
 import { toBoard } from './new-game.ts';
 import { walkName, walkNext, walkThrough } from './night-step.ts';
+import { pickNumber } from './number-select.ts';
+import { tapStartGame } from './start-game.ts';
 import { openPane, paneIsSheet, storytellerPane } from './players.ts';
 
 // The grim as the home screen (Trevor, 2026-11-16: "make the grim the home screen"): the Day
@@ -16,8 +17,30 @@ async function newGame(page: Page) {
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
+	await pickNumber(page, 'Players', 7);
 	await toBoard(page);
 	await expect(page.getByTestId('cover-button')).toBeVisible();
+}
+
+/** An Imp in Seat 1, then Start game: the first night's walk-through starts at Dusk. */
+async function firstNight(page: Page) {
+	const seatSheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await page.locator('[data-testid="seat"][aria-label^="Seat 1:"]').tap();
+	await seatSheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: /^Imp(, Recommended)?$/ })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seatSheet).toBeHidden();
+	await tapStartGame(
+		page,
+		page
+			.getByRole('list', { name: 'Reminder bank' })
+			.locator('..')
+			.getByRole('button', { name: 'Start game', exact: true })
+	);
+	await expect(endNight(page)).toBeVisible();
 }
 
 const endNight = (page: Page) =>
@@ -57,9 +80,7 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 
 test("tonight's step is the pane's Night tab, with the strip's Next", async ({ page }) => {
 	await newGame(page);
-	await startExecution(page);
-	await chooseExecution(page);
-	await expect(endNight(page)).toBeEnabled();
+	await firstNight(page);
 	await expect(walkThrough(page)).toBeVisible();
 	await expect(walkName(page)).toHaveText('Dusk');
 	await walkNext(page).tap();
@@ -68,7 +89,7 @@ test("tonight's step is the pane's Night tab, with the strip's Next", async ({ p
 	if (!(await paneIsSheet(page))) {
 		// Beside the board there is no strip: the pane has the step, its count by the night.
 		await expect(page.getByTestId('night-strip')).toHaveCount(0);
-		const step = storytellerPane(page).getByRole('region', { name: 'Other nights' });
+		const step = storytellerPane(page).getByRole('region', { name: 'First night' });
 		await expect(step.getByTestId('step-count')).toHaveText(/^2 of \d+$/);
 		await step.getByRole('button', { name: 'Previous step', exact: true }).tap();
 		await expect(walkName(page)).toHaveText('Dusk');
@@ -77,9 +98,7 @@ test("tonight's step is the pane's Night tab, with the strip's Next", async ({ p
 
 test('starting the timer at night asks to start the day', async ({ page }) => {
 	await newGame(page);
-	await startExecution(page);
-	await chooseExecution(page);
-	await expect(endNight(page)).toBeEnabled();
+	await firstNight(page);
 
 	const board = page.locator('.board-timer').getByTestId('day-timer');
 	await board.getByRole('button', { name: /open its controls$/ }).tap();

@@ -1,4 +1,4 @@
-import { paneDay } from './players.ts';
+import { paneDay, boardTimer } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
@@ -124,7 +124,7 @@ test('Back to town can be called before the time is up, and stops the timer', as
 		page.getByTestId('day-toolbar').getByRole('button', { name: 'Back to town' })
 	).toBeEnabled();
 	// At the timer's front, as on the board's (Trevor, 2026-11-02).
-	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const dayTimer = await boardTimer(page);
 	expect(await dayTimer.evaluate((el) => el.firstElementChild?.getAttribute('aria-label'))).toBe(
 		'Back to town'
 	);
@@ -184,7 +184,7 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await expect(cover).toBeHidden();
 
 	await paneDay(page);
-	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const dayTimer = await boardTimer(page);
 	expect(await buttons(dayTimer)).toEqual(fromGrim);
 	// And the day's own Timer sheet holds the same timer again.
 	await dayTimer.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
