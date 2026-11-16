@@ -16,7 +16,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
 	import ScriptChooser from './ScriptChooser.svelte';
-	import { searchableScripts, type ScriptChoice } from './script-choices.svelte.ts';
+	import { NO_SCRIPT, searchableScripts, type ScriptChoice } from './script-choices.svelte.ts';
 	import { scriptVersions } from './script-versions.ts';
 
 	/**
@@ -34,9 +34,14 @@
 		hideLabel?: boolean;
 		value: ScriptChoice;
 		onChange: (value: ScriptChoice) => void;
+		/**
+		 * A third choice, None, after Official and Custom (Trevor, 2026-11-16): New game shows it
+		 * always, so nothing moves, and it can be chosen only for a Local Grim game.
+		 */
+		none?: 'enabled' | 'disabled';
 	}
 
-	let { label, hideLabel, value, onChange }: Props = $props();
+	let { label, hideLabel, value, onChange, none }: Props = $props();
 
 	const CUSTOM = '__custom__';
 	const editions = OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name }));
@@ -49,11 +54,15 @@
 	const OFFICIAL = '__official__';
 	const kinds = $derived([
 		{ value: OFFICIAL, label: t('modes.scriptKind.official') },
-		{ value: CUSTOM, label: t('modes.scriptSearch.custom') }
+		{ value: CUSTOM, label: t('modes.scriptSearch.custom') },
+		...(none
+			? [{ value: NO_SCRIPT, label: t('modes.scriptKind.none'), disabled: none === 'disabled' }]
+			: [])
 	]);
 	// Custom until a base script is picked; a custom script chosen elsewhere (Play on Search) is Custom.
 	let customPicked = $state(false);
-	const custom = $derived(customPicked || !isEdition(value));
+	const noScript = $derived(value === NO_SCRIPT);
+	const custom = $derived(!noScript && (customPicked || !isEdition(value)));
 	/** The official script Official goes back to: the last one chosen, else the first. */
 	let lastEdition = $state<ScriptChoice>(
 		untrack(() => (isEdition(value) ? value : editions[0]!.value))
@@ -152,17 +161,17 @@
 		label={t('modes.scriptKind.label')}
 		hideLabel
 		layout="joined"
-		value={custom ? CUSTOM : OFFICIAL}
+		value={noScript ? NO_SCRIPT : custom ? CUSTOM : OFFICIAL}
 		options={kinds}
 		onChange={choose}
 	/>
 	<!-- Both kinds in one cell: the hidden one keeps its height, so nothing below moves. -->
 	<div class="kinds">
-		<div class="kind" class:hidden={custom} inert={custom}>
+		<div class="kind" class:hidden={custom || noScript} inert={custom || noScript}>
 			<ChoiceGroup
 				{label}
 				{hideLabel}
-				value={custom ? '' : value}
+				value={custom || noScript ? '' : value}
 				options={editions}
 				onChange={choose}
 			/>
@@ -191,7 +200,11 @@
 		<ScriptByline author={chosen?.author} inline />
 		<span class="source">
 			<ScriptSourceButton
-				page={custom ? shownSource && sourcePage(shownSource) : editionWikiUrl(value)}
+				page={custom
+					? shownSource && sourcePage(shownSource)
+					: noScript
+						? undefined
+						: editionWikiUrl(value)}
 				source={shownSource && describeSource(shownSource)}
 			/>
 		</span>

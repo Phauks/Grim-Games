@@ -21,6 +21,7 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import {
 		loadScriptChoice,
+		NO_SCRIPT,
 		scriptChoiceSource,
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
@@ -80,7 +81,8 @@
 			// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
 			else if (openedByBack()) {
 				const draft = readDraft();
-				if (draft.edition) edition = draft.edition as ScriptChoice;
+				// Host starts as Storyteller, which has no None.
+				if (draft.edition && draft.edition !== NO_SCRIPT) edition = draft.edition;
 				if (draft.players) players = draft.players;
 			}
 		}
@@ -193,7 +195,11 @@
 						hideLabel
 						value={host}
 						options={hostOptions}
-						onChange={(v) => (host = v)}
+						onChange={(v) => {
+							host = v;
+							// No script is a Local Grim game's alone.
+							if (v !== 'local' && edition === NO_SCRIPT) edition = 'tb';
+						}}
 					/>
 					<!-- When to use each (Trevor, 2026-11-06, wording A picked 2026-11-08); its two
 					     lines are kept, so nothing below moves when the choice changes. -->
@@ -216,7 +222,14 @@
 						onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
 					>
 				{/snippet}
-				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
+				<!-- None only for a Local Grim game (Trevor, 2026-11-16), shown always so nothing moves. -->
+				<ScriptPicker
+					label="Script"
+					hideLabel
+					value={edition}
+					onChange={(v) => (edition = v)}
+					none={compact ? undefined : host === 'local' ? 'enabled' : 'disabled'}
+				/>
 			</PageSection>
 			<Button
 				variant="accent"

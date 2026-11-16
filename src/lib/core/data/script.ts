@@ -83,7 +83,12 @@ export const OFFICIAL_EDITIONS = [
 ] as const;
 export type OfficialEditionId = (typeof OFFICIAL_EDITIONS)[number]['id'];
 
-const PLAYABLE_TYPES: readonly CharacterType[] = ['townsfolk', 'outsider', 'minion', 'demon'];
+export const PLAYABLE_TYPES: readonly CharacterType[] = [
+	'townsfolk',
+	'outsider',
+	'minion',
+	'demon'
+];
 
 /** Finds an official edition by id or name, forgiving case, spacing and "&" vs "and". */
 export function findEdition(query: string): (typeof OFFICIAL_EDITIONS)[number] | undefined {

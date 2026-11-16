@@ -1827,7 +1827,9 @@ test('Official or Custom: only one kind of script is shown, and the sheet finds 
 	// sources and Add script, never leaving New game.
 	await page.goto('/new');
 	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
-	await expect(kinds.getByRole('radio')).toHaveCount(2);
+	// None, a Local Grim game's alone (2026-11-16), is shown but can't be chosen here.
+	await expect(kinds.getByRole('radio')).toHaveCount(3);
+	await expect(kinds.getByRole('radio', { name: 'None' })).toBeDisabled();
 	const official = kinds.getByRole('radio', { name: 'Official' });
 	const custom = kinds.getByRole('radio', { name: 'Custom' });
 	const script = page.getByRole('radiogroup', { name: 'Script' });

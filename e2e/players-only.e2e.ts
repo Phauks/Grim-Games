@@ -343,3 +343,47 @@ test('a Local Grim seat guesses an off-script character once the toggle is on', 
 	await expect(next.getByRole('checkbox', { name: 'Off-script characters' })).toBeChecked();
 	await expect(next.getByRole('button', { name: 'Pukka', exact: true })).toBeAttached();
 });
+
+// Trevor, 2026-11-15: "Should be able to do a local only grim without a script": New game's
+// Script gets None after Official and Custom, which only a Local Grim game can choose.
+test('a Local Grim game starts with no script, and any character can be guessed', async ({
+	page
+}) => {
+	await page.goto('/new');
+	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
+	const none = kinds.getByRole('radio', { name: 'None' });
+	// Shown for a Storyteller's game too, so nothing moves, but not choosable.
+	await expect(none).toBeDisabled();
+	await page.getByRole('combobox', { name: 'Host' }).tap();
+	await page.getByRole('option', { name: /^Local Grim/ }).tap();
+	await expect(none).toBeEnabled();
+	await kinds.getByText('None', { exact: true }).tap();
+	await expect(none).toBeChecked();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+
+	await expect(page).toHaveURL(/\/play$/);
+	await page.getByTestId('grim-seat').nth(0).tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 1/ });
+	// Every official character, from any edition, without the Off-script switch.
+	await sheet.getByRole('searchbox').first().fill('Pukka');
+	await sheet.getByRole('button', { name: 'Pukka', exact: true }).tap();
+	await expect(
+		sheet.getByTestId('seat-guesses').getByRole('button', { name: /Pukka/ })
+	).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	await page.goto('/join');
+	await expect(page.getByTestId('players-only-games').getByRole('button')).toContainText(
+		'No script'
+	);
+
+	// Back to a Storyteller's game, the script goes back to an official one.
+	await page.goto('/new');
+	await page.getByRole('combobox', { name: 'Host' }).tap();
+	await page.getByRole('option', { name: /^Local Grim/ }).tap();
+	await kinds.getByText('None', { exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Host' }).tap();
+	await page.getByRole('option', { name: /^Storyteller/ }).tap();
+	await expect(kinds.getByRole('radio', { name: 'Official' })).toBeChecked();
+});

@@ -6,6 +6,8 @@
 	interface Option {
 		value: T;
 		label: string;
+		/** Shown but not choosable, as `disabled` for one option. */
+		disabled?: boolean;
 	}
 
 	interface Props {
@@ -70,6 +72,7 @@
 		{#each options as option (option.value)}
 			<RadioGroup.Item
 				value={option.value}
+				disabled={option.disabled}
 				onclick={clearable && !disabled && option.value === value
 					? (event: MouseEvent) => {
 							// Not passed on to the radio, which would choose it again.
