@@ -2842,9 +2842,12 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await alex.goto(`/join/${code}`);
 	const you = await seatSheet(alex);
 	const picture = you.getByTestId('avatar-picture');
-	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeDisabled();
-	// "+ Image" (Trevor, 2026-10-27), the add icon and one word.
-	await expect(picture.getByRole('button', { name: 'Image', exact: true })).toBeVisible();
+	// A pencil on the token is its only control (Trevor, 2026-11-16): a menu whose Move and
+	// Remove wait for a picture.
+	await picture.getByRole('button', { name: 'Edit profile picture' }).tap();
+	await expect(alex.getByRole('menuitem', { name: 'Remove picture' })).toBeDisabled();
+	await expect(alex.getByRole('menuitem', { name: 'Choose picture' })).toBeEnabled();
+	await alex.keyboard.press('Escape');
 	await picture.getByLabel('Picture for your seat').setInputFiles({
 		name: 'me.png',
 		mimeType: 'image/png',
@@ -2869,7 +2872,9 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await crop.getByRole('button', { name: 'Save' }).tap();
 	await expect(crop).toBeHidden();
 	await expect(picture.getByTestId('avatar-face')).toHaveAttribute('data-picture', 'true');
-	await expect(picture.getByRole('button', { name: 'Remove picture' })).toBeEnabled();
+	await picture.getByRole('button', { name: 'Edit profile picture' }).tap();
+	await expect(alex.getByRole('menuitem', { name: 'Remove picture' })).toBeEnabled();
+	await alex.keyboard.press('Escape');
 	// Only the left half, red, was kept.
 	const kept = await picture
 		.getByTestId('avatar-face')
@@ -2886,7 +2891,8 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	expect(kept[2]).toBeLessThan(60);
 	// A tap on the picture opens the crop screen again on the whole picture, where it was left
 	// (Trevor, 2026-10-27: "clicking on picture in player settings to preview and edit crop").
-	await picture.getByRole('button', { name: 'Move or zoom your picture' }).tap();
+	await picture.getByRole('button', { name: 'Edit profile picture' }).tap();
+	await alex.getByRole('menuitem', { name: 'Move or zoom' }).tap();
 	await expect(crop).toBeVisible();
 	await expect(shown).toHaveAttribute('style', /left: 0%/);
 	await expect(shown).toHaveAttribute('style', /width: 200%/);

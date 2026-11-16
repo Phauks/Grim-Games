@@ -515,7 +515,12 @@ test('Account in the menu keeps the account icon with a character token chosen',
 	const settings = await openSettingsDialog(page);
 	await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
 	const profile = page.getByRole('dialog', { name: 'Profile', exact: true });
-	await profile.getByRole('button', { name: 'Change character token' }).tap();
+	// The character token is a detail (Trevor, 2026-11-16).
+	await profile.getByTestId('profile-detail-new').tap();
+	const form = page.getByRole('dialog', { name: 'New detail' });
+	await form.getByRole('combobox', { name: 'Detail' }).tap();
+	await page.getByRole('option', { name: 'Character token', exact: true }).tap();
+	await form.getByRole('button', { name: 'Pick character' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Character token' });
 	await picker.getByRole('searchbox').fill('Fortune Teller');
 	await picker
@@ -523,6 +528,7 @@ test('Account in the menu keeps the account icon with a character token chosen',
 		.first()
 		.tap();
 	await expect(picker).toBeHidden();
+	await form.getByRole('button', { name: 'Save' }).tap();
 	await profile.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(profile).toBeHidden();
 
