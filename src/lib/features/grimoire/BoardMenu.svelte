@@ -128,6 +128,13 @@
 				onclick={() => appFullScreen.toggle()}
 			/>
 		{/if}
+		<!-- The one Report form, straight from the game (Trevor, 2026-10-20), as an icon beside
+		     Close rather than a row of its own (Trevor, 2026-11-16). -->
+		<IconButton
+			icon="report"
+			label={t('shell.reportIssue')}
+			onclick={() => fromMenu(() => void reportWithDiagnostics())}
+		/>
 	{/snippet}
 	<div class="menu">
 		<div class="column">
@@ -209,14 +216,6 @@
 						Navigation
 					</Button>
 				</span>
-				<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-				<Button
-					variant="quiet"
-					icon="report"
-					onclick={() => fromMenu(() => void reportWithDiagnostics())}
-				>
-					{t('shell.reportIssue')}
-				</Button>
 			</section>
 			<!-- Before and after the game, apart from its other items (Trevor, 2026-10-30: they "feel
 			     somewhat different from the other items in game"; "these all seem related to pre and
