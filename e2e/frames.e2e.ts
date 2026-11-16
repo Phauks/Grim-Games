@@ -379,3 +379,25 @@ test('no frame or motion paints over the face', async ({ page }) => {
 		}
 	}
 });
+
+test("the Profile's seat changes laurel without the arrival grow-in", async ({ page }) => {
+	// Trevor, 2026-11-16: "in the profile area, when making changes, don't show the i have
+	// arrived animation, as that isn't useful in this context". Seats on a board still grow
+	// a laurel in as a player arrives (e2e/room.e2e.ts).
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await page.evaluate(() => {
+		(window as unknown as { grew: boolean }).grew = false;
+		new MutationObserver(() => {
+			if (document.querySelector('[data-testid="profile-preview"] [data-growing]')) {
+				(window as unknown as { grew: boolean }).grew = true;
+			}
+		}).observe(document.body, { subtree: true, childList: true, attributes: true });
+	});
+	for (const form of ['Laurel', 'Olive', 'None', 'Simple ring']) {
+		await choose(page, 'Your laurel', form);
+	}
+	await choose(page, 'Motion', 'Pulse');
+	await expect(dialog.getByTestId('profile-preview').locator('svg[data-frame]')).toBeAttached();
+	expect(await page.evaluate(() => (window as unknown as { grew: boolean }).grew)).toBe(false);
+});

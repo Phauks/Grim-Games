@@ -71,6 +71,7 @@
 		avatar={playerSettings.current.avatar}
 		picture={avatarPicture.url}
 		{frame}
+		growIn={false}
 	/>
 {/snippet}
 
