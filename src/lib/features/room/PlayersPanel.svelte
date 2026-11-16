@@ -109,14 +109,8 @@
 		return t('room.players.where', { seat, state: t(PHONE_TEXT[phoneOf(entry)]) });
 	}
 
-	/** What waits from this player: unread messages and pictures still to judge. */
-	function waiting(memberId: string): { count: number; urgent: boolean } {
-		const items = host.inbox.items.filter((i) => i.memberId === memberId);
-		const fresh = items.filter((i) => i.kind === 'picture' || !i.read);
-		// A request to talk, or a reported picture, needs the Storyteller more than a note does.
-		const urgent = fresh.some((i) => i.kind === 'picture' || i.consult);
-		return { count: fresh.length, urgent };
-	}
+	/** What waits from this player (the seat's mark on the board shows the same). */
+	const waiting = (memberId: string) => host.inbox.waitingFrom(memberId);
 	const inboxCount = (memberId: string) =>
 		host.inbox.items.filter((i) => i.memberId === memberId).length;
 
@@ -225,53 +219,55 @@
 	</li>
 {/snippet}
 
-<div class="players">
-	<div class="list-side">
-		<!-- A caret section whose count, while closed, is how many players there are (Trevor,
+<div class="players-room">
+	<div class="players">
+		<div class="list-side">
+			<!-- A caret section whose count, while closed, is how many players there are (Trevor,
 		     2026-11-01). -->
-		<Collapsible
-			title={t('room.playersInRoom')}
-			storageKey="players-list"
-			pinned={false}
-			count={players.length}
-		>
-			{#if players.length === 0}
-				<p class="none">{t('common.none')}</p>
-			{:else}
-				<ul class="list" aria-label={t('room.playersInRoom')} bind:this={list}>
-					{#each players as entry (entry.key)}{@render line(entry)}{/each}
-				</ul>
-			{/if}
-		</Collapsible>
-		<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view;
-		     the switch says whether they may message the Storyteller. -->
-		<Collapsible
-			title={t('room.spectators')}
-			storageKey="players-spectators"
-			pinned={false}
-			count={spectators.length}
-		>
-			<div data-testid="room-spectators">
-				<SettingToggle
-					label={t('room.spectators.mayMessage')}
-					checked={!host.inbox.spectatorsMuted}
-					disabled={!host.code || viewOnly}
-					onChange={(on) => host.inbox.allowSpectators(on)}
-				/>
-				{#if spectators.length === 0}
+			<Collapsible
+				title={t('room.playersInRoom')}
+				storageKey="players-list"
+				pinned={false}
+				count={players.length}
+			>
+				{#if players.length === 0}
 					<p class="none">{t('common.none')}</p>
 				{:else}
-					<ul class="list" aria-label={t('room.spectators')}>
-						{#each spectators as entry (entry.key)}{@render line(entry)}{/each}
+					<ul class="list" aria-label={t('room.playersInRoom')} bind:this={list}>
+						{#each players as entry (entry.key)}{@render line(entry)}{/each}
 					</ul>
 				{/if}
-			</div>
-		</Collapsible>
-		{#if host.code}<RemovedPlayers />{/if}
+			</Collapsible>
+			<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view;
+		     the switch says whether they may message the Storyteller. -->
+			<Collapsible
+				title={t('room.spectators')}
+				storageKey="players-spectators"
+				pinned={false}
+				count={spectators.length}
+			>
+				<div data-testid="room-spectators">
+					<SettingToggle
+						label={t('room.spectators.mayMessage')}
+						checked={!host.inbox.spectatorsMuted}
+						disabled={!host.code || viewOnly}
+						onChange={(on) => host.inbox.allowSpectators(on)}
+					/>
+					{#if spectators.length === 0}
+						<p class="none">{t('common.none')}</p>
+					{:else}
+						<ul class="list" aria-label={t('room.spectators')}>
+							{#each spectators as entry (entry.key)}{@render line(entry)}{/each}
+						</ul>
+					{/if}
+				</div>
+			</Collapsible>
+			{#if host.code}<RemovedPlayers />{/if}
+		</div>
+		<section class="chosen" aria-label={chosen?.name}>
+			{#if chosen}{@render details(chosen)}{/if}
+		</section>
 	</div>
-	<section class="chosen" aria-label={chosen?.name}>
-		{#if chosen}{@render details(chosen)}{/if}
-	</section>
 </div>
 
 <!-- The chosen player: who and where, then their messages and notes. -->
@@ -379,12 +375,21 @@
 	 * (Trevor, 2026-11-01: "on a phone, it could use better delineation"), each scrolling on
 	 * its own so the list never scrolls away. Wider: side by side.
 	 */
+	/* Side by side by the room Players has, not the screen's: the board's pane is narrow on a
+	   wide screen (plan M86). */
+	.players-room {
+		container: players / inline-size;
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		height: 100%;
+		min-height: 0;
+	}
 	.players {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr) minmax(0, 1.1fr);
 		flex: 1;
-		height: 100%;
 		min-height: 0;
 	}
 	.list-side,
@@ -401,14 +406,15 @@
 	}
 	/* The chosen player's panel and their line in the list share one fill, so they read as one. */
 	.chosen {
-		margin: 0 calc(-1 * var(--space-4));
+		/* Out to the edges of a phone's sheet; the board's pane has none to reach (--players-bleed). */
+		margin: 0 calc(-1 * var(--players-bleed, var(--space-4)));
 		padding: var(--space-3) var(--space-4) 0;
 		border-top: 1px solid var(--border);
 		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 		background: var(--surface);
 		box-shadow: var(--shadow);
 	}
-	@media (min-width: 40rem) {
+	@container players (min-width: 40rem) {
 		.players {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			grid-template-rows: minmax(0, 1fr);
@@ -422,7 +428,7 @@
 			box-shadow: none;
 		}
 	}
-	@media (min-width: 64rem) {
+	@container players (min-width: 64rem) {
 		.players {
 			grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
 		}

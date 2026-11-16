@@ -15,8 +15,9 @@
 	/**
 	 * One player's messages and reported picture, in their sheet on Players (Trevor,
 	 * 2026-10-29: "get rid of messages, and just fully integrate it into Players"). Newest
-	 * first, each in its own box (Trevor, 2026-10-28: "Each message should be a box"). Tapping a
-	 * box opens it on its own; only then is a message read, and it can be marked unread again
+	 * first, each drawn as a note is (plan M86, Trevor 2026-11-15: player-written notes should
+	 * look like the Storyteller's): a row with a line under it, when it was sent on its first
+	 * line, the words below in the notes' lighter well. Tapping one opens it on its own; only then is a message read, and it can be marked unread again
 	 * ("only marked as read when entered"). A reported picture is judged there: let it stand,
 	 * or take that player's picture away until the next game.
 	 */
@@ -74,8 +75,8 @@
 	}
 </script>
 
-<!-- When it was sent and whether a consult was asked for, in a shaded band above the words
-     (Trevor, 2026-11-06, "A"): the same in the list and opened on its own. -->
+<!-- When it was sent and whether a consult was asked for, on the line above the words, where a
+     note's title sits (Trevor, 2026-11-06, "A"; 2026-11-15): the same in the list and opened. -->
 {#snippet meta(item: InboxItem, dot: boolean)}
 	<span class="meta" data-testid="inbox-meta">
 		{#if dot}
@@ -189,48 +190,40 @@
 	}
 	.items {
 		display: grid;
-		gap: var(--space-2);
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
+	/* A row with a line under it, as a note is (NoteRow). */
 	li {
 		display: grid;
-	}
-	/* Each message its own box (Trevor, 2026-10-28), as the notes' cards: when it was sent in a
-	   shaded band, the words below (Trevor, 2026-11-06, "A"). */
-	.item,
-	.opened {
-		display: grid;
-		overflow: hidden;
-		border: 0.0625rem solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
+		border-bottom: 1px solid var(--border); /* px-ok: a hairline, as a note's */
 	}
 	.item {
+		display: grid;
 		width: 100%;
 		min-height: var(--tap-target);
-		padding: 0;
+		padding: 0 0 var(--space-2);
+		border: 0;
+		background: none;
+		color: var(--on-surface);
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.item:hover {
-		background: var(--surface-selected);
+	.opened {
+		display: grid;
+		color: var(--on-surface);
 	}
-	.item[data-new] {
-		border-color: var(--accent);
-	}
+	/* The note's title line: the same height and font as a title. */
 	.meta {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1) var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		border-bottom: 0.0625rem solid var(--border);
-		background: var(--surface);
+		min-height: var(--tap-target);
+		font-family: var(--font-control);
 	}
 	.dot {
 		flex: none;
@@ -269,7 +262,18 @@
 		color: var(--on-accent);
 		font-weight: 600;
 	}
-	/* Two lines at most in the list; the whole message shows when it is opened. */
+	/* The words in the notes' lighter well (RichTextField's inline field), two lines at most in
+	   the list; the whole message shows when it is opened. */
+	.preview,
+	.body {
+		box-sizing: border-box;
+		min-height: calc(2lh + 2 * var(--space-2));
+		border-radius: var(--radius-md);
+		background: var(--surface-selected);
+	}
+	.item:hover .preview {
+		box-shadow: inset 0 0 0 2px var(--border); /* px-ok: the well's ring, as the field's focus */
+	}
 	.preview {
 		display: -webkit-box;
 		-webkit-box-orient: vertical;
@@ -286,7 +290,7 @@
 	.body {
 		display: grid;
 		gap: var(--space-2);
-		padding: var(--space-3);
+		padding: var(--space-2) var(--space-3);
 	}
 	.text {
 		margin: 0;

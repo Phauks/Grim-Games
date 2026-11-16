@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { openInfoTokens } from './toolbar.ts';
 
 // The info-token sheet the grimoire board opens from its header (Trevor, 2026-10-16).
 
@@ -35,6 +36,28 @@ test('"not in play" asks which bluff set when there are several', async ({ page 
 	await expect(shown(page)).toContainText('Empath');
 	await expect(shown(page)).toContainText('Slayer');
 	await expect(shown(page)).not.toContainText('Chef');
+});
+
+test("tapping a character's icon in the picker chooses it, like the rest of its row", async ({
+	page
+}) => {
+	await openSheet(page);
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	const row = page
+		.getByTestId('character-picker')
+		.locator('.ring-row:has(button[data-character-id="empath"])');
+	// Trevor, 2026-11-15: the icon once opened the character's info and still took the tap.
+	// A tap where the icon is drawn, landing on whatever is there.
+	const ring = await row.locator('.ring').boundingBox();
+	if (!ring) throw new Error('No icon');
+	await page.touchscreen.tap(ring.x + ring.width / 2, ring.y + ring.height / 2);
+	await expect(row.getByRole('button', { name: 'Empath', exact: true })).toHaveAttribute(
+		'aria-current',
+		'true'
+	);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown(page).getByRole('img', { name: /Empath token/ })).toBeVisible();
 });
 
 test('the sheet shows a character card and edits and deletes a custom card', async ({ page }) => {
@@ -165,7 +188,7 @@ test('a card to show with long character names keeps the sheet its width', async
 			.tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'Info tokens' }).tap();
+	await openInfoTokens(page);
 	await page
 		.getByRole('button', { name: 'Add These characters are not in play to the cards to show' })
 		.tap();

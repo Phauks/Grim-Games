@@ -480,6 +480,13 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(clock).toHaveText('0:00');
 	await expect(timer).toHaveAttribute('data-done', '');
 	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeDisabled();
+	// Red but still: no flashing (Trevor, 2026-11-15: "Don't flash the timer is done").
+	expect(
+		await clock.evaluate((el) => {
+			const style = getComputedStyle(el);
+			return [style.animationName, style.opacity];
+		})
+	).toEqual(['none', '1']);
 	expect(await page.evaluate(() => (window as unknown as { vibrated: number }).vibrated)).toBe(1);
 	// Back to town ends the timer, in place of its sound button (Trevor, 2026-11-01): always
 	// available (2026-11-02), and lit once the time is up.
@@ -492,8 +499,22 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await timer.getByRole('button', { name: 'Day timer, 0:00; open its controls' }).tap();
 	const sounds = page.getByTestId('timer-sheet');
 	await sounds.getByRole('combobox', { name: 'Timer sound' }).tap();
+	// No None: silence is its own switch (Trevor, 2026-11-15).
+	await expect(page.getByRole('option')).toHaveText([
+		'Bell',
+		'Chime',
+		'Clock tower chimes',
+		'Buzzer'
+	]);
 	await page.getByRole('option', { name: 'Chime', exact: true }).tap();
 	await expect(sounds.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	// "When timer is over, don't always make noise" (Trevor, 2026-11-15): a switch, which greys
+	// the sound in place when off.
+	const soundOn = sounds.getByRole('checkbox', { name: 'Sound when time is up' });
+	await expect(soundOn).toBeChecked();
+	await sounds.getByText('Sound when time is up', { exact: true }).tap();
+	await expect(soundOn).not.toBeChecked();
+	await expect(sounds.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await expect(sounds).toBeHidden();
 	// Reset: back to 30 seconds per living player (7 alive).
@@ -528,6 +549,9 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(
 		page.getByTestId('timer-sheet').getByRole('combobox', { name: 'Timer sound' })
 	).toContainText('Chime');
+	await expect(
+		page.getByTestId('timer-sheet').getByRole('checkbox', { name: 'Sound when time is up' })
+	).not.toBeChecked();
 });
 
 // Trevor, 2026-10-17: the timer can count up instead, past its target.

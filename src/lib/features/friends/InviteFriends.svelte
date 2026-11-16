@@ -47,15 +47,22 @@
 		};
 	});
 
+	/**
+	 * The switch moves at once and stays enabled while it saves: dimming it for the round trip
+	 * made its text flash (Trevor, 2026-11-15). The last tap wins; a failed save puts it back.
+	 */
+	let saving = 0;
 	async function setFriendsJoin(open: boolean): Promise<void> {
 		if (!code) return;
-		busy = true;
+		const before = friendsJoin;
+		const mine = ++saving;
+		friendsJoin = open;
 		try {
-			friendsJoin = await friends.friendRoom(code, open);
+			const saved = await friends.friendRoom(code, open);
+			if (mine === saving) friendsJoin = saved;
 		} catch (e) {
+			if (mine === saving) friendsJoin = before;
 			toast(t('friends.failed'), e instanceof Error ? e.message : String(e));
-		} finally {
-			busy = false;
 		}
 	}
 
@@ -95,7 +102,7 @@
 		<Toggle
 			label={t('friends.room.open')}
 			checked={friendsJoin ?? false}
-			disabled={friendsJoin === undefined || busy}
+			disabled={friendsJoin === undefined}
 			onChange={(open) => void setFriendsJoin(open)}
 		/>
 		<GroupRoomToggles {code} {title} />

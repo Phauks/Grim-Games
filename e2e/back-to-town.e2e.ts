@@ -108,6 +108,14 @@ test('Back to town can be called before the time is up, and stops the timer', as
 	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeVisible();
 	await page.clock.runFor(10_000);
 	await expect(timer.getByRole('timer')).toHaveText('3:50');
+	await expect(page.getByText('Couldn’t reach the players’ phones.')).toBeHidden();
+	// Running out calls Back to town by itself (Trevor, 2026-11-15), saying nothing without a
+	// room: the toast is only for a call the Storyteller made.
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(231_000);
+	await expect(timer.getByRole('timer')).toHaveText('0:00');
+	await expect(page.getByRole('alertdialog', { name: 'Back to town?' })).toHaveCount(0);
+	await expect(page.getByText('Couldn’t reach the players’ phones.')).toHaveCount(0);
 
 	// The same in the day view and on the grim cover.
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
@@ -245,5 +253,54 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 	await call.tap();
 	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('None');
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await phoneContext.close();
+});
+
+// Trevor, 2026-11-15: "If timer goes down to 0, should activate back to town. Such as
+// subtracting". Reaching 0:00 calls every phone, with no confirm, however it gets there.
+test('the day timer reaching 0:00 calls Back to town, even by taking time off', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.addInitScript(() => {
+		const calls: string[] = [];
+		(window as unknown as { alerts: string[] }).alerts = calls;
+		navigator.vibrate = () => (calls.push('vibrate'), true);
+	});
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+
+	await page.goto(board);
+	await page
+		.locator('.board-timer')
+		.getByRole('button', { name: /^Day timer, .*; open its controls$/ })
+		.tap();
+	const timer = page.getByTestId('timer-sheet').getByTestId('day-timer');
+	const clock = timer.getByRole('timer');
+	const less = timer.getByRole('button', { name: '30 seconds less' });
+	// Taken down to 0:30, nobody is called yet.
+	while ((await clock.textContent()) !== '0:30') await less.tap();
+	await page.waitForTimeout(500);
+	await expect(phone.getByText('Back to town', { exact: true })).toHaveCount(0);
+	expect(await phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts)).toEqual(
+		[]
+	);
+	await less.tap();
+	await expect(clock).toHaveText('0:00');
+	// No confirm sheet, and the phone is called.
+	await expect(page.getByRole('alertdialog', { name: 'Back to town?' })).toHaveCount(0);
+	await expect(phone.getByText('Back to town', { exact: true })).toBeVisible();
+	await expect
+		.poll(() => phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts))
+		.toContain('vibrate');
 	await phoneContext.close();
 });

@@ -45,7 +45,7 @@ export function gameSound(phase: PlayersPhase | undefined): PublicSound {
 	return {
 		on: prefs.soundOutput,
 		...(mix ? { ambience: { id: mix.id, level: prefs.ambienceLevel } } : {}),
-		...(prefs.timerSound !== 'none' ? { timerSound: prefs.timerSound } : {})
+		...(prefs.timerSoundOn ? { timerSound: prefs.timerSound } : {})
 	};
 }
 

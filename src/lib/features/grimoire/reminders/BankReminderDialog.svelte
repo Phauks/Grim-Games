@@ -46,10 +46,10 @@
 		 * A watcher's board (Trevor, 2026-11-15: tap a token "to more readily see what those
 		 * tokens say"): the token, its words and its ability, with nothing to change.
 		 */
-		readOnly?: boolean;
+		watching?: boolean;
 	}
 
-	let { grimoire, hand, onRemove, readOnly = false }: Props = $props();
+	let { grimoire, hand, onRemove, watching: readOnly = false }: Props = $props();
 
 	const item = $derived(hand.about?.kind === 'bank' ? hand.about.item : undefined);
 	const reminderId = $derived(hand.about?.kind === 'placed' ? hand.about.reminderId : undefined);

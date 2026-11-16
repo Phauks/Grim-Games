@@ -8,7 +8,7 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
-import { openPlayerSheet } from './players.ts';
+import { closePane, openPlayerSheet } from './players.ts';
 import { pickNumber } from './number-select.ts';
 import { closeBin, dragToSeat, openBin } from './reminder-bank.ts';
 
@@ -409,7 +409,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const status = phone.getByTestId('join-status');
 	await expect(status).toHaveText('');
 	// Hidden until the game is over.
-	const rate = phone.getByRole('button', { name: 'Game over', exact: true });
+	const rate = phone.getByRole('button', { name: /Rate this game/ });
 	await expect(rate).toHaveCount(0);
 
 	await page.goto(board);
@@ -438,7 +438,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	const other = await otherContext.newPage();
 	await other.goto(`/join/${code}`);
 	await expect(other.getByTestId('join-status')).toHaveText('Game over: Good won');
-	await other.getByRole('button', { name: 'Game over', exact: true }).tap();
+	await other.getByRole('button', { name: /Rate this game/ }).tap();
 	const otherSheet = other.getByRole('dialog', { name: 'Game over' });
 	await otherSheet.getByRole('button', { name: 'Star 2' }).tap();
 	await otherSheet.getByRole('button', { name: 'Send' }).tap();
@@ -476,7 +476,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await openFeedback();
 	// 3.5 and 2 average to 2.75, shown to the half star.
 	await expect(feedback.getByTestId('feedback-average')).toHaveText('3 of 5 from 2 rated');
-	await expect(feedback.getByTestId('feedback-accolade-counts')).toHaveText('⏱️ Great pacing × 1');
+	await expect(feedback.getByTestId('feedback-accolade-counts')).toContainText('Great pacing × 1');
 	const entries = feedback.getByTestId('feedback-entry');
 	await expect(entries).toHaveCount(2);
 	const entry = entries.filter({ hasText: 'A great night.' });
@@ -714,7 +714,7 @@ test('after a game the room votes on the next script, and the next game opens in
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Game over');
-	const rate = phone.getByRole('button', { name: 'Game over', exact: true });
+	const rate = phone.getByRole('button', { name: /Rate this game/ });
 	await expect(rate).toBeVisible();
 
 	await page.goto('/new');
@@ -3101,7 +3101,7 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await opened.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
 	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
 	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');

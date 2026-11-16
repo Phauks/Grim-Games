@@ -47,6 +47,7 @@ export const room = {
 	'room.players.away': 'Away',
 	'room.players.noPhone': 'No phone',
 	'room.players.gameNotes': 'Game notes',
+	'room.players.pane': 'Game notes and Players',
 	'room.players.notesHeading': 'Notes',
 	'room.players.hasNotes': 'Has notes',
 	'room.players.notes': {
@@ -256,7 +257,7 @@ export const room = {
 	'room.nameSharedDetail': 'The Storyteller sees you as {name} until you change your name.',
 	'room.vote.title': 'Spectators’ vote',
 	// After the game (plan R4); accolades approved by Trevor, 2026-10-22.
-	'room.feedback.open': 'Game over',
+	'room.feedback.rate': 'Rate this game',
 	'room.feedback.title': 'Game over',
 	'room.result.won': 'You won as',
 	'room.result.lost': 'You lost as',

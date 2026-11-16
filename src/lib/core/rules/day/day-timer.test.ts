@@ -57,9 +57,11 @@ describe('day timer', () => {
 		expect(start(done, 50_000)).toBe(done);
 	});
 
-	it('changes length by 30 seconds, never below one step or the time used', () => {
+	it('changes length by 30 seconds, down to 0:00 but never below the time used', () => {
 		expect(adjust(dayTimer(2), 1, 0).durationMs).toBe(90_000);
-		expect(adjust(dayTimer(2), -5, 0).durationMs).toBe(30_000);
+		// Taking it down to 0 ends the time (Trevor, 2026-11-15), which calls Back to town.
+		expect(adjust(dayTimer(2), -5, 0).durationMs).toBe(0);
+		expect(isOver(adjust(dayTimer(2), -2, 0), 0)).toBe(true);
 		const running = start(dayTimer(4), 0);
 		expect(adjust(running, -10, 100_000).durationMs).toBe(100_000);
 		expect(remaining(adjust(running, -10, 100_000), 100_000)).toBe(0);
