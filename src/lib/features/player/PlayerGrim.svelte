@@ -13,7 +13,6 @@
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import FinalGrimoireDialog from './FinalGrimoireDialog.svelte';
 	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
@@ -418,12 +417,14 @@
 		});
 </script>
 
-{#if final}<FinalGrimoireDialog
-		bind:open={showFinal}
-		grimoire={final.grimoire}
-		{over}
-		room={final.room}
-	/>{/if}
+<!-- Loaded only once a final grimoire arrives: it brings the Storyteller's whole board, which
+     every joining phone would otherwise download before Join game shows. -->
+{#if final}{#await import('./FinalGrimoireDialog.svelte') then { default: FinalGrimoireDialog }}<FinalGrimoireDialog
+			bind:open={showFinal}
+			grimoire={final.grimoire}
+			{over}
+			room={final.room}
+		/>{/await}{/if}
 {#if seats.length === 0 || (!code && !local)}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
