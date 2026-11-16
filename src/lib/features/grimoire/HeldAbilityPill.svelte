@@ -2,6 +2,7 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import type { SeatMessages } from '#lib/ui/seating/seat-messages.ts';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
 
 	/**
@@ -34,6 +35,8 @@
 		madAs?: { character: Character; reminderId?: string }[];
 		/** The seat has notes: their pen goes in the pill too, and opens them. */
 		notes?: boolean;
+		/** Messages from the player still unread: the mark shows them instead (plan M86). */
+		messages?: SeatMessages;
 		/**
 		 * Who the Storyteller pretends the player is (`Game.pretend`, M26: the fake evil team), a
 		 * token marked ≈ ("seems like") with a dashed edge, as it is not really in play (Trevor,
@@ -49,6 +52,7 @@
 		believes,
 		madAs = [],
 		notes = false,
+		messages,
 		pretends
 	}: Props = $props();
 </script>
@@ -91,8 +95,12 @@
 			data-testid="pretend-character"
 			title={`Fake ${pretends.name}`}
 			><img src={iconUrl(pretends)} alt="" /><span class="kind is" aria-hidden="true">≈</span></span
-		>{/if}{#if notes}<span class="note-slot" data-testid="note-mark" title="Note"
-			><Icon name="notes" /></span
+		>{/if}{#if notes || messages}<span
+			class="note-slot"
+			data-testid="note-mark"
+			data-messages={messages}
+			title={messages ? 'New message' : 'Note'}
+			><Icon name={messages ? 'messages' : 'notes'} /></span
 		>{/if}</RimPill
 >
 
@@ -149,6 +157,12 @@
 	.kind.mad {
 		background: var(--fabled);
 		color: var(--on-fabled);
+	}
+	/* A request to talk or a reported picture, as on the lone mark. */
+	.note-slot[data-messages='urgent'] {
+		border-radius: 50%;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	/* A tap target bigger than the mark, as the lone notes mark has. */
 	.note-slot::after {

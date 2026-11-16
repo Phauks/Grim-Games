@@ -56,6 +56,23 @@ export class RoomInbox {
 		return this.messages.filter((m) => !m.read).length + this.pictureReports.length;
 	}
 
+	/** Something waiting needs the Storyteller more than a note does: a consult or a picture. */
+	get urgent(): boolean {
+		return this.pictureReports.length > 0 || this.messages.some((m) => !m.read && m.consult);
+	}
+
+	/**
+	 * What waits from one player: unread messages and pictures still to judge, urgent when one
+	 * asks to talk or is a reported picture. Players' lines and their seat's mark both show it.
+	 */
+	waitingFrom(memberId: string | undefined): { count: number; urgent: boolean } {
+		if (!memberId) return { count: 0, urgent: false };
+		const fresh = this.items.filter(
+			(i) => i.memberId === memberId && (i.kind === 'picture' || !i.read)
+		);
+		return { count: fresh.length, urgent: fresh.some((i) => i.kind === 'picture' || i.consult) };
+	}
+
 	/**
 	 * The Storyteller opened this message, or marked it unread again (Trevor, 2026-10-28:
 	 * "only marked as read when entered").

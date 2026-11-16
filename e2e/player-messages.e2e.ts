@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openPlayers, openPlayerSheet } from './players.ts';
+import { closePane, openPlayers, openPlayerSheet } from './players.ts';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 
@@ -20,7 +20,8 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
-	// Players (with its messages) is only ever in ⋯, never on the toolbar (Trevor, 2026-10-28).
+	// Players (with its messages) is in the pane by the grim cover, with no button of its own
+	// (Trevor, 2026-11-15: "move the players button out of ... and into the header").
 	await expect(page.getByTestId('toolbar-messages')).toHaveCount(0);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -70,14 +71,20 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
+	// The pane's button counts it, in the accent colour for a consult (plan M86), and More has
+	// no count any more.
+	const paneButton = page.getByTestId('game-notes-button');
+	await expect(paneButton).toHaveAccessibleName('Game notes and Players, 1 new message');
+	await expect(page.locator('.notes-slot [data-warn]')).toHaveText('1');
+	await expect(page.getByRole('button', { name: 'More', exact: true })).toBeVisible();
 	// Players shows who has sent something (Trevor, 2026-10-29: Messages folded into Players);
-	// a consult makes the count stand out.
+	// a consult makes the count stand out, on the tab and on the player's line.
 	const players = await openPlayers(page);
+	await expect(players.getByRole('tab', { name: /^Players/ })).toContainText('1');
 	const row = players.getByTestId('room-player').filter({ hasText: 'Alex' });
 	await expect(row.getByTestId('room-player-waiting')).toHaveText('1');
 	await expect(row.getByTestId('room-player-waiting')).toHaveAttribute('data-warn', '');
-	await page.keyboard.press('Escape');
-	await expect(players).toBeHidden();
+	await closePane(page);
 	// Their sheet has what they sent, each in its own box (Trevor, 2026-10-28); a message is
 	// read only once it is opened on its own, and can be marked unread again.
 	const alexSheet = await openPlayerSheet(page, 'Alex');
@@ -86,8 +93,8 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(item).toContainText('Can I swap seats with Sam?');
 	await expect(item.getByTestId('inbox-consult')).toHaveText('Consult requested');
 	await expect(item).toContainText('New');
-	// When it was sent, in the game and by the clock, in a band apart from the words (Trevor,
-	// 2026-11-06, "A"), the same opened on its own.
+	// When it was sent, in the game and by the clock, on a line above the words as a note's
+	// title is (Trevor, 2026-11-06, "A"; 2026-11-15), the same opened on its own.
 	const band = item.getByTestId('inbox-meta');
 	await expect(band.getByTestId('inbox-when')).not.toBeEmpty();
 	await expect(band.getByTestId('inbox-time')).toHaveText(/\d{1,2}[:.]\d{2}/);
@@ -107,10 +114,11 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(item).toContainText('New');
 	await item.tap();
 	await page.keyboard.press('Escape');
+	await expect(opened).toBeHidden();
 	await expect(row.getByTestId('room-player-waiting')).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(players).toBeHidden();
+	await closePane(page);
 	await expect(page.getByRole('button', { name: /new message/ })).toHaveCount(0);
+	await expect(paneButton).toHaveAccessibleName('Game notes and Players');
 	await page.getByTestId('cover-button').tap();
 	await expect(cover.getByTestId('cover-inbox')).toBeHidden();
 	await phoneContext.close();

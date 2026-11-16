@@ -5,6 +5,7 @@
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import { besidePlacement, rootRem } from '#lib/ui/layout/beside.ts';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
 	import { gameSheetCharacters, playerNight } from './player-script.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -71,13 +72,7 @@
 	 */
 	let width = $state(0);
 	let height = $state(0);
-	const beside = $derived.by((): 'side' | 'under' | undefined => {
-		if (!notes || !width) return undefined;
-		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-		if (width >= 50 * rem) return 'side';
-		if (width >= 36 * rem && height >= 50 * rem) return 'under';
-		return undefined;
-	});
+	const beside = $derived(notes ? besidePlacement(width, height, rootRem()) : undefined);
 	const notesOpen = $derived(!!beside && playerSettings.current.notesBeside);
 	// Notes chosen as a tab, then the screen widens (a tablet turned): they move beside it.
 	$effect(() => {
