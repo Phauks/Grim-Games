@@ -116,7 +116,6 @@
 						{...placedLook(reminder, characters)}
 						{...reminderPlacing(game, reminder, characters)}
 						ariaLabel={reminder.label}
-						disabled={watching}
 						onTap={() => onReminder(reminder.reminderId)}
 					/>
 				{/each}

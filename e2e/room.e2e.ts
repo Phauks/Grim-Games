@@ -10,6 +10,7 @@ import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
 import { closePane, openPlayerSheet } from './players.ts';
 import { pickNumber } from './number-select.ts';
+import { closeBin, dragToSeat, openBin } from './reminder-bank.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -559,39 +560,55 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await page.getByTestId('game-over').tap();
 	await expect(page.getByRole('menuitem', { name: 'Share grim' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
-	// The phone shows it on the Grim tab in place of the town (Trevor, 2026-10-24): the whole
-	// board, every seat; the switch puts the town and its guesses back.
-	const final = phone.getByTestId('final-grimoire');
+	// The phone shows it over its Grim tab, full screen (Trevor, 2026-11-15): the whole board,
+	// every seat, with no Storyteller's toolbar; the town and its guesses stay under it.
+	const finalDialog = phone.getByRole('dialog', { name: 'Final grimoire' });
+	const final = finalDialog.getByTestId('final-grimoire');
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
-	await expect(finalSwitch).toBeChecked();
-	await phone.getByText('Final grimoire', { exact: true }).tap();
-	await expect(final).toHaveCount(0);
+	await expect(final.getByTestId('view-only')).toHaveCount(0);
+	await expect(final.getByTestId('history-strip')).toBeVisible();
+	// Nothing is secret once the game is over.
+	await expect(final.getByTestId('fair-play')).toHaveCount(0);
+	// The same as the Storyteller's own board shows it on a phone, where the game's name
+	// reaches the bottom seat's box too (known there, not from this dialog).
+	await expectNothingCovered(
+		phone,
+		final,
+		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
+			() => testInfo.project.name === 'phone'
+		)
+	);
+	// Its close puts the town back, guesses and all; the switch opens it again.
+	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(finalDialog).toHaveCount(0);
 	await expect(phone.getByTestId('player-grim')).toBeVisible();
-	// A phone coming back still has it, and turns to the Grim tab for it.
-	await phone.reload();
-	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	await expect(finalSwitch).not.toBeChecked();
+	await phone.getByText('Final grimoire', { exact: true }).tap();
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
-	// The page still scrolls with the board on it: only the Storyteller's board page holds
-	// its page still (2026-10-31).
-	const scroll = await phone.evaluate(() => {
-		const root = document.documentElement;
-		window.scrollTo(0, root.scrollHeight);
-		return {
-			overflow: getComputedStyle(root).overflowY,
-			room: root.scrollHeight - window.innerHeight,
-			at: window.scrollY
-		};
-	});
-	expect(scroll.overflow).not.toBe('hidden');
-	expect(scroll.room > 1 ? scroll.at : 1).toBeGreaterThan(0);
-	await phone.evaluate(() => window.scrollTo(0, 0));
+	// A phone coming back still has it, on the Grim tab.
+	await phone.reload();
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(finalDialog).toHaveCount(0);
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 
 	// The Storyteller's player view shows the end as phones do (Trevor, 2026-10-30).
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const view = page.getByTestId('script-scroll');
 	await expect(view.getByTestId('join-status')).toHaveText('Game over: Evil won');
 	await view.getByRole('tab', { name: 'Grim' }).tap();
-	await expect(view.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	const viewFinal = page.getByRole('dialog', { name: 'Final grimoire' });
+	await expect(viewFinal.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	await expectNothingCovered(
+		page,
+		viewFinal.getByTestId('final-grimoire'),
+		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
+			() => testInfo.project.name === 'phone'
+		)
+	);
+	// Escape closes the grimoire first, then the player view.
+	await page.keyboard.press('Escape');
+	await expect(viewFinal).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(view).toBeHidden();
 
@@ -654,9 +671,8 @@ test('Share grim after End game lets each phone step through the History in the 
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 
-	// The phone turns to its Grim tab, where the finished board shows with its History.
-	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
-	const final = phone.getByTestId('final-grimoire');
+	// The finished board opens over the phone's Grim tab with its History.
+	const final = phone.getByRole('dialog', { name: 'Final grimoire' }).getByTestId('final-grimoire');
 	const steps = final.getByTestId('history-strip');
 	await expect(steps).toBeVisible();
 	const count = steps.locator('.count');
@@ -1643,6 +1659,8 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	// Specters (Trevor, 2026-10-18): spectators see the Storyteller's grimoire live, with the
 	// room code and a password the Storyteller turns on and off, after promising not to spoil
 	// the game.
+	// It walks every Grim view control on top (2026-11-15): 24s on a laptop, more on CI.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -1681,13 +1699,40 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(viewer.getByRole('dialog', { name: 'Do Not Share With Players' })).toBeVisible();
 	await viewer.keyboard.press('Escape');
 	await expect(viewer.getByTestId('fair-play-full')).toBeHidden();
-	// Every control that changes the game is there but disabled (Trevor, 2026-10-19), so
-	// nothing invites a try; what only reads still opens. The board says it is view-only.
+	// What only reads opens (Trevor, 2026-11-15): the grim cover, Day, Script, Share and More.
+	// No View-Only label and no Info tokens, which only the Storyteller shows.
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(toolbar.getByTestId('view-only')).toHaveText('View-Only');
-	for (const name of ['Day', 'Info tokens', 'Share', 'More'])
-		await expect(toolbar.getByRole('button', { name, exact: true })).toBeDisabled();
-	await expect(toolbar.getByRole('button', { name: 'Script', exact: true })).toBeEnabled();
+	await expect(toolbar.getByTestId('view-only')).toHaveCount(0);
+	await expect(toolbar.getByRole('button', { name: 'Info tokens', exact: true })).toHaveCount(0);
+	await expect(toolbar.getByTestId('cover-button')).toBeVisible();
+	for (const name of ['Day', 'Script', 'Share', 'More'])
+		await expect(toolbar.getByRole('button', { name, exact: true })).toBeEnabled();
+	// Script is the players' own view, as the Storyteller's Script opens it.
+	await toolbar.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheetTabs = viewer.getByRole('tablist', { name: 'Player view' });
+	for (const name of ['Script', 'Night', 'Grim'])
+		await expect(sheetTabs.getByRole('tab', { name })).toBeVisible();
+	await viewer.keyboard.press('Escape');
+	await expect(sheetTabs).toHaveCount(0);
+	// Share hands on the game's link and join code.
+	await toolbar.getByRole('button', { name: 'Share', exact: true }).tap();
+	await expect(viewer.getByRole('dialog').getByTestId('share-code')).toBeVisible();
+	await viewer.keyboard.press('Escape');
+	// ⋯ reads the Demon's bluffs (Trevor, 2026-11-15: "see lunatic bluffs"), with nothing to
+	// change, and leaves out the Storyteller's own items.
+	await toolbar.getByRole('button', { name: 'More', exact: true }).tap();
+	const more = viewer.getByRole('dialog', { name: 'Grimoire' });
+	await expect(more.getByTestId('menu-players')).toHaveCount(0);
+	await expect(more.getByTestId('menu-seating')).toHaveCount(0);
+	await expect(more.getByRole('button', { name: 'End game' })).toHaveCount(0);
+	await more.getByTestId('menu-bluffs').tap();
+	const bluffs = viewer.getByRole('dialog', { name: 'Demon bluffs' });
+	await expect(bluffs.getByTestId('bluff-set').first()).toBeVisible();
+	await expect(bluffs.getByRole('button', { name: /^Choose|^Show|^Clear|^Add a set/ })).toHaveCount(
+		0
+	);
+	await viewer.keyboard.press('Escape');
+	await expect(bluffs).toBeHidden();
 	const timer = viewer.getByTestId('day-timer');
 	await expect(timer).toBeVisible();
 	// The app's sidebar stays beside the watched board, so a spectator can leave and come back
@@ -1748,6 +1793,21 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(clock).toHaveText(
 		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
 	);
+
+	// A reminder the Storyteller puts down can be tapped to read it (Trevor, 2026-11-15), in
+	// the Storyteller's own reminder dialog with nothing to change.
+	// No characters are dealt, so the ∞ token it is.
+	const bin = await openBin(page);
+	await dragToSeat(page, bin.getByRole('button', { name: 'Generic reminder', exact: true }), 2);
+	if ((await page.getByRole('dialog').count()) > 0) await page.keyboard.press('Escape');
+	await closeBin(page);
+	// On the board, not the bank's disabled copy.
+	await viewer.locator('button[aria-label^="Generic reminder"]:enabled').tap();
+	const about = viewer.getByRole('dialog', { name: /^Generic reminder/ });
+	await expect(about).toBeVisible();
+	await expect(about.getByRole('button', { name: 'Remove reminder' })).toHaveCount(0);
+	await viewer.keyboard.press('Escape');
+	await expect(about).toBeHidden();
 
 	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
 	await expect(viewer.getByTestId('board-background')).toHaveCount(0);

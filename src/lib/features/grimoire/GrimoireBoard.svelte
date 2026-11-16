@@ -77,8 +77,6 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
-	import { drawnLook } from '#lib/features/board/shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import { endGameRequest } from './end-game-request.svelte.ts';
@@ -86,6 +84,8 @@
 	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import { provideSeatPictures } from './seats/seat-picture.ts';
+	import { ShownLook } from './shown-look.svelte.ts';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantAsk from '#lib/features/savant/SavantAsk.svelte';
@@ -148,6 +148,7 @@
 		 * nothing to share or change, and leaving needs no asking.
 		 */
 		watching?: boolean;
+		toolbar?: boolean; // False: none, filling its box (the final grimoire's dialog, 2026-11-15).
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
 		/**
@@ -172,6 +173,7 @@
 	let {
 		grimoire,
 		watching = false,
+		toolbar = true,
 		watchedTimer,
 		over,
 		watchedHistory = false,
@@ -397,10 +399,10 @@
 	}
 	/**
 	 * A token on the board tapped: held, as one from the bank is (Trevor, 2026-10-30), for the
-	 * seat (or bank) tapped next. With no bank (the game over), its own dialog instead.
+	 * seat (or bank) tapped next. With no bank (the game over), or watching, its own dialog.
 	 */
 	function holdReminder(reminderId: ReminderId, from?: SeatId) {
-		if (bank) hand.toggle({ kind: 'placed', reminderId, from });
+		if (bank && !watching) hand.toggle({ kind: 'placed', reminderId, from });
 		else showReminder(reminderId);
 	}
 	function showReminder(reminderId: ReminderId) {
@@ -668,22 +670,9 @@
 	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
 	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
-	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
-	let ownLook = $state<PublicLook>();
-	let ownPicture = $state.raw<Blob>();
-	const look = $derived(watching ? grimoire.look : ownLook);
-	const logoOpacity = $derived(
-		watching
-			? drawnLook(grimoire.look).logo
-			: boardLooks.current.logo
-				? boardLooks.current.logoOpacity
-				: undefined
-	);
-	function shareLook(shown: PublicLook, picture?: Blob) {
-		ownLook = shown;
-		ownPicture = picture;
-		roomHost().showLook(game.gameId, shown, picture);
-	}
+	provideSeatPictures(() => (watching ? grimoire : undefined));
+	const secret = $derived(watching && !ended); // Nothing is secret once it is over (2026-11-15).
+	const lookNow = new ShownLook(() => ({ grimoire, watching }));
 	let menuOpen = $state(false);
 	/** The board shown to a player who looks at the Grimoire, from their night step. */
 	let showingGrim = $state(false);
@@ -721,9 +710,9 @@
 		characters,
 		layout: { ...layout, aspect },
 		corner: cornerInfo,
-		look,
-		picture: watching ? undefined : ownPicture,
-		pictureRoom: watching ? grimoire.room : undefined
+		...lookNow.shown,
+		pictureRoom: watching ? grimoire.room : undefined,
+		watched: watching ? (grimoire.watched ?? {}) : undefined
 	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
@@ -770,21 +759,23 @@
 		{characters}
 		{tokenSize}
 		{chip}
-		disabled={seatArr.arranging || watching}
+		disabled={seatArr.arranging}
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id, kind) => (id ? rules?.show(id) : rules?.showAll(kind))}
 		onShowAbility={(via) => rules?.showAbility(via)}
 		onHeldTap={(id) => holdReminder(id)}
-		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
+		onHeldDrag={watching ? undefined : (id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
 	/>
 {/snippet}
 
-{#if mini}{@render boardBody()}{:else}<BoardPane {grimoire} {watching} bind:beside={paneAt}
-		>{@render boardBody()}</BoardPane
+{#if mini || !toolbar}{@render boardBody()}{:else}<BoardPane
+		{grimoire}
+		{watching}
+		bind:beside={paneAt}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
-	<div class="grimoire" class:mini bind:this={grimoireEl}>
+	<div class="grimoire" class:mini class:fill={!toolbar} bind:this={grimoireEl}>
 		<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
 		{#if !mini}<div
 				class="strip-measure"
@@ -796,12 +787,11 @@
 			{game}
 			logo={boardLogo || undefined}
 			watched={watching ? { look: grimoire.look, room: grimoire.room } : undefined}
-			onlook={shareLook}
+			onlook={lookNow.share}
 		/>
-		{#if !mini}<BoardToolbar
+		{#if !mini && toolbar}<BoardToolbar
 				{grimoire}
 				{watching}
-				menu={!watching || watchedHistory}
 				{seatArr}
 				placing={!!placing}
 				onCancelPlacing={() => (placing = undefined)}
@@ -818,16 +808,16 @@
 				onMore={() => (menuOpen = true)}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
-			     the board and the day (2026-10-27: "so it doesn't move"); the Storyteller's only. -->
+			     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too. -->
 				{#snippet lead()}
+					<CoverButton
+						gameId={game.gameId}
+						details={coverDetails}
+						timer={coverTimer}
+						actions={watching ? undefined : coverActions}
+						outlined
+					/>
 					{#if !watching}
-						<CoverButton
-							gameId={game.gameId}
-							details={coverDetails}
-							timer={coverTimer}
-							actions={coverActions}
-							outlined
-						/>
 						<GameNotesButton
 							game={grimoire.open}
 							run={(command) => grimoire.run(command)}
@@ -855,11 +845,11 @@
 		>
 			<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18: his
 				switch and opacity; 2026-10-27: the name when there is no logo). -->
-			{#if logoOpacity !== undefined}
+			{#if lookNow.logoOpacity !== undefined}
 				<BoardLogo
 					src={boardLogo || undefined}
 					name={showTitle ? game.script.meta?.name : undefined}
-					opacity={logoOpacity}
+					opacity={lookNow.logoOpacity}
 					height={sizing.sizingHeight > 0
 						? `${Math.round(0.42 * sizing.sizingHeight)}px`
 						: undefined}
@@ -955,7 +945,7 @@
 					bind:room={corner}
 				></BoardCorner>
 				<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
-				{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
+				{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
 				<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
 			     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
 				<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
@@ -1043,7 +1033,12 @@
 		onShare={watching ? undefined : () => (phonesOpen = true)}
 	/>
 	<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-	<BankReminderDialog {grimoire} {hand} onRemove={(id) => moveConfirm?.requestReturn(id)} />
+	<BankReminderDialog
+		{grimoire}
+		{hand}
+		{watching}
+		onRemove={(id) => moveConfirm?.requestReturn(id)}
+	/>
 	<AlignmentAsk {grimoire} />
 	<StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 	<FirstDeathAsk {grimoire} />
@@ -1169,6 +1164,7 @@
 		bind:open={bluffsOpen}
 		{game}
 		{characters}
+		readOnly={watching}
 		dispatch={(command) => grimoire.open.run(command)}
 	/>
 
@@ -1177,9 +1173,7 @@
 
 {#snippet miniGrim()}<GrimoireBoard {grimoire} mini pick={flow} />{/snippet}
 
-{#snippet coverActions()}
-	<GrimCoverActions view={playerView} />
-{/snippet}
+{#snippet coverActions()}<GrimCoverActions view={playerView} />{/snippet}
 
 {#snippet coverTimer()}
 	<!-- The same timer as the board's, Back to town at its front (Trevor, 2026-11-03). -->
@@ -1234,7 +1228,7 @@
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
 	}
-	.grimoire.mini {
+	.grimoire:is(.mini, .fill) {
 		height: 100%;
 		min-height: 0;
 	}

@@ -4,6 +4,7 @@
 	import PlayerProfileDialog from '#lib/features/player/PlayerProfileDialog.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
+	import { seatPictureOf } from './seat-picture.ts';
 
 	/** A seated player's profile on the board, from their avatar mark (Trevor, 2026-10-28). */
 	let {
@@ -13,6 +14,7 @@
 	}: { open?: boolean; game: Game; seatId: SeatId | undefined } = $props();
 
 	const seat = $derived(seatId ? game.seats[seatId] : undefined);
+	const pictureOf = seatPictureOf();
 	const code = $derived(roomHost().code);
 	// The player's tag-line and details, as their phone shared them (2026-11-01).
 	const words = $derived.by(() => {
@@ -25,7 +27,7 @@
 		bind:open
 		name={seatName(game, seatId)}
 		avatar={seat.avatar}
-		picture={roomHost().pictureOf(seatId)}
+		picture={pictureOf(seatId)}
 		frame={seat.frame}
 		{words}
 		friend={code ? { code, seatId } : undefined}
