@@ -735,10 +735,8 @@
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		/* No taller than the room left above the bottom tab bar, on /play or in the
-		   Storyteller's player view, so the whole ring and its reminder tray show without
-		   scrolling (fitAboveBar, Trevor 2026-11-16: B); never so short that the seats crowd
-		   together. */
+		/* No taller than the room above the bottom tab bar, so the ring and its tray show
+		   unscrolled (fitAboveBar, Trevor 2026-11-16: B); never so short the seats crowd. */
 		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
 		/* + the reminder tray (tray-ring.ts); with Notes under the tabs, the room left above
 		   them (Tabs `aside`, --panel-room), tray included. */
