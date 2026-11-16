@@ -143,7 +143,11 @@ test.describe('on a computer', () => {
 		}
 		const you = nav.getByRole('list', { name: 'You', exact: true });
 		await expect(you.getByRole('link')).toHaveText(['Account', 'Friends', 'History']);
-		await expect(nav.getByTestId(/^nav-action-/)).toHaveText(['Profile', 'Settings', 'Report an issue']);
+		await expect(nav.getByTestId(/^nav-action-/)).toHaveText([
+			'Profile',
+			'Settings',
+			'Report an issue'
+		]);
 		// A label that wraps (a larger text size) stays at the start, beside its icon (2026-11-06).
 		for (const action of await nav.getByTestId(/^nav-action-/).all()) {
 			await expect(action).toHaveCSS('text-align', 'start');
