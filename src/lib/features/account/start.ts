@@ -10,6 +10,8 @@ import '#lib/features/library/library-labels.svelte.ts';
 import '#lib/features/library/library-collections.svelte.ts';
 // Settings, all but each device's own sizes (Trevor, 2026-11-09).
 import '#lib/features/settings/synced/synced-settings.svelte.ts';
+// Players' feedback the room kept on this account (Trevor, 2026-11-16).
+import '#lib/features/room/feedback-sync.svelte.ts';
 
 export function startAccount(): Promise<void> {
 	return account.refresh();
