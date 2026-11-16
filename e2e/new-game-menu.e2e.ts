@@ -80,3 +80,33 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 		await expect(selection).toHaveCount(0, { timeout: 1000 });
 	}).toPass();
 });
+
+// Trevor (2026-11-16): Character selection "should not be available from the end of the
+// game, that doesn't make sense". Ended before the bag is dealt, neither ⋯ nor the bank's
+// Set up leads back to it.
+test('an ended game offers no way back to Character selection', async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await pickNumber(page, 'Players', 5);
+	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
+	await page.goto(board);
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	await expect(page.getByRole('button', { name: 'Set up' })).toBeEnabled();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'Character selection' })).toBeVisible();
+	await menu.getByRole('button', { name: 'End game' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(page.getByTestId('game-over')).toBeVisible();
+
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(menu.getByRole('button', { name: 'New game' })).toBeVisible();
+	await expect(menu.getByRole('button', { name: 'Character selection' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	// The bank, with its Set up, gives way to History's strip.
+	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
+});
