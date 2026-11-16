@@ -36,8 +36,11 @@ class InstallApp {
 
 	/** Listens from the first page on, before Settings has loaded. Returns a function that stops. */
 	listen(): () => void {
-		this.#browser = thisBrowser();
-		this.#installed = this.#browser.standalone;
+		// Written, never read, here: the layout calls this in an effect, which would rerun on a
+		// state it reads.
+		const browser = thisBrowser();
+		this.#browser = browser;
+		this.#installed = browser.standalone;
 		const held = (event: Event) => {
 			// Kept for the button instead of the browser's own banner (Trevor bars banners).
 			event.preventDefault();
