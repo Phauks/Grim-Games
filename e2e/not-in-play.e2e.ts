@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, paneIsSheet } from './players.ts';
 import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -48,7 +48,7 @@ async function endTheNight(page: Page) {
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await closePane(page);
-	await expect(daySheet(page)).toBeHidden();
+	if (await paneIsSheet(page)) await expect(daySheet(page)).toBeHidden();
 }
 
 async function aliveCount(page: Page) {

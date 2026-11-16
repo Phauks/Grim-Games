@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closeStep } from './players.ts';
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
@@ -110,8 +110,7 @@ test("a jinx's text shows on both characters' night steps once both are in play"
 		await page.screenshot({
 			path: `test-results/jinx-step-${title.replace(' ', '-')}-${test.info().project.name}.png`
 		});
-		await closePane(page);
-		await expect(step).toBeHidden();
+		await closeStep(page, step);
 	}
 });
 

@@ -1,4 +1,4 @@
-import { closePane } from './players.ts';
+import { closePane, boardTimer as openBoardTimer } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
@@ -143,7 +143,9 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(counts).toBeHidden();
 
 	// The Storyteller starts it, and the sun sets off across the sky. 4:00 for 8 players, so 1% is 2.4s.
-	await day.getByRole('button', { name: 'Start timer' }).tap();
+	await closePane(page);
+	await (await openBoardTimer(page)).getByRole('button', { name: 'Start timer' }).tap();
+	await page.keyboard.press('Escape');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
 		/^Day timer: (9\d)% of the day left$/,

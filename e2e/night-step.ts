@@ -28,7 +28,8 @@ export async function openWalkStep(page: Page): Promise<void> {
 	if (await page.getByRole('dialog', { name: 'Game' }).isVisible()) return;
 	const strip = page.getByTestId('night-strip');
 	if (!(await strip.isVisible())) return;
-	// At its corner: its text names characters, and each name opens that character.
-	await strip.locator('button.step').tap({ position: { x: 4, y: 4 } });
+	// A click on the button itself: its text names characters, and a tap on a name opens that
+	// character instead.
+	await strip.locator('button.step').dispatchEvent('click');
 	await page.getByRole('dialog', { name: 'Game' }).waitFor();
 }

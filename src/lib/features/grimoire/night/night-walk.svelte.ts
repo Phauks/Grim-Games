@@ -104,12 +104,26 @@ export class NightWalk {
 			});
 		});
 		// The pane shows the walk-through's step: moving along the night shows the next one.
+		// A change to the night's steps (a character changed) keeps the open step, moving the
+		// walk-through to where it now is.
+		let followed: typeof this.walk;
 		$effect(() => {
 			const walk = this.walk;
+			const steps = this.steps;
 			if (!walk || !this.#context().data) return;
 			untrack(() => {
-				const step = this.steps[walk.index];
-				if (step && this.guided?.step.id !== step.id) this.guided = { step, night: walk.night };
+				const g = this.guided;
+				const moved = walk !== followed;
+				followed = walk;
+				if (!moved && g && g.night === walk.night) {
+					const i = steps.findIndex((s) => s.id === g.step.id);
+					if (i >= 0 && i !== walk.index) this.walk = { ...walk, index: i };
+					if (i >= 0) return;
+				}
+				const step = steps[walk.index];
+				// By night too: Dusk and Dawn have the same id every night.
+				if (step && (g?.step.id !== step.id || g.night !== walk.night))
+					this.guided = { step, night: walk.night };
 			});
 		});
 		// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:

@@ -1,5 +1,5 @@
 import { startExecution } from './execution.ts';
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, closeStep } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder, putRunReminder } from './reminder-bank.ts';
@@ -80,9 +80,7 @@ async function toSecondNight(page: Page, executed: number, deathAsk?: string) {
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByTestId('pane-day');
 	await closePane(page);
-	await expect(day).toBeHidden();
 	const sheet = await openSeat(page, executed);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
@@ -100,12 +98,8 @@ async function toSecondNight(page: Page, executed: number, deathAsk?: string) {
 
 /** Opens a step from the walk-through by its name. */
 async function openStep(page: Page, title: string) {
-	// Its name: on a phone, a tap on the middle also reached the opened step's icon below it.
-	await (
-		await walkTo(page, title)
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, title);
+	await openWalkStep(page);
 	const step = nightStep(page, title);
 	await expect(step).toBeVisible();
 	return step;
@@ -152,8 +146,7 @@ test("the Plague Doctor's Spy goes to a Minion, who is shown it, not to the Stor
 	await expect(given).toContainText('Seat 3');
 	// The Minion learns it: it can be shown to them.
 	await expect(given.getByRole('button', { name: 'Show to player' })).toBeVisible();
-	await closePane(page);
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	// Nothing on the board for the Storyteller.
 	await expect(page.getByTestId('storyteller-ability-token')).toHaveCount(0);
 });
@@ -197,8 +190,7 @@ test("the Pit-Hag's Goon made from an evil player is not offered to turn good", 
 	await expect(picker.getByRole('button', { name: 'Imp', exact: true })).toHaveCount(0);
 	await picker.getByRole('button', { name: 'Goon', exact: true }).tap();
 	await expect(step.getByTestId('change-character')).toContainText('Goon');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 
 	// A good player chooses the Goon: no offer to turn them good, by the jinx.
 	await putReminder(page, 'Drunk', 4);
@@ -270,8 +262,7 @@ test('the Leviathan chooses the Sage at night, and the Sage acts without dying',
 	await expect(row.getByRole('button', { name: 'Change' })).toBeVisible();
 	const chosen = /chosen by\s*Leviathan\s*,\s*uses their ability but doesn't die/;
 	await expect(step.getByTestId('night-alerts')).toContainText(chosen);
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 
 	const sage = await openStep(page, 'Sage');
 	await expect(sage.getByTestId('night-alerts')).toContainText(chosen);
@@ -464,8 +455,7 @@ test("the Vizier's jinxes with the Fearmonger and the Courtier show at their nig
 	await expect(courtier.getByTestId('night-alerts')).toContainText(
 		/Vizier\s*,\s*learns\s+they\s+lost\s+their\s+ability,\s+which\s+still\s+protects\s+them/
 	);
-	await page.keyboard.press('Escape');
-	await expect(courtier).toBeHidden();
+	await closeStep(page, courtier);
 
 	const fear = await openStep(page, 'Fearmonger');
 	await expect(fear.getByTestId('night-alerts')).toContainText(
@@ -570,7 +560,6 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByTestId('pane-day');
 	const executeSeat1 = async () => {
 		await startExecution(page);
 		// Tapped on the board (Trevor, 2026-11-06); the Vizier's save opens the sheet.
@@ -583,8 +572,6 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 	await expect(ask.getByTestId('execution-saved')).toContainText('does not die');
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(ask).toBeHidden();
-	// Execution closed the day view so the board could be tapped.
-	await expect(day).toBeHidden();
 
 	await putReminder(page, 'Is The Demon', 1);
 	await closeBin(page);
@@ -765,8 +752,7 @@ test('the Engineer who creates Legion makes every evil player Legion', async ({ 
 		.tap();
 	const made = step.getByTestId('change-character');
 	await expect(made.getByRole('button', { name: 'Show to player' })).toHaveCount(2);
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	await expect(await openSeat(page, 3)).toContainText(/Demon · Evil · Seat 3[\s\S]*Legion/);
 });
 
@@ -892,8 +878,7 @@ test('a summoned Lord of Typhon makes their other neighbour an evil Minion', asy
 	await expect(minions.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
 	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
 	await expect(step.getByTestId('change-character')).toContainText('Spy');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
 });
 
@@ -997,8 +982,7 @@ test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the p
 		.getByRole('button', { name: 'Imp', exact: true })
 		.tap();
 	await expect(step.getByTestId('change-character')).toContainText('Imp');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	await expect(await openSeat(page, 3)).toContainText(/Demon · Evil · Seat 3[\s\S]*Imp/);
 });
 
@@ -1071,8 +1055,7 @@ test('the Engineer who removes the Summoner gives the Storyteller its ability', 
 		.getByRole('button', { name: 'Poisoner', exact: true })
 		.tap();
 	await expect(step.getByTestId('change-character')).toContainText('Poisoner');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	// The Summoner's step, now the Storyteller's: before the Engineer's on the first night.
 	const strip = walkThrough(page);
 	const name = strip.locator('[data-walk-name]');

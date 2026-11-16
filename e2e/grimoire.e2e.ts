@@ -1177,11 +1177,8 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await expect(day).toBeHidden();
 
 	// Tapped at its count: the middle of the Imp's text is a glossary word with its own popover.
-	await (
-		await walkTo(page, 'Imp')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Imp');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Imp');
 	// The card is on the line that names it (Trevor, 2026-11-06), with no list of cards below.
 	const lines = step.getByTestId('night-lines');
@@ -1322,21 +1319,15 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	await expect(day).toBeHidden();
 
 	// Steps open at their count: their text has glossary words with their own popovers.
-	await (
-		await walkTo(page, 'Exorcist')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Exorcist');
+	await openWalkStep(page);
 	const exorcist = nightStep(page, 'Exorcist');
 	await placeFromStep(page, exorcist, 1);
 	await expect(exorcist).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
 	await exorcist.getByRole('button', { name: 'Close' }).tap();
 
-	await (
-		await walkTo(page, 'Pukka')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Pukka');
+	await openWalkStep(page);
 	const pukka = nightStep(page, 'Pukka');
 	await expect(pukka.getByTestId('night-alerts')).toContainText(
 		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake\s+tonight/
@@ -1362,11 +1353,8 @@ test("the Lord of Typhon's step warns when the evil players don't sit in one lin
 		await picker.getByRole('button', { name, exact: true }).tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Lord of Typhon')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Lord of Typhon');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Lord of Typhon');
 	await expect(step.getByTestId('night-alerts')).toContainText(
 		/Seat 1: the evil players don't sit in one line with\s*Lord of Typhon\s*inside it/
@@ -1398,11 +1386,8 @@ test("the Demon's step says when the Princess stops its kill tonight", async ({ 
 
 	await putReminder(page, "Doesn't Kill", 1);
 
-	await (
-		await walkTo(page, 'Imp')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Imp');
+	await openWalkStep(page);
 	const alerts = nightStep(page, 'Imp').getByTestId('night-alerts');
 	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
 	await expect(alerts).not.toContainText(/Soldier/);
@@ -1422,11 +1407,8 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 		.tap();
 	await closeSheet(page);
 
-	await (
-		await walkTo(page, 'Cerenovus')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Cerenovus');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Cerenovus');
 	// "This character selected you" is on the line naming it, and "You are mad as" beside it
 	// (Trevor, 2026-11-09: "The mad as is not showing up as an eyeball under cerenovus").
@@ -1470,11 +1452,8 @@ test('the Snake Charmer step fills "You are" with the Demon, then with the Snake
 			.tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Snake Charmer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Snake Charmer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Snake Charmer');
 	// Each "You are" line has its own card, in the text's order (Trevor, 2026-11-06).
 	const eyes = step.getByTestId('night-lines').getByRole('button', { name: /^Show to player/ });
@@ -1542,11 +1521,8 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 		await closeSheet(page);
 	}
 
-	await (
-		await walkTo(page, 'Dreamer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Dreamer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Dreamer');
 	// On the step's first line, as every card the step offers (Trevor, 2026-11-09).
 	await step
@@ -1589,11 +1565,8 @@ test("the Dreamer's Valid Information shows a good and an evil token, never one 
 			.tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Dreamer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Dreamer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Dreamer');
 	// The Clockmaker's row: the picker opens with the Clockmaker in place and the evil token to
 	// pick, instead of showing the Clockmaker alone.
@@ -3218,11 +3191,8 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 		.tap();
 
 	// Its name: on a phone, a tap on the middle also reached the opened step's icon below it.
-	await (
-		await walkTo(page, 'Plague Doctor')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Plague Doctor');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Plague Doctor');
 	const row = step.getByTestId('storyteller-ability');
 	await expect(row).toContainText('None');
@@ -8190,11 +8160,8 @@ test('the Harlot step asks the chosen player, then shows the Harlot their charac
 	const day = page.getByTestId('pane-day');
 	await closePane(page);
 	await expect(day).toBeHidden();
-	await (
-		await walkTo(page, 'Harlot')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Harlot');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Harlot');
 	// Every card the step offers has its eye on the step's lines (Trevor, 2026-11-09).
 	const lines = step.getByTestId('night-lines');

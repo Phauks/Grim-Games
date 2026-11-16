@@ -1,4 +1,4 @@
-import { closePane } from './players.ts';
+import { closePane, paneIsSheet } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
@@ -82,7 +82,7 @@ async function toNightTwo(page: Page, executed: string) {
 		.tap();
 	const day = page.getByTestId('pane-day');
 	await closePane(page);
-	await expect(day).toBeHidden();
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')

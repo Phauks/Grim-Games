@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, paneIsSheet } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -68,7 +68,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	await closePane(page);
-	await expect(day).toBeHidden();
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	await expect(status).toContainText('Day 1');

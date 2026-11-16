@@ -93,3 +93,12 @@ export async function boardTimer(page: Page): Promise<Locator> {
 	await expect(sheet).toBeVisible();
 	return sheet.getByTestId('day-timer');
 }
+
+/**
+ * Closes the pane over a step: on a phone the step closes with its sheet; beside the board it
+ * stays, the pane's Night tab.
+ */
+export async function closeStep(page: Page, step: Locator) {
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(step).toBeHidden();
+}

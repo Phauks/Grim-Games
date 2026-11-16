@@ -94,7 +94,6 @@ test('the fiddle contest runs in its own dialog and opens End game with its resu
 	// End game opens over the board with the contest's winner and the Fiddler as how it ended.
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(end).toBeVisible();
-	await expect(day).toBeHidden();
 	await expect(end.getByRole('combobox', { name: 'Winner' })).toContainText('Good');
 	await expect(end.getByRole('combobox', { name: 'How it ended' })).toContainText('Fiddler');
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();

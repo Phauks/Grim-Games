@@ -1,3 +1,4 @@
+import { closePane } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
@@ -110,8 +111,7 @@ test("the Demon's step lists who can't die or sets something off, once each, in 
 	await endNight(page);
 	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
 	// The Sweetheart's Drunk on the Klutz.
 	await putReminder(page, 'Drunk', 2);
 
