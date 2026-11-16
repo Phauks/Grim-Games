@@ -1173,12 +1173,7 @@
 {#snippet miniGrim()}<GrimoireBoard {grimoire} mini pick={flow} />{/snippet}
 
 <!-- The board's own background on the cover (Trevor, 2026-11-16). -->
-{#snippet coverBackdrop()}<GameBackdrop
-		{game}
-		logo={boardLogo || undefined}
-		{watched}
-		cover
-	/>{/snippet}
+{#snippet coverBackdrop()}<GameBackdrop {game} logo={coverDetails.logo} {watched} cover />{/snippet}
 
 {#snippet coverActions()}<GrimCoverActions view={playerView} />{/snippet}
 
