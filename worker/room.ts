@@ -437,7 +437,7 @@ export class Room extends DurableObject<RoomEnv> {
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'count') {
-				const next = takeCount(room, id, message.number);
+				const next = takeCount(room, id, message.number, message.free);
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'hold-traveller' || message.type === 'confirm-traveller') {
