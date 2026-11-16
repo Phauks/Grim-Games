@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { closePane, openPlayers, openPlayerSheet } from './players.ts';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
