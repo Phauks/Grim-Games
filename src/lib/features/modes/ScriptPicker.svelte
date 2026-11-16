@@ -216,6 +216,8 @@
 <style>
 	.picker {
 		display: grid;
+		/* Never wider than the screen: the kinds' pill cuts a long name short instead. */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);
 		min-width: 0;
 	}
