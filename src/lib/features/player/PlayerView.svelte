@@ -40,7 +40,10 @@
 	import OfflineGame from './OfflineGame.svelte';
 	import { markOfflineScript, offlineScript } from './offline-script.svelte.ts';
 	import { startingTown } from '#lib/core/town/local-town.ts';
+	import { dealtSeats } from '#lib/features/modes/players-line.ts';
+	import { travellersInPlay } from './travellers-in-play.ts';
 	import {
+		keptLocalSeats,
 		keptLocalTown,
 		localNotesKey,
 		openOnGrim,
@@ -232,6 +235,16 @@
 		);
 	});
 
+	/**
+	 * A players-only game's town (as PlayerGrim reads it, with no room) gives the Script and
+	 * Night tabs its players and Travellers, as a room's table does (Trevor, 2026-11-16: "parity
+	 * is having issues").
+	 */
+	const localSeatsShown = $derived.by(() => {
+		const seats = !lastRoom() && !join && key ? keptLocalSeats(key) : [];
+		return seats.length ? seats : undefined;
+	});
+
 	// With no room, the Grim tab is the player's own town (plan M55): Join game lists it, so it
 	// can be opened again.
 	$effect(() => {
@@ -402,8 +415,12 @@
 		     (Trevor, 2026-10-26: "so players don't have to think"). -->
 		{#key localGeneration}<PlayerScreen
 				{script}
-				players={inRoom === lastRoom() ? roomTable.players : undefined}
-				travellers={roomTable.travellers}
+				players={localSeatsShown
+					? dealtSeats(localSeatsShown).dealt || undefined
+					: inRoom === lastRoom()
+						? roomTable.players
+						: undefined}
+				travellers={localSeatsShown ? travellersInPlay(localSeatsShown) : roomTable.travellers}
 				rules={roomTable.rules}
 				ruleCharacters={roomTable.ruleCharacters}
 				notesKey={key}

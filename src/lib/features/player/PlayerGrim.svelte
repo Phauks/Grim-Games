@@ -76,14 +76,14 @@
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
+	import { toggleGhostVote as toggleVote } from './local-town.svelte.ts';
 	import { setTraveller } from '#lib/core/town/local-town.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import LocalSeatCount from './LocalSeatCount.svelte';
 	import LocalSeatRows from './LocalSeatRows.svelte';
 	import { seatLabel } from './seat-label.ts';
 	import { playerHandMarks, seatMarks } from './hand-seat-marks.ts';
-	import { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
-	import { localLayout, localSeatTable } from './local-arranging.ts';
+	import { localArranging, localLayout } from './local-arranging.ts';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -236,22 +236,16 @@
 		ringAboveTray({ seats, layout, board, aspect, fit, tools, tray: !display }, preferences.current)
 	);
 	const { chip, foot, ring, ringPoints, size, points } = $derived(placement);
-	/**
-	 * A players-only town's seats move as the board's do (Trevor, 2026-11-15): hold one and
-	 * drag it anywhere, or onto another seat to swap the two players.
-	 */
-	const arrange = new SeatArranging(() => ({
-		table: localSeatTable(local ?? ''),
-		seating: seats.map((s) => s.seatId),
+	const arrange = localArranging(() => ({
+		local,
+		seats,
 		layout,
 		points,
 		size,
 		board,
-		element: townEl,
-		// The layout is of the ring, above the tray.
-		toLayout: (p) => ({ x: p.x, y: ring.height > 0 ? (p.y * height) / ring.height : p.y })
+		townEl,
+		ring
 	}));
-	const seatAt = $derived(arrange.shown);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	const root = watchRootFont();
@@ -308,13 +302,16 @@
 	/** The seat in the sheet as it is now, after the player renamed or marked it. */
 	const current = $derived(chosen && (seats.find((s) => s.seatId === chosen?.seatId) ?? chosen));
 	function choose(seat: PublicSeat, event?: MouseEvent) {
+		const target = event?.target instanceof Element ? event.target : null;
+		// The dead badge is the ghost vote's own switch, as on the board (SeatToken).
+		if (local && seat.dead && target?.closest('[data-testid="dead-mark"]'))
+			return toggleVote(local, seat.seatId);
 		// A token tapped in the bin goes on the seat tapped next.
 		if (gestures.dropOnSeat(seat.seatId) || seating?.claim(seat)) return;
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
 		// The note mark opens the note (Trevor, 2026-10-25); anywhere else, the seat's sheet.
-		const target = event?.target instanceof Element ? event.target : null;
 		if (target?.closest('.mark.note')) noteOpen = true;
 		else open = true;
 	}
@@ -379,6 +376,11 @@
 			saveLocalTown(local, setTraveller(localTown(local), seatId, next));
 		if (!traveller) save(toggleGuess(guesses, seatId, characterId));
 	}
+	/** A players-only seat's marked Traveller leads its guesses (Trevor, 2026-11-16). */
+	const markedTraveller = (seat: PublicSeat | undefined): SeatGuess[] => {
+		const known = local ? characterOf(seat?.traveller) : undefined;
+		return known ? [{ id: known.id, character: known }] : [];
+	};
 	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
 	const guessChoices = $derived(
 		current?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
@@ -469,7 +471,7 @@
 				/>
 			{/if}
 			{#each seats as seat, i (seat.seatId)}
-				{@const point = seatAt[i]}
+				{@const point = arrange.shown[i]}
 				{@const hand = seatMarks(inHandMarks, gestures, seat.seatId)}
 				{@const known = characterOf(seat.traveller)}
 				<!-- A Traveller's seat takes only an alignment, shown in its icon's colour. -->
@@ -538,7 +540,7 @@
 			     seat's reminders. -->
 			<PlayerSeatReminders
 				{seats}
-				points={seatAt}
+				points={arrange.shown}
 				{board}
 				{size}
 				reminders={visible}
@@ -646,7 +648,10 @@
 	{#if local && current}<LocalSeatRows notesKey={local} seat={current} />{/if}
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
-		<SeatGuessChips entries={chosen ? listed(chosen.seatId) : []} onPick={guess} />
+		<SeatGuessChips
+			entries={chosen ? [...markedTraveller(current), ...listed(chosen.seatId)] : []}
+			onPick={(id) => (id === current?.traveller ? pick(id) : guess(id))}
+		/>
 	</div>
 	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap on one
 	     opens its About, where it comes off, as on the board's sheet (Trevor, 2026-11-01). -->
