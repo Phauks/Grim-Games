@@ -57,6 +57,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Saved-game format and room protocol numbers never go down (README "Rolling back").
+      - name: Versions never go down
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch --depth=1 origin "$BASE"
+          node scripts/check-versions.ts --run FETCH_HEAD
       - run: npm run check
       - run: npm run lint
       - run: npm run test:unit -- --run
