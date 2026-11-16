@@ -179,6 +179,8 @@ export class RoomPlayer {
 	script = $state.raw<Script>();
 	/** The finished grimoire, once the Storyteller shares it after the game (plan R5). */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
+	/** The whole grimoire, live, while the Storyteller gives this phone Grim view (2026-11-16). */
+	grimView = $state.raw<SharedGrimoire>();
 	/**
 	 * Times the Storyteller handed this phone's account the room (plan F14): each one opens
 	 * Room transfer with no code (JoinPanel).
@@ -226,6 +228,8 @@ export class RoomPlayer {
 					if (isNewerBuild(m.storytellerBuiltAt, buildInfo.builtAt)) lookForNewerBuild();
 					// The game runs again, or a new one began: the finished grimoire goes.
 					if (!m.ended) this.revealed = undefined;
+					// Grim view taken away: the grimoire goes at once.
+					if (!m.grimView) this.grimView = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
 					const storytellerLook = m.public?.storyteller;
 					const travellers = travellersInPlay(m.public?.seats ?? []);
@@ -242,7 +246,9 @@ export class RoomPlayer {
 						...(ruleCharacters?.length ? { ruleCharacters } : {})
 					});
 				} else if (m.type === 'script') this.script = m.script;
-				else if (m.type === 'reveal') {
+				else if (m.type === 'grimoire') {
+					if (this.view?.grimView) this.grimView = m.grimoire;
+				} else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
 				} else if (m.type === 'call-town') {
 					hearCallTown(m.sound);
@@ -392,9 +398,12 @@ export class RoomPlayer {
 		return this.#socket.send(message);
 	}
 
-	/** Count off (plan J40): the number this player counted to, going clockwise. */
-	count(number: number): boolean {
-		return this.#socket.send({ type: 'count', number });
+	/**
+	 * Count off (plan J40): the number this player counted to, going clockwise; `null` lets it go.
+	 * `free`: only if no one holds it yet.
+	 */
+	count(number: number | null, free?: true): boolean {
+		return this.#socket.send({ type: 'count', number, ...(free ? { free } : {}) });
 	}
 
 	/** Travellers choose (room-traveller-pick.ts): holds one, or `null` lets this phone's go. */

@@ -63,7 +63,6 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import PlayerScreen from './PlayerScreen.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { gameKey, lastRoom, leaveLastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
@@ -89,6 +88,11 @@
 	}
 
 	let { join }: Props = $props();
+	/**
+	 * The script's tabs load beside the page, not before it: they bring the grim, the night
+	 * order and the notes, so Join game and its room row show while they arrive.
+	 */
+	const playerScreen = import('./PlayerScreen.svelte');
 	/** On Join game, a typed code opens that room's own link. */
 	const openRoom = (code: string) => void goto(resolve('/join/[code]', { code }));
 
@@ -98,11 +102,20 @@
 	/** The room this phone is in, whose name the You sheet sets. */
 	let joinedRoom = $state<string>();
 	let error = $state<string>();
-	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
+	// Joining lands on the script (Trevor, 2026-10-23), or on the grim for a phone with a seat
+	// to pick (seatToPick below); the room is the row above the tabs.
 	// A players-only game opened from New game or Join game starts on its town (plan M55).
 	/** Opened as a players-only game, from New game or Join game. */
 	const startedLocal = openOnGrim.take();
 	let tab = $state(startedLocal ? 'grim' : 'script');
+	// A phone with no seat that could take one turns to the Grim tab, where seats are picked,
+	// once as it joins; away from it the status box says Select seat (Trevor, 2026-11-16).
+	let turnedToSeats = false;
+	function seatToPick(unseated: boolean) {
+		if (!unseated || turnedToSeats) return;
+		turnedToSeats = true;
+		tab = 'grim';
+	}
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
 	$effect(() => {
 		if (!finalGrimoire.open) return;
@@ -374,6 +387,8 @@
 				onCode={join ? openRoom : undefined}
 				onVoting={(v) => (voting = v)}
 				onRoom={(room) => (joinedRoom = room)}
+				onSeatToPick={seatToPick}
+				selectSeat={tab === 'grim' ? undefined : () => (tab = 'grim')}
 			/>
 		{/key}
 		{#if join && !joining}<GroupGames onJoin={openRoom} />{/if}
@@ -414,19 +429,21 @@
 		<!-- The same screen the Storyteller's player view shows (PlayerScreen). -->
 		<!-- In a room, the table's own column of the Players breakdown is picked for the player
 		     (Trevor, 2026-10-26: "so players don't have to think"). -->
-		{#key localGeneration}<PlayerScreen
-				{script}
-				players={localSeatsShown
-					? dealtSeats(localSeatsShown).dealt || undefined
-					: inRoom === lastRoom()
-						? roomTable.players
-						: undefined}
-				travellers={localSeatsShown ? travellersInPlay(localSeatsShown) : roomTable.travellers}
-				rules={roomTable.rules}
-				ruleCharacters={roomTable.ruleCharacters}
-				notesKey={key}
-				bind:tab
-			/>{/key}
+		{#key localGeneration}{#await playerScreen}<p class="muted">
+					{t('player.loading')}
+				</p>{:then { default: PlayerScreen }}<PlayerScreen
+					{script}
+					players={localSeatsShown
+						? dealtSeats(localSeatsShown).dealt || undefined
+						: inRoom === lastRoom()
+							? roomTable.players
+							: undefined}
+					travellers={localSeatsShown ? travellersInPlay(localSeatsShown) : roomTable.travellers}
+					rules={roomTable.rules}
+					ruleCharacters={roomTable.ruleCharacters}
+					notesKey={key}
+					bind:tab
+				/>{/await}{/key}
 	{/if}
 </Page>
 <StorytellerSoundsAsk />

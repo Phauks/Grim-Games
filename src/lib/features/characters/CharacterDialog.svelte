@@ -284,7 +284,7 @@
 	.muted {
 		color: var(--on-surface-muted);
 	}
-	/* A colour flash, not movement, so it shows with reduced motion too. */
+	/* A colour flash, not movement, so it shows with animations off too. */
 	.own {
 		flex: none;
 		border-radius: var(--radius-md);

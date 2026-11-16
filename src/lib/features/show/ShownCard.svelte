@@ -74,6 +74,10 @@
 			// No slack here: a word one pixel too wide would be split once the measuring ends.
 			if (line.scrollWidth > line.clientWidth) return false;
 		}
+		// A name cut short on its band counts as too wide, as a word running past its line does.
+		for (const name of box.querySelectorAll<HTMLElement>('.band-name')) {
+			if (name.scrollWidth > name.clientWidth) return false;
+		}
 		return true;
 	}
 
@@ -225,7 +229,9 @@
 	}
 	/* Set by fit() while it measures, so it is not in the markup. */
 	.content:global([data-measuring]) .title,
-	.content:global([data-measuring]) .detail:not([data-short]) {
+	.content:global([data-measuring]) .detail:not([data-short]),
+	.content:global([data-measuring]) .caption,
+	.content:global([data-measuring]) .rows {
 		overflow-wrap: normal;
 	}
 	.detail {
@@ -282,6 +288,9 @@
 		width: min(100%, calc(32rem * var(--fill, 1)));
 		font-size: calc(clamp(1.1rem, 4.5vw, 1.5rem) * var(--fill, 1));
 		text-align: start;
+		/* The row's ring keeps its normal size as the words grow, so the ability keeps the width
+		   (Trevor, 2026-11-16: "Normal size plz", picked B). */
+		--character-ring: calc(4.4em / var(--fill, 1));
 	}
 	.jinxes {
 		display: grid;

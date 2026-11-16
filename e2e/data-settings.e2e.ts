@@ -154,13 +154,17 @@ test('the browser is asked to keep the data, and Data offers Add to Home Screen 
 		.toBeGreaterThan(0);
 	const dialog = await openData(page);
 	await expect(dialog.getByText('Kept by the browser')).toHaveCount(0);
-	const steps = dialog.getByTestId('home-screen-steps');
+	const install = dialog.getByTestId('home-screen-install');
 	// The phone project is an iPhone 13 (Safari's user agent); the tablet is Android.
 	if (testInfo.project.name === 'phone') {
-		await expect(steps).toContainText('Add to Home Screen');
 		await expect(dialog.getByText(/after 7 days/)).toBeVisible();
+		// The same Install app dialog as Settings' and the menu's buttons.
+		await install.tap();
+		await expect(
+			page.getByRole('dialog', { name: 'Install app' }).getByTestId('install-steps')
+		).toContainText('Tap Add to Home Screen');
 	} else {
-		await expect(steps).toHaveCount(0);
+		await expect(install).toHaveCount(0);
 	}
 });
 
@@ -170,7 +174,7 @@ test('opened from the Home Screen, Add to Home Screen is not offered', async ({ 
 	);
 	await page.goto('/');
 	const dialog = await openData(page);
-	await expect(dialog.getByTestId('home-screen-steps')).toHaveCount(0);
+	await expect(dialog.getByTestId('home-screen-install')).toHaveCount(0);
 });
 
 test('the table scrolls under the sticky Data heading, never over it', async ({ page }) => {

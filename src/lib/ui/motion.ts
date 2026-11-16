@@ -14,8 +14,7 @@ export function parseDuration(value: string): number {
 
 /**
  * A motion token's length in milliseconds, read from the stylesheet so script-driven motion
- * matches the CSS and is 0 when the device asks for reduced motion (base.css sets the tokens
- * to 0ms then).
+ * matches the CSS and is 0 while animations are off (base.css sets the tokens to 0ms then).
  */
 export function duration(speed: Speed = 'normal'): number {
 	if (speed === 'none' || typeof document === 'undefined') return 0;

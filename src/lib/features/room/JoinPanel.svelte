@@ -8,16 +8,13 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TransferClaimDialog from './TransferClaimDialog.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
 	import { offlineHash, offlineRoomFrom, scannedScriptHash } from '#lib/features/scripts/share.ts';
 	import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
-	import { viewerKeyFromPassword } from './viewer.svelte.ts';
 	import ScriptBallot from './ScriptBallot.svelte';
 	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
@@ -39,6 +36,7 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
+	import { seatToPick } from '#lib/core/sync/room-seating-open.ts';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -67,6 +65,13 @@
 		 * own row for the last room shows nothing then.
 		 */
 		entry?: boolean;
+		/** Told whether this phone has no seat yet and could take one (seatToPick). */
+		onSeatToPick?: (unseated: boolean) => void;
+		/**
+		 * While this phone has a seat to pick, the status box says Select seat and opens this
+		 * (Trevor, 2026-11-16: away from the Grim tab, where seats are picked).
+		 */
+		selectSeat?: () => void;
 		/** Above the code form, in its column (Home's last game and New game, plan M69). */
 		lead?: Snippet;
 		/** Above the games to resume, in their column (Home's player card, Trevor 2026-11-06). */
@@ -80,6 +85,8 @@
 		onStoryteller,
 		onSeated,
 		onVoting,
+		onSeatToPick,
+		selectSeat,
 		entry = true,
 		lead,
 		aside
@@ -162,6 +169,10 @@
 	});
 	/** The seat this phone sits in, for tests to read; the screen doesn't say it. */
 	const mySeat = $derived(seats.find((x) => x.seatId === mine)?.seatNumber);
+	const unseated = $derived(inRoom && !!view && seatToPick(view));
+	$effect(() => onSeatToPick?.(unseated));
+	/** Select seat in the status box, away from the Grim tab (Trevor, 2026-11-16). */
+	const askSeat = $derived(unseated && !view?.endedGameId ? selectSeat : undefined);
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
 		if (view.choosing) return t('room.choosing');
@@ -259,41 +270,21 @@
 
 	/*
 	 * Share grim (Trevor, 2026-10-20, plan R5): when the finished grimoire the Storyteller
-	 * shared arrives, /play turns to its Grim tab, where it shows (Trevor, 2026-10-24).
+	 * shared arrives, /play turns to its Grim tab, where it shows (Trevor, 2026-10-24). So does
+	 * Grim view, when the Storyteller gives it (2026-11-16).
 	 */
-	const revealed = $derived(player?.revealed);
-	let seenReveal: string | undefined;
+	const shown = $derived(player?.revealed?.gameId ?? (player?.view?.grimView && 'grim-view'));
+	let seenShown: string | undefined;
 	$effect(() => {
-		const id = revealed?.gameId;
-		if (id && id !== seenReveal) finalGrimoire.open = true;
+		const id = shown || undefined;
+		if (id && id !== seenShown) finalGrimoire.open = true;
 		if (!id) finalGrimoire.open = false;
-		seenReveal = id;
+		seenShown = id;
 	});
 
 	/*
-	 * Grim view (plan D1, Trevor 2026-10-22: "grim view by password or direct link. drop
-	 * spectate"): the room code and the Storyteller's password open the view-only grimoire.
-	 * Players without a seat (Specters) join as players.
-	 */
-	let grimViewOpen = $state(false);
-	let grimPassword = $state('');
-	async function grimView(event: SubmitEvent) {
-		event.preventDefault();
-		const password = grimPassword.trim();
-		if (!lookup || !password) return;
-		const key = await viewerKeyFromPassword(lookup.code, password);
-		grimViewOpen = false;
-		grimPassword = '';
-		// The key goes in the hash, which never reaches the server; the path is resolved.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		await goto(`${resolve('/watch/[code]', { code: lookup.code })}#${key}`, {
-			state: { password: true }
-		});
-	}
-
-	/*
 	 * Scan a code (plan J2, 2026-10-22): the Share screen's QR code read in the app, or an
-	 * older players or Grim view link, or a room code on its own.
+	 * older players link, or a room code on its own.
 	 */
 	let scanning = $state(false);
 	let scanProblem = $state('');
@@ -337,11 +328,8 @@
 		scanning = false;
 		// A players' code fills the boxes and shows its game, so the choice of Join as player
 		// or ⋯ (Public Town) is still the person's (Trevor, 2026-10-26: one QR, no third).
-		if (room.kind === 'join' && code === undefined) typed = room.code;
-		else if (room.kind === 'join') openRoom(room.code);
-		// The key stays in the hash, which never reaches the server; the path is resolved.
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		else void goto(`${resolve('/watch/[code]', { code: room.code })}#${room.key}`);
+		if (code === undefined) typed = room.code;
+		else openRoom(room.code);
 		return true;
 	}
 
@@ -441,18 +429,11 @@
 						</Button>
 						<!-- A camera icon, not words (Trevor, 2026-10-23). -->
 						<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
-						<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
-			     player stays the one big button (Trevor, 2026-10-26). -->
+						<!-- Public Town and Room transfer are for fewer people, so they wait behind ⋯ and Join
+			     as player stays the one big button (Trevor, 2026-10-26). -->
 						<Menu
 							label={t('room.moreWays')}
 							items={[
-								// Disabled until the room has a Grim view password.
-								{
-									value: 'grim-view',
-									label: t('room.grimView'),
-									disabled: !found?.grimView,
-									onSelect: () => (grimViewOpen = true)
-								},
 								// A tablet for the middle of the table shows the players' grim (Public Town,
 								// Trevor 2026-10-26).
 								{
@@ -497,22 +478,6 @@
 			/>{/if}
 	</Dialog>
 	{#if lookup}<TransferClaimDialog bind:open={transferOpen} roomCode={lookup.code} />{/if}
-	<Dialog bind:open={grimViewOpen} title={t('room.grimView')}>
-		<form class="grim-view" onsubmit={grimView}>
-			<TextField
-				label={t('room.watch.password')}
-				bind:value={grimPassword}
-				maxlength={64}
-				type="secret"
-				plain
-			/>
-			<ModalActions
-				onCancel={() => (grimViewOpen = false)}
-				disabled={!grimPassword.trim()}
-				submit
-			/>
-		</form>
-	</Dialog>
 {:else if inRoom}
 	<!-- The row the Storyteller's player view shows too (PlayerStatusRow): anything drawn from
 	     the table's public state goes in it, never here. -->
@@ -528,6 +493,7 @@
 		seatNumber={mySeat}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
 		characterUntil={view?.roleUntil}
+		selectSeat={askSeat}
 	/>
 	{#if player}<YourCharacter
 			bind:this={yourCharacter}
@@ -655,10 +621,6 @@
 		.columns.split {
 			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 		}
-	}
-	.grim-view {
-		display: grid;
-		gap: var(--space-4);
 	}
 	.code-form :global(.button) {
 		min-width: calc(10 * var(--u));

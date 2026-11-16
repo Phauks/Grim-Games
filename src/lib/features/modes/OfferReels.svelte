@@ -2,7 +2,8 @@
 	import { untrack } from 'svelte';
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import { reelsMove, spinReel } from '#lib/features/setup/reel.ts';
+	import { spinReel } from '#lib/features/setup/reel.ts';
+	import { animationsOn } from '#lib/ui/animations.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 
@@ -37,7 +38,7 @@
 		void key;
 		untrack(() => {
 			stopAll();
-			if (reel.length < 2 || !reelsMove()) return;
+			if (reel.length < 2 || !animationsOn()) return;
 			spinning = true;
 			let left = offer.length;
 			offer.forEach((_, i) => {

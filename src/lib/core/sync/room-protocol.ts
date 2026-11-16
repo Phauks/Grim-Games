@@ -41,7 +41,7 @@ export type ClientMessage =
 			 * `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing.
 			 * `claim`: a device taking the room over (room-transfer.ts); its key is its new host key.
 			 */
-			role: 'host' | 'player' | 'viewer' | 'town' | 'claim';
+			role: 'host' | 'player' | 'town' | 'claim';
 			key: string;
 			protocol?: number;
 			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
@@ -66,8 +66,8 @@ export type ClientMessage =
 	  }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
-	/** To the Storyteller (2026-10-27); from Grim view, with its device's id and name (2026-11-03). */
-	| { type: 'message'; text: string; consult?: boolean; from?: string; name?: string }
+	/** To the Storyteller (2026-10-27). */
+	| { type: 'message'; text: string; consult?: boolean }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
@@ -90,7 +90,11 @@ export type ClientMessage =
 	| { type: 'sit'; place: { x: number; y: number } }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
-	| { type: 'count'; number: number } // Count off (plan J40): the number this player counted to.
+	/**
+	 * Count off (plan J40): the number this player counted to, or `null` to let theirs go.
+	 * `free`: only if no one holds it yet, as this phone saw it.
+	 */
+	| { type: 'count'; number: number | null; free?: true }
 	/** Travellers choose (room-traveller-pick.ts): hold one, `null` to let it go, then confirm. */
 	| { type: 'hold-traveller'; pickId: string; characterId: CharacterId | null }
 	| { type: 'confirm-traveller'; pickId: string }
@@ -114,7 +118,7 @@ export type ClientMessage =
 	| { type: 'let-back-in'; memberId: string }
 	/** Lets phones move their own seat, or locks seating (plan J38). */
 	| { type: 'seating'; open: boolean }
-	/** Starts a count off (plan J40); apps from before 2026-10-30 also name who is 1. */
+	/** Starts a count off (plan J40), with who is 1 when it is known already. */
 	| { type: 'count-off'; first?: { memberId: string } | { name: string } }
 	| { type: 'end-count-off' } // Done (once the board has the order) or Cancel.
 	/** Travellers choose on their phones: the Travellers allowed and the seats choosing. */
@@ -128,19 +132,18 @@ export type ClientMessage =
 	| { type: 'close-traveller-pick' }
 	/** Confirms a Traveller for a seat (a player without a phone), or `null` lets its hold go. */
 	| { type: 'traveller-for'; seatId: SeatId; characterId: CharacterId | null }
-	/** Names a number for a player without a phone; no name clears it. */
-	| { type: 'name-count'; number: number; name?: string }
+	/** Gives a number to a phone in the room, or names it for a player without one; neither clears it. */
+	| { type: 'name-count'; number: number; name?: string; memberId?: string }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
 	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
 	| { type: 'close-vote' }
-	/**
-	 * Turns the view-only grimoire link on with this key's hash, or off with `null`.
-	 * `password`: the key is made from a password (`viewerPassword`).
-	 */
-	| { type: 'viewers'; keyHash: string | null; password?: boolean }
-	/** The grimoire for viewers; ignored while the link is off. */
+	/** Gives exactly these members Grim view (Trevor, 2026-11-16: a switch per person). */
+	| { type: 'grim-viewers'; members: string[] }
+	/** The whole grimoire, for admins watching from Live games and a transfer bringing it. */
 	| { type: 'grimoire'; grimoire: SharedGrimoire }
+	/** The grimoire as the members with Grim view get it: what the Storyteller chose to share. */
+	| { type: 'grim-view'; grimoire: SharedGrimoire }
 	/** The game `gameId` is over (protocol 2). */
 	| { type: 'game-over'; gameId: string; winner?: Alignment; reason?: string; result?: string }
 	/**
@@ -253,6 +256,7 @@ export interface HostView {
 	seatingOpen?: true; // Phones may move their own seat (plan J38).
 	countOff?: CountOffView; // The count off, while one is open (plan J40).
 	travellerPick?: TravellerPickHostView; // Travellers choosing on their phones.
+	grimViewers?: string[]; // Members with Grim view.
 }
 
 export interface VoteTally {
@@ -293,6 +297,8 @@ export interface PlayerView {
 	endedGameId?: string;
 	/** The name the Storyteller sees for this phone while another player has its name. */
 	shownAs?: string;
+	/** The Storyteller gave this phone Grim view: the whole grimoire comes to it, live. */
+	grimView?: true;
 	/** When the Storyteller's app was built: a phone built earlier looks for the update. */
 	storytellerBuiltAt?: string;
 	/** The Storyteller is choosing the next script. */
@@ -343,7 +349,7 @@ export interface ScriptView {
 	script: Script;
 }
 
-/** What a viewer of the view-only link sees, on joining and on every change. */
+/** What a phone with Grim view sees, on joining and on every change. */
 export interface GrimoireView {
 	type: 'grimoire';
 	grimoire: SharedGrimoire;
@@ -363,7 +369,7 @@ export type ServerMessage =
 	| TownView
 	| ScriptView
 	| GrimoireView
-	/** To the Storyteller: how many are watching through the view-only link right now. */
+	/** To the Storyteller: how many phones with Grim view are connected right now. */
 	| { type: 'watchers'; count: number }
 	/**
 	 * To the players: the Storyteller calls everyone back to town (plan U2). Sent once, never
@@ -400,8 +406,6 @@ export type ServerMessage =
 	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
 	 */
 	| { type: 'message-delivered'; delivered: boolean }
-	/** To Grim view: whether it may message the Storyteller (`viewersMayMessage`). */
-	| { type: 'viewer-inbox'; on: boolean }
 	/** To the Storyteller's device: where a phone asks to sit (plan J38); never kept. */
 	| SitWish
 	| { type: 'refused'; reason: RefusedReason }
@@ -409,9 +413,6 @@ export type ServerMessage =
 
 /**
  * `too-old`: the app must update before it can use the room; the room itself is fine.
- * `not-viewer`: the view-only link is off, or was replaced by a newer one, or the password
- * was wrong. `too-many-tries`: too many wrong keys lately; watching waits a while.
  * `removed`: the Storyteller removed this phone for the current game (plan J37).
  */
-export type RefusedReason =
-	'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer' | 'too-many-tries' | 'removed';
+export type RefusedReason = 'no-room' | 'not-host' | 'room-full' | 'too-old' | 'removed';

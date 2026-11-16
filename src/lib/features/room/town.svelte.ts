@@ -54,8 +54,9 @@ export class RoomTown {
 					if (command) this.#sounds?.hear(command);
 				}
 			},
-			// Each connection starts again from what the room holds then.
-			() => (this.grimoire = undefined),
+			// The last grimoire stays through a reconnect (a deploy restarts the room) until the
+			// Storyteller's device sends a new one, so Live games doesn't flash to the town.
+			undefined,
 			admin ? liveGamePath(code) : undefined
 		);
 	}

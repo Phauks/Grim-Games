@@ -14,6 +14,7 @@
 	} from '#lib/ui/themes/colors.ts';
 	import { THEMES } from '#lib/ui/themes/registry.ts';
 	import type { PlainMessageKey } from '#lib/i18n/catalog.ts';
+	import AnimationsSetting from '../AnimationsSetting.svelte';
 
 	const theme = $derived(preferences.theme);
 	const colors = $derived(preferences.current.colors);
@@ -47,6 +48,7 @@
 	options={THEMES.map((option) => ({ value: option.id, label: option.name }))}
 	onChange={(themeId) => preferences.update({ themeId })}
 />
+<AnimationsSetting variant="setting" />
 {#each groups as [group, tokens] (group)}
 	<SettingCollapsible
 		title={t(`settings.colorGroup.${group}`)}

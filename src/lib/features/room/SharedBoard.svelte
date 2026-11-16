@@ -21,7 +21,6 @@
 	import GrimoireBoard from '#lib/features/grimoire/GrimoireBoard.svelte';
 	import { parseAspect, parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
 	import { lookForNewerBuild } from './newer-build.ts';
-	import type { Snippet } from 'svelte';
 
 	/**
 	 * The Storyteller's grimoire as another device sent it, drawn view-only: the view-only
@@ -38,24 +37,13 @@
 		over?: EndedGame;
 		/** The room it came through, which holds the board's background picture. */
 		room?: string;
-		/** History can be looked through while the game goes on (an admin's Live games). */
+		/** History can be looked through while the game goes on (Live games, Grim view). */
 		history?: boolean;
-		/** Beside ☰: Grim view's message to the Storyteller. */
-		lead?: Snippet;
 		/** False leaves out the board's toolbar, for a board in a dialog of its own (the final grimoire). */
 		toolbar?: boolean;
 	}
 
-	let {
-		shared,
-		onReady,
-		onProblem,
-		over,
-		room,
-		history = false,
-		lead,
-		toolbar = true
-	}: Props = $props();
+	let { shared, onReady, onProblem, over, room, history = false, toolbar = true }: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -108,7 +96,6 @@
 			watchedTimer={timer.known ? timer : undefined}
 			{over}
 			watchedHistory={history}
-			watchLead={lead}
 			{toolbar}
 		/>
 	</ErrorBoundary>

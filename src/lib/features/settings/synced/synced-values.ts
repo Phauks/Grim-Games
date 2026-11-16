@@ -20,6 +20,7 @@ export const DEVICE_PREFERENCES = [
 	'iconScale',
 	'characterIconScale',
 	'allowZoom',
+	'animations',
 	'soundVolume',
 	'speaker',
 	'soundOutput',

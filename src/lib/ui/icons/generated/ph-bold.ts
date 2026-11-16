@@ -62,6 +62,7 @@ import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-b
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_coffee_bold from '~icons/ph/coffee-bold';
 import ph_coin_bold from '~icons/ph/coin-bold';
+import ph_compass_bold from '~icons/ph/compass-bold';
 import ph_copy_bold from '~icons/ph/copy-bold';
 import ph_copy_simple_bold from '~icons/ph/copy-simple-bold';
 import ph_corners_in_bold from '~icons/ph/corners-in-bold';
@@ -82,6 +83,7 @@ import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
 import ph_envelope_simple_bold from '~icons/ph/envelope-simple-bold';
 import ph_eraser_bold from '~icons/ph/eraser-bold';
+import ph_export_bold from '~icons/ph/export-bold';
 import ph_eye_bold from '~icons/ph/eye-bold';
 import ph_eye_closed_bold from '~icons/ph/eye-closed-bold';
 import ph_eye_slash_bold from '~icons/ph/eye-slash-bold';
@@ -173,6 +175,7 @@ import ph_play_bold from '~icons/ph/play-bold';
 import ph_play_circle_bold from '~icons/ph/play-circle-bold';
 import ph_plus_bold from '~icons/ph/plus-bold';
 import ph_plus_circle_bold from '~icons/ph/plus-circle-bold';
+import ph_plus_square_bold from '~icons/ph/plus-square-bold';
 import ph_poker_chip_bold from '~icons/ph/poker-chip-bold';
 import ph_printer_bold from '~icons/ph/printer-bold';
 import ph_prohibit_bold from '~icons/ph/prohibit-bold';
@@ -311,6 +314,7 @@ const icons: IconMap = {
 	'ph:club-bold': ph_club_bold,
 	'ph:coffee-bold': ph_coffee_bold,
 	'ph:coin-bold': ph_coin_bold,
+	'ph:compass-bold': ph_compass_bold,
 	'ph:copy-bold': ph_copy_bold,
 	'ph:copy-simple-bold': ph_copy_simple_bold,
 	'ph:corners-in-bold': ph_corners_in_bold,
@@ -331,6 +335,7 @@ const icons: IconMap = {
 	'ph:drop-bold': ph_drop_bold,
 	'ph:envelope-simple-bold': ph_envelope_simple_bold,
 	'ph:eraser-bold': ph_eraser_bold,
+	'ph:export-bold': ph_export_bold,
 	'ph:eye-bold': ph_eye_bold,
 	'ph:eye-closed-bold': ph_eye_closed_bold,
 	'ph:eye-slash-bold': ph_eye_slash_bold,
@@ -422,6 +427,7 @@ const icons: IconMap = {
 	'ph:play-circle-bold': ph_play_circle_bold,
 	'ph:plus-bold': ph_plus_bold,
 	'ph:plus-circle-bold': ph_plus_circle_bold,
+	'ph:plus-square-bold': ph_plus_square_bold,
 	'ph:poker-chip-bold': ph_poker_chip_bold,
 	'ph:printer-bold': ph_printer_bold,
 	'ph:prohibit-bold': ph_prohibit_bold,

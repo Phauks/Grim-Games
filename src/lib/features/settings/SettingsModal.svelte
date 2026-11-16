@@ -26,7 +26,6 @@
 	// 2026-10-16); the section list keeps its own scroll.
 	let content = $state<HTMLElement>();
 	let confirmReset = $state(false);
-	let installSteps = $state(false);
 	const activeLabel = $derived(active ? sectionLabel(active.label, say) : '');
 	$effect(() => {
 		void active?.id;
@@ -125,11 +124,8 @@
 							{/each}
 						</ul>{/if}
 					<!-- At the very bottom (Trevor, 2026-10-20), only where the browser can install it. -->
-					{#if installApp.way}<div class="install">
-							<Button
-								icon="installApp"
-								onclick={() =>
-									installApp.way === 'prompt' ? void installApp.install() : (installSteps = true)}
+					{#if installApp.route}<div class="install">
+							<Button icon="installApp" onclick={() => installApp.start()}
 								>{t('settings.installApp')}</Button
 							>
 						</div>{/if}
@@ -170,9 +166,6 @@
 		</div>{/if}
 </Dialog>
 
-<Dialog bind:open={installSteps} title={t('settings.homeScreen')}>
-	<p data-testid="install-steps">{t('settings.homeScreenSteps')}</p>
-</Dialog>
 <ConfirmDialog
 	bind:open={confirmReset}
 	title={t('settings.resetSectionTitle', { section: activeLabel })}

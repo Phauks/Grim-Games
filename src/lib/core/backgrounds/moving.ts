@@ -228,47 +228,14 @@ export function parseMoving(raw: unknown): MovingChoice | undefined {
 }
 
 /**
- * How a device moves a moving background, kept on that device (Trevor, 2026-11-03):
- * - `fps`: 'screen' draws once per screen refresh (vsync); 30 halves the work on a 60 Hz
- *   screen and saves battery;
- * - `reduceMotion`: what the phone's Reduce motion setting means here: hold the scene still,
- *   move it gently (a third of the speed, no lightning or shooting stars), or ignore it;
- * - `still`: this device holds every moving background still (Trevor, 2026-11-05: each
- *   player's switch).
+ * How a device draws a moving background, kept on that device (Trevor, 2026-11-03): 'screen'
+ * draws once per screen refresh (vsync); 30 halves the work on a 60 Hz screen and saves
+ * battery. Whether it moves at all is the app's Animations setting.
  */
 export interface MovingMotion {
 	fps: 'screen' | '30';
-	reduceMotion: 'still' | 'gentle' | 'ignore';
-	still: boolean;
 }
 export function parseMovingMotion(raw: unknown): MovingMotion {
 	const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-	return {
-		fps: value.fps === '30' ? '30' : 'screen',
-		reduceMotion:
-			value.reduceMotion === 'gentle' || value.reduceMotion === 'ignore'
-				? value.reduceMotion
-				: 'still',
-		still: value.still === true
-	};
-}
-
-/**
- * How a scene runs on this device right now: held still, or at what speed, with which
- * settings. Gentle motion slows it to a third and turns off what flashes or streaks.
- */
-export function movingRun(
-	choice: MovingChoice,
-	motion: MovingMotion,
-	reducedMotion: boolean
-): { still: boolean; speed: number; params: MovingParams } {
-	const mode = reducedMotion ? motion.reduceMotion : 'ignore';
-	if (motion.still || mode === 'still') return { still: true, speed: 0, params: choice.params };
-	if (mode === 'gentle') {
-		const params = { ...choice.params };
-		if ('lightning' in params) params.lightning = 0;
-		if ('meteors' in params) params.meteors = 0;
-		return { still: false, speed: 0.35, params };
-	}
-	return { still: false, speed: 1, params: choice.params };
+	return { fps: value.fps === '30' ? '30' : 'screen' };
 }

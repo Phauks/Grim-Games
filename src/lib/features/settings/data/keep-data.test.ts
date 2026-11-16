@@ -5,6 +5,8 @@ const IPHONE_SAFARI =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 const IPHONE_CHROME =
 	'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0 Mobile/15E148 Safari/604.1';
+const IPHONE_GOOGLE_APP =
+	'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/390.0.812345 Mobile/15E148 Safari/604.1';
 const IPAD_DESKTOP =
 	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
 const ANDROID =
@@ -23,6 +25,8 @@ describe('Add to Home Screen row', () => {
 		const browser = { maxTouchPoints: 5, standalone: false };
 		expect(needsHomeScreen({ ...browser, standalone: true, userAgent: IPHONE_SAFARI })).toBe(false);
 		expect(needsHomeScreen({ ...browser, userAgent: IPHONE_CHROME })).toBe(false);
+		// The Google app's window says Safari/ but has no Add to Home Screen.
+		expect(needsHomeScreen({ ...browser, userAgent: IPHONE_GOOGLE_APP })).toBe(false);
 		expect(needsHomeScreen({ ...browser, userAgent: ANDROID })).toBe(false);
 	});
 });

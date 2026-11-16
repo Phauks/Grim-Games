@@ -14,7 +14,7 @@
 	 *
 	 * Once every seat's candle is lit, sparks drift up from each flame, so the table can see at
 	 * a glance that everyone is here and ready (Trevor, 2026-10-31). Phones with no seat don't
-	 * count, as they have no candle. With reduced motion the sparks hang still over the flames.
+	 * count, as they have no candle. With animations off the sparks hang still over the flames.
 	 */
 	interface Props {
 		look: SetupLook;
@@ -293,21 +293,19 @@
 	.flame {
 		transform-origin: center bottom;
 	}
-	@media (prefers-reduced-motion: no-preference) {
-		.flame {
-			animation: flicker 3s ease-in-out infinite;
-		}
-		.ember,
-		.window {
-			animation: glow 4s ease-in-out infinite;
-		}
-		.star {
-			animation: twinkle 4s ease-in-out infinite;
-		}
-		.spark {
-			opacity: 0;
-			animation: rise 3.3s ease-out infinite;
-		}
+	:global(:root:not([data-motion-off])) .flame {
+		animation: flicker 3s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .ember,
+	:global(:root:not([data-motion-off])) .window {
+		animation: glow 4s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .star {
+		animation: twinkle 4s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .spark {
+		opacity: 0;
+		animation: rise 3.3s ease-out infinite;
 	}
 	@keyframes flicker {
 		0%,

@@ -165,7 +165,7 @@
 		display: block;
 		height: 100%;
 		background: var(--accent);
-		transition: width 0.3s ease;
+		transition: width var(--duration-normal) ease;
 	}
 	.summary {
 		display: flex;

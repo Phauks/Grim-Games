@@ -16,6 +16,13 @@ export interface ShareChoices {
 	gameNotes: boolean;
 }
 
+/** What goes unless the Storyteller picks otherwise: the history, and none of their notes. */
+export const DEFAULT_SHARE_CHOICES: ShareChoices = {
+	history: true,
+	seatNotes: false,
+	gameNotes: false
+};
+
 const SEAT_NOTE_EVENTS = new Set<GameEvent['type']>([
 	'SeatNoteSaved',
 	'SeatNoteDeleted',

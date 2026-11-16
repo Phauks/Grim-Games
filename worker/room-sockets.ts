@@ -10,7 +10,6 @@ export type Attachment =
 	| { role: 'host' }
 	/** `showing`: the app is on the phone's screen, so Back to town isn't pushed to it too. */
 	| { role: 'player'; memberId: string; showing?: boolean }
-	| { role: 'viewer' }
 	| { role: 'town' }
 	| { role: 'admin' }
 	/** A device typing a transfer code (room-transfer.ts), by its new host key's hash. */
@@ -56,14 +55,10 @@ export function memberSockets(ctx: DurableObjectState, memberId: string): WebSoc
 	});
 }
 
-/** How many devices in `role` are connected now, leaving out one that is going. */
-export function openSockets(
-	ctx: DurableObjectState,
-	role: 'viewer' | 'admin',
-	going?: WebSocket
-): number {
+/** Admins watching from Live games now, leaving out one that is going. */
+export function openAdmins(ctx: DurableObjectState, going?: WebSocket): number {
 	return ctx.getWebSockets().filter((socket) => {
 		const who = socket.deserializeAttachment() as Attachment | null;
-		return who?.role === role && socket !== going && socket.readyState === WebSocket.OPEN;
+		return who?.role === 'admin' && socket !== going && socket.readyState === WebSocket.OPEN;
 	}).length;
 }

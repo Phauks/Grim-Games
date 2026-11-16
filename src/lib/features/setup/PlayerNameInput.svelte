@@ -15,19 +15,30 @@
 		value: string;
 		/** Names already on other seats, left out of the phones to pick from. */
 		taken?: readonly string[];
+		/**
+		 * Names on seats still open to the bag draw, listed before the room's phones: the
+		 * player drawing may be any of them (Trevor, 2026-11-16).
+		 */
+		seatNames?: readonly string[];
 		/** Shows the label only to screen readers, the placeholder saying what it is. */
 		hideLabel?: boolean;
 		/** The empty field's words while there are phones to pick: the player's own ("Pick your name") unless given. */
 		pickLabel?: string;
 	}
 
-	let { value = $bindable(), taken = [], hideLabel = false, pickLabel }: Props = $props();
+	let {
+		value = $bindable(),
+		taken = [],
+		seatNames = [],
+		hideLabel = false,
+		pickLabel
+	}: Props = $props();
 
-	// Only the room's phones, connected or asleep, without a seat in this game, never names
-	// from earlier games (Trevor, 2026-10-26).
+	// Only the room's phones, connected or asleep, without a seat in this game, and the open
+	// seats' names given, never names from earlier games (Trevor, 2026-10-26).
 	const names = $derived(
 		suggestNames(
-			roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])),
+			[...seatNames, ...roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))],
 			'',
 			taken,
 			Infinity

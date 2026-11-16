@@ -13,7 +13,7 @@
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import FinalGrimoireDialog from './FinalGrimoireDialog.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
@@ -73,11 +73,10 @@
 	import type { ProfileWords } from '#lib/core/profile/index.ts';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
-	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
-	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
-	import { toggleGhostVote as toggleVote } from './local-town.svelte.ts';
-	import { setTraveller } from '#lib/core/town/local-town.ts';
-	import type { Character } from '#lib/core/data/index.ts';
+	import { fitAboveBar } from '#lib/ui/fit-above-bar.ts';
+	import { localGuessKey, localPickable, localSeats, localTown } from './local-town.svelte.ts';
+	import { saveLocalTown, toggleGhostVote as toggleVote } from './local-town.svelte.ts';
+	import { setOffScript, setTraveller } from '#lib/core/town/local-town.ts';
 	import LocalSeatCount from './LocalSeatCount.svelte';
 	import LocalSeatRows from './LocalSeatRows.svelte';
 	import { seatLabel } from './seat-label.ts';
@@ -181,7 +180,7 @@
 	/**
 	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), over the town
 	 * until closed (Trevor, 2026-11-15: full screen, the player's guesses kept under it); its
-	 * History steps through on this phone only.
+	 * History steps through on this phone only. Or Grim view's, live (2026-11-16).
 	 */
 	const final = $derived(finalGrimoireOf(town, player, code));
 	let showFinal = $state(true);
@@ -190,7 +189,7 @@
 		if (final) arrivedAt = Date.now();
 	});
 	const over = $derived<EndedGame | undefined>(
-		final ? ({ endedAt: arrivedAt, ...final.ended } as EndedGame) : undefined
+		final && !final.live ? ({ endedAt: arrivedAt, ...final.ended } as EndedGame) : undefined
 	);
 
 	const nameOf = (seat: PublicSeat) =>
@@ -339,19 +338,13 @@
 				: toggleGuess(guesses, chosen.seatId, characterId)
 		);
 	}
-	/**
-	 * A players-only game's seat picker lists the Travellers as a character type of their own
-	 * (Trevor, 2026-11-10): the script's first, then every other official one, since a Traveller
-	 * can join any game.
-	 */
-	const pickable = $derived.by((): readonly Character[] => {
-		if (!local) return script.characters;
-		const listed = new Set(script.characters.map((c) => c.id));
-		const others = (officialData.current?.characters ?? []).filter(
-			(c) => c.type === 'traveller' && !listed.has(c.id)
-		);
-		return [...script.characters, ...others];
-	});
+	// A players-only game's picker adds other Travellers, and with Off script any character.
+	const offScript = $derived(!!local && !!localTown(local).offScript);
+	const pickable = $derived(
+		local
+			? localPickable(script.characters, officialData.current?.characters ?? [], offScript)
+			: script.characters
+	);
 	/** What the seat picker shows as chosen: a Traveller's seat its Traveller, else the guesses. */
 	const picked = $derived(
 		!chosen
@@ -418,12 +411,15 @@
 		});
 </script>
 
-{#if final}<FinalGrimoireDialog
-		bind:open={showFinal}
-		grimoire={final.grimoire}
-		{over}
-		room={final.room}
-	/>{/if}
+<!-- Loaded only once a final grimoire arrives: it brings the Storyteller's whole board, which
+     every joining phone would otherwise download before Join game shows. -->
+{#if final}{#await import('./FinalGrimoireDialog.svelte') then { default: FinalGrimoireDialog }}<FinalGrimoireDialog
+			bind:open={showFinal}
+			grimoire={final.grimoire}
+			live={final.live}
+			{over}
+			room={final.room}
+		/>{/await}{/if}
 {#if seats.length === 0 || (!code && !local)}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
@@ -441,7 +437,7 @@
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
 			bind:this={townEl}
-			{@attach fitInDialog}
+			{@attach fitAboveBar}
 		>
 			<BoardBackdrop
 				contained
@@ -606,7 +602,7 @@
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
-		final={!!final}
+		final={final && (final.live ? 'live' : 'final')}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
 		info={{ meta: script.meta, table, roomCode: friendRoom }}
@@ -672,6 +668,11 @@
 		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
 		onGuess={guess}
 	/>
+	{#if local}<Toggle
+			label={t('player.grim.offScript')}
+			checked={offScript}
+			onChange={(on) => saveLocalTown(local!, setOffScript(localTown(local!), on))}
+		/>{/if}
 	{#if local || !current?.traveller}<CharacterPicker
 			characters={pickable}
 			selected={picked}
@@ -708,22 +709,24 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* The board's shape (plan J13): the screen's width, and most of its height, so the seats
-	   sit as they do on the Storyteller's board, tall on a phone and wide on a tablet. */
+	/* The board's shape (plan J13): the screen's width, seats as on the Storyteller's board. */
 	.town {
 		position: relative;
-		/* The backdrop and vignette sit under the seats, inside the town (BoardBackdrop). */
-		isolation: isolate;
+		isolation: isolate; /* BoardBackdrop's vignette sits under the seats, in the town */
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		/* In a dialog (the Storyteller's player view), no taller than the room left under the
-		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
-		   that the seats crowd together. */
-		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
-		/* + the reminder tray (tray-ring.ts); with Notes under the tabs, the room left above
-		   them (Tabs `aside`, --panel-room), tray included. */
+		/* No taller than the room above the tab bar, so ring and tray (--foot-room) show
+		   unscrolled (fitAboveBar, Trevor 2026-11-16: B), or with Notes beside, the room above
+		   them (--panel-room). An upright screen keeps 60dvh of ring: a short phone scrolls. */
+		height: max(var(--floor), min(var(--tall), var(--fit-height, var(--tall))));
 		--tall: var(--panel-room, calc(75dvh + var(--foot-room, 0rem)));
+		--floor: 40dvh;
+	}
+	@media (orientation: portrait) {
+		.town {
+			--floor: calc(60dvh + var(--foot-room, 0rem));
+		}
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {
@@ -749,7 +752,7 @@
 	}
 	.holding .seat:not(.dragging) {
 		opacity: 0.35;
-		transition: opacity 0.15s;
+		transition: opacity var(--duration-fast);
 	}
 	.seat {
 		position: absolute;
@@ -763,17 +766,15 @@
 		transform: translate(-50%, -50%);
 		cursor: pointer;
 	}
-	/* Your own seat has a ring (Trevor, 2026-10-26: "special glow or effect on self in grim"),
-	   steady, with no pulse (2026-10-27: "having ring is good enough"). In the text colour, not
-	   the accent, since red or blue would read as an alignment (the accent is red in some themes). */
+	/* Your own seat has a steady ring (Trevor, 2026-10-26/27: "having ring is good enough"), in
+	   the text colour: the accent (red in some themes) would read as an alignment. */
 	.seat[data-mine] :global(.disc) {
 		outline: calc(0.2 * var(--u)) solid var(--on-surface);
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
 	}
-	/* A guess is the player's own, so it never looks like something the town was told. Only
-	   the seat's round face: a token's own SVG circle is a .face too, and an outline there
-	   drew dashed square edges round the token (2026-10-28). */
+	/* A guess is the player's own, unlike what the town was told. Only the seat's face: a
+	   token's SVG circle is a .face too, and drew dashed square edges (2026-10-28). */
 	.seat[data-guess] :global(.disc > .face) {
 		opacity: 0.75;
 		outline: calc(0.15 * var(--u)) dashed var(--on-surface-muted);

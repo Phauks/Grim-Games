@@ -111,7 +111,8 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 		.getByRole('group', { name: 'Rotate players' })
 		.evaluate((el) => getComputedStyle(el, '::after').boxShadow);
 	expect(rotateEdge).toBe((await fill(countOff))[1]);
-	await expect(line).toHaveText('Seating is open');
+	// Ana has no seat yet, so the line says what to do (Trevor, 2026-11-16).
+	await expect(line).toHaveText('Drag your seat to where you sit');
 	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
 	// Words beside the icons on a tablet, icons only on a phone (Trevor, 2026-11-01), and
 	// all seven tools fit across the bar either way.
@@ -151,7 +152,7 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	const middle = await centre(disc);
 	await dragTo({ x: middle.x + 4, y: middle.y + 12 });
 	await expect(target).toHaveCount(0);
-	await expect(line).toHaveText('Seating is open');
+	await expect(line).toHaveText('Drag your seat to where you sit');
 	await phone.mouse.up();
 
 	// A phone with no seat drags its disc onto Eve's seat: it lights up and the line names it.
@@ -198,8 +199,10 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	// The switch off: no more dragging. Done leaves Seating with seating locked.
 	await lock.tap();
 	await expect(unlock).toBeVisible();
+	// The tap's hover wash clears once the pointer leaves, a frame or so later on CI's tablet.
 	await page.mouse.move(0, 0);
-	expect(await fill(unlock)).toEqual(await fill(countOff));
+	const plain = await fill(countOff);
+	await expect.poll(() => fill(unlock)).toEqual(plain);
 	await expect(line).toHaveCount(0);
 	await unlock.tap();
 	await expect(lock).toBeVisible();
@@ -331,5 +334,59 @@ test('the seat the room gives a phone has a ring on its Grim, with no way to mar
 	const sheet = phone.getByRole('dialog', { name: /^Seat 3/ });
 	await expect(sheet.getByTestId('seat-note')).toBeVisible();
 	await expect(sheet.getByText('This is me', { exact: true })).toHaveCount(0);
+	await phone.context().close();
+});
+
+test('a phone with no seat lands on its Grim with the open seats ringed, and Select seat brings it back', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-11-16: players joining didn't know they should pick a seat. A phone with a
+	// seat to pick opens on the Grim tab; on another tab the status box says Select seat.
+	test.slow();
+	const code = await openRoom(page);
+	await nameSeat(page, 1, 'Cy');
+	await nameSeat(page, 2, 'Eve');
+	const phone = await (await browser.newContext({ ...testInfo.project.use })).newPage();
+	await phone.goto(`/join/${code}`);
+	const grimTab = phone.getByRole('tab', { name: 'Grim' });
+	await expect(grimTab).toHaveAttribute('aria-selected', 'true');
+	const status = phone.getByTestId('join-status');
+	await expect(status).toHaveText('');
+	// Named, the open seats are ringed and the middle says to tap one.
+	await openProfile(phone);
+	await setPlayerName(phone, 'Ana');
+	await phone.keyboard.press('Escape');
+	const offered = phone.getByTestId('seating-offered');
+	const seats = await phone.getByTestId('grim-seat').count();
+	await expect(offered).toHaveCount(seats - 2);
+	await expect(phone.getByTestId('seating-line')).toHaveText('Tap an open seat');
+
+	// On the Script tab, Select seat in the game status's place turns back to the Grim, and
+	// the row keeps its one box, so nothing moves.
+	const ask = phone.getByTestId('select-seat');
+	await expect(ask).toHaveCount(0);
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(ask).toHaveText('Select seat');
+	await expect(status).toHaveText('');
+	const game = (await phone.getByTestId('players-status').boundingBox())!;
+	const box = (await ask.boundingBox())!;
+	expect(Math.abs(box.width - game.width)).toBeLessThan(2);
+	await ask.tap();
+	await expect(grimTab).toHaveAttribute('aria-selected', 'true');
+	await expect(ask).toHaveCount(0);
+
+	// Sitting ends it: no rings, and the Script tab's status box is empty again.
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	await phone
+		.getByRole('alertdialog', { name: 'Sit in Seat 3?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(phone.getByTestId('grim-seat').nth(2)).toHaveAttribute('aria-label', /^Seat 3: Ana/);
+	await expect(offered).toHaveCount(0);
+	await expect(phone.getByTestId('seating-line')).toHaveCount(0);
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+	await expect(phone.getByTestId('players-status')).toBeVisible();
+	await expect(ask).toHaveCount(0);
 	await phone.context().close();
 });

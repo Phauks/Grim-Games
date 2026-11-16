@@ -181,7 +181,7 @@ function askingSocket(host: TransferRoom, keyHash: string): WebSocket | undefine
 
 /**
  * The Storyteller's answer. Allowed, and the transfer still live, the host key changes hands:
- * the old Storyteller's device is told and let go, Grim view's viewers too, and the new one
+ * the old Storyteller's device is told and let go, Grim view ends, and the new one
  * gets the game when it comes along, then reconnects as the host. Turned down, the asking
  * device is told and the transfer stays open.
  */
@@ -206,9 +206,6 @@ export async function answerTransfer(
 		if (who?.role === 'host') {
 			send(socket, { type: 'handed-over' });
 			closeSocket(socket, 4409, 'Room transferred');
-		} else if (who?.role === 'viewer') {
-			send(socket, { type: 'refused', reason: 'not-viewer' });
-			closeSocket(socket, 4403, 'Link turned off');
 		}
 	}
 	await host.ctx.storage.delete([TRANSFER_GAME, 'grimoire']);

@@ -33,9 +33,7 @@
 			transform: rotate(360deg);
 		}
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.spinner {
-			animation-duration: 3s;
-		}
+	:global(:root[data-motion-off]) .spinner {
+		animation-duration: 3s;
 	}
 </style>

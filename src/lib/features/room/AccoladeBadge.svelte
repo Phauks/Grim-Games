@@ -118,9 +118,7 @@
 		top: 0;
 		right: 0;
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.coin {
-			transition: none;
-		}
+	:global(:root[data-motion-off]) .coin {
+		transition: none;
 	}
 </style>

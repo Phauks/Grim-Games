@@ -63,6 +63,15 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 }
 
 /** A seat by the start of its label; the board is hidden from the a11y tree under a sheet. */
+/** Dismisses the toasts showing, one at a time, each gone before the next. */
+async function dismissToasts(page: Page) {
+	const close = page.getByRole('button', { name: 'Dismiss' });
+	for (let left = await close.count(); left > 0; left--) {
+		await close.first().tap();
+		await expect(close).toHaveCount(left - 1);
+	}
+}
+
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
@@ -1061,12 +1070,14 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 		'Wrong',
 		'Wrong',
 		'Is The Drunk'
-	])
+	]) {
 		await putReminder(page, label, 4);
+		// A token put where it doesn't usually go says so in a toast, which sits over the bank's
+		// Every reminder button for its 3 s: dismissed, as a player in a hurry would, so seven
+		// tokens don't spend the test's time waiting for toasts to leave.
+		await dismissToasts(page);
+	}
 	await expect(seatLabelled(page, 'Seat 4: no name, Drunk, 7 reminders')).toBeAttached();
-
-	// Tokens put where they don't usually go say so in toasts; they leave by themselves.
-	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Each one is on the board and on top where it sits, so a finger can take any of them.
 	// (The bank, under the board, keeps its generic ∞ reminder.)
@@ -1609,13 +1620,10 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
-	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view is on
-	// the Grimoire tab (Trevor, 2026-10-31), off, with no link of its own.
-	const watch = share.getByTestId('watch-link');
+	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view has
+	// no link or tab of its own: it is given per person on Players (2026-11-16).
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
-	await share.getByRole('tab', { name: 'Grimoire' }).tap();
-	await expect(watch.getByTestId('share-url')).toHaveCount(0);
-	await expect(watch.getByLabel('Grim view password', { exact: true })).toBeDisabled();
+	await expect(share.getByRole('tab', { name: 'Grimoire' })).toHaveCount(0);
 	expect(page.url()).toBe(url);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
 	await expect(share).toBeHidden();
@@ -5102,11 +5110,11 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 		}))
 	).toEqual({ fills: true, face: false });
 	// Trevor, 2026-11-13 (style B): the Dusk sun swells and its stars twinkle, and both hold
-	// still when the device asks for less motion.
+	// still while animations are off (here by the device's Reduce motion).
 	const moving = () => art.evaluate((el) => el.getAnimations({ subtree: true }).length);
 	expect(await moving()).toBeGreaterThan(0);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
-	expect(await moving()).toBe(0);
+	await expect.poll(moving).toBe(0);
 	await page.emulateMedia({ reducedMotion: 'no-preference' });
 	const parts = () =>
 		step.evaluate((dialog) => ({
@@ -6528,7 +6536,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
 
-test('the night walk-through rises into place, and appears at once with reduced motion', async ({
+test('the night walk-through rises into place, and appears at once with animations off', async ({
 	page
 }) => {
 	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.

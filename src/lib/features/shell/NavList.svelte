@@ -6,6 +6,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
@@ -31,6 +32,7 @@
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { buildSwitch } from '#lib/features/about/build-switch.ts';
+	import AnimationsSetting from '#lib/features/settings/AnimationsSetting.svelte';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 
 	interface Props {
@@ -60,6 +62,17 @@
 		// The player's own Profile dialog, above Settings (Trevor, 2026-11-15).
 		{ id: 'profile', label: t('player.profile'), icon: 'profile', run: () => profileDialog.show() },
 		{ id: 'settings', label: t('shell.settings'), icon: 'settings', run: openSettings },
+		// Under Settings while this browser can install the app (Trevor, 2026-11-16: option B).
+		...(installApp.route
+			? [
+					{
+						id: 'install',
+						label: t('settings.installApp'),
+						icon: 'installApp' as const,
+						run: () => installApp.start()
+					}
+				]
+			: []),
 		{
 			id: 'report',
 			label: t('shell.reportIssue'),
@@ -144,6 +157,8 @@
 	<!-- Settings, Report an issue and the switch to the other build do something rather than go
 	     somewhere, so they are buttons, not menu rows (Trevor, 2026-10-29). -->
 	<div class="actions">
+		<!-- Animations on or off from any screen, for every role (Trevor, 2026-11-16). -->
+		<AnimationsSetting variant="switch" />
 		{#each actions as action (action.id)}
 			<Button
 				icon={action.icon}

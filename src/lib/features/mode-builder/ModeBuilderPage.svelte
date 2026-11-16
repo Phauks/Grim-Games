@@ -41,6 +41,7 @@
 	import BuilderTable from './BuilderTable.svelte';
 	import type { GuideAt } from './guide-at.ts';
 	import { isEmptyDraft, modeDraft } from './draft.svelte.ts';
+	import { animationsOn } from '#lib/ui/animations.svelte.ts';
 
 	/**
 	 * Make a game mode or special rule without writing JSON (Trevor, 2026-10-31: "an interactive
@@ -126,7 +127,7 @@
 			) ?? 'id';
 		const el = places.find((p) => p.dataset.path === target);
 		if (!el) return;
-		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		el.scrollIntoView({ behavior: animationsOn() ? 'smooth' : 'instant', block: 'center' });
 		el.querySelector<HTMLElement>('input, textarea, button, [role="combobox"]')?.focus({
 			preventScroll: true
 		});

@@ -22,9 +22,7 @@ import {
 	reportPicture,
 	readMessages,
 	sendMessage,
-	sendViewerMessage,
 	setInbox,
-	viewersMayMessage,
 	setSeatingOpen,
 	setSpectatorMessages,
 	takeCount,
@@ -47,14 +45,12 @@ import {
 	seat,
 	setName,
 	setChoosing,
-	setViewers,
+	grimViewersOf,
+	setGrimViewers,
 	setStorytellerBuild,
 	supportsProtocol,
 	townView,
 	unseat,
-	viewerFailed,
-	viewersLocked,
-	type ViewerFails,
 	type GrimoireView,
 	type RevealView,
 	type RoomState,
@@ -89,7 +85,7 @@ import {
 import {
 	closeSocket,
 	memberSockets,
-	openSockets,
+	openAdmins,
 	refuseRemoved,
 	send,
 	sendText,
@@ -99,7 +95,7 @@ import {
 	accountTags,
 	linkAccount,
 	restartStorytellers,
-	saveFeedbackToAccounts,
+	keepFeedback,
 	notePresence,
 	requestAccount,
 	roomPlayers,
@@ -279,7 +275,10 @@ export class Room extends DurableObject<RoomEnv> {
 		const message = parseClientMessage(raw);
 		if (!message) return;
 		// Only a grimoire may be that large; a script keeps its own limit.
-		if (raw.length > MAX_SCRIPT_BYTES && message.type !== 'grimoire' && message.type !== 'reveal')
+		if (
+			raw.length > MAX_SCRIPT_BYTES &&
+			!['grimoire', 'grim-view', 'reveal'].includes(message.type)
+		)
 			return;
 		let room = await this.load();
 		if (!room) {
@@ -298,9 +297,7 @@ export class Room extends DurableObject<RoomEnv> {
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);
 			send(ws, townView(room));
-			const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
-			if (grimoire) send(ws, grimoire);
-			// The Storyteller's device sends the grimoire from now on, if it isn't already.
+			// The Storyteller's device sends the whole grimoire from now on, if it isn't already.
 			this.tellGrimoireWanted();
 			return;
 		}
@@ -328,30 +325,8 @@ export class Room extends DurableObject<RoomEnv> {
 				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
 				if (built !== room) await this.save((room = built));
 				send(ws, hostView(room, this.present()));
-				send(ws, { type: 'watchers', count: openSockets(this.ctx, 'viewer') });
-				if (openSockets(this.ctx, 'admin') > 0) send(ws, { type: 'grimoire-wanted', on: true });
-				return;
-			}
-			if (message.role === 'viewer') {
-				// A Grim view password can be short: wrong keys are counted, and too many in a
-				// while stop every viewer from joining until it passes.
-				const fails = await this.ctx.storage.get<ViewerFails>('viewer-fails');
-				if (viewersLocked(fails, Date.now())) {
-					send(ws, { type: 'refused', reason: 'too-many-tries' });
-					closeSocket(ws, 4429, 'Too many tries');
-					return;
-				}
-				if (hash !== room.viewerKeyHash) {
-					await this.ctx.storage.put('viewer-fails', viewerFailed(fails, Date.now()));
-					send(ws, { type: 'refused', reason: 'not-viewer' });
-					closeSocket(ws, 4403, 'Link turned off');
-					return;
-				}
-				ws.serializeAttachment({ role: 'viewer' } satisfies Attachment);
-				const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
-				if (grimoire) send(ws, grimoire);
-				send(ws, { type: 'viewer-inbox', on: viewersMayMessage(room) });
-				this.tellWatchers();
+				send(ws, { type: 'watchers', count: this.watchers(room) });
+				if (openAdmins(this.ctx) > 0) send(ws, { type: 'grimoire-wanted', on: true });
 				return;
 			}
 			if (message.role === 'claim') {
@@ -391,18 +366,18 @@ export class Room extends DurableObject<RoomEnv> {
 			// A phone joining after the Storyteller shared the finished grimoire gets it too.
 			const reveal = await this.ctx.storage.get<RevealView>('reveal');
 			if (reveal && canReveal(room, reveal.gameId)) send(ws, reveal);
+			// And one with Grim view, the grimoire as it is now.
+			if (grimViewersOf(room).includes(memberId)) {
+				const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
+				if (grimoire) send(ws, grimoire);
+			}
 			return;
 		}
 		if (who?.role === 'claim') {
 			await claimMessage(this.transferRoom(), ws, who.keyHash, message, room);
 			return;
 		}
-		if (who?.role === 'viewer' && message.type === 'message') {
-			const next = sendViewerMessage(room, message, Date.now(), crypto.randomUUID());
-			if (next !== room) await this.save(next);
-			return send(ws, { type: 'message-delivered', delivered: next !== room });
-		}
-		if (!who || who.role === 'viewer' || who.role === 'town') return;
+		if (!who || who.role === 'town') return;
 
 		if (who.role === 'player') {
 			const id = who.memberId;
@@ -442,7 +417,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'feedback') {
 				room = receiveFeedback(room, id, message.gameId, message.feedback, crypto.randomUUID());
-				this.ctx.waitUntil(saveFeedbackToAccounts(this.ctx, this.env, room, Date.now()));
+				this.ctx.waitUntil(keepFeedback(this.ctx, this.env, room, Date.now()));
 			} else if (message.type === 'script-ballot') {
 				room = castScriptBallot(room, id, message.voteId, message.choices, Date.now());
 			} else if (message.type === 'role-seen') {
@@ -450,7 +425,7 @@ export class Room extends DurableObject<RoomEnv> {
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'count') {
-				const next = takeCount(room, id, message.number);
+				const next = takeCount(room, id, message.number, message.free);
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'hold-traveller' || message.type === 'confirm-traveller') {
@@ -519,21 +494,10 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				return;
 			}
-			case 'viewers': {
-				const next = setViewers(room, message.keyHash, message.password);
-				if (next.viewerKeyHash === room.viewerKeyHash) {
-					if (next.viewerPassword !== room.viewerPassword) await this.save(next);
-					return;
-				}
-				// A link turned off (or replaced) stops working now, and its grimoire is deleted.
-				await this.ctx.storage.delete('grimoire');
-				for (const socket of this.ctx.getWebSockets()) {
-					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role !== 'viewer') continue;
-					send(socket, { type: 'refused', reason: 'not-viewer' });
-					closeSocket(socket, 4403, 'Link turned off');
-				}
-				this.tellWatchers();
+			case 'grim-viewers': {
+				const next = setGrimViewers(room, message.members);
+				// Nobody left with Grim view: the grimoire kept for them goes.
+				if (!next.grimViewers) await this.ctx.storage.delete('grimoire');
 				room = next;
 				break;
 			}
@@ -542,13 +506,24 @@ export class Room extends DurableObject<RoomEnv> {
 				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
 				// A transfer that brings the game keeps the latest for the device taking over.
 				await keepsTransferGame(room, this.ctx.storage, view);
-				if (!room.viewerKeyHash && openSockets(this.ctx, 'admin') === 0) return;
-				// Kept only for the view-only link; an admin's copy is passed on and never stored.
-				if (room.viewerKeyHash) await this.ctx.storage.put('grimoire', view);
+				// An admin's copy is passed on and never stored.
 				const text = JSON.stringify(view);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'viewer' || to?.role === 'admin') sendText(socket, text);
+					if (to?.role === 'admin') sendText(socket, text);
+				}
+				return;
+			}
+			case 'grim-view': {
+				const viewers = grimViewersOf(room);
+				if (!isSharedGrimoire(message.grimoire) || !viewers.length) return;
+				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
+				// Kept for a phone with Grim view that joins later.
+				await this.ctx.storage.put('grimoire', view);
+				const text = JSON.stringify(view);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player' && viewers.includes(to.memberId)) sendText(socket, text);
 				}
 				return;
 			}
@@ -681,15 +656,14 @@ export class Room extends DurableObject<RoomEnv> {
 	}
 
 	/**
-	 * A viewer leaving changes the Storyteller's count of who is watching; a phone leaving
-	 * changes who is here now, which the other phones show as their seats' candles.
+	 * A phone leaving changes who is here now, which the other phones show as their seats'
+	 * candles, and the Storyteller's count of who is watching on Grim view.
 	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'host' || who?.role === 'player') {
 			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, false).catch(() => {}));
 		}
-		if (who?.role === 'viewer') this.tellWatchers(ws);
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player' || who?.role === 'claim') {
 			const room = await this.load();
@@ -697,6 +671,7 @@ export class Room extends DurableObject<RoomEnv> {
 			else if (room) {
 				this.tellHost(room, ws);
 				this.tellPlayers(room, ws);
+				this.tellWatchers(room, ws);
 			}
 		}
 	}
@@ -734,15 +709,21 @@ export class Room extends DurableObject<RoomEnv> {
 		}
 	}
 
+	/** Phones with Grim view connected now, leaving out one that is going. */
+	private watchers(room: RoomState, going?: WebSocket): number {
+		const viewers = grimViewersOf(room);
+		return [...this.present(going)].filter((id) => viewers.includes(id)).length;
+	}
+
 	/** Tells the Storyteller's device whether an admin wants the whole grimoire now. */
 	private tellGrimoireWanted(going?: WebSocket): void {
-		const on = openSockets(this.ctx, 'admin', going) > 0;
+		const on = openAdmins(this.ctx, going) > 0;
 		this.toHosts(JSON.stringify({ type: 'grimoire-wanted', on }));
 	}
 
 	/** Sends the Storyteller's device how many are watching. */
-	private tellWatchers(going?: WebSocket): void {
-		const count = openSockets(this.ctx, 'viewer', going);
+	private tellWatchers(room: RoomState, going?: WebSocket): void {
+		const count = this.watchers(room, going);
 		this.toHosts(JSON.stringify({ type: 'watchers', count }));
 	}
 
@@ -754,14 +735,13 @@ export class Room extends DurableObject<RoomEnv> {
 	/** Stores the room and sends every device its updated view. */
 	private async save(room: RoomState): Promise<void> {
 		await this.ctx.storage.put('room', room);
+		this.tellWatchers(room);
 		const present = this.present();
 		const host = JSON.stringify(hostView(room, present));
 		const town = JSON.stringify(townView(room));
-		const viewers = JSON.stringify({ type: 'viewer-inbox', on: viewersMayMessage(room) });
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'viewer') sendText(socket, viewers);
-			if (!who || who.role === 'viewer' || who.role === 'claim') continue;
+			if (!who || who.role === 'claim') continue;
 			sendText(
 				socket,
 				who.role === 'host'

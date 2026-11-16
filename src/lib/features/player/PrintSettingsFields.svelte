@@ -20,6 +20,7 @@
 		type PrintFront,
 		type PrintSettings
 	} from './player-settings.svelte.ts';
+	import { jinxesOnlyLabel } from './jinxes-only-label.svelte.ts';
 
 	/**
 	 * Our printed sheet's settings: in the Print screen beside its preview, and in Settings →
@@ -150,6 +151,13 @@
 			checked={print.front.ruleCharacters}
 			onChange={(ruleCharacters) => setFront({ ruleCharacters })}
 		/>
+		<!-- The Djinn among them, off by default as on TPI's printout (Trevor, 2026-11-16). -->
+		<SettingToggle
+			label={jinxesOnlyLabel()}
+			checked={print.front.jinxesOnly}
+			disabled={!print.front.ruleCharacters}
+			onChange={(jinxesOnly) => setFront({ jinxesOnly })}
+		/>
 		<SettingToggle
 			label={t('player.modeAndRules')}
 			checked={hasRules && print.front.rules}
@@ -219,6 +227,12 @@
 			checked={print.back.ruleCharacters}
 			disabled={!print.back.enabled}
 			onChange={(ruleCharacters) => setBack({ ruleCharacters })}
+		/>
+		<SettingToggle
+			label={jinxesOnlyLabel()}
+			checked={print.back.jinxesOnly}
+			disabled={!print.back.enabled || !print.back.ruleCharacters}
+			onChange={(jinxesOnly) => setBack({ jinxesOnly })}
 		/>
 		<SettingToggle
 			label={t('player.modeAndRules')}

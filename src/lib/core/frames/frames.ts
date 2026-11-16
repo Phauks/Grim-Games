@@ -61,7 +61,7 @@ export interface FrameProgress {
  * across it or round it either way, or the whole frame turning either way (sway dropped,
  * Trevor 2026-10-28: "I don't like it"), then Pulse, Breathe, Twinkle, Regrow and Flicker
  * (Trevor, 2026-10-28: "add the additional motion settings"). Plain CSS on the whole frame,
- * so a full town stays smooth; reduced motion keeps every frame still.
+ * so a full town stays smooth; animations off keep every frame still.
  */
 export const FRAME_MOTIONS = [
 	'none',
@@ -205,8 +205,12 @@ function scalloped([base, , dark, ink]: Material): FrameShape[] {
 		const [x1, y1] = at(45.6, from + span);
 		d += `${i ? 'L' : 'M'}${x0} ${y0}C${ax} ${ay} ${bx} ${by} ${x1} ${y1}`;
 	}
+	// The face shows through: a hole the face's size, wound the other way round, so the fill
+	// is a band and never a plate over the player's picture (Trevor, 2026-11-16).
+	const r = FACE_RADIUS;
+	const hole = `M50 ${50 - r}A${r} ${r} 0 1 0 50 ${50 + r}A${r} ${r} 0 1 0 50 ${50 - r}Z`;
 	return [
-		{ shape: 'path', d: `${d}Z`, fill: base, stroke: ink, width: 1.4 },
+		{ shape: 'path', d: `${d}Z${hole}`, fill: base, stroke: ink, width: 1.4 },
 		{ shape: 'circle', cx: 50, cy: 50, r: 43.6, stroke: dark, width: 2.6 }
 	];
 }
@@ -430,21 +434,4 @@ export function restyleFrame(
  */
 export function seatFrame(playerFrame: FrameId | undefined): Frame {
 	return frameById(playerFrame) ?? NONE;
-}
-
-/**
- * The frame's outline as a standalone SVG, for a mask: every shape in one solid paint, since a
- * mask reads only where the frame is, and `var()` colours mean nothing outside the page.
- */
-export function frameMaskSvg(frame: Frame): string {
-	const paint = (colour: string | undefined) => (colour ? 'currentColor' : 'none');
-	const parts = frame.drawing.map((part) => {
-		const style = `fill="${paint(part.fill)}" stroke="${paint(part.stroke)}" stroke-width="${part.width ?? 0}" stroke-linecap="round" stroke-linejoin="round"${part.opacity === undefined ? '' : ` opacity="${part.opacity}"`}`;
-		if (part.shape === 'circle')
-			return `<circle cx="${part.cx}" cy="${part.cy}" r="${part.r}" ${style}/>`;
-		if (part.shape === 'ellipse')
-			return `<ellipse cx="${part.cx}" cy="${part.cy}" rx="${part.rx}" ry="${part.ry}" transform="rotate(${part.rotate} ${part.cx} ${part.cy})" ${style}/>`;
-		return `<path d="${part.d}" ${style}/>`;
-	});
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" overflow="visible">${parts.join('')}</svg>`;
 }

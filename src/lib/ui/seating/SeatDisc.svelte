@@ -277,13 +277,11 @@
 		bottom: -6%;
 		--badge-size: calc(var(--size) * 0.38);
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.face {
-			transition: none;
-		}
-		.frame-layer[data-growing] {
-			mask-image: none;
-			animation: none;
-		}
+	:global(:root[data-motion-off]) .face {
+		transition: none;
+	}
+	:global(:root[data-motion-off]) .frame-layer[data-growing] {
+		mask-image: none;
+		animation: none;
 	}
 </style>

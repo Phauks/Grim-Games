@@ -62,6 +62,7 @@ import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-f
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_coffee_fill from '~icons/ph/coffee-fill';
 import ph_coin_fill from '~icons/ph/coin-fill';
+import ph_compass_fill from '~icons/ph/compass-fill';
 import ph_copy_fill from '~icons/ph/copy-fill';
 import ph_copy_simple_fill from '~icons/ph/copy-simple-fill';
 import ph_corners_in_fill from '~icons/ph/corners-in-fill';
@@ -82,6 +83,7 @@ import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
 import ph_envelope_simple_fill from '~icons/ph/envelope-simple-fill';
 import ph_eraser_fill from '~icons/ph/eraser-fill';
+import ph_export_fill from '~icons/ph/export-fill';
 import ph_eye_fill from '~icons/ph/eye-fill';
 import ph_eye_closed_fill from '~icons/ph/eye-closed-fill';
 import ph_eye_slash_fill from '~icons/ph/eye-slash-fill';
@@ -173,6 +175,7 @@ import ph_play_fill from '~icons/ph/play-fill';
 import ph_play_circle_fill from '~icons/ph/play-circle-fill';
 import ph_plus_fill from '~icons/ph/plus-fill';
 import ph_plus_circle_fill from '~icons/ph/plus-circle-fill';
+import ph_plus_square_fill from '~icons/ph/plus-square-fill';
 import ph_poker_chip_fill from '~icons/ph/poker-chip-fill';
 import ph_printer_fill from '~icons/ph/printer-fill';
 import ph_prohibit_fill from '~icons/ph/prohibit-fill';
@@ -311,6 +314,7 @@ const icons: IconMap = {
 	'ph:club-fill': ph_club_fill,
 	'ph:coffee-fill': ph_coffee_fill,
 	'ph:coin-fill': ph_coin_fill,
+	'ph:compass-fill': ph_compass_fill,
 	'ph:copy-fill': ph_copy_fill,
 	'ph:copy-simple-fill': ph_copy_simple_fill,
 	'ph:corners-in-fill': ph_corners_in_fill,
@@ -331,6 +335,7 @@ const icons: IconMap = {
 	'ph:drop-fill': ph_drop_fill,
 	'ph:envelope-simple-fill': ph_envelope_simple_fill,
 	'ph:eraser-fill': ph_eraser_fill,
+	'ph:export-fill': ph_export_fill,
 	'ph:eye-fill': ph_eye_fill,
 	'ph:eye-closed-fill': ph_eye_closed_fill,
 	'ph:eye-slash-fill': ph_eye_slash_fill,
@@ -422,6 +427,7 @@ const icons: IconMap = {
 	'ph:play-circle-fill': ph_play_circle_fill,
 	'ph:plus-fill': ph_plus_fill,
 	'ph:plus-circle-fill': ph_plus_circle_fill,
+	'ph:plus-square-fill': ph_plus_square_fill,
 	'ph:poker-chip-fill': ph_poker_chip_fill,
 	'ph:printer-fill': ph_printer_fill,
 	'ph:prohibit-fill': ph_prohibit_fill,

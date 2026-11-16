@@ -5,6 +5,7 @@
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderLinesSetting from '#lib/features/board/ReminderLinesSetting.svelte';
+	import { jinxesOnlyLabel } from './jinxes-only-label.svelte.ts';
 </script>
 
 <!-- Name, picture and laurel are in the Profile, from the button beside Settings' X (Trevor,
@@ -46,4 +47,12 @@
 	}))}
 	defaultValue="theme"
 	onChange={(sheetBackground) => playerSettings.update({ sheetBackground })}
+/>
+
+<!-- The Djinn under Fabled on the on-screen sheets; off, the Jinxes section is its rule, as on
+     the printed sheet (Trevor, 2026-11-16). Print has its own switch per side. -->
+<SettingToggle
+	label={t('player.showJinxesOnly', { name: jinxesOnlyLabel() })}
+	checked={playerSettings.current.showJinxesOnly}
+	onChange={(showJinxesOnly) => playerSettings.update({ showJinxesOnly })}
 />

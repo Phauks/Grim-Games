@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -434,6 +434,16 @@
 		return true;
 	}
 
+	/**
+	 * The game's seats follow the player count as soon as it changes (Trevor, 2026-11-16: "we
+	 * shouldn't have to go to arrange in order to update the grim to allow there to be more
+	 * seats"), so the board, Seating and every phone in the room see them at once.
+	 */
+	$effect(() => {
+		void analysis.players;
+		if (ready) untrack(seatPlayers);
+	});
+
 	/** Seats the player count, builds the bag and opens the draw. */
 	async function buildBag() {
 		replaceOpen = false;
@@ -535,11 +545,10 @@
 
 <Page title={t('setup.characters')} sideFlow iconActions>
 	{#snippet actions()}<!-- Seating from here (Trevor, 2026-10-31: players sit and count off while the
-			Storyteller picks characters): this screen's seats first. --><SetupActions
+			Storyteller picks characters). --><SetupActions
 			{port}
 			from="setup"
 			seatingDisabled={!ready}
-			beforeSeating={seatPlayers}
 		/>{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>
@@ -554,7 +563,7 @@
 		<ErrorBoundary area="setup">
 			<GameOptions {port} />
 			<!-- Who has connected, as players' phones see it (Trevor, 2026-10-29). -->
-			<SetupCandles {game} players={analysis.players} />
+			<SetupCandles {game} />
 			<PlayerCountSheet
 				players={s.players}
 				onChange={(n) => setupSelection.setPlayers(n)}

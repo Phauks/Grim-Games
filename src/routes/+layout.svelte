@@ -25,6 +25,7 @@
 	} from '#lib/features/offline/stale-build.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
+	import InstallDialog from '#lib/features/settings/InstallDialog.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
 	import {
@@ -42,6 +43,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { applyAppearance } from '#lib/ui/themes/apply.ts';
+	import { markMotion } from '#lib/ui/animations.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import type { LayoutProps } from './$types';
 
@@ -56,6 +58,10 @@
 			screen ? { ...preferences.current, colors: {} } : preferences.current
 		);
 	});
+
+	// Animations off (the Animations setting, or the device's Reduce motion), before the first
+	// render so nothing starts moving first.
+	$effect.pre(() => markMotion());
 
 	// The interface language for this device (English until another language exists).
 	$effect(() => {
@@ -200,6 +206,7 @@
 {#snippet characterBadge(id: string)}<CharacterPiece template="badge" characterId={id} />{/snippet}
 {#snippet toastText(text: string)}<Sentence {text} fill={characterBadge} />{/snippet}
 <Toaster describe={toastText} />
+<InstallDialog />
 <UpdateBanner />
 
 <style>

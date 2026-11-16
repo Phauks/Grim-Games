@@ -12,7 +12,7 @@ const manifest = JSON.parse(
 ) as { scope: string; start_url: string; id: string };
 
 describe('web app manifest', () => {
-	it.each(['/join/ABCD', '/watch/ABCD', '/play', '/recap/abc'])(
+	it.each(['/join/ABCD', '/play', '/recap/abc'])(
 		'covers %s, so its QR code can open the installed app',
 		(path) => {
 			expect(path.startsWith(manifest.scope)).toBe(true);

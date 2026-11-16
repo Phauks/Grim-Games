@@ -5,6 +5,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CountOffTokens from './CountOffTokens.svelte';
+	import PlayerNameDialog from './PlayerNameDialog.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 
 	/**
@@ -16,6 +17,8 @@
 
 	const view = $derived(player.view?.countOff);
 	const first = $derived(view?.tokens.find((token) => token.number === 1));
+	/** Nothing can be tapped until the Storyteller locks 1, and 1 is theirs to set. */
+	const tappable = (number: number) => !!first && number !== 1;
 	let open = $state(false);
 	let seen = '';
 	$effect(() => {
@@ -28,15 +31,40 @@
 	/** A number someone else holds, waiting for Confirm before it is taken. */
 	let taking = $state<{ number: number; name: string }>();
 	let confirming = $state(false);
+	/**
+	 * The number a phone with no name tapped, taken once it has one: the room counts only named
+	 * players, so the tap did nothing (Trevor, 2026-11-16: "tried clicking the button and it
+	 * never worked").
+	 */
+	let naming = $state<number>();
+	let nameOpen = $state(false);
 	function tap(number: number) {
 		const holder = view?.tokens.find((token) => token.number === number);
-		if (holder?.mine) return;
+		// Tap again to let it go (Trevor, 2026-11-16: "they couldn't unselect a seat").
+		if (holder?.mine) {
+			player.count(null);
+			return;
+		}
+		if (!player.view?.me.name) {
+			naming = number;
+			nameOpen = true;
+			return;
+		}
+		take(number);
+	}
+	function take(number: number) {
+		const holder = view?.tokens.find((token) => token.number === number);
 		if (!holder) {
-			player.count(number);
+			// Refused if another phone took it first: their name shows, so tap another.
+			player.count(number, true);
 			return;
 		}
 		taking = holder;
 		confirming = true;
+	}
+	function named() {
+		if (naming !== undefined) take(naming);
+		naming = undefined;
 	}
 </script>
 
@@ -45,12 +73,14 @@
 		<div class="count-off" data-testid="count-off">
 			<p class="from">
 				{#if first}{t('room.countOff.from')}
-					<PlayerBadge name={first.name as PlayerName} />{:else}{t('room.countOff.fromOne')}{/if}
+					<PlayerBadge name={first.name as PlayerName} />{:else}{t('room.countOff.waiting')}{/if}
 			</p>
-			<CountOffTokens {view} onTap={tap} />
+			<CountOffTokens {view} onTap={tap} enabled={tappable} />
 		</div>
 	</Dialog>
 {/if}
+
+<PlayerNameDialog bind:open={nameOpen} {player} onSaved={named} />
 
 <ConfirmDialog
 	bind:open={confirming}

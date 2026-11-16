@@ -3,6 +3,7 @@ import { openProfile, setPlayerName } from './player-name.ts';
 import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { pickNumber } from './number-select.ts';
+import { nameSeat } from './seat-name.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -685,6 +686,51 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
 	await reveal.getByRole('combobox', { name: 'Name' }).tap();
 	await expect(page.getByRole('option')).toHaveCount(0);
+	await phoneContext.close();
+});
+
+test('the draw starts with no name and offers the open seats and phones', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-11-16: the draw "attempted to assign the earliest name when it shouldn't
+	// have. Name should be blank", and the drop-down of names did not show.
+	await selectionFor(page, 5);
+	const setup = new URL(page.url()).pathname;
+	const board = setup.replace(/\/setup$/, '');
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.goto(board);
+	await nameSeat(page, 1, 'Bea');
+	await nameSeat(page, 2, 'Cal');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await openProfile(phone);
+	await setPlayerName(phone, 'Alex');
+	await page.goto(`${board}/players`);
+	await expect(page.getByRole('list', { name: 'Spectators' })).toContainText('Alex');
+
+	await page.goto(setup);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
+	const reveal = page.getByTestId('reveal');
+	const name = reveal.getByRole('combobox', { name: 'Name' });
+	await expect(name).toHaveValue('');
+	await expect(name).toHaveAttribute('placeholder', 'Pick your name');
+	await name.tap();
+	await expect(page.getByRole('option')).toHaveText(['Bea', 'Cal', 'Alex']);
+	// Cal drew it, so the tile goes to Cal's seat.
+	await page.getByRole('option', { name: 'Cal' }).tap();
+	await expect(name).toHaveValue('Cal');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+
+	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
+	await expect(name).toHaveValue('');
+	await name.tap();
+	await expect(page.getByRole('option')).toHaveText(['Bea', 'Alex']);
 	await phoneContext.close();
 });
 

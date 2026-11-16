@@ -35,7 +35,6 @@ import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
 import ph_dots_three_circle from '~icons/ph/dots-three-circle';
-import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_envelope_simple from '~icons/ph/envelope-simple';
 import ph_eye_closed from '~icons/ph/eye-closed';
@@ -150,7 +149,6 @@ const icons: IconMap = {
 	'ph:dice-five': ph_dice_five,
 	'ph:door-open': ph_door_open,
 	'ph:dots-three-circle': ph_dots_three_circle,
-	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
 	'ph:envelope-simple': ph_envelope_simple,
 	'ph:eye-closed': ph_eye_closed,

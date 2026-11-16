@@ -29,6 +29,7 @@ describe('parsePreferences', () => {
 				textScale: 'huge',
 				iconScale: Number.NaN,
 				textAlign: 'center',
+				animations: 'sometimes',
 				iconSet: 'ph-heavy',
 				iconOverrides: { dead: 'ph:not-offered', nope: 'ph:skull' },
 				tileFace: 'pictures'
@@ -45,6 +46,7 @@ describe('parsePreferences', () => {
 			characterIconScale: 0.8,
 			textAlign: 'justify',
 			allowZoom: true,
+			animations: 'off',
 			iconSet: 'ph-fill',
 			iconOverrides: { dead: 'ph:cross' },
 			tokenAppearance: {

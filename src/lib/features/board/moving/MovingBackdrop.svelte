@@ -1,11 +1,7 @@
 <script lang="ts">
 	import type { Component, ComponentProps } from 'svelte';
-	import { prefersReducedMotion } from 'svelte/motion';
-	import {
-		MOVING_BACKGROUNDS,
-		movingRun,
-		type MovingChoice
-	} from '#lib/core/backgrounds/moving.ts';
+	import { MOVING_BACKGROUNDS, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
+	import { animationsOn } from '#lib/ui/animations.svelte.ts';
 	import type MovingCanvasType from './MovingCanvas.svelte';
 	import { movingMotion } from './motion.svelte.ts';
 	import { overlayOpen, watchOverlays } from './overlay-open.svelte.ts';
@@ -13,7 +9,7 @@
 	/**
 	 * A moving background (M43), on the board or in a preview. three.js is only loaded once
 	 * one is shown. Until it is, and on a device without WebGL, a still blend of the scene's
-	 * own colours stands in. It holds still when this device says so (movingRun), and stops
+	 * own colours stands in. It holds still while animations are off on this device, and stops
 	 * while the app is hidden or, behind the board, while a dialog covers it.
 	 */
 	interface Props {
@@ -23,7 +19,7 @@
 	}
 	let { choice, contained = false }: Props = $props();
 
-	const run = $derived(movingRun(choice, movingMotion.current, prefersReducedMotion.current));
+	const still = $derived(!animationsOn());
 	/** A still stand-in: the scene's first two colours, top to bottom. */
 	const fallback = $derived.by(() => {
 		const colours = MOVING_BACKGROUNDS[choice.id].params
@@ -69,17 +65,16 @@
 	class:contained
 	data-testid={contained ? 'preview-background' : 'board-background'}
 	data-moving={choice.id}
-	data-still={run.still || paused ? '' : undefined}
+	data-still={still || paused ? '' : undefined}
 	style:background={fallback}
 	aria-hidden="true"
 >
 	{#if MovingCanvas}
 		<MovingCanvas
 			id={choice.id}
-			params={run.params}
+			params={choice.params}
 			fps={movingMotion.current.fps}
-			speed={run.speed}
-			still={run.still}
+			{still}
 			{paused}
 		/>
 	{/if}

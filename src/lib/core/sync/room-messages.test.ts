@@ -3,9 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cleanMessage,
-	GRIM_VIEW_PREFIX,
 	MAX_MESSAGE_LENGTH,
-	MAX_VIEWER_NAME_LENGTH,
 	MAX_MESSAGES_PER_MEMBER,
 	MAX_ROOM_MESSAGE_CHARS,
 	MESSAGE_GAP_MS
@@ -21,9 +19,7 @@ import {
 	sendMessage,
 	setName,
 	setInbox,
-	sendViewerMessage,
 	setSpectatorMessages,
-	viewersMayMessage,
 	type RoomState
 } from './room.ts';
 
@@ -176,75 +172,5 @@ describe('spectators’ messages', () => {
 	it('stay off from one game to the next in the room', () => {
 		const off = setSpectatorMessages(seated(), false);
 		expect(publish(off, 'g2', table()).spectatorsMuted).toBe(true);
-	});
-});
-
-// Trevor (2026-11-03): "those with grim view could also message storyteller".
-describe('messages from Grim view', () => {
-	const watched = (r: RoomState): RoomState => ({ ...r, viewerKeyHash: 'k' });
-
-	it('reach the Storyteller with the device’s name, while the link is on', () => {
-		const r = sendViewerMessage(
-			watched(room()),
-			{ from: 'device-1234', name: '  Pat  ', text: 'Hi' },
-			1000,
-			'm1'
-		);
-		expect(r.messages).toEqual([
-			expect.objectContaining({
-				id: 'm1',
-				memberId: `${GRIM_VIEW_PREFIX}device-1234`,
-				name: 'Pat',
-				text: 'Hi'
-			})
-		]);
-		expect(viewersMayMessage(watched(room()))).toBe(true);
-		// The link off: nobody is watching, so nothing comes.
-		expect(viewersMayMessage(room())).toBe(false);
-		expect(
-			sendViewerMessage(room(), { from: 'device-1234', name: 'Pat', text: 'Hi' }, 1000, 'm1')
-		).toEqual(room());
-	});
-
-	it('follow the spectators’ switch', () => {
-		const off = setSpectatorMessages(watched(room()), false);
-		expect(viewersMayMessage(off)).toBe(false);
-		expect(
-			sendViewerMessage(off, { from: 'device-1234', name: 'Pat', text: 'Hi' }, 1000, 'm1')
-		).toBe(off);
-	});
-
-	it('need a device id, and keep a name only if there is one', () => {
-		const r = watched(room());
-		expect(sendViewerMessage(r, { from: 'x', name: 'Pat', text: 'Hi' }, 1000, 'm1')).toBe(r);
-		expect(
-			sendViewerMessage(r, { from: 'bad id with spaces', name: 'Pat', text: 'Hi' }, 1000, 'm1')
-		).toBe(r);
-		const nameless = sendViewerMessage(
-			r,
-			{ from: 'device-1234', name: '   ', text: 'Hi' },
-			1000,
-			'm1'
-		);
-		expect(nameless.messages?.[0].name).toBeUndefined();
-		const long = sendViewerMessage(
-			r,
-			{ from: 'device-1234', name: 'P'.repeat(99), text: 'Hi' },
-			1000,
-			'm1'
-		);
-		expect(long.messages?.[0].name).toHaveLength(MAX_VIEWER_NAME_LENGTH);
-	});
-
-	it('are limited per device as a phone is', () => {
-		let r = watched(room());
-		r = sendViewerMessage(r, { from: 'device-1234', name: 'Pat', text: 'One' }, 1000, 'm1');
-		expect(
-			sendViewerMessage(r, { from: 'device-1234', name: 'Pat', text: 'Two' }, 1000 + 1, 'm2')
-		).toBe(r);
-		expect(
-			sendViewerMessage(r, { from: 'device-5678', name: 'Lee', text: 'Two' }, 1000 + 1, 'm2')
-				.messages
-		).toHaveLength(2);
 	});
 });

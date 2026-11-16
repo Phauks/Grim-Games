@@ -1,4 +1,5 @@
 {
+	"unlimitedReminders": true,
 	"reminderTargets": {
 		"?": {
 			"seat": "any",

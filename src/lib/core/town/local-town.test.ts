@@ -8,6 +8,7 @@ import {
 	placeSeats,
 	renameSeat,
 	setDead,
+	setOffScript,
 	setTraveller,
 	setVoteUsed,
 	startingTown,
@@ -116,5 +117,15 @@ describe('local town', () => {
 		expect(swapSeats(town, 's1', 'nobody')).toBe(town);
 		expect(moveSeat(town, 's4', 1).seats.map((s) => s.id)).toEqual(['s1', 's4', 's2', 's3']);
 		expect(moveSeat(town, 's1', 99).seats.map((s) => s.id)).toEqual(['s2', 's3', 's4', 's1']);
+	});
+
+	// Trevor, 2026-11-16: picked an Off-script toggle on the seat sheet, remembered per game.
+	it('remembers the Off-script characters toggle, and only reads a true', () => {
+		const on = setOffScript(withSeatCount(emptyTown(), 3), true);
+		expect(on.offScript).toBe(true);
+		expect(parseLocalTown(JSON.parse(JSON.stringify(on))).offScript).toBe(true);
+		expect(withSeatCount(on, 5).offScript).toBe(true);
+		expect('offScript' in setOffScript(on, false)).toBe(false);
+		expect(parseLocalTown({ v: 1, seats: [], offScript: 'yes' }).offScript).toBeUndefined();
 	});
 });

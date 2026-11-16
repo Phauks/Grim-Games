@@ -4,8 +4,6 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const room = {
 	// Storyteller's page
 	'room.title': 'Share',
-	'room.tab.players': 'Players',
-	'room.tab.grimoire': 'Grimoire',
 	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
 	'room.callTown': 'Back to town',
 	'room.callTownHeard': 'Back to town',
@@ -34,8 +32,6 @@ export const room = {
 	'room.playersInRoom': 'Players in the room',
 	'room.spectators': 'Spectators',
 	'room.spectators.mayMessage': 'Spectators can message',
-	'room.spectators.grimView': 'Grim view',
-	'room.spectators.unnamed': 'Someone on Grim view',
 	'room.giveSeat': 'Give a seat',
 	'room.giveSeat.open': 'Open',
 	'room.giveSeat.taken': 'Has a player',
@@ -98,7 +94,9 @@ export const room = {
 	'room.countOff.from': 'Count clockwise from',
 	'room.countOff.take': 'Take {number}?',
 	'room.countOff.takeFrom': 'taps again.',
-	'room.countOff.fromOne': 'Count clockwise from 1',
+	'room.countOff.waiting': 'Waiting for the Storyteller to pick who is 1',
+	'room.countOff.first': 'Top of the clock',
+	'room.countOff.pickFirst': 'Pick who is 1',
 	'room.countOff.name': 'Player for {number}',
 	'room.countOff.done': 'Done',
 	'room.removedYou': 'The Storyteller removed you from this game.',
@@ -118,7 +116,6 @@ export const room = {
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
 	'room.codeLabel': 'Room Code',
 	'room.join': 'Join as player',
-	'room.grimView': 'Grim view',
 	'room.moreWays': 'More ways to join',
 	'room.scanNotRoom': "That code is not a game's room code or a script.",
 	'room.gameToJoin': 'Game to join',
@@ -133,6 +130,7 @@ export const room = {
 	'room.recentLine': '{code} · Storyteller: {name}',
 	'room.settingsNamed': 'Settings: {name}',
 	'room.joining': 'Joining the room…',
+	'room.selectSeat': 'Select seat',
 	'room.playerOffline': 'Offline: reconnecting…',
 	'room.gameOver': 'Game over',
 	'room.gameOverGood': 'Game over: Good won',
@@ -150,6 +148,8 @@ export const room = {
 	'room.transfer.button': 'Room transfer',
 	'room.transfer.title': 'Room transfer',
 	'room.transfer.code': 'Transfer code',
+	// Marks a transfer code as one; never typed (Trevor, 2026-11-16).
+	'room.transfer.prefix': 'T-',
 	'room.transfer.roomCode': 'Room code',
 	'room.transfer.expires': 'Expires in {time}',
 	'room.transfer.expired': 'Expired',
@@ -304,26 +304,14 @@ export const room = {
 	'room.role.openTime': 'Your character · {time}',
 	'room.role.good': 'You are Good',
 	'room.role.evil': 'You are Evil',
-	// The view-only grimoire link (Specters)
-	'room.watch.title': 'Watch the grimoire',
-	'room.watch.toggle': 'Grim view',
-	'room.watch.hint':
-		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',
-	'room.watch.password': 'Grim view password',
-	'room.watch.copy': 'Copy password',
-	'room.watch.copyFailed': 'Could not copy the password',
-	'room.watch.refresh': 'New password',
-	'room.watch.refreshTitle': 'Make a new password?',
-	'room.watch.refreshText':
-		'The current password stops working, and anyone watching with it is disconnected.',
+	// Grim view (Specters): the whole grimoire, live, on the phones the Storyteller picks
+	'room.watch.title': 'Grim view',
+	'room.watch.hint': 'This phone sees the whole grimoire, live.',
+	'room.watch.askTitle': 'Share the grimoire?',
+	'room.watch.askBody':
+		'They see the whole grimoire on their phone, live: every seat’s character and reminders. Everyone with Grim view gets the same.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
 	'room.watch.pledgeTitle': 'Before you watch',
-	'room.watch.waiting': 'Waiting for the Storyteller’s grimoire…',
-	'room.watch.turnedOff': 'The Storyteller has turned Grim view off, or made a new password.',
-	'room.watch.wrongPassword': 'Wrong password, or the Storyteller has turned Grim view off.',
-	'room.watch.tooManyTries': 'Too many wrong tries. Wait a few minutes, then try again.',
-	'room.watch.badLink': 'This link is incomplete. Ask the Storyteller for it again.',
-	'room.watch.home': 'Home',
 	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)
 	'room.town.title': 'Public Town',
 	'room.town.waiting': 'Waiting for the Storyteller’s game…',

@@ -3,7 +3,12 @@
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { gameSheetCharacters, playerJinxes, sheetCharacters } from './player-script.ts';
+	import {
+		gameSheetCharacters,
+		playerJinxes,
+		sheetCharacters,
+		sheetRuleCharacters
+	} from './player-script.ts';
 	import ScriptByline from './ScriptByline.svelte';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
@@ -66,8 +71,14 @@
 		new Set(listed.filter((c) => c.type === 'traveller').map((c) => c.id))
 	);
 	// In a game the Travellers are the ones in play (`gameSheetCharacters`).
+	// The jinxes-only character (the Djinn) only when Settings > Player asks (Trevor, 2026-11-16).
 	const characters = $derived(
-		data ? gameSheetCharacters(listed, data.byId, inPlay, travellers) : []
+		data
+			? sheetRuleCharacters(
+					gameSheetCharacters(listed, data.byId, inPlay, travellers),
+					playerSettings.current.showJinxesOnly
+				)
+			: []
 	);
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 	// A custom Fabled or Loric is found on the script.
