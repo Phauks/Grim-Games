@@ -32,6 +32,8 @@
 		playerName: PlayerName;
 		/** Names already on other seats, left out of the names to pick from. */
 		taken?: readonly string[];
+		/** Names on the seats still open to the draw, offered with the room's phones. */
+		seatNames?: readonly string[];
 		/**
 		 * One token for two games (Two games at once, Trevor 2026-10-18): the other game's
 		 * character, shown beside `shows`, with a label for each game.
@@ -63,6 +65,7 @@
 		seatLabel,
 		playerName,
 		taken = [],
+		seatNames = [],
 		pair,
 		holdToReveal = false,
 		reel = [],
@@ -168,7 +171,7 @@
 		     Confirm stays a separate tap from Enter in the name. -->
 		<div class="top">
 			<span class="seat">{seatLabel}</span>
-			<PlayerNameInput bind:value={name} {taken} hideLabel />
+			<PlayerNameInput bind:value={name} {taken} {seatNames} hideLabel />
 		</div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<!-- No long-press anywhere on the faces, held or not: Chrome's long press on the token's

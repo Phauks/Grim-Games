@@ -6,6 +6,7 @@ import {
 	testCharacters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
+import type { PlayerName } from '#lib/core/data/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { placeableSetupReminders, setupReminders } from './setup-reminders.ts';
 import {
@@ -13,6 +14,7 @@ import {
 	bagSlots,
 	dealPairs,
 	nextDrawSeat,
+	openDrawSeats,
 	planBag,
 	randomSelection,
 	selectedIds,
@@ -390,6 +392,29 @@ describe('the draw', () => {
 		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[0] });
 		// A seat holding a tile is skipped until the draw is confirmed or put back.
 		expect(nextDrawSeat(held.game)).toBe(seats[1]);
+	});
+
+	it('draws go to an unnamed empty seat first, then to named ones', () => {
+		const { session, ctx, seats } = drawGame();
+		const named = run(
+			session,
+			ctx,
+			{ type: 'RenameSeat', seatId: seats[0], playerName: 'Bea' as PlayerName },
+			{ type: 'RenameSeat', seatId: seats[1], playerName: 'Cal' as PlayerName }
+		);
+		expect(openDrawSeats(named.game)).toEqual(seats);
+		expect(nextDrawSeat(named.game)).toBe(seats[2]);
+		const rest = run(
+			named,
+			ctx,
+			...seats
+				.slice(2)
+				.flatMap((seatId) => [
+					{ type: 'RenameSeat' as const, seatId, playerName: `P${seatId}` as PlayerName }
+				])
+		);
+		// Every empty seat has a name: the first of them.
+		expect(nextDrawSeat(rest.game)).toBe(seats[0]);
 	});
 
 	it('deals every tile in the bag to an empty seat, skipping a seat that holds one', () => {
