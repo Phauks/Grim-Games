@@ -10,6 +10,11 @@ const PNG = Buffer.from(
 );
 const LOGO = 'https://logo.example/storm-front.png';
 
+// Once the service worker runs, it fetches other sites' images itself, past page.route, so a
+// stubbed logo would sometimes load from the real (missing) host and show the name instead
+// (CI run 43778653412, as in homebrew-icon-fallback). These tests are about the page, not it.
+test.use({ serviceWorkers: 'block' });
+
 async function startGame(page: Page) {
 	await page.goto('/new');
 	await page
