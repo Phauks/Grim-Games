@@ -151,6 +151,7 @@
 	<ChoiceGroup
 		label={t('modes.scriptKind.label')}
 		hideLabel
+		layout="joined"
 		value={custom ? CUSTOM : OFFICIAL}
 		options={kinds}
 		onChange={choose}
