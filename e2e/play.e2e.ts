@@ -742,6 +742,43 @@ test('a short script name shares the buttons\u2019 row, a long one goes under th
 	).toBe(false);
 });
 
+test('a title that only seemed to fit beside the buttons goes under them, never squeezed', async ({
+	page
+}) => {
+	// Trevor, 2026-11-16: a phone measured "Trouble Brewing" as fitting beside five buttons and
+	// broke it two letters a line. Here every measure says the words are tiny, as that phone's did.
+	await page.addInitScript(() => {
+		const rect = Element.prototype.getBoundingClientRect;
+		Element.prototype.getBoundingClientRect = function (this: Element) {
+			const box = rect.call(this);
+			const measuring =
+				this instanceof HTMLElement &&
+				this.classList.contains('title-text') &&
+				this.style.whiteSpace === 'nowrap';
+			return measuring ? new DOMRect(box.x, box.y, 1, box.height) : box;
+		};
+	});
+	await page.goto('/play#e=tb');
+	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
+	await expect(title).toBeVisible();
+	// The words on one line at their full size, wherever the title ends up.
+	await expect
+		.poll(() =>
+			title.locator('.title-text').evaluate((words: HTMLElement) => {
+				const line = parseFloat(getComputedStyle(words).lineHeight);
+				const fit = parseFloat(words.style.getPropertyValue('--fit') || '1');
+				return words.getBoundingClientRect().height < line * 1.5 && fit === 1;
+			})
+		)
+		.toBe(true);
+	const header = page.locator('header');
+	await expectTitleBesideOrUnder(
+		header,
+		(await title.boundingBox())!,
+		(await page.getByTestId('you-button').boundingBox())!
+	);
+});
+
 test('the header shares the script from an icon and has no Code button', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);

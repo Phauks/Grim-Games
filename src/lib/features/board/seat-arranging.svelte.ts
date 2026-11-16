@@ -1,9 +1,13 @@
 /**
- * Arranging seats (GrimoireBoard): seats can be dragged anywhere (people on a couch, a gap
- * by the door) and gaps left between neighbours. Only where seats are drawn changes; the
- * seating order does not, unless a seat is dropped onto another.
+ * Arranging seats: seats can be dragged anywhere (people on a couch, a gap by the door) and
+ * gaps left between neighbours. Only where seats are drawn changes; the seating order does
+ * not, unless a seat is dropped onto another. One behaviour for the Storyteller's board
+ * (GrimoireBoard) and a players-only game's Grim tab (PlayerGrim, Trevor 2026-11-15: "In a
+ * local only grim, should be able to arrange tokens as desired"); each only says how its
+ * seats and layout are kept (`SeatTable`).
  */
 import type { SeatId } from '#lib/core/model/index.ts';
+import { hold } from '#lib/ui/hold.ts';
 import {
 	orderAround,
 	seatPoints,
@@ -15,11 +19,19 @@ import {
 } from '#lib/ui/seating/seat-layout.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { toPx, type BoardSize } from '#lib/features/board/board-geometry.ts';
-import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+
+/** How a board keeps its seats: the Storyteller's game, or a players-only town. */
+export interface SeatTable {
+	setLayout(layout: SeatLayout): void;
+	/** Two players swap places; false when the swap didn't happen. */
+	swap(a: SeatId, b: SeatId): boolean;
+	/** A seat moves to `position` in the seating order. */
+	move(seatId: SeatId, position: number): void;
+}
 
 /** What arranging reads from the board, fresh on each call. */
 export interface ArrangeContext {
-	grimoire: Grimoire;
+	table: SeatTable;
 	seating: readonly SeatId[];
 	layout: SeatLayout;
 	/** Where each seat sits, in % of the board, in seating order. */
@@ -29,6 +41,11 @@ export interface ArrangeContext {
 	board: BoardSize;
 	/** The board element, for turning a pointer into a point on it. */
 	element: HTMLElement | undefined;
+	/**
+	 * A point on the board as the layout keeps it, when the layout is of only part of the
+	 * board (a player's ring above their reminder tray, tray-ring.ts). Left out, the same.
+	 */
+	toLayout?: (point: SeatPoint) => SeatPoint;
 }
 
 interface Drag {
@@ -105,7 +122,7 @@ export class SeatArranging {
 	 * then they are spaced evenly in that order.
 	 */
 	spread() {
-		const { grimoire, seating, layout, board } = this.#context();
+		const { table, seating, layout, board } = this.#context();
 		const px = (p: SeatPoint) => toPx(p, board);
 		const even = seatPoints(seating, spreadEvenly(layout), board);
 		const target = orderAround(
@@ -115,10 +132,9 @@ export class SeatArranging {
 			even.map(px)
 		);
 		for (let i = 0; i < target.length; i++) {
-			if (seating[i] !== target[i])
-				grimoire.run({ type: 'MoveSeat', seatId: target[i], position: i });
+			if (seating[i] !== target[i]) table.move(target[i], i);
 		}
-		grimoire.setLayout(spreadEvenly(grimoire.layout));
+		table.setLayout(spreadEvenly(layout));
 	}
 
 	#boardPoint(event: PointerEvent, element: HTMLElement): SeatPoint {
@@ -187,13 +203,12 @@ export class SeatArranging {
 		this.#pressed = undefined;
 		const drag = this.drag;
 		if (!drag || event.pointerId !== drag.pointerId) return;
-		const { grimoire, layout } = this.#context();
+		const { table, layout, toLayout = (p: SeatPoint) => p } = this.#context();
 		const target = this.reorderTarget;
 		if (target) {
 			// Onto another seat: the two players swap places (the Matron), one History entry.
-			if (grimoire.run({ type: 'SwapSeats', seatA: drag.seatId, seatB: target }))
-				grimoire.setLayout(swapPlaces(layout, drag.seatId, target));
-		} else if (drag.moved) grimoire.setLayout(withPlaced(layout, drag.seatId, drag.at));
+			if (table.swap(drag.seatId, target)) table.setLayout(swapPlaces(layout, drag.seatId, target));
+		} else if (drag.moved) table.setLayout(withPlaced(layout, drag.seatId, toLayout(drag.at)));
 		this.drag = undefined;
 	}
 
@@ -210,7 +225,51 @@ export class SeatArranging {
 		];
 		if (!step) return;
 		event.preventDefault();
-		const { grimoire, layout } = this.#context();
-		grimoire.setLayout(withPlaced(layout, seatId, { x: at.x + step[0], y: at.y + step[1] }));
+		const { table, layout, toLayout = (p: SeatPoint) => p } = this.#context();
+		table.setLayout(withPlaced(layout, seatId, toLayout({ x: at.x + step[0], y: at.y + step[1] })));
+	}
+
+	/** Each seat's attachment, kept so a redrawn seat keeps its press (and its hold). */
+	#seats: Record<SeatId, { at: () => SeatPoint; attach: (node: HTMLElement) => () => void }> = {};
+
+	/**
+	 * A seat drawn by a plain element (a player's Grim tab): the same press, hold and drag as
+	 * the board's seat slot with SeatToken's hold. `at` is where the seat is drawn now. The
+	 * same attachment each time for a seat, so a change to the town mid-press never resets it.
+	 */
+	seat(seatId: SeatId, at: () => SeatPoint) {
+		const kept = this.#seats[seatId];
+		if (kept) {
+			kept.at = at;
+			return kept.attach;
+		}
+		const entry = {
+			at,
+			attach: (node: HTMLElement) => this.#attach(node, seatId, () => entry.at())
+		};
+		this.#seats[seatId] = entry;
+		return entry.attach;
+	}
+
+	#attach(node: HTMLElement, seatId: SeatId, at: () => SeatPoint) {
+		const stopHold = hold(() => this.held(seatId))(node);
+		const down = (event: PointerEvent) => this.dragStart(event, seatId, at());
+		const move = (event: PointerEvent) => this.dragMove(event);
+		const up = (event: PointerEvent) => this.dragEnd(event);
+		const cancel = () => this.dragCancel();
+		const key = (event: KeyboardEvent) => this.nudge(event, seatId, at());
+		node.addEventListener('pointerdown', down);
+		node.addEventListener('pointermove', move);
+		node.addEventListener('pointerup', up);
+		node.addEventListener('pointercancel', cancel);
+		node.addEventListener('keydown', key);
+		return () => {
+			stopHold();
+			node.removeEventListener('pointerdown', down);
+			node.removeEventListener('pointermove', move);
+			node.removeEventListener('pointerup', up);
+			node.removeEventListener('pointercancel', cancel);
+			node.removeEventListener('keydown', key);
+		};
 	}
 }

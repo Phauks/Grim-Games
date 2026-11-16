@@ -79,6 +79,8 @@ export const ICON_SLOTS = {
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
+	/** The menu's Profile button, apart from Account's icon (Trevor, 2026-11-15). */
+	profile: { label: 'Profile', choices: ['ph:identification-badge', 'ph:user-focus'] },
 	friends: { label: 'Friends', choices: ['ph:handshake', 'ph:address-book'] },
 	/** Admins' Accounts page (plan S27): every account, not your own. */
 	accounts: { label: 'Accounts', choices: ['ph:user-list', 'ph:users'] },

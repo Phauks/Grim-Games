@@ -205,12 +205,108 @@ test('a Local Grim seat takes a Traveller from the character list, and gives it 
 	const scapegoat = sheet.getByRole('button', { name: 'Scapegoat', exact: true });
 	await scapegoat.scrollIntoViewIfNeeded();
 	await scapegoat.tap();
+	await expect(sheet.getByTestId('seat-guesses')).toContainText('Scapegoat');
 	await expect(seat).toHaveAttribute('aria-label', /Traveller: Scapegoat/);
 	// A Traveller's seat takes only Good or Evil.
 	await expect(townsfolk).toHaveCount(0);
 
-	// A second tap takes the Traveller off again.
-	await scapegoat.tap();
+	// A second tap takes the Traveller off again; it also leads the seat's Guesses now
+	// (Trevor, 2026-11-16).
+	await expect(scapegoat).toHaveCount(2);
+	await scapegoat.last().tap();
 	await expect(seat).not.toHaveAttribute('aria-label', /Traveller/);
 	await expect(townsfolk).toBeVisible();
+});
+
+// Trevor, 2026-11-15: "In a local only grim, should be able to arrange tokens as desired":
+// the board's own seat arranging (hold a seat, then drag it anywhere, or onto another seat to
+// swap the two players).
+test('a players-only town arranges its seats as the board does', async ({ page }) => {
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = page.getByTestId('grim-seat');
+	await expect(seats).toHaveCount(7);
+	const centre = async (i: number) => {
+		const box = (await seats.nth(i).boundingBox())!;
+		return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	};
+	/** Holds seat `i` still until it is picked up, then drags it to `to` and lets go. */
+	const holdAndDrag = async (i: number, to: { x: number; y: number }) => {
+		const from = await centre(i);
+		await page.mouse.move(from.x, from.y);
+		await page.mouse.down();
+		await expect(seats.nth(i)).toHaveClass(/dragging/);
+		await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+		await page.mouse.move(to.x, to.y, { steps: 4 });
+		await page.mouse.up();
+	};
+
+	// Seat 1 goes inside the ring, clear of the others; the rest stay put, and the hold is
+	// not also a tap that opens the seat.
+	const town = (await page.getByTestId('player-grim').boundingBox())!;
+	const seat2 = await centre(1);
+	const to = { x: town.x + town.width / 2, y: town.y + town.height * 0.3 };
+	await holdAndDrag(0, to);
+	const moved = await centre(0);
+	expect(Math.abs(moved.x - to.x)).toBeLessThan(4);
+	expect(Math.abs(moved.y - to.y)).toBeLessThan(4);
+	expect(await centre(1)).toEqual(seat2);
+	await expect(page.getByRole('dialog')).toBeHidden();
+
+	// A tap still opens the seat: name seat 2.
+	await seats.nth(1).tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 2/ });
+	await sheet.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// Seat 2 dropped on seat 3: the two players swap, Ana now in seat 3.
+	await holdAndDrag(1, await centre(2));
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', /Ana/);
+	await expect(seats.nth(1)).not.toHaveAttribute('aria-label', /Ana/);
+
+	// Kept on the phone: a reload draws seat 1 where it was put.
+	await page.reload();
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const after = await centre(0);
+	expect(Math.abs(after.x - to.x)).toBeLessThan(4);
+	expect(Math.abs(after.y - to.y)).toBeLessThan(4);
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', /Ana/);
+});
+
+// Trevor, 2026-11-16: "In grim view for local, parity is having issues. Traveler does not
+// appear in guesses area." A marked Traveller leads the seat's Guesses, the dead badge spends
+// the ghost vote as on the board, and the Script tab lists the town's Travellers as a room's.
+test("a players-only town's Travellers and ghost votes work as the board's", async ({ page }) => {
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = page.getByTestId('grim-seat');
+	await seats.nth(0).tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 1/ });
+	await sheet.getByRole('searchbox').first().fill('Barista');
+	await sheet.getByText('Barista', { exact: true }).first().tap();
+	const guesses = sheet.getByTestId('seat-guesses');
+	await expect(guesses.getByRole('button', { name: /Barista/ })).toBeVisible();
+	await sheet.getByText('Dead', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// The dead badge is the ghost vote's switch.
+	await seats.nth(0).getByTestId('dead-mark').tap();
+	await expect(seats.nth(0)).toHaveAttribute('aria-label', /ghost vote used/);
+	await expect(page.getByRole('dialog')).toBeHidden();
+	await seats.nth(0).getByTestId('dead-mark').tap();
+	await expect(seats.nth(0)).toHaveAttribute('aria-label', /ghost vote not used/);
+
+	// The Script tab lists the Traveller in play, not the recommended ones.
+	await page.getByRole('tab', { name: 'Script' }).tap();
+	await expect(page.locator('[data-character="barista"]')).toBeVisible();
+	await expect(page.locator('[data-character="scapegoat"]')).toHaveCount(0);
+
+	// A tap on the Traveller in Guesses takes it off the seat.
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await seats.nth(0).tap();
+	await guesses.getByRole('button', { name: /Barista/ }).tap();
+	await expect(guesses.getByRole('button', { name: /Barista/ })).toHaveCount(0);
+	await expect(seats.nth(0)).not.toHaveAttribute('aria-label', /Traveller/);
 });

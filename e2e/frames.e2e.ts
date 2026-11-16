@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openSettingsDialog } from './shell.ts';
+import { openSettingsDialog, theMenu } from './shell.ts';
 
 // Laurels round seat tokens (L4, A1): each player's own pick in their Profile. The fixed
 // frames are laurel forms, and the Storyteller's Board default is gone (Trevor, 2026-10-27).
@@ -15,12 +15,16 @@ async function openSettings(page: Page, section: string) {
 	return dialog;
 }
 
-/** Opens the Profile from the button beside Settings' X (Trevor, 2026-10-27). */
+/**
+ * Opens the Profile from the button beside Settings' X (Trevor, 2026-10-27): its own dialog,
+ * in Settings' place (2026-11-15).
+ */
 async function openProfile(page: Page) {
-	await openSettingsDialog(page);
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog.getByRole('button', { name: 'Profile', exact: true }).tap();
-	await expect(dialog.getByRole('heading', { name: 'Profile', level: 2 })).toBeVisible();
+	const settings = await openSettingsDialog(page);
+	await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
+	await expect(settings).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Profile', exact: true });
+	await expect(dialog).toBeVisible();
 	return dialog;
 }
 
@@ -30,6 +34,45 @@ async function pick(page: Page, label: string, option: string) {
 	await page.getByRole('option', { name: option, exact: true }).tap();
 	await expect(page.getByRole('listbox')).toBeHidden();
 }
+
+/** One of the Profile's folding groups of tiles: Your laurel, Color or Motion. */
+function tiles(page: Page, group: string) {
+	return page
+		.getByRole('dialog', { name: 'Profile', exact: true })
+		.getByRole('group', { name: group, exact: true });
+}
+
+/** Opens a folding group if it is closed and taps one of its tiles (Trevor, 2026-11-15). */
+async function choose(page: Page, group: string, option: string) {
+	const dialog = page.getByRole('dialog', { name: 'Profile', exact: true });
+	const head = dialog.getByRole('button', { name: group, exact: true });
+	if ((await head.getAttribute('aria-expanded')) !== 'true') await head.tap();
+	const tile = tiles(page, group).getByRole('button', { name: option, exact: true });
+	await tile.tap();
+	await expect(tile).toHaveAttribute('aria-pressed', 'true');
+}
+
+test('the Profile is its own dialog: from the menu, with the seat pinned while it scrolls', async ({
+	page
+}) => {
+	// Trevor, 2026-11-15 (option E): a dedicated Profile dialog, the seat pinned, every laurel,
+	// colour and motion shown at once in groups that fold. The menu has a Profile button.
+	await page.goto('/');
+	const nav = await theMenu(page);
+	await nav.getByRole('button', { name: 'Profile', exact: true }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Profile', exact: true });
+	await expect(dialog).toBeVisible();
+	const preview = dialog.getByTestId('profile-preview');
+	await choose(page, 'Your laurel', 'Olive');
+	await dialog.getByRole('button', { name: 'Motion', exact: true }).tap();
+	// Scrolling the choices to the end leaves the seat in view, held at the dialog's top.
+	const add = dialog.getByTestId('profile-detail-new');
+	await add.scrollIntoViewIfNeeded();
+	await expect(add).toBeInViewport();
+	await expect(preview).toBeInViewport();
+	const top = (await dialog.boundingBox())!.y;
+	expect((await preview.boundingBox())!.y).toBeGreaterThanOrEqual(top);
+});
 
 test("the Board has no frame of its own: laurels are each player's", async ({ page }) => {
 	await page.goto('/');
@@ -55,53 +98,58 @@ test('a player picks a laurel form, its colour and its motion, and keeps them', 
 }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
-	const form = dialog.getByRole('combobox', { name: 'Your laurel' });
-	const colour = dialog.getByRole('combobox', { name: 'Color', exact: true });
-	const motion = dialog.getByRole('combobox', { name: 'Motion' });
-	await expect(form).toContainText('None');
-	// The colour and motion rows are always there, so picking a form moves nothing; None
-	// disables them.
-	await expect(colour).toBeDisabled();
-	await expect(motion).toBeDisabled();
-	// Measured from the laurel's row: the pick may scroll the Profile on a short screen.
-	const gap = async () => (await motion.boundingBox())!.y - (await form.boundingBox())!.y;
-	const below = await gap();
+	const preview = dialog.getByTestId('profile-preview');
+	const heads = dialog.getByTestId('player-frame-setting');
+	// Each group folds, closed at first, its pick at the end of its header (Trevor, 2026-11-15).
+	await expect(dialog.getByRole('button', { name: 'Your laurel', exact: true })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	await expect(heads).toContainText('None');
+	await dialog.getByRole('button', { name: 'Color', exact: true }).tap();
+	await dialog.getByRole('button', { name: 'Motion', exact: true }).tap();
+	// The colour and motion tiles are always there; None disables them.
+	await expect(tiles(page, 'Color').getByRole('button', { name: 'Orange' })).toBeDisabled();
+	await expect(tiles(page, 'Motion').getByRole('button', { name: 'Pulse' })).toBeDisabled();
 
+	// Every form is a tile drawn round the player's own face.
+	await choose(page, 'Your laurel', 'Simple ring');
+	await expect(
+		tiles(page, 'Your laurel')
+			.getByRole('button', { name: 'Olive' })
+			.locator('[data-testid="avatar-face"]')
+	).toBeAttached();
+	await expect(preview.locator('svg[data-frame="ring-accent"]')).toBeAttached();
+	await expect(tiles(page, 'Color').getByRole('button', { name: 'Orange' })).toBeEnabled();
 	// Any form takes any colour, the simple ring too (Trevor, 2026-10-28).
-	await pick(page, 'Your laurel', 'Simple ring');
-	await expect(form.locator('svg[data-frame="ring-accent"]')).toBeAttached();
-	await expect(colour).toBeEnabled();
-	expect(await gap()).toBe(below);
-	await pick(page, 'Color', 'Orange');
-	await expect(form.locator('svg[data-frame="ring-minion"]')).toBeAttached();
+	await choose(page, 'Color', 'Orange');
+	await expect(preview.locator('svg[data-frame="ring-minion"]')).toBeAttached();
 
 	// A new form keeps the colour.
-	await pick(page, 'Your laurel', 'Olive');
-	await expect(form.locator('svg[data-frame="laurel-olive-minion"]')).toBeAttached();
-	await pick(page, 'Color', 'Red');
+	await choose(page, 'Your laurel', 'Olive');
+	await expect(preview.locator('svg[data-frame="laurel-olive-minion"]')).toBeAttached();
+	await choose(page, 'Color', 'Red');
 	// The colour shows as itself, not drawn as a laurel (Trevor, 2026-10-28).
-	await expect(colour.locator('.dot')).toBeAttached();
-	await expect(colour.locator('svg[data-frame]')).toHaveCount(0);
-	await pick(page, 'Motion', 'Clockwise shimmer');
-	const preview = dialog.getByTestId('profile-preview');
+	await expect(tiles(page, 'Color').locator('.dot').first()).toBeAttached();
+	await expect(tiles(page, 'Color').locator('svg[data-frame]')).toHaveCount(0);
+	await choose(page, 'Motion', 'Clockwise shimmer');
 	await expect(preview.locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')).toBeAttached();
 	await expect(preview.locator('[data-shimmer]')).toBeAttached();
 
 	await page.reload();
 	const again = await openProfile(page);
+	await expect(again.getByTestId('player-frame-setting')).toContainText('Olive');
+	await expect(again.getByTestId('player-frame-setting')).toContainText('Red');
+	await expect(again.getByTestId('player-frame-setting')).toContainText('Clockwise shimmer');
 	await expect(
-		again
-			.getByRole('combobox', { name: 'Your laurel' })
-			.locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')
+		again.getByTestId('profile-preview').locator('svg[data-frame="laurel-olive-demon~shimmer-cw"]')
 	).toBeAttached();
-	await expect(again.getByRole('combobox', { name: 'Color', exact: true })).toContainText('Red');
-	await expect(again.getByRole('combobox', { name: 'Motion' })).toContainText('Clockwise shimmer');
 });
 
 test('every motion can be picked and keeps the laurel (Trevor, 2026-10-28)', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
-	await pick(page, 'Your laurel', 'Olive');
+	await choose(page, 'Your laurel', 'Olive');
 	const preview = dialog.getByTestId('profile-preview');
 	for (const [name, id] of [
 		['Pulse', 'pulse'],
@@ -110,10 +158,10 @@ test('every motion can be picked and keeps the laurel (Trevor, 2026-10-28)', asy
 		['Regrow', 'regrow'],
 		['Flicker', 'flicker']
 	]) {
-		await pick(page, 'Motion', name);
+		await choose(page, 'Motion', name);
 		await expect(preview.locator(`svg[data-frame="laurel-olive-gold~${id}"]`)).toBeAttached();
 	}
-	await pick(page, 'Motion', 'Twinkle');
+	await choose(page, 'Motion', 'Twinkle');
 	await expect(preview.locator('.sparkle')).toHaveCount(6);
 });
 
@@ -221,7 +269,7 @@ test('a representative character stays in the Profile, off every seat (Trevor, 2
 }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
-	await pick(page, 'Your laurel', 'Olive');
+	await choose(page, 'Your laurel', 'Olive');
 	await expect(dialog.getByTestId('character-icon')).toHaveText('None');
 	await dialog.getByRole('button', { name: 'Change character token' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Character token' });
@@ -238,7 +286,10 @@ test('a representative character stays in the Profile, off every seat (Trevor, 2
 	const preview = dialog.getByTestId('profile-preview');
 	await expect(preview.getByTestId('avatar-face').locator('svg')).toBeAttached();
 	await expect(preview.locator('img')).toHaveCount(0);
-	await expect(dialog.getByTestId('profile-button').locator('img')).toHaveCount(0);
+	await dialog.getByRole('button', { name: 'Close' }).first().tap();
+	const settings = await openSettingsDialog(page);
+	await expect(settings.getByTestId('profile-button').locator('img')).toHaveCount(0);
+	await page.keyboard.press('Escape');
 
 	await page.reload();
 	const again = await openProfile(page);
@@ -266,8 +317,8 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 	const modal = page.getByRole('dialog', { name: 'Your name' });
 	await modal.getByRole('textbox', { name: 'Your name' }).fill('Pixelation');
 	await modal.getByRole('button', { name: 'Save' }).tap();
-	await pick(page, 'Your laurel', 'Olive');
-	await pick(page, 'Motion', 'Pulse');
+	await choose(page, 'Your laurel', 'Olive');
+	await choose(page, 'Motion', 'Pulse');
 	await dialog.getByRole('button', { name: 'Change character token' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Character token' });
 	await picker.getByRole('searchbox').fill('Fortune Teller');
@@ -277,7 +328,9 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 		.tap();
 	await expect(picker).toBeHidden();
 
-	// Picking them moved nothing.
+	// Picking them moved nothing, seen from the dialog's top (the seat stays pinned while the
+	// choices under it scroll).
+	await dialog.evaluate((element) => (element.scrollTop = 0));
 	expect(await gap()).toBe(before);
 	await preview.scrollIntoViewIfNeeded();
 	const textTop = (await notice.boundingBox())!.y;

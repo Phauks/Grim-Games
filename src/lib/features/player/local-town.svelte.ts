@@ -6,6 +6,7 @@
 import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 import {
 	localPublicSeats,
+	setVoteUsed,
 	parseLocalTown,
 	startingTown,
 	type LocalTown
@@ -58,6 +59,13 @@ export function localTown(notesKey: string): LocalTown {
 export function saveLocalTown(notesKey: string, town: LocalTown): void {
 	changed[notesKey] = town;
 	writeStored(storeKey(notesKey), town);
+}
+
+/** A dead seat's ghost vote spent, or given back: the board's tap on its dead badge. */
+export function toggleGhostVote(notesKey: string, seatId: string): void {
+	const town = localTown(notesKey);
+	const seat = town.seats.find((s) => s.id === seatId);
+	if (seat?.dead) saveLocalTown(notesKey, setVoteUsed(town, seatId, !seat.voteUsed));
 }
 
 export const localSeats = (notesKey: string): PublicSeat[] => localPublicSeats(localTown(notesKey));

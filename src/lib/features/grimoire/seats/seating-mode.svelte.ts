@@ -17,7 +17,7 @@ import { finishCountOff } from '#lib/features/room/count-off.ts';
 import { roomHost } from '#lib/features/room/host.svelte.ts';
 import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-import type { SeatArranging } from './seat-arranging.svelte.ts';
+import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 
 /** The setup screen Seating was opened from, which its Done goes back to. */
 export type SeatingFrom = 'setup' | 'draw';
