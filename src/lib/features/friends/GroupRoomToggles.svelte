@@ -13,7 +13,6 @@
 
 	/** The groups showing this room; undefined until known. */
 	let shown = $state<string[]>();
-	let busy = $state(false);
 
 	$effect(() => {
 		shown = undefined;
@@ -35,15 +34,24 @@
 		};
 	});
 
+	/**
+	 * A switch moves at once and stays enabled while it saves, as Friends can join does (no
+	 * dimmed flash, Trevor 2026-11-15). The last tap wins; a failed save puts it back.
+	 */
+	let saving = 0;
 	async function set(group: string, show: boolean): Promise<void> {
-		if (!code) return;
-		busy = true;
+		if (!code || !shown) return;
+		const before = shown;
+		const mine = ++saving;
+		shown = show
+			? [...before.filter((c) => c !== group), group]
+			: before.filter((c) => c !== group);
 		try {
-			shown = await groups.room({ room: code, group, show, title });
+			const saved = await groups.room({ room: code, group, show, title });
+			if (mine === saving) shown = saved;
 		} catch (e) {
+			if (mine === saving) shown = before;
 			toast(t('friends.failed'), e instanceof Error ? e.message : String(e));
-		} finally {
-			busy = false;
 		}
 	}
 </script>
@@ -52,7 +60,7 @@
 	<Toggle
 		label={t('friends.groups.show', { name: group.name })}
 		checked={shown?.includes(group.code) ?? false}
-		disabled={shown === undefined || busy}
+		disabled={shown === undefined}
 		onChange={(show) => void set(group.code, show)}
 	/>
 {/each}
