@@ -780,6 +780,7 @@
 {#if !toolbar}{@render boardBody()}{:else}<BoardPane
 		{grimoire}
 		{watching}
+		hidden={showingGrim}
 		bind:beside={paneAt}
 		day={dayPane}
 		night={nightPane}>{@render boardBody()}</BoardPane
@@ -817,8 +818,7 @@
 				onShare={() => (phonesOpen = true)}
 				onMore={() => (menuOpen = true)}
 			>
-				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
-			     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too. -->
+				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26); a spectator's too. -->
 				{#snippet lead()}
 					<CoverButton
 						gameId={game.gameId}

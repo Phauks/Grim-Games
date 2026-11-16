@@ -126,7 +126,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 		.tap();
 	await expect(lines).toBeHidden();
 	await closePane(page);
-	await expect(day).toBeHidden();
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 
 	// The grim cover's Player view is the same view.
 	await page.getByTestId('cover-button').tap();

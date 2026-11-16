@@ -1,4 +1,4 @@
-import { paneDay, closePane, paneIsSheet } from './players.ts';
+import { paneDay, closePane, closeStep, paneIsSheet } from './players.ts';
 import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -56,7 +56,7 @@ async function aliveCount(page: Page) {
 	await expect(page.getByTestId('alive-count')).toBeVisible();
 	const text = await page.getByTestId('alive-count').textContent();
 	await closePane(page);
-	await expect(daySheet(page)).toBeHidden();
+	if (await paneIsSheet(page)) await expect(daySheet(page)).toBeHidden();
 	return text;
 }
 
@@ -128,8 +128,7 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 	await expect(alive).toHaveAttribute('aria-pressed', 'false');
 	await alive.tap();
 	await expect(alive).toHaveAttribute('aria-pressed', 'true');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	await expect(arrival).not.toHaveAccessibleName(/not in play/);
 	await expect(arrival.getByTestId('not-in-play')).toHaveCount(0);
 	await endTheNight(page);

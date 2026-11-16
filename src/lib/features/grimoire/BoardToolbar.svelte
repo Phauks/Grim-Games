@@ -221,7 +221,7 @@
 		min-width: 0;
 		text-align: center;
 	}
-	@media (max-width: 999.98px) {
+	@container beside (max-width: 999.98px) {
 		/* Below the width where Seating's words show, its tools need the whole bar; the
 		   title keeps its space, so Done stays at the right. */
 		.arranging-title {
@@ -277,7 +277,7 @@
 		background: var(--surface);
 	}
 	/* Eight 44px buttons and their gaps need 412px; narrower, Info tokens is in More. */
-	@media (max-width: 411.98px) {
+	@container beside (max-width: 411.98px) {
 		.toolbar :global([data-info-tokens]) {
 			display: none;
 		}
@@ -286,33 +286,33 @@
 	.toolbar :global(.tool-label) {
 		display: none;
 	}
-	@media (max-width: 719.98px) {
+	@container beside (max-width: 719.98px) {
 		.toolbar:not(.seating) :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
 		}
 	}
-	@media (min-width: 720px) {
+	@container beside (min-width: 720px) {
 		.toolbar :global(.tool-label) {
 			display: inline;
 		}
 	}
 	/* Seating's tools have their words from a tablet up, icons only on a phone (Trevor,
 	   2026-11-01), tighter so all seven fit across a tablet. */
-	@media (max-width: 699.98px) {
+	@container beside (max-width: 699.98px) {
 		.seating :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
 		}
 	}
-	@media (min-width: 700px) {
+	@container beside (min-width: 700px) {
 		.seating :global(.tool-label) {
 			display: inline;
 		}
 	}
-	@media (min-width: 700px) and (max-width: 999.98px) {
+	@container beside (min-width: 700px) and (max-width: 999.98px) {
 		.seating {
 			gap: var(--space-1);
 		}

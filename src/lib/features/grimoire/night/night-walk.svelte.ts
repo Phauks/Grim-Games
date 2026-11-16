@@ -118,7 +118,7 @@ export class NightWalk {
 				if (!moved && g && g.night === walk.night) {
 					const i = steps.findIndex((s) => s.id === g.step.id);
 					if (i >= 0 && i !== walk.index) this.walk = { ...walk, index: i };
-					if (i >= 0) return;
+					return;
 				}
 				const step = steps[walk.index];
 				// By night too: Dusk and Dawn have the same id every night.

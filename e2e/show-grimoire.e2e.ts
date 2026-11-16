@@ -1,3 +1,4 @@
+import { paneIsSheet } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
@@ -56,9 +57,10 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	const seat = page.getByTestId('seat').nth(4);
 	const usual = await seat.boundingBox();
 	const step = await openStep(page, 'Spy');
+	const sheet = await paneIsSheet(page);
 
 	await step.getByRole('button', { name: 'Show the Grimoire' }).tap();
-	await expect(step).toBeHidden();
+	if (sheet) await expect(step).toBeHidden();
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button')).toHaveCount(1);
 	await expect(walkThrough(page)).toBeHidden();

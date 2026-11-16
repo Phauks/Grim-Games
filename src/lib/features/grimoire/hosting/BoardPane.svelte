@@ -18,6 +18,8 @@
 	interface Props {
 		grimoire: Grimoire;
 		watching: boolean;
+		/** Showing the Grimoire to a player: the pane keeps its place, empty. */
+		hidden?: boolean;
 		/** Where the pane shows beside the board, if it can (none on a phone). */
 		beside?: BesidePlacement;
 		/** The Day tab's contents. */
@@ -27,7 +29,15 @@
 		children: Snippet;
 	}
 
-	let { grimoire, watching, beside = $bindable(), day, night, children }: Props = $props();
+	let {
+		grimoire,
+		watching,
+		hidden = false,
+		beside = $bindable(),
+		day,
+		night,
+		children
+	}: Props = $props();
 
 	let width = $state(0);
 	let height = $state(0);
@@ -53,8 +63,13 @@
 </div>
 
 {#snippet pane()}
-	<div class="side-pane">
-		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} {day} {night} />
+	<div class="side-pane" inert={hidden}>
+		{#if !hidden}<StorytellerPane
+				game={grimoire.open}
+				run={(command) => grimoire.run(command)}
+				{day}
+				{night}
+			/>{/if}
 	</div>
 {/snippet}
 

@@ -120,7 +120,8 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(row.getByTestId('room-player-waiting')).toHaveCount(0);
 	await closePane(page);
 	await expect(page.getByRole('button', { name: /new message/ })).toHaveCount(0);
-	await expect(paneButton).toHaveAccessibleName('Game notes and Players');
+	if (await paneIsSheet(page))
+		await expect(page.getByTestId('game-pane-button')).toHaveAccessibleName('Game');
 	await page.getByTestId('cover-button').tap();
 	await expect(cover.getByTestId('cover-inbox')).toBeHidden();
 	await phoneContext.close();

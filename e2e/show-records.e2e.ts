@@ -1,3 +1,4 @@
+import { paneIsSheet } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
@@ -75,7 +76,7 @@ test('showing the Washerwoman a Townsfolk places its reminder', async ({ page })
 	await choose(page, 3, 'Imp');
 	await choose(page, 4, 'Poisoner');
 	const placed = page.locator(
-		'[data-testid="board-reminder"][aria-label="Townsfolk reminder"]:not([data-tray] *)'
+		'[data-testid="board-reminder"][aria-label="Townsfolk reminder"]:not([data-tray] *):not([data-testid="beside-pane"] *)'
 	);
 	await expect(placed).toHaveCount(0);
 
@@ -92,6 +93,6 @@ test('showing the Washerwoman a Townsfolk places its reminder', async ({ page })
 	await page.keyboard.press('Escape');
 	await expect(shown).toBeHidden();
 	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	if (await paneIsSheet(page)) await expect(step).toBeHidden();
 	await expect(placed).toHaveCount(1);
 });
