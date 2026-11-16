@@ -108,6 +108,59 @@ test('clearing the selected rows asks first, then deletes only those', async ({ 
 	expect(await stillSeeded(page, 'grim-games-player')).toBe(true);
 });
 
+// Trevor (2026-11-16): clearing stored icons freed nothing in the browser's own total (About >
+// Storage used): Data read each file as a Blob, and deleted a cache the offline worker held.
+// Chromium kept counting the files either way.
+test('clearing stored icons frees their room at once, though the offline worker used them', async ({
+	page
+}) => {
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	const cachedBytes = () =>
+		page.evaluate(async () => {
+			const estimate = (await navigator.storage.estimate()) as StorageEstimate & {
+				usageDetails?: Record<string, number>;
+			};
+			return estimate.usageDetails?.caches ?? 0;
+		});
+	const before = await cachedBytes();
+	// Five large icons, each then served by the offline worker from the runtime cache.
+	await page.evaluate(async () => {
+		const runtime = await caches.open('grim-games-runtime-v1');
+		for (let i = 0; i < 5; i++) {
+			const path = `/data/icons/e2e-large-${i}.webp`;
+			await runtime.put(path, new Response(new Uint8Array(1_000_000)));
+			await (await fetch(path)).arrayBuffer();
+		}
+	});
+	expect(await cachedBytes()).toBeGreaterThan(before + 4_000_000);
+	// A reload first, as clearing does: the browser stores compiled scripts beside the app's
+	// files after one, which counts as cached too.
+	await page.reload();
+	await page.waitForTimeout(3000);
+	const filled = await cachedBytes();
+
+	const dialog = await openData(page);
+	await dialog
+		.getByTestId('storage-table')
+		.getByRole('checkbox', { name: 'Select Stored character icons' })
+		.tap();
+	await dialog.getByRole('button', { name: 'Clear selected' }).tap();
+	const reloaded = page.waitForEvent('load');
+	await page
+		.getByRole('alertdialog', { name: 'Clear the selected data?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await reloaded;
+	// The reloaded app may store a few files again, never the 5 MB just cleared.
+	await expect.poll(cachedBytes).toBeLessThan(filled - 4_000_000);
+	const runtime = await page.evaluate(async () =>
+		(await (await caches.open('grim-games-runtime-v1')).keys()).map((r) => r.url)
+	);
+	expect(runtime.filter((url) => url.includes('e2e-large'))).toEqual([]);
+});
+
 test('Select all clears settings and saved data, not other sites', async ({ page }) => {
 	await page.goto('/');
 	await page.evaluate(() => {
