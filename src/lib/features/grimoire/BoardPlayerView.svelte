@@ -12,7 +12,6 @@
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
-	import { gameOverText } from '#lib/features/room/game-over-text.ts';
 	import YourCharacter from '#lib/features/room/YourCharacter.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
@@ -103,9 +102,7 @@
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
 <PlayerStatusRow
 	table={town}
-	ended={!!ended}
-	status={ended ? gameOverText(ended.winner) : undefined}
-	winner={ended?.winner}
+	over={ended}
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 	character={roleSeats.some((s) => s.role) ? () => yourCharacter?.show() : undefined}

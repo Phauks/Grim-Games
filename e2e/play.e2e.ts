@@ -1,3 +1,4 @@
+import { expectInRoom } from './player-status.ts';
 import { notesToggle, openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
@@ -1047,7 +1048,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 }, testInfo) => {
 	// Plan J12 (Trevor, 2026-10-23): no Room tab. Before joining, /play has no room row.
 	await expect(page.getByRole('tab', { name: 'Room' })).toHaveCount(0);
-	await expect(page.getByTestId('you-row')).toHaveCount(0);
+	await expect(page.getByTestId('player-status-row')).toHaveCount(0);
 
 	// The Storyteller opens a room on another device.
 	const st = await (await browser.newContext({ ...testInfo.project.use })).newPage();
@@ -1067,8 +1068,8 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	// Joining lands on the grim while there is a seat to pick (Trevor, 2026-11-16), with the
 	// room's row over the tabs; You on the title line takes a name (plan E2).
 	await page.goto(`/join/${code}`);
-	const row = page.getByTestId('you-row');
-	await expect(page.getByTestId('join-status')).toHaveText('');
+	const row = page.getByTestId('join-status');
+	await expectInRoom(page);
 	// No "set your name" box at the top, not even before a name (Trevor, 2026-10-27: "I just
 	// want that whole thing gone").
 	await expect(row).toBeHidden();
@@ -1081,7 +1082,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	await expect(sheet.getByTestId('player-name')).toHaveText('Alex');
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	await expect(page.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(page);
 	// The cog at the top is named for it (plan E2), and the empty room box leaves the row
 	// (Trevor, 2026-10-26: "remove the empty space next to the game state tracker").
 	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
@@ -1105,7 +1106,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 
 	// /play itself shows the same room, while the phone is in it.
 	await page.goto('/play');
-	await expect(page.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(page);
 	await expect(page.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	await st.context().close();
 });

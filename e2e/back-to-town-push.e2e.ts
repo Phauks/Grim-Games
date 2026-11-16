@@ -1,3 +1,4 @@
+import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { ENDPOINT, fakePush } from './push.ts';
@@ -58,7 +59,7 @@ test('a phone with alerts on gives the room its push address', async ({
 	await fakePush(phone);
 	const sent = sentToRoom(phone);
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	// The app is on screen, so a call reaches it on its socket and isn't pushed.
 	await expect.poll(() => sent).toContainEqual({ type: 'showing', on: true });
 	expect(sent.filter((m) => (m as { type: string }).type === 'push')).toEqual([]);

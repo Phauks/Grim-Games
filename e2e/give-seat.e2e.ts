@@ -79,7 +79,7 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
 
 	const bea = await joinAs(browser, use, code, 'Bea');
-	await expect(bea.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(bea.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await expect(bea.getByTestId('your-character')).toHaveCount(0);
 	const alex = await joinAs(browser, use, code, 'Alex');
 	await page.goto(board);
@@ -95,7 +95,7 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	// An open seat is given straight away; Alex may see theirs, Bea still may not.
 	await options.first().tap();
 	await expect(list).toBeHidden();
-	await expect(alex.getByTestId('you-row')).toHaveAttribute('data-seat', '5');
+	await expect(alex.getByTestId('player-status-row')).toHaveAttribute('data-seat', '5');
 	await expect(alex.getByTestId('your-character')).toBeVisible();
 	await expect(bea.getByTestId('your-character')).toHaveCount(0);
 	const players = storytellerPane(page);
@@ -110,7 +110,7 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	await expect(ask).toContainText('Bea');
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(ask).toBeHidden();
-	await expect(bea.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(bea.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	if (await seats.isVisible()) await page.keyboard.press('Escape');
 	await expect(seats).toBeHidden();
 	await closePane(page);
@@ -119,7 +119,7 @@ test('the Storyteller gives a spectator an open seat, or a player’s seat after
 	seats = await giveSeat(page, 'Sam');
 	await seats.locator('[data-seat="1"]').tap();
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(sam.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(sam.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await expect(sam.getByTestId('your-character')).toBeVisible();
 	await expect(bea.getByTestId('your-character')).toHaveCount(0);
 	const after = (await players.isVisible()) ? players : await openPlayers(page);

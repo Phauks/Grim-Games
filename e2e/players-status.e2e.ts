@@ -1,3 +1,4 @@
+import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -28,7 +29,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	const status = phone.getByTestId('players-status');
 	const shown = phone.getByTestId('players-timer');
 	// Setup, and the count of phones in the room with no seat: this one.
@@ -205,7 +206,7 @@ test('the candles beside Setup open who is connected, on phones and in character
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 
 	// On the phone: every seat, nobody sitting yet, and this phone in the room without a seat.
 	await phone.getByRole('button', { name: 'Setup; see who is connected' }).tap();

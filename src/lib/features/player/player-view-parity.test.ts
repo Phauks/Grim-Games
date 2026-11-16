@@ -48,8 +48,12 @@ describe("Storyteller's player view parity", () => {
 		expect(boardView).toMatch(/roomHost\(\)\.revealed|host\.revealed/);
 		expect(boardView).toMatch(/\bfinal\b[\s\S]*}}/);
 		expect(grim).toContain('finalGrimoireOf(town, player');
-		// "Game over" over the tabs comes from the same words on both sides.
-		for (const host of [joinPanel, boardView]) expect(host).toContain('gameOverText(');
+		// "Game over" over the tabs: both sides hand the row the ended game, and the row alone
+		// says it (playerStatus ranks it with everything else, Trevor 2026-11-16).
+		for (const host of [joinPanel, boardView]) {
+			expect(host).toMatch(/<PlayerStatusRow[^]*?\bover=/);
+			expect(host).not.toContain('gameOverText(');
+		}
 	});
 
 	it('opens Your character from the status line on both sides, never a row of its own', () => {

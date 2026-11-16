@@ -44,7 +44,7 @@ test('after End game a seated phone shares its result, and the page names nobody
 	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Alex');
 	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
 	await page.keyboard.press('Escape');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '2');
 	await page.goto(`${board}/draw`);
 	await page.getByRole('button', { name: 'Deal' }).tap();
 	await page
@@ -67,7 +67,9 @@ test('after End game a seated phone shares its result, and the page names nobody
 	await expect(phone.getByTestId('join-status')).toHaveText('Game over: Good won');
 	// Game over takes the status box: Your character goes, and the box says what a tap does.
 	await expect(phone.getByTestId('your-character')).toHaveCount(0);
-	await expect(phone.getByTestId('you-row')).toHaveText(/^Game over: Good won\s*Rate this game$/);
+	await expect(phone.getByTestId('player-status-row').getByRole('button')).toHaveText(
+		/^Game over: Good won\s*Rate this game$/
+	);
 
 	await phone.getByRole('button', { name: /Rate this game/ }).tap();
 	const over = phone.getByRole('dialog', { name: 'Game over' });

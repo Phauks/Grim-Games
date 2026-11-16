@@ -62,7 +62,7 @@ test("a seated player's rating shows in the script's details for anyone", async 
 	await seat.getByRole('textbox', { name: 'Player name' }).fill('Alex');
 	await seat.getByRole('textbox', { name: 'Player name' }).press('Enter');
 	await page.keyboard.press('Escape');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '2');
 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page

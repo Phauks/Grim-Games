@@ -31,7 +31,6 @@
 	import PlayerCountOff from './PlayerCountOff.svelte';
 	import PlayerTravellerPick from './PlayerTravellerPick.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
-	import { gameOverText } from './game-over-text.ts';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
@@ -172,17 +171,14 @@
 	const unseated = $derived(inRoom && !!view && seatToPick(view));
 	$effect(() => onSeatToPick?.(unseated));
 	/** Select seat in the status box, away from the Grim tab (Trevor, 2026-11-16). */
-	const askSeat = $derived(unseated && !view?.endedGameId ? selectSeat : undefined);
-	const summary = $derived.by(() => {
-		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
-		if (view.choosing) return t('room.choosing');
-		// The same words as the Storyteller's board once the game has ended.
-		if (view.ended) return gameOverText(view.ended.winner);
-		// In the room: nothing to say, named or not; the cog at the top carries the name (Trevor,
-		// 2026-10-26: "remove you are in the room as ...", then of "set your name": "I just want
-		// that whole thing gone").
-		return '';
-	});
+	const askSeat = $derived(unseated ? selectSeat : undefined);
+	/**
+	 * This phone's link to the room, for the status box: joining until the room first answers,
+	 * then offline whenever it is reconnecting, at any point of the game (Trevor, 2026-11-16).
+	 */
+	const link = $derived(
+		status === 'offline' ? ('offline' as const) : view ? ('open' as const) : ('joining' as const)
+	);
 
 	// Specters: a spectators' vote opens over the page, once for each new vote.
 	const vote = $derived(view?.vote);
@@ -483,17 +479,16 @@
 	     the table's public state goes in it, never here. -->
 	<PlayerStatusRow
 		table={view?.public}
-		ended={!!view?.endedGameId}
-		presence={parseSeatPresence(view?.presence)}
-		mySeat={mine}
-		status={summary}
-		onStatus={view?.endedGameId ? () => (rating = true) : undefined}
-		statusAction={view?.endedGameId ? t('room.feedback.rate') : undefined}
-		winner={view && !view.choosing ? view.ended?.winner : undefined}
-		seatNumber={mySeat}
+		{link}
+		choosing={!!view?.choosing}
+		over={view?.ended}
+		rate={view?.endedGameId ? () => (rating = true) : undefined}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
 		characterUntil={view?.roleUntil}
 		selectSeat={askSeat}
+		presence={parseSeatPresence(view?.presence)}
+		mySeat={mine}
+		seatNumber={mySeat}
 	/>
 	{#if player}<YourCharacter
 			bind:this={yourCharacter}

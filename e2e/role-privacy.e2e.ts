@@ -70,7 +70,7 @@ test('a player’s phone is sent and shown its own character only', async ({
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 2, 'Alex');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '2');
 
 	// Deal, with players allowed to see their characters.
 	await page.goto(`${board}/draw`);

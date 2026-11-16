@@ -1,3 +1,4 @@
+import { expectInRoom } from './player-status.ts';
 import {
 	expect,
 	test,
@@ -351,8 +352,7 @@ test('a phone with no seat lands on its Grim with the open seats ringed, and Sel
 	await phone.goto(`/join/${code}`);
 	const grimTab = phone.getByRole('tab', { name: 'Grim' });
 	await expect(grimTab).toHaveAttribute('aria-selected', 'true');
-	const status = phone.getByTestId('join-status');
-	await expect(status).toHaveText('');
+	await expectInRoom(phone);
 	// With no name it can't sit, so the middle asks for one (Trevor, 2026-11-16: "make it so
 	// they are notified to create a name if they don't have one").
 	await expect(phone.getByTestId('seating-offered')).toHaveCount(0);
@@ -373,7 +373,7 @@ test('a phone with no seat lands on its Grim with the open seats ringed, and Sel
 	await expect(ask).toHaveCount(0);
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await expect(ask).toHaveText('Select seat');
-	await expect(status).toHaveText('');
+	await expectInRoom(phone);
 	const game = (await phone.getByTestId('players-status').boundingBox())!;
 	const box = (await ask.boundingBox())!;
 	expect(Math.abs(box.width - game.width)).toBeLessThan(2);

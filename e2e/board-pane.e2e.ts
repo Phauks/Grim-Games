@@ -43,7 +43,7 @@ test("a seated player's message marks their seat, and the mark opens them in Pla
 	await phone.keyboard.press('Escape');
 	// Naming a seat with the phone's name seats it.
 	await nameSeat(page, 3, 'Alex');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 
 	const seat = page.getByTestId('seat').nth(2);
 	await expect(seat.getByTestId('note-mark')).toHaveCount(0);
