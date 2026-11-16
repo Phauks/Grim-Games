@@ -13,7 +13,6 @@
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { GRIM_VIEW_PREFIX } from '#lib/core/sync/room-messages.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -238,8 +237,8 @@
 					</ul>
 				{/if}
 			</Collapsible>
-			<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view;
-		     the switch says whether they may message the Storyteller. -->
+			<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view.
+		     Whether they may message is in Game settings (Trevor, 2026-11-16). -->
 			<Collapsible
 				title={t('room.spectators')}
 				storageKey="players-spectators"
@@ -247,12 +246,6 @@
 				count={spectators.length}
 			>
 				<div data-testid="room-spectators">
-					<SettingToggle
-						label={t('room.spectators.mayMessage')}
-						checked={!host.inbox.spectatorsMuted}
-						disabled={!host.code || viewOnly}
-						onChange={(on) => host.inbox.allowSpectators(on)}
-					/>
 					{#if spectators.length === 0}
 						<p class="none">{t('common.none')}</p>
 					{:else}
