@@ -311,7 +311,7 @@ test('Diagnostics gathers build, device and problems on the device, without game
 		'Settings',
 		'Live room'
 	]) {
-		await expect(panel.getByRole('heading', { level: 2, name })).toBeVisible();
+		await expect(panel.getByRole('heading', { level: 3, name })).toBeVisible();
 	}
 	await expect(panel).toContainText('1 problem');
 	// The version and commit show once, in About above; times carry the time of day.
