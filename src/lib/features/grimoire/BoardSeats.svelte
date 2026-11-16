@@ -282,14 +282,16 @@
 				at={dragged ? remDrag.drag!.at : at[k]}
 				{...reminderPlacing(game, reminder, characters)}
 				size={chip}
-				disabled={seatArr.arranging || watching}
+				disabled={seatArr.arranging}
 				seatNumber={i + 1}
 				onHeldSeat={heldSeat === seat.seatId}
 				dragging={dragged}
 				extra={hints.extras.has(reminder.reminderId)}
 				now={nw.isStepReminder(reminder)}
 				onTap={() => onReminder(seat.seatId, reminder.reminderId)}
-				onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
+				onDrag={watching
+					? undefined
+					: (x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
 				onCancel={() => remDrag.cancel()}
 			/>
 		{/each}
@@ -330,14 +332,16 @@
 			: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
 		{...reminderPlacing(game, reminder, characters)}
 		size={chip}
-		disabled={seatArr.arranging || watching}
+		disabled={seatArr.arranging}
 		loose
 		dragging={dragged}
 		extra={hints.extras.has(reminder.reminderId)}
 		unassigned
 		now={nw.isStepReminder(reminder)}
 		onTap={() => onLooseReminder(reminder.reminderId)}
-		onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
+		onDrag={watching
+			? undefined
+			: (x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
 	/>
 {/each}
@@ -389,7 +393,7 @@
 		believes={believesOf(seat, k)}
 		madAs={madAs[k]}
 		pretends={pretends.get(seat.seatId)}
-		onReminder={watching ? undefined : (reminderId) => onReminder(seat.seatId, reminderId)}
+		onReminder={(reminderId) => onReminder(seat.seatId, reminderId)}
 	/>
 {/if}
 

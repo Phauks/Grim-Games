@@ -9,6 +9,7 @@
  */
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { RoomMember, RoomState } from './room.ts';
+import { isImageHash } from './room-images.ts';
 
 /** A player's picture is shrunk to this side on their phone before it goes anywhere. */
 export const AVATAR_PICTURE_SIDE = 256;
@@ -57,6 +58,19 @@ export function mayShowPicture(room: RoomState, memberId: string): boolean {
 export function seatPictures(members: readonly RoomMember[]): Partial<Record<SeatId, string>> {
 	const pictures: Partial<Record<SeatId, string>> = {};
 	for (const m of members) if (m.seatId && m.picture) pictures[m.seatId] = m.picture;
+	return pictures;
+}
+
+/**
+ * Seat pictures as a shared grimoire carries them (`SharedGrimoire.pictures`): each seat's
+ * picture by its hash; anything malformed is left out.
+ */
+export function parseSeatPictures(value: unknown): Partial<Record<SeatId, string>> {
+	const pictures: Partial<Record<SeatId, string>> = {};
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) return pictures;
+	for (const [seatId, hash] of Object.entries(value)) {
+		if (isImageHash(hash)) pictures[seatId as SeatId] = hash;
+	}
 	return pictures;
 }
 

@@ -58,6 +58,11 @@
 		 * Characters screen's area for the Lunatic's bluffs (M38).
 		 */
 		start?: number;
+		/**
+		 * A spectator's board (Trevor, 2026-11-15: "they should be able to see lunatic bluffs"):
+		 * the sets to read, with nothing to choose, clear or show.
+		 */
+		readOnly?: boolean;
 	}
 
 	let {
@@ -66,7 +71,8 @@
 		characters,
 		dispatch,
 		inPlay: given,
-		start
+		start,
+		readOnly = false
 	}: Props = $props();
 
 	let editing = $state<number>();
@@ -217,31 +223,31 @@
 						<!-- The set's name, then its buttons on the same line (Trevor, 2026-10-19). -->
 						<div class="label-row">
 							<span class="label">{label(index)}</span>
-							<span class="ink"
-								><IconButton
-									icon="edit"
-									label={t(stale ? 'bluffs.replaceNamed' : 'bluffs.chooseNamed', {
+							{#if !readOnly}<span class="ink"
+									><IconButton
+										icon="edit"
+										label={t(stale ? 'bluffs.replaceNamed' : 'bluffs.chooseNamed', {
+											set: label(index)
+										})}
+										onclick={() => edit(index)}
+									/><IconButton
+										icon="showToPlayer"
+										label={t('bluffs.showNamed', { set: label(index) })}
+										disabled={ids.length === 0}
+										onclick={() => show(ids)}
+									/></span
+								>
+								<!-- Clearing the Demon's set or deleting another asks first (Trevor, 2026-10-29). -->
+								<DeleteButton
+									label={t(fixed(index) ? 'bluffs.clearNamed' : 'bluffs.deleteNamed', {
 										set: label(index)
 									})}
-									onclick={() => edit(index)}
-								/><IconButton
-									icon="showToPlayer"
-									label={t('bluffs.showNamed', { set: label(index) })}
-									disabled={ids.length === 0}
-									onclick={() => show(ids)}
-								/></span
-							>
-							<!-- Clearing the Demon's set or deleting another asks first (Trevor, 2026-10-29). -->
-							<DeleteButton
-								label={t(fixed(index) ? 'bluffs.clearNamed' : 'bluffs.deleteNamed', {
-									set: label(index)
-								})}
-								disabled={fixed(index) && ids.length === 0}
-								onclick={() => {
-									deleting = index;
-									deleteOpen = true;
-								}}
-							/>
+									disabled={fixed(index) && ids.length === 0}
+									onclick={() => {
+										deleting = index;
+										deleteOpen = true;
+									}}
+								/>{/if}
 						</div>
 						<!-- Each bluff as the script lists it: its name, its ability under it (Trevor, 2026-10-20). -->
 						<ol class="rows">
@@ -267,13 +273,14 @@
 					</li>
 				{/each}
 			</ul>
-			<div class="add">
-				<Button
-					icon="add"
-					variant="quiet"
-					onclick={() => edit(Math.max(fixedSets, game.bluffs.length))}>{t('bluffs.addSet')}</Button
-				>
-			</div>
+			{#if !readOnly}<div class="add">
+					<Button
+						icon="add"
+						variant="quiet"
+						onclick={() => edit(Math.max(fixedSets, game.bluffs.length))}
+						>{t('bluffs.addSet')}</Button
+					>
+				</div>{/if}
 		{:else}
 			<CharacterPicker
 				characters={scriptList}

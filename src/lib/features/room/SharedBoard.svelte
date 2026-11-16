@@ -3,6 +3,8 @@
 	import { readSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
+	import { parseSeatPictures } from '#lib/core/sync/room-pictures.ts';
+	import { watchedTable } from '#lib/core/sync/watched-table.ts';
 	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -40,9 +42,20 @@
 		history?: boolean;
 		/** Beside ☰: Grim view's message to the Storyteller. */
 		lead?: Snippet;
+		/** False leaves out the board's toolbar, for a board in a dialog of its own (the final grimoire). */
+		toolbar?: boolean;
 	}
 
-	let { shared, onReady, onProblem, over, room, history = false, lead }: Props = $props();
+	let {
+		shared,
+		onReady,
+		onProblem,
+		over,
+		room,
+		history = false,
+		lead,
+		toolbar = true
+	}: Props = $props();
 
 	let board = $state.raw<Grimoire>();
 	/** The Storyteller's day timer, as sent with the grimoire. */
@@ -73,6 +86,8 @@
 			drawn.look = parsePublicLook(next.look);
 			drawn.room = room;
 			drawn.aspect = parseAspect(next.aspect);
+			drawn.pictures = parseSeatPictures(next.pictures);
+			drawn.watched = watchedTable(next);
 			timer.set(dayTimers.parseSharedTimer(next.timer));
 			board = drawn;
 			onProblem?.(undefined);
@@ -94,6 +109,7 @@
 			{over}
 			watchedHistory={history}
 			watchLead={lead}
+			{toolbar}
 		/>
 	</ErrorBoundary>
 {/if}
