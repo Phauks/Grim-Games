@@ -29,10 +29,6 @@
 		RESULT[updateCheck.result === 'ready' && !updateCheck.offered ? 'current' : updateCheck.result]
 	);
 
-	// The intro around the app's name, which is drawn as the wordmark (Trevor, 2026-11-16).
-	const MARK = '\u0000';
-	const [introBefore, introAfter = ''] = $derived(t('shell.aboutIntro', { app: MARK }).split(MARK));
-
 	// What the waiting build changed, here as on the update card, so About need not be left to
 	// see it (Trevor, 2026-10-19). In a dialog, so the version line never grows.
 	let changesOpen = $state(false);
@@ -76,7 +72,8 @@
 <!-- The one About in the app: its own page in the menu's App group, since it holds no settings
      (2026-10-23; it was a Settings section before). -->
 <Page title={t('shell.about')}>
-	<p>{introBefore}<AppName />{introAfter}</p>
+	<!-- The app's name as its wordmark, then what it is on the next line (Trevor, 2026-11-16). -->
+	<p><AppName /><br />{t('shell.aboutIntro')}</p>
 	<dl>
 		<dt>{t('shell.aboutVersion')}</dt>
 		<!-- Check for updates sits small beside the version, with when it last checked and the
