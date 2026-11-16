@@ -66,7 +66,7 @@
 		boardAspect
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { grimoireSeatArranging } from './grimoire-seat-arranging.ts';
+	import { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import {
 		enterSeating,
 		seatingRequested
@@ -322,8 +322,8 @@
 	const heldDrag = $derived(remDrag.held);
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
-	const seatArr = grimoireSeatArranging(() => ({
-		grimoire,
+	const seatArr: SeatArranging = new SeatArranging(() => ({
+		table: grimoire,
 		seating: game.seating,
 		layout,
 		points,
