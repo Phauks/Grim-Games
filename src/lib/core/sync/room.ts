@@ -29,6 +29,7 @@ import { mayMessage, withoutMessages, type PlayerMessage } from './room-messages
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 import { seatPresence } from './seat-presence.ts';
+import { grimViewersOf } from './shared-grimoire.ts';
 import { transferCheck, type RoomTransfer } from './room-transfer.ts';
 import { withoutRemoved, type RemovedMember } from './room-removed.ts';
 import { setSeatingOpen } from './room-seating-open.ts';
@@ -43,7 +44,8 @@ import {
 export {
 	isSharedGrimoire,
 	MAX_GRIMOIRE_BYTES,
-	setViewers,
+	grimViewersOf,
+	setGrimViewers,
 	type SharedGrimoire
 } from './shared-grimoire.ts';
 export { join, markHere } from './room-presence.ts';
@@ -88,15 +90,10 @@ export interface RoomState {
 	/** A spectators' vote the Storyteller has open (Specters), if any. */
 	vote?: SpectatorVote;
 	/**
-	 * SHA-256 (hex) of the key in the view-only grimoire link, while the Storyteller has the
-	 * link turned on. Turning it off (or on again, with a new key) stops every earlier link.
+	 * Members the Storyteller let see the whole grimoire, live (Grim view; Trevor, 2026-11-16:
+	 * a switch per person on Players, in place of a password).
 	 */
-	viewerKeyHash?: string;
-	/**
-	 * The link's key is made from a password the Storyteller set (Grim view, plan D1), so a
-	 * phone with only the room code can watch by typing it.
-	 */
-	viewerPassword?: true;
+	grimViewers?: string[];
 	/** The current game is over, as the Storyteller ended it; a new game clears it. */
 	ended?: GameOver;
 	/** The Storyteller is choosing the next script (plan R1); a new game clears it. */
@@ -181,10 +178,8 @@ export { judgePicture, reportPicture } from './room-pictures.ts';
 export {
 	readMessages,
 	sendMessage,
-	sendViewerMessage,
 	setInbox,
 	setSpectatorMessages,
-	viewersMayMessage,
 	type PlayerMessage
 } from './room-messages.ts';
 export {
@@ -252,6 +247,8 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.spectatorsMuted) view.spectatorsMuted = true;
 	if (room.removed?.length) view.removed = room.removed;
 	if (room.seatingOpen) view.seatingOpen = true;
+	const grimViewers = grimViewersOf(room);
+	if (grimViewers.length) view.grimViewers = grimViewers;
 	if (room.countOff) view.countOff = countOffView(room, present);
 	const travellers = travellerPickHostView(room);
 	if (travellers) view.travellerPick = travellers;
@@ -334,6 +331,7 @@ export function playerView(
 	}
 	if (room.choosing) view.choosing = true;
 	if (room.seatingOpen) view.seatingOpen = true;
+	if (grimViewersOf(room).includes(memberId)) view.grimView = true;
 	if (room.countOff) view.countOff = countOffView(room, present, memberId);
 	const travellers = travellerPickPlayerView(room, memberId, present);
 	if (travellers) view.travellerPick = travellers;

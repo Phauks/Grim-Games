@@ -206,20 +206,13 @@ export function transferDetails(room: RoomState): TransferDetails {
 
 /**
  * The room changes hands: `keyHash` (the new device's host key) is now the Storyteller's, and
- * the old key stops working. What belonged to the old Storyteller goes: Grim view (its
- * password was theirs) and players' messages (written to them).
+ * the old key stops working. What belonged to the old Storyteller goes: Grim view (theirs to
+ * give) and players' messages (written to them).
  */
 export function completeTransfer(room: RoomState, keyHash: string): RoomState {
-	const {
-		transfer: _done,
-		viewerKeyHash: _viewers,
-		viewerPassword: _password,
-		messages: _messages,
-		...rest
-	} = room;
+	const { transfer: _done, grimViewers: _viewers, messages: _messages, ...rest } = room;
 	void _done;
 	void _viewers;
-	void _password;
 	void _messages;
 	return { ...rest, hostKeyHash: keyHash };
 }

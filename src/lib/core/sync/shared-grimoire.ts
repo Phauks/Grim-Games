@@ -1,14 +1,14 @@
 /**
- * The grimoire a Storyteller's device sends whole: to the view-only link while the game runs,
- * and to the room's phones once it is over (Share grim, R5). Split from room.ts.
+ * The grimoire a Storyteller's device sends whole: to the phones it gave Grim view while the
+ * game runs, and to the room's phones once it is over (Share grim, R5). Split from room.ts.
  */
 import type { RoomState } from './room.ts';
 
 /**
- * The Storyteller's whole grimoire, for the view-only link (Trevor, 2026-10-18: Specters
- * spectators watch the grimoire, after promising not to spoil the game). Only the
- * Storyteller's device sends it and only viewers with the link's key receive it; the room
- * relays it as given, and each viewer checks `saved` as a saved game before showing it.
+ * The Storyteller's whole grimoire, for Grim view (Trevor, 2026-10-18: Specters spectators
+ * watch the grimoire, after promising not to spoil the game). Only the Storyteller's device
+ * sends it and only the members it named (`grimViewers`) receive it; the room relays it as
+ * given, and each phone checks `saved` as a saved game before showing it.
  */
 export interface SharedGrimoire {
 	/** The game as the Storyteller's device saves it (`SavedGame`). */
@@ -46,19 +46,17 @@ export function isSharedGrimoire(value: unknown): value is SharedGrimoire {
 	return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
 }
 
-/**
- * Turns the view-only link on (a SHA-256 hex hash) or off (`null`); anything else is ignored.
- * `password` says the key was made from a Grim view password.
- */
-export function setViewers(room: RoomState, keyHash: unknown, password?: unknown): RoomState {
-	const { viewerKeyHash: _off, viewerPassword: _password, ...rest } = room;
-	void _off;
-	void _password;
-	if (keyHash === null) return rest;
-	if (typeof keyHash !== 'string' || !/^[0-9a-f]{64}$/.test(keyHash)) return room;
-	return {
-		...rest,
-		viewerKeyHash: keyHash,
-		...(password === true ? { viewerPassword: true } : {})
-	};
+/** The members with Grim view, as still in the room. */
+export function grimViewersOf(room: RoomState): string[] {
+	const ids = room.grimViewers ?? [];
+	return ids.filter((id) => room.members.some((m) => m.memberId === id));
+}
+
+/** Gives Grim view to exactly these members (Trevor, 2026-11-16); anything else is ignored. */
+export function setGrimViewers(room: RoomState, members: unknown): RoomState {
+	if (!Array.isArray(members)) return room;
+	const { grimViewers: _old, ...rest } = room;
+	void _old;
+	const ids = room.members.flatMap((m) => (members.includes(m.memberId) ? [m.memberId] : []));
+	return ids.length ? { ...rest, grimViewers: ids } : rest;
 }

@@ -50,10 +50,8 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(adminSeat).toBeVisible();
 	await expect(admin.getByTestId('player-grim')).toHaveCount(0);
 
-	// Unseen: the Storyteller's room counts no player and no one watching.
+	// Unseen: the Storyteller's room counts no player.
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
-	await page.getByRole('tab', { name: 'Grimoire' }).tap();
-	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
 
 	// Live: what the Storyteller does shows at once.
 	await page.getByRole('link', { name: 'Grimoire' }).tap();

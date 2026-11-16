@@ -11,6 +11,7 @@
 import type { Script } from '#lib/core/data/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
 import {
+	DEFAULT_SHARE_CHOICES as GRIM_CHOICES,
 	sharedSave,
 	toSavedGame,
 	type SavedGame,
@@ -60,18 +61,16 @@ import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 import { BoardLook } from './board-look.svelte.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
 import { RoomInbox } from './inbox.svelte.ts';
-import { viewerKeyFromPassword } from './viewer.svelte.ts';
 import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { seatPresence, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
-import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
 import { SeatLooks } from './seat-looks.svelte.ts';
 import { applySeats, boardPlaces, grantSit } from './host-seating.ts';
 
-/** Changes are gathered for this long before the grimoire is sent to viewers again. */
+/** Changes are gathered for this long before the grimoire is sent to Grim view again. */
 const GRIMOIRE_DELAY_MS = 300;
 
 export class RoomHost {
@@ -88,16 +87,14 @@ export class RoomHost {
 	problem = $state(false); // Opening a room failed, e.g. offline.
 	opening = $state(false); // A room is being opened.
 	removed = $state.raw<readonly RemovedMember[]>([]); // Phones removed this game (plan J37).
-	// The key Grim view's password makes, while the Storyteller has it on (Specters, Trevor
-	// 2026-10-18). Viewers see everything, so it is off until turned on.
-	viewerKey = $state<string>();
 	/**
-	 * Grim view's password, while it is on (Trevor, 2026-10-26: "access password locked by
-	 * storyteller ... default to a new password per game (that can be customizable)").
+	 * Members the Storyteller gave Grim view (Trevor, 2026-11-16: a switch per person on
+	 * Players), and what of the game goes to them (`ShareChoices`, as Share grim's).
 	 */
-	viewerPassword = $state<string>();
-	grimoireTooLarge = $state(false); // Too large to send to viewers.
-	watchers = $state(0); // Watching through the view-only link now (Trevor, 2026-10-20).
+	grimViewers = $state.raw<readonly string[]>([]);
+	grimChoices = $state.raw<ShareChoices>(GRIM_CHOICES);
+	grimoireTooLarge = $state(false); // Too large to send to Grim view.
+	watchers = $state(0); // Phones with Grim view connected now (Trevor, 2026-10-20).
 	readonly rolesShown = new RolesShown(); // Players may see their own character, for a minute.
 	rolesSeen = $state.raw<readonly SeatId[]>([]); // Their player held the character to see it.
 	seatingOpen = $state(false); // Phones may move their own seat (plan J38).
@@ -119,12 +116,11 @@ export class RoomHost {
 		| undefined;
 	readonly seatLooks = new SeatLooks(); // A seat given to a spectator: its own character.
 	/**
-	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
-	 * for the view-only link, but nothing on this device says so, and the room keeps no copy.
+	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room,
+	 * but nothing on this device says so, and the room keeps no copy.
 	 */
 	#grimoireWanted = $state(false);
-	#viewerKeyHash: string | undefined;
-	#grimoire: SharedGrimoire | undefined;
+	#grimoire: { whole: SharedGrimoire; shared: SharedGrimoire } | undefined;
 	#grimoireTimer: ReturnType<typeof setTimeout> | undefined;
 	#openingRoom: Promise<void> | undefined;
 	#choosing = false;
@@ -149,8 +145,7 @@ export class RoomHost {
 		const stored = readStored<StoredRoom>(STORAGE_KEY);
 		if (stored?.code && stored.key) {
 			this.rolesShown.restore(stored);
-			this.viewerPassword = stored.viewerKey ? stored.viewerPassword : undefined;
-			if (stored.viewerKey) void this.#useViewerKey(stored.viewerKey);
+			if (stored.grimChoices) this.grimChoices = stored.grimChoices;
 			this.#connect(stored);
 		}
 	}
@@ -201,88 +196,27 @@ export class RoomHost {
 		}
 	}
 
-	/** Turns Grim view on, with a new password, or off for every viewer. */
-	async setViewers(on: boolean): Promise<void> {
-		if (on === !!this.viewerKey) return;
-		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (!stored) return;
-		if (on) {
-			// Set first, so the password below has a Grim view to change.
-			this.viewerKey = randomKey();
-			await this.setViewerPassword(newGrimViewPassword());
-		} else {
-			const { viewerKey: _off, viewerPassword: _password, viewerGame: _game, ...rest } = stored;
-			void _off;
-			void _password;
-			void _game;
-			writeStored(STORAGE_KEY, rest);
-			this.viewerKey = undefined;
-			this.viewerPassword = undefined;
-			this.#viewerKeyHash = undefined;
-			this.#socket?.send({ type: 'viewers', keyHash: null });
+	/**
+	 * Gives one member Grim view, sending `choices` of the game to everyone who has it, or
+	 * takes it away (Trevor, 2026-11-16: a switch per person on Players). False when offline.
+	 */
+	setGrimView(memberId: string, on: boolean, choices?: ShareChoices): boolean {
+		const others = this.grimViewers.filter((id) => id !== memberId);
+		const members = on ? [...others, memberId] : others;
+		if (!this.#socket?.send({ type: 'grim-viewers', members })) return false;
+		this.grimViewers = members;
+		if (choices) {
+			this.grimChoices = choices;
+			const stored = readStored<StoredRoom>(STORAGE_KEY);
+			if (stored) writeStored(STORAGE_KEY, { ...stored, grimChoices: choices });
 		}
+		return true;
 	}
 
-	/**
-	 * A new password in one step (Trevor, 2026-10-20): the old one stops working and anyone
-	 * watching with it is let go.
-	 */
-	async refreshViewers(): Promise<void> {
-		await this.setViewerPassword(newGrimViewPassword());
-	}
-
-	/**
-	 * Grim view's password (plan D1): the room code and it open the grimoire. One the
-	 * Storyteller types lasts for this game; '' makes a new one. Either way the old one stops
-	 * working and anyone watching with it is let go.
-	 */
-	async setViewerPassword(password: string): Promise<void> {
-		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (!stored || !this.viewerKey) return;
-		const clean = password.trim() || newGrimViewPassword();
-		const key = await viewerKeyFromPassword(stored.code, clean);
-		const game = this.#game?.game.gameId ?? stored.viewerGame;
-		writeStored(STORAGE_KEY, {
-			...stored,
-			viewerKey: key,
-			viewerPassword: clean,
-			...(game ? { viewerGame: game } : {})
-		});
-		this.viewerPassword = clean;
-		await this.#useViewerKey(key);
-	}
-
-	/** Each game gets a new Grim view password (Trevor, 2026-10-26), once it opens here. */
-	#newGameViewers(gameId: string): void {
-		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (!stored?.viewerKey || stored.viewerGame === gameId) return;
-		if (stored.viewerGame) void this.refreshViewers();
-		else writeStored(STORAGE_KEY, { ...stored, viewerGame: gameId });
-	}
-
-	async #useViewerKey(key: string): Promise<void> {
-		this.viewerKey = key;
-		const hash = await sha256Hex(key);
-		if (this.viewerKey !== key) return;
-		this.#viewerKeyHash = hash;
-		this.#sendViewers();
-		this.#sendGrimoire();
-	}
-
-	/**
-	 * A new code (Trevor, 2026-10-20): the old room is deleted, its phones and viewers let go,
-	 * and a new one opened. Grim view that was on is on again, with the same password.
-	 */
+	/** A new code (Trevor, 2026-10-20): the old room is deleted, its phones let go, and a new one opened. */
 	async refreshRoom(): Promise<void> {
-		const watching = !!this.viewerKey;
-		// The password stays; its key is made with the new code.
-		const password = this.viewerPassword;
 		this.close();
 		await this.open();
-		if (watching && this.code) {
-			await this.setViewers(true);
-			if (password) await this.setViewerPassword(password);
-		}
 	}
 
 	/** Deletes the room for everyone in it. */
@@ -300,15 +234,18 @@ export class RoomHost {
 		if (this.#game === game) return;
 		this.#stopWatching?.();
 		this.#game = game;
-		this.#newGameViewers(game.game.gameId);
 		this.#stopWatching = $effect.root(() => {
-			// The whole grimoire, for Grim view while it is on.
+			// The whole grimoire, for Grim view while anyone has it, an admin or a transfer.
 			$effect(() => {
-				if (!this.viewerKey && !this.#grimoireWanted && !this.sendingGame) return;
+				if (!this.grimViewers.length && !this.#grimoireWanted && !this.sendingGame) return;
 				const { gameId } = game.game;
 				const saved = toSavedGame(game.session, Date.now());
-				const drawn = this.#drawn(gameId, saved, notes?.() ?? storedNotes(gameId));
-				this.#queueGrimoire({ ...drawn, timer: liveDayTimer.shared });
+				const board = notes?.() ?? storedNotes(gameId);
+				const timer = liveDayTimer.shared;
+				this.#queueGrimoire({
+					whole: { ...this.#drawn(gameId, saved, board), timer },
+					shared: { ...this.#drawn(gameId, sharedSave(saved, this.grimChoices), board), timer }
+				});
 			});
 			$effect(() => {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
@@ -652,6 +589,7 @@ export class RoomHost {
 			this.present = message.present;
 			this.away = message.away ?? [];
 			this.removed = message.removed ?? [];
+			this.grimViewers = message.grimViewers ?? [];
 			this.seatingOpen = !!message.seatingOpen;
 			this.countOff = message.countOff;
 			applyTravellerPicks(this.#game, this.travellerPick, message.travellerPick);
@@ -680,20 +618,24 @@ export class RoomHost {
 		}
 	}
 
-	#queueGrimoire(grimoire: SharedGrimoire): void {
+	#queueGrimoire(grimoire: { whole: SharedGrimoire; shared: SharedGrimoire }): void {
 		this.#grimoire = grimoire;
 		clearTimeout(this.#grimoireTimer);
 		this.#grimoireTimer = setTimeout(() => this.#sendGrimoire(), GRIMOIRE_DELAY_MS);
 	}
 
 	#sendGrimoire(): void {
-		const wanted = this.#viewerKeyHash || this.#grimoireWanted || this.sendingGame;
-		if (!this.#grimoire || !wanted) return;
-		const message = { type: 'grimoire', grimoire: this.#grimoire } as const;
-		const tooLarge = JSON.stringify(message).length > MAX_GRIMOIRE_BYTES;
-		// Said only for the view-only link: an admin's watching shows nowhere here.
-		if (this.#viewerKeyHash) this.grimoireTooLarge = tooLarge;
-		if (!tooLarge) this.#socket?.send(message);
+		if (!this.#grimoire) return;
+		const fits = (m: unknown) => JSON.stringify(m).length <= MAX_GRIMOIRE_BYTES;
+		if (this.#grimoireWanted || this.sendingGame) {
+			const whole = { type: 'grimoire', grimoire: this.#grimoire.whole } as const;
+			if (fits(whole)) this.#socket?.send(whole);
+		}
+		if (!this.grimViewers.length) return;
+		const shared = { type: 'grim-view', grimoire: this.#grimoire.shared } as const;
+		// Said only for Grim view: an admin's watching shows nowhere here.
+		this.grimoireTooLarge = !fits(shared);
+		if (!this.grimoireTooLarge) this.#socket?.send(shared);
 	}
 
 	#publish(published: { gameId: string; state: PublicGameState }): void {
@@ -710,21 +652,7 @@ export class RoomHost {
 		this.#sendEnded();
 		if (this.#choosing) this.#socket?.send({ type: 'choosing', on: true });
 		if (this.#script) this.#socket?.send({ type: 'script', script: this.#script });
-		// While a stored key's hash is still being worked out, say nothing about viewers.
-		if (!this.viewerKey) this.#socket?.send({ type: 'viewers', keyHash: null });
-		else if (this.#viewerKeyHash) {
-			this.#sendViewers();
-			this.#sendGrimoire();
-		}
-	}
-
-	#sendViewers(): void {
-		if (!this.#viewerKeyHash) return;
-		this.#socket?.send({
-			type: 'viewers',
-			keyHash: this.#viewerKeyHash,
-			...(this.viewerPassword ? { password: true } : {})
-		});
+		this.#sendGrimoire();
 	}
 
 	#forget(): void {
@@ -741,8 +669,7 @@ export class RoomHost {
 		this.countOff = this.travellerPick = undefined;
 		this.vote = undefined;
 		this.scriptVote = undefined;
-		this.viewerKey = undefined;
-		this.viewerPassword = undefined;
+		this.grimViewers = [];
 		this.revealed = undefined;
 		this.rolesShown.stop();
 		this.rolesSeen = [];
@@ -751,7 +678,6 @@ export class RoomHost {
 		this.inbox.clear();
 		this.#roles = undefined;
 		this.seatLooks.clear();
-		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);
 		writeStored(STORAGE_KEY, undefined);

@@ -14,8 +14,6 @@ export interface GamePreview {
 	storyteller?: string;
 	seats?: number;
 	seated?: number;
-	/** The Storyteller set a Grim view password. */
-	grimView?: boolean;
 	/** The Storyteller removed this phone from the game (plan J37): joining is turned away. */
 	removed?: boolean;
 }
@@ -47,7 +45,6 @@ export function toGamePreview(preview: RoomPreview): GamePreview | undefined {
 		game.seats = preview.seats;
 		game.seated = preview.seated ?? 0;
 	}
-	if (preview.grimView) game.grimView = true;
 	if (preview.removed) game.removed = true;
 	return game;
 }

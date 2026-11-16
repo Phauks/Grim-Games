@@ -40,18 +40,22 @@ export interface PlayerGrimTown {
 	final?: { grimoire: SharedGrimoire; ended?: Omit<GameOver, 'gameId'>; room?: string };
 }
 
-type FinalGrimoire = NonNullable<PlayerGrimTown['final']>;
+/** A grimoire shown whole on the Grim tab; `live`: Grim view's, as the game goes on. */
+type SharedOnGrim = NonNullable<PlayerGrimTown['final']> & { live?: true };
 
 /**
- * The finished grimoire the Grim tab shows (Share grim, R5): the one the Storyteller's board
- * hands its player view (Trevor, 2026-10-30), else the one this phone's room sent.
+ * The whole grimoire the Grim tab shows: the finished one (Share grim, R5) the Storyteller's
+ * board hands its player view (Trevor, 2026-10-30), else the one this phone's room sent, else
+ * Grim view's, live, while the Storyteller gives this phone it (2026-11-16).
  */
 export function finalGrimoireOf(
 	town: PlayerGrimTown | undefined,
 	player: RoomPlayer | undefined,
 	room: string | undefined
-): FinalGrimoire | undefined {
+): SharedOnGrim | undefined {
 	if (town) return town.final;
 	const sent = player?.revealed;
-	return sent && { grimoire: sent.grimoire, ended: player?.view?.ended, room };
+	if (sent) return { grimoire: sent.grimoire, ended: player?.view?.ended, room };
+	const live = player?.grimView;
+	return live && { grimoire: live, room, live: true };
 }

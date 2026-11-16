@@ -27,14 +27,10 @@ import {
 	setLook,
 	setChoosing,
 	setName,
-	setViewers,
+	setGrimViewers,
 	supportsProtocol,
 	townView,
 	unseat,
-	viewerFailed,
-	viewersLocked,
-	MAX_VIEWER_FAILS,
-	VIEWER_FAIL_WINDOW_MS,
 	type RoomState
 } from './room.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
@@ -559,52 +555,26 @@ describe('a spectators’ vote', () => {
 	});
 });
 
-describe('the view-only grimoire link', () => {
-	const hash = 'a'.repeat(64);
-
-	it('is turned on with a key hash and off with null', () => {
-		const on = setViewers(newRoom('host'), hash);
-		expect(on.viewerKeyHash).toBe(hash);
-		expect('viewerKeyHash' in setViewers(on, null)).toBe(false);
+// Trevor (2026-11-16, option A): Grim view is a switch per person on Players, no password.
+describe('Grim view', () => {
+	it('goes to exactly the members the Storyteller names', () => {
+		const room = setGrimViewers(roomWith('alex', 'sam'), ['sam', 'nobody', 'sam']);
+		expect(room.grimViewers).toEqual(['sam']);
+		expect(hostView(room).grimViewers).toEqual(['sam']);
+		expect(playerView(room, 'sam').grimView).toBe(true);
+		expect(playerView(room, 'alex').grimView).toBeUndefined();
 	});
 
-	it('ignores anything that is not a SHA-256 hash', () => {
-		const on = setViewers(newRoom('host'), hash);
-		expect(setViewers(on, 'short')).toBe(on);
-		expect(setViewers(on, 42)).toBe(on);
-		expect(setViewers(on, undefined)).toBe(on);
+	it('is taken away with an empty list, and ignores anything not a list', () => {
+		const on = setGrimViewers(roomWith('alex'), ['alex']);
+		expect('grimViewers' in setGrimViewers(on, [])).toBe(false);
+		expect(setGrimViewers(on, 'alex')).toBe(on);
+		expect(setGrimViewers(on, undefined)).toBe(on);
 	});
 
-	it('never shows in what phones see before or after joining', () => {
-		const room = setViewers(roomWith('alex'), hash);
-		expect(JSON.stringify(roomPreview(room))).not.toContain(hash);
-		expect(JSON.stringify(playerView(room, 'alex'))).not.toContain(hash);
-		expect(JSON.stringify(hostView(room))).not.toContain(hash);
-	});
-
-	it('says when its key is made from a Grim view password, and nothing else of it', () => {
-		const room = setViewers(roomWith('alex'), hash, true);
-		expect(room.viewerPassword).toBe(true);
-		expect(roomPreview(room).grimView).toBe(true);
-		// A link with no password, or no link at all, offers no Grim view.
-		expect(roomPreview(setViewers(room, hash)).grimView).toBeUndefined();
-		expect(setViewers(room, hash).viewerPassword).toBeUndefined();
-		expect(roomPreview(setViewers(room, null)).grimView).toBeUndefined();
-	});
-
-	it('slows guessing: too many wrong keys stop viewers for a while', () => {
-		let fails = viewerFailed(undefined, 0);
-		for (let i = 1; i < MAX_VIEWER_FAILS; i++) {
-			expect(viewersLocked(fails, 1)).toBe(false);
-			fails = viewerFailed(fails, 1);
-		}
-		expect(viewersLocked(fails, 1)).toBe(true);
-		expect(viewersLocked(fails, VIEWER_FAIL_WINDOW_MS)).toBe(false);
-		// The next window starts the count again.
-		expect(viewerFailed(fails, VIEWER_FAIL_WINDOW_MS)).toEqual({
-			count: 1,
-			since: VIEWER_FAIL_WINDOW_MS
-		});
+	it('never shows before joining', () => {
+		const room = setGrimViewers(roomWith('alex'), ['alex']);
+		expect(JSON.stringify(roomPreview(room))).not.toContain('alex');
 	});
 
 	it('relays a grimoire only when it carries a saved game', () => {
