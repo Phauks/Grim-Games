@@ -42,6 +42,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { applyAppearance } from '#lib/ui/themes/apply.ts';
+	import { markMotion } from '#lib/ui/animations.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import type { LayoutProps } from './$types';
 
@@ -56,6 +57,10 @@
 			screen ? { ...preferences.current, colors: {} } : preferences.current
 		);
 	});
+
+	// Animations off (the Animations setting, or the device's Reduce motion), before the first
+	// render so nothing starts moving first.
+	$effect.pre(() => markMotion());
 
 	// The interface language for this device (English until another language exists).
 	$effect(() => {

@@ -245,17 +245,15 @@
 		);
 		animation-direction: reverse;
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.frame-drawing[data-motion],
-		.shine i {
-			animation: none;
-		}
-		.frame-drawing[data-motion='regrow'] {
-			mask-image: none;
-		}
-		.shine,
-		.sparkle {
-			display: none;
-		}
+	:global(:root[data-motion-off]) .frame-drawing[data-motion],
+	:global(:root[data-motion-off]) .shine i {
+		animation: none;
+	}
+	:global(:root[data-motion-off]) .frame-drawing[data-motion='regrow'] {
+		mask-image: none;
+	}
+	:global(:root[data-motion-off]) .shine,
+	:global(:root[data-motion-off]) .sparkle {
+		display: none;
 	}
 </style>

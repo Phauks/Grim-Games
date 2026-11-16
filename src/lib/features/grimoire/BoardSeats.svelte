@@ -430,7 +430,7 @@
 	:global(.holding) .slot:not(.dragging),
 	:global(.holding .tethers line:not(.held)) {
 		opacity: 0.35;
-		transition: opacity 0.15s;
+		transition: opacity var(--duration-fast);
 	}
 	.held-token {
 		position: absolute;

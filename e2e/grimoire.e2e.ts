@@ -5102,11 +5102,11 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 		}))
 	).toEqual({ fills: true, face: false });
 	// Trevor, 2026-11-13 (style B): the Dusk sun swells and its stars twinkle, and both hold
-	// still when the device asks for less motion.
+	// still while animations are off (here by the device's Reduce motion).
 	const moving = () => art.evaluate((el) => el.getAnimations({ subtree: true }).length);
 	expect(await moving()).toBeGreaterThan(0);
 	await page.emulateMedia({ reducedMotion: 'reduce' });
-	expect(await moving()).toBe(0);
+	await expect.poll(moving).toBe(0);
 	await page.emulateMedia({ reducedMotion: 'no-preference' });
 	const parts = () =>
 		step.evaluate((dialog) => ({
@@ -6528,7 +6528,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
 
-test('the night walk-through rises into place, and appears at once with reduced motion', async ({
+test('the night walk-through rises into place, and appears at once with animations off', async ({
 	page
 }) => {
 	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.

@@ -354,7 +354,7 @@
 		display: grid;
 		place-items: center;
 		flex: none;
-		transition: transform 0.15s ease;
+		transition: transform var(--duration-fast) ease;
 	}
 	.collapsible:not([data-open]) .caret {
 		transform: rotate(-90deg);
@@ -384,10 +384,5 @@
 	.count {
 		flex: none;
 		font-size: 0.75em;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.caret {
-			transition: none;
-		}
 	}
 </style>

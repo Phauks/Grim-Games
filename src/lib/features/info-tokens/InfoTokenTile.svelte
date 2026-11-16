@@ -145,7 +145,7 @@
 	@media (hover: hover) {
 		.actions {
 			opacity: 0;
-			transition: opacity 0.15s;
+			transition: opacity var(--duration-fast);
 		}
 		.tile:hover .actions,
 		.tile:focus-within .actions {

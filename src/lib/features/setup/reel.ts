@@ -26,6 +26,3 @@ export function spinReel<T>(
 		for (const timer of timers) clearTimeout(timer);
 	};
 }
-
-/** Whether reels should spin at all: not for someone who asked for reduced motion. */
-export const reelsMove = (): boolean => !matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -9,7 +9,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { untrack } from 'svelte';
-	import { reelsMove, spinReel } from './reel.ts';
+	import { spinReel } from './reel.ts';
+	import { animationsOn } from '#lib/ui/animations.svelte.ts';
 	import PlayerNameInput from './PlayerNameInput.svelte';
 	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
 	import { noLongPress } from '#lib/ui/no-long-press.ts';
@@ -104,7 +105,7 @@
 	}
 	function spin() {
 		spun = true;
-		if (reel.length < 2 || pair || !reelsMove()) return;
+		if (reel.length < 2 || pair || !animationsOn()) return;
 		cancelReel = spinReel(reel, (character) => (spinning = character), stopReel);
 	}
 	const shown = $derived(revealed && (!holdToReveal || held));

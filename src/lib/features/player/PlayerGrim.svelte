@@ -767,7 +767,7 @@
 	}
 	.holding .seat:not(.dragging) {
 		opacity: 0.35;
-		transition: opacity 0.15s;
+		transition: opacity var(--duration-fast);
 	}
 	.seat {
 		position: absolute;
