@@ -68,9 +68,21 @@ test('a report sent from the menu reaches the inbox, where it can be triaged and
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
-	// Still an admin after a reload, with no filter on again; delete confirms first.
+	// Still an admin after a reload, with no filter on again.
 	await page.reload();
 	await expect(table.getByRole('button', { name: 'Filter Status (set)' })).toHaveCount(0);
+
+	// Trevor, 2026-11-16: a second screen for finished reports, "closed, not finished". Done
+	// moves it from the Open tab to Closed; delete confirms first.
+	const tabs = page.getByRole('tablist', { name: 'Open or closed reports' });
+	await expect(tabs.getByRole('tab', { name: /^Open/ })).toHaveAttribute('aria-selected', 'true');
+	await row.getByRole('button', { name: title }).tap();
+	await report.getByRole('combobox', { name: 'Status' }).tap();
+	await page.getByRole('option', { name: 'Done' }).tap();
+	await report.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(row).toBeHidden();
+	await tabs.getByRole('tab', { name: /^Closed/ }).tap();
+	await expect(row).toContainText('Done');
 	await row.getByRole('button', { name: title }).tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
