@@ -36,14 +36,17 @@ import ph_clipboard_text from '~icons/ph/clipboard-text';
 import ph_clock_clockwise from '~icons/ph/clock-clockwise';
 import ph_clock_counter_clockwise from '~icons/ph/clock-counter-clockwise';
 import ph_coffee from '~icons/ph/coffee';
+import ph_compass from '~icons/ph/compass';
 import ph_copy from '~icons/ph/copy';
 import ph_crop from '~icons/ph/crop';
 import ph_database from '~icons/ph/database';
 import ph_device_mobile from '~icons/ph/device-mobile';
 import ph_door from '~icons/ph/door';
 import ph_dots_three from '~icons/ph/dots-three';
+import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_download_simple from '~icons/ph/download-simple';
 import ph_eraser from '~icons/ph/eraser';
+import ph_export from '~icons/ph/export';
 import ph_eye from '~icons/ph/eye';
 import ph_eye_slash from '~icons/ph/eye-slash';
 import ph_flask from '~icons/ph/flask';
@@ -97,6 +100,7 @@ import ph_person_simple_walk from '~icons/ph/person-simple-walk';
 import ph_play from '~icons/ph/play';
 import ph_play_circle from '~icons/ph/play-circle';
 import ph_plus from '~icons/ph/plus';
+import ph_plus_square from '~icons/ph/plus-square';
 import ph_poker_chip from '~icons/ph/poker-chip';
 import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
@@ -172,14 +176,17 @@ const icons: IconMap = {
 	'ph:clock-clockwise': ph_clock_clockwise,
 	'ph:clock-counter-clockwise': ph_clock_counter_clockwise,
 	'ph:coffee': ph_coffee,
+	'ph:compass': ph_compass,
 	'ph:copy': ph_copy,
 	'ph:crop': ph_crop,
 	'ph:database': ph_database,
 	'ph:device-mobile': ph_device_mobile,
 	'ph:door': ph_door,
 	'ph:dots-three': ph_dots_three,
+	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:download-simple': ph_download_simple,
 	'ph:eraser': ph_eraser,
+	'ph:export': ph_export,
 	'ph:eye': ph_eye,
 	'ph:eye-slash': ph_eye_slash,
 	'ph:flask': ph_flask,
@@ -233,6 +240,7 @@ const icons: IconMap = {
 	'ph:play': ph_play,
 	'ph:play-circle': ph_play_circle,
 	'ph:plus': ph_plus,
+	'ph:plus-square': ph_plus_square,
 	'ph:poker-chip': ph_poker_chip,
 	'ph:printer': ph_printer,
 	'ph:prohibit': ph_prohibit,
