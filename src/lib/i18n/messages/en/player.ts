@@ -200,6 +200,7 @@ export const player = {
 	'player.jinxedWith': 'Jinxed with {names}',
 	'player.seating.open': 'Seating is open',
 	'player.seating.tapOpen': 'Tap an open seat',
+	'player.seating.setName': 'Set your name',
 	'player.seating.dragYours': 'Drag your seat to where you sit',
 	'player.seating.drag': 'Your seat: drag it to where you sit',
 	'player.seating.between': 'Between',
