@@ -267,15 +267,12 @@
 						{t('room.transfer.button')}
 					</Button>
 				{/if}
-				<!-- End game is always here (Trevor, 2026-11-15: "There should always be a game end
-				     button"), disabled once the game is over; New game comes under it then. -->
-				<Button
-					disabled={watching || ended}
-					variant="danger"
-					icon="close"
-					onclick={() => fromMenu(onEnd)}>End game</Button
-				>
-				{#if ended && newGame}
+				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+				{#if !ended}
+					<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
+						>End game</Button
+					>
+				{:else if newGame}
 					<Button
 						disabled={watching}
 						variant="quiet"
