@@ -271,10 +271,6 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		'Connected'
 	);
 	await expect(page.getByTestId('status-players')).toHaveText('1 player');
-	// Who is watching, on the Grimoire tab (Trevor, 2026-10-31).
-	await page.getByRole('tab', { name: 'Grimoire' }).tap();
-	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
-	await page.getByRole('tab', { name: 'Players' }).tap();
 	// New code deletes the old room, sending the phone back to the code form.
 	await page.getByRole('button', { name: 'New code' }).tap();
 	await page
@@ -520,7 +516,6 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(finalSwitch).toHaveCount(0);
 	// Share grim isn't on Share (Trevor, 2026-10-31: "totally misplaced"), nor in ⋯ until the
 	// game is over.
-	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(page.getByRole('button', { name: 'Share grim' })).toHaveCount(0);
 
 	await page.goto(board);
@@ -1608,12 +1603,14 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	).toHaveCount(1);
 	await expect(viewer.getByText('Only the Storyteller can change this game.')).toHaveCount(0);
 	// Game info, from the corner where it shows, has no pencil for a viewer.
-	const corner = viewer.getByTestId('mode-menu');
+	const corner = viewer.getByTestId('grim-view-board').getByTestId('mode-menu');
 	if (await corner.isVisible()) {
 		await corner.tap();
 		await expect(viewer.getByRole('dialog', { name: 'Game info', exact: true })).toBeVisible();
 		await expect(viewer.getByTestId('game-info-edit')).toHaveCount(0);
 		await viewer.keyboard.press('Escape');
+		await expect(viewer.getByRole('dialog', { name: 'Game info', exact: true })).toBeHidden();
+		await expect(viewer.getByTestId('grim-view-board')).toBeVisible();
 	}
 
 	// The Storyteller's changes show live.
@@ -1655,7 +1652,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	if ((await page.getByRole('dialog').count()) > 0) await page.keyboard.press('Escape');
 	await closeBin(page);
 	// On the board, not the bank's disabled copy.
-	await viewer.locator('button[aria-label^="Generic reminder"]:enabled').tap();
+	await viewer
+		.getByTestId('grim-view-board')
+		.locator('button[aria-label^="Generic reminder"]:enabled')
+		.tap();
 	const about = viewer.getByRole('dialog', { name: /^Generic reminder/ });
 	await expect(about).toBeVisible();
 	await expect(about.getByRole('button', { name: 'Remove reminder' })).toHaveCount(0);
