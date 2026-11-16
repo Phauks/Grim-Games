@@ -63,6 +63,15 @@ async function startGame(page: Page, script = 'Trouble Brewing') {
 }
 
 /** A seat by the start of its label; the board is hidden from the a11y tree under a sheet. */
+/** Dismisses the toasts showing, one at a time, each gone before the next. */
+async function dismissToasts(page: Page) {
+	const close = page.getByRole('button', { name: 'Dismiss' });
+	for (let left = await close.count(); left > 0; left--) {
+		await close.first().tap();
+		await expect(close).toHaveCount(left - 1);
+	}
+}
+
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
@@ -1061,12 +1070,14 @@ test('every reminder on a crowded seat is shown and can be dragged off', async (
 		'Wrong',
 		'Wrong',
 		'Is The Drunk'
-	])
+	]) {
 		await putReminder(page, label, 4);
+		// A token put where it doesn't usually go says so in a toast, which sits over the bank's
+		// Every reminder button for its 3 s: dismissed, as a player in a hurry would, so seven
+		// tokens don't spend the test's time waiting for toasts to leave.
+		await dismissToasts(page);
+	}
 	await expect(seatLabelled(page, 'Seat 4: no name, Drunk, 7 reminders')).toBeAttached();
-
-	// Tokens put where they don't usually go say so in toasts; they leave by themselves.
-	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Each one is on the board and on top where it sits, so a finger can take any of them.
 	// (The bank, under the board, keeps its generic ∞ reminder.)
