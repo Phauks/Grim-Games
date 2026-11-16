@@ -181,6 +181,7 @@ export const player = {
 	'player.printQrLabel': 'QR code for {name}',
 	'player.printNightStrips': 'Night order down the sides',
 	'player.printRuleCharacters': 'Fabled and Loric',
+	'player.showJinxesOnly': '{name} on script sheets',
 	'player.printColumns': 'Columns',
 	'player.printColumns.auto': 'Automatic',
 	'player.printColumns.one': 'One',
