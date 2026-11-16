@@ -20,7 +20,7 @@
 	import { REPORT_KINDS, REPORT_LIMITS, type ReportKind } from './reports-protocol.ts';
 
 	// The one Report form (Trevor, 2026-10-17: reports go to our Worker, not GitHub). Nothing
-	// leaves the device until Send, and "Sent with it" shows everything sent besides the text.
+	// leaves the device until Send, and "Metadata" shows everything sent besides the text.
 
 	let kind = $state<ReportKind>('bug');
 	let title = $state('');
@@ -154,7 +154,7 @@
 					onChange={(v) => (includeDetails = v)}
 				/>
 			{/if}
-			<Collapsible title={t('reports.sentWith')} level={3}>
+			<Collapsible title={t('reports.metadata')} level={3}>
 				<dl class="sent-with">
 					<dt>{t('reports.page')}</dt>
 					<dd>{page}</dd>

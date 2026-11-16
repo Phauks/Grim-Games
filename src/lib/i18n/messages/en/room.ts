@@ -320,6 +320,7 @@ export const room = {
 	'room.town.fillScreen': 'Fill the screen',
 	// Live games: admins watch any open room, unseen (plan J31, Trevor 2026-10-26)
 	'room.liveGames.title': 'Live games',
+	'room.liveGames.boardProblem': "The Storyteller's grimoire can't be shown",
 	'room.liveGames.code': 'Code',
 	'room.liveGames.script': 'Script',
 	'room.liveGames.storyteller': 'Storyteller',

@@ -58,6 +58,11 @@
 		drop?: boolean;
 		/** The seat a dragged reminder is being moved from (Trevor, 2026-10-20): a dashed ring. */
 		from?: boolean;
+		/**
+		 * Whether a new laurel grows in. Off where the player is picking one (the Profile),
+		 * since the arrival means nothing there (Trevor, 2026-11-16).
+		 */
+		growIn?: boolean;
 	}
 
 	let {
@@ -76,7 +81,8 @@
 		role,
 		misfit = false,
 		drop = false,
-		from = false
+		from = false,
+		growIn = true
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -93,7 +99,7 @@
 		const id = frame?.id;
 		if (id === shown) return;
 		shown = id;
-		growing = untrack(() => framed);
+		growing = untrack(() => framed && growIn);
 	});
 </script>
 
