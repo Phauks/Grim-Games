@@ -1,34 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { historyStats, type GameRecord } from '#lib/core/stats/index.ts';
-	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import { loadGameRecords } from '#lib/features/history/records.ts';
+	import { HistorySummary } from '#lib/features/history/history-summary.svelte.ts';
+	import { profileDialog } from '#lib/features/player/profile-dialog.svelte.ts';
 	import ProfileAvatar from '#lib/features/player/ProfileAvatar.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
-	import { intl, t } from '#lib/i18n/locale.svelte.ts';
-	import { openSettings } from './shell.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * Home's player card (Trevor, 2026-11-06: "a stats screen above as a player, shows the
 	 * account image, with current customization settings"): the Profile's avatar in its laurel,
-	 * the name and tag-line, then History's summary counts. A tap opens the Profile.
+	 * the name and tag-line, then History's summary counts. A tap opens the Profile dialog.
 	 */
-	let records = $state.raw<GameRecord[]>([]);
-	onMount(() => {
-		loadGameRecords()
-			.then((r) => (records = r))
-			.catch((e: unknown) => reportError(e, { area: 'history' }));
-	});
-	const summary = $derived(historyStats(records).summary);
+	const history = new HistorySummary();
+	onMount(() => history.load());
 	const name = $derived(joinedRoom.player?.view?.me.name ?? savedPlayerName());
 	const tagline = $derived(playerSettings.current.flavour);
-	const stats = $derived([
-		{ label: t('history.games'), value: summary.games },
-		{ label: t('history.goodWins'), value: summary.wins.good },
-		{ label: t('history.evilWins'), value: summary.wins.evil }
-	]);
 </script>
 
 <button
@@ -36,7 +24,7 @@
 	class="card"
 	data-testid="home-profile"
 	aria-label={t('player.profile')}
-	onclick={() => openSettings('profile')}
+	onclick={() => profileDialog.show()}
 >
 	<span class="avatar"><ProfileAvatar /></span>
 	<span class="who">
@@ -45,10 +33,10 @@
 		<span class="tagline">{tagline || ''}</span>
 	</span>
 	<dl class="stats">
-		{#each stats as stat (stat.label)}
+		{#each history.counts as stat (stat.label)}
 			<div>
 				<dt>{stat.label}</dt>
-				<dd>{intl.number(stat.value)}</dd>
+				<dd>{stat.value}</dd>
 			</div>
 		{/each}
 	</dl>

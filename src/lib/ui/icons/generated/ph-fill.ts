@@ -123,6 +123,7 @@ import ph_hexagon_fill from '~icons/ph/hexagon-fill';
 import ph_hourglass_fill from '~icons/ph/hourglass-fill';
 import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
+import ph_identification_badge_fill from '~icons/ph/identification-badge-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
 import ph_image_fill from '~icons/ph/image-fill';
 import ph_image_square_fill from '~icons/ph/image-square-fill';
@@ -231,6 +232,7 @@ import ph_umbrella_fill from '~icons/ph/umbrella-fill';
 import ph_upload_simple_fill from '~icons/ph/upload-simple-fill';
 import ph_user_fill from '~icons/ph/user-fill';
 import ph_user_circle_fill from '~icons/ph/user-circle-fill';
+import ph_user_focus_fill from '~icons/ph/user-focus-fill';
 import ph_user_gear_fill from '~icons/ph/user-gear-fill';
 import ph_user_list_fill from '~icons/ph/user-list-fill';
 import ph_user_plus_fill from '~icons/ph/user-plus-fill';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:hourglass-fill': ph_hourglass_fill,
 	'ph:house-fill': ph_house_fill,
 	'ph:house-simple-fill': ph_house_simple_fill,
+	'ph:identification-badge-fill': ph_identification_badge_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
 	'ph:image-fill': ph_image_fill,
 	'ph:image-square-fill': ph_image_square_fill,
@@ -478,6 +481,7 @@ const icons: IconMap = {
 	'ph:upload-simple-fill': ph_upload_simple_fill,
 	'ph:user-fill': ph_user_fill,
 	'ph:user-circle-fill': ph_user_circle_fill,
+	'ph:user-focus-fill': ph_user_focus_fill,
 	'ph:user-gear-fill': ph_user_gear_fill,
 	'ph:user-list-fill': ph_user_list_fill,
 	'ph:user-plus-fill': ph_user_plus_fill,

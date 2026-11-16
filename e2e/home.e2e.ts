@@ -58,6 +58,6 @@ test('Home shows your Profile and History counts, and opens the Profile', async 
 	await expect(card.getByTestId('profile-avatar')).toBeVisible();
 	await expect(card.getByRole('definition')).toHaveText(['0', '0', '0']);
 	await card.tap();
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await expect(dialog.getByRole('heading', { name: 'Profile', level: 2 })).toBeVisible();
+	// The Profile's own dialog (Trevor, 2026-11-15).
+	await expect(page.getByRole('dialog', { name: 'Profile', exact: true })).toBeVisible();
 });

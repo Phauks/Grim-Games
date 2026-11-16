@@ -25,6 +25,13 @@ interface OneRowParts {
 export function oneRow(parts: OneRowParts, ...layout: unknown[]): Attachment<HTMLElement> {
 	void layout;
 	return (node) => {
+		/**
+		 * The row's width at which the title, put beside its buttons, still wrapped or shrank: a
+		 * phone measured it as fitting when it did not (Trevor, 2026-11-16: "TR / OU / BLE" on
+		 * /play). The title stays under the buttons at that width, whatever the measure says.
+		 */
+		let squeezedAt: number | undefined;
+		/** Its one-line width at full size, and whether it now wraps or is shrunk to fit. */
 		const titleWidth = (title: HTMLElement) => {
 			// Every fitWords share set inside, put back to full size for the measure.
 			const fitted = [title, ...title.querySelectorAll<HTMLElement>('*')].filter((el) =>
@@ -36,19 +43,24 @@ export function oneRow(parts: OneRowParts, ...layout: unknown[]): Attachment<HTM
 			// the title's own box may stretch to fill its row.
 			const children = [...title.children] as HTMLElement[];
 			const pieces = children.length ? children : [title];
+			let wraps = false;
 			const widths = pieces.map((el) => {
+				const shown = el.getBoundingClientRect().height;
 				const { width, whiteSpace } = el.style;
 				el.style.width = 'max-content';
 				el.style.whiteSpace = 'nowrap';
-				const w = el.getBoundingClientRect().width;
+				const line = el.getBoundingClientRect();
 				el.style.width = width;
 				el.style.whiteSpace = whiteSpace;
-				return w;
+				// Taller as shown than on one line: its words wrap (half a line spare for rounding).
+				if (shown > line.height * 1.5) wraps = true;
+				return line.width;
 			});
 			const gap = parseFloat(getComputedStyle(title).columnGap) || 0;
 			const measured = widths.reduce((sum, w) => sum + w, 0) + gap * (widths.length - 1);
 			fitted.forEach((el, i) => el.style.setProperty('--fit', shares[i]));
-			return measured;
+			const shrunk = shares.some((share) => parseFloat(share) < 1);
+			return { width: measured, squeezed: wraps || shrunk };
 		};
 		const actionsWidth = (actions: HTMLElement) => {
 			const buttons = [...actions.children].filter(
@@ -78,9 +90,15 @@ export function oneRow(parts: OneRowParts, ...layout: unknown[]): Attachment<HTM
 			}
 			const others = (parts.others?.() ?? []).filter((el): el is HTMLElement => !!el);
 			const gap = parseFloat(getComputedStyle(node).columnGap) || 0;
-			const items = [titleWidth(title), actionsWidth(actions)].concat(others.map(widthOf));
+			const room = node.clientWidth;
+			const measured = titleWidth(title);
+			// Checked on the screen as well as measured: beside the buttons, the title must show
+			// on one line at full size, or it goes under them for as long as the row keeps this width.
+			if (squeezedAt !== room) squeezedAt = undefined;
+			if (node.dataset.oneRow !== undefined && measured.squeezed) squeezedAt = room;
+			const items = [measured.width, actionsWidth(actions)].concat(others.map(widthOf));
 			const needed = items.reduce((sum, w) => sum + w, 0) + gap * (items.length - 1);
-			const fits = needed <= node.clientWidth - 1;
+			const fits = needed <= room - 1 && squeezedAt === undefined;
 			if (fits) node.dataset.oneRow = '';
 			else delete node.dataset.oneRow;
 		};

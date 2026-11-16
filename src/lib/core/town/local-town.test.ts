@@ -3,12 +3,15 @@ import {
 	LOCAL_TOWN_MAX_SEATS,
 	emptyTown,
 	localPublicSeats,
+	moveSeat,
 	parseLocalTown,
+	placeSeats,
 	renameSeat,
 	setDead,
 	setTraveller,
 	setVoteUsed,
 	startingTown,
+	swapSeats,
 	withSeatCount
 } from './local-town.ts';
 
@@ -81,5 +84,37 @@ describe('local town', () => {
 				]
 			}).seats
 		).toEqual([{ id: 's1', name: 'Sam', dead: true, voteUsed: true }, { id: 's2' }]);
+	});
+
+	// Trevor, 2026-11-15: "In a local only grim, should be able to arrange tokens as desired".
+	it('keeps where the player placed seats, for seats it still has', () => {
+		const town = placeSeats(withSeatCount(emptyTown(), 5), {
+			s2: { x: 10, y: 20 },
+			gone: { x: 1, y: 1 }
+		});
+		expect(town.placed).toEqual({ s2: { x: 10, y: 20 } });
+		expect(parseLocalTown(JSON.parse(JSON.stringify(town))).placed).toEqual(town.placed);
+		// A seat dropped by the count takes its place with it; none left keeps nothing.
+		expect(withSeatCount(town, 1).placed).toBeUndefined();
+		expect(withSeatCount(town, 3).placed).toEqual({ s2: { x: 10, y: 20 } });
+		expect(placeSeats(town, {}).placed).toBeUndefined();
+		// Places off the board, or not numbers, are not read.
+		const odd = parseLocalTown({
+			v: 1,
+			seats: [{ id: 's1' }, { id: 's2' }],
+			placed: { s1: { x: 150, y: 5 }, s2: { x: '5', y: 5 } }
+		});
+		expect(odd.placed).toBeUndefined();
+	});
+
+	it('swaps two players, who keep their names and marks, and moves one along the table', () => {
+		const town = setDead(renameSeat(withSeatCount(emptyTown(), 4), 's1', 'Ana'), 's4', true);
+		const swapped = swapSeats(town, 's1', 's4');
+		expect(swapped.seats.map((s) => s.id)).toEqual(['s4', 's2', 's3', 's1']);
+		expect(localPublicSeats(swapped)[3]).toMatchObject({ seatId: 's1', playerName: 'Ana' });
+		expect(localPublicSeats(swapped)[0]).toMatchObject({ seatId: 's4', seatNumber: 1, dead: true });
+		expect(swapSeats(town, 's1', 'nobody')).toBe(town);
+		expect(moveSeat(town, 's4', 1).seats.map((s) => s.id)).toEqual(['s1', 's4', 's2', 's3']);
+		expect(moveSeat(town, 's1', 99).seats.map((s) => s.id)).toEqual(['s2', 's3', 's4', 's1']);
 	});
 });

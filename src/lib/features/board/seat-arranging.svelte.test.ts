@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { SeatId } from '#lib/core/model/index.ts';
 import { DEFAULT_SEAT_LAYOUT, type SeatLayout } from '#lib/ui/seating/seat-layout.ts';
-import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import { SeatArranging } from './seat-arranging.svelte.ts';
 
-const seating = ['a', 'b', 'c'] as SeatId[];
+const seating = ['a', 'b', 'c'];
 const points = [
 	{ x: 20, y: 50 },
 	{ x: 50, y: 20 },
@@ -12,25 +10,32 @@ const points = [
 ];
 
 /** A board 200px square, its element at the page's top left. */
-function setup({ arranging = true } = {}) {
+function setup({
+	arranging = true,
+	toLayout
+}: {
+	arranging?: boolean;
+	toLayout?: (p: { x: number; y: number }) => { x: number; y: number };
+} = {}) {
 	const runs: unknown[] = [];
 	const layouts: SeatLayout[] = [];
-	const grimoire = {
-		layout: DEFAULT_SEAT_LAYOUT,
-		run: (command: unknown) => (runs.push(command), true),
+	const table = {
+		swap: (seatA: string, seatB: string) => (runs.push({ swap: [seatA, seatB] }), true),
+		move: (seatId: string, position: number) => runs.push({ move: [seatId, position] }),
 		setLayout: (layout: SeatLayout) => layouts.push(layout)
-	} as unknown as Grimoire;
+	};
 	const element = {
 		getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height: 200 })
 	} as HTMLElement;
 	const arrange = new SeatArranging(() => ({
-		grimoire,
+		table,
 		seating,
 		layout: DEFAULT_SEAT_LAYOUT,
 		points,
 		size: 40,
 		board: { width: 200, height: 200 },
-		element
+		element,
+		toLayout
 	}));
 	arrange.arranging = arranging;
 	return { arrange, runs, layouts };
@@ -90,7 +95,7 @@ describe('SeatArranging', () => {
 		arrange.dragMove(pointer(158, 100));
 		expect(arrange.reorderTarget).toBe('c');
 		arrange.dragEnd(pointer(158, 100));
-		expect(runs).toEqual([{ type: 'SwapSeats', seatA: 'a', seatB: 'c' }]);
+		expect(runs).toEqual([{ swap: ['a', 'c'] }]);
 	});
 
 	it('ignores a press that does not move past the slop', () => {
@@ -114,5 +119,14 @@ describe('SeatArranging', () => {
 		const event = new KeyboardEvent('keydown', { key: 'ArrowRight' });
 		arrange.nudge(event, seating[2], points[2]);
 		expect(layouts.at(-1)?.placed).toEqual({ c: { x: 82, y: 50 } });
+	});
+
+	it("keeps a place in the layout's own area, as a player's ring above their tray", () => {
+		// The ring is the board's top half: a point half way down the board is its foot.
+		const { arrange, layouts } = setup({ toLayout: (p) => ({ x: p.x, y: p.y * 2 }) });
+		arrange.dragStart(pointer(40, 100), seating[0], points[0]);
+		arrange.dragMove(pointer(60, 60));
+		arrange.dragEnd(pointer(60, 60));
+		expect(layouts.at(-1)?.placed).toEqual({ a: { x: 30, y: 60 } });
 	});
 });

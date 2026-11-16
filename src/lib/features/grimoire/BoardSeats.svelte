@@ -16,18 +16,19 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminderChip from '#lib/features/board/BoardReminderChip.svelte';
-	import { isOrphan, reminderPlacing } from './board.ts';
+	import { reminderPlacing, seatIssues } from './board.ts';
 	import { placedLook } from '#lib/features/board/reminders.ts';
 	import ReminderTethers from '#lib/features/board/ReminderTethers.svelte';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 	import type { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
-	import type { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import type { SeatHints } from '#lib/features/grimoire/seats/seat-hints.svelte.ts';
 	import type { PhaseFlow } from './phase-flow.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SeatMarksSheet from '#lib/features/grimoire/seats/SeatMarksSheet.svelte';
+	import SeatIssuesSheet from '#lib/features/grimoire/seats/SeatIssuesSheet.svelte';
 	import SeatToken from '#lib/features/grimoire/seats/SeatToken.svelte';
 	import {
 		remindersBeside,
@@ -141,6 +142,15 @@
 	const marksTitle = $derived(
 		marksSeat ? (marksSeat.playerName ?? t('common.seat', { number: (marksOf ?? 0) + 1 })) : ''
 	);
+	/** What is wrong with each seat (the top-middle mark), and the seat whose issues are open. */
+	const issues = $derived(
+		seats.map((seat) => seatIssues(seat, game.script, characters, offScriptOk))
+	);
+	let issuesOf = $state<number | undefined>();
+	const issuesSeat = $derived(issuesOf === undefined ? undefined : seats[issuesOf]);
+	const issuesTitle = $derived(
+		issuesSeat ? (issuesSeat.playerName ?? t('common.seat', { number: (issuesOf ?? 0) + 1 })) : ''
+	);
 	const truthsInPill = $derived(bigToken !== 'reminders');
 	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, bigToken)));
 	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
@@ -222,7 +232,7 @@
 						other: nightNumbers.other.get(seat.characterId)
 					}
 				: undefined}
-			orphan={isOrphan(seat, game.script, characters, offScriptOk)}
+			issues={issues[i]}
 			nominations={nominations(seat.seatId)}
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 			heldAbilities={vanilla ? [] : held[i]}
@@ -247,7 +257,9 @@
 					? executionPick.pick(seat.seatId)
 					: part === 'marks'
 						? (marksOf = i)
-						: onSeat(seat.seatId, part))}
+						: part === 'issues'
+							? (issuesOf = i)
+							: onSeat(seat.seatId, part))}
 			onHold={seatArr.arranging || watching ? undefined : (on) => on && seatArr.held(seat.seatId)}
 			onGhostVote={() =>
 				!seatArr.arranging &&
@@ -378,6 +390,16 @@
 		madAs={madAs[k]}
 		pretends={pretends.get(seat.seatId)}
 		onReminder={watching ? undefined : (reminderId) => onReminder(seat.seatId, reminderId)}
+	/>
+{/if}
+
+<!-- What is wrong with a seat, opened by tapping its warning mark (Trevor, 2026-11-15). -->
+{#if issuesOf !== undefined && seats[issuesOf]}
+	<SeatIssuesSheet
+		bind:open={() => issuesOf !== undefined, (open) => !open && (issuesOf = undefined)}
+		title={issuesTitle}
+		issues={issues[issuesOf]}
+		{characters}
 	/>
 {/if}
 

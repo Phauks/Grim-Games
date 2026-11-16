@@ -16,6 +16,7 @@
 	import { startAccount } from '#lib/features/account/start.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import { profileDialog } from '#lib/features/player/profile-dialog.svelte.ts';
 	import {
 		isMissingBuildFile,
 		isMissingPageFile,
@@ -111,6 +112,22 @@
 		return () => clearTimeout(id);
 	});
 
+	// The Profile dialog loads the first time it opens (Trevor, 2026-11-15: its own dialog).
+	let ProfileDialog = $state<Component>();
+	let loadingProfile: Promise<unknown> | undefined;
+	$effect(() => {
+		if (!profileDialog.open) return;
+		loadingProfile ??= import('#lib/features/player/ProfileDialog.svelte').then(
+			(module) => (ProfileDialog = module.default),
+			(error: unknown) => {
+				loadingProfile = undefined;
+				profileDialog.open = false;
+				if (isMissingBuildFile(error) && recoverMissingFile()) return;
+				reportError(error, { area: 'settings' });
+			}
+		);
+	});
+
 	// A downloaded build takes over by itself where that interrupts nothing (auto-update.svelte.ts).
 	$effect(() => watchAway(() => !showsAppShell(page.data)));
 	// Inside the Character Lab's game frame, each new lab game opens in this app (lab-frame.ts).
@@ -176,6 +193,7 @@
 </div>
 
 <SettingsModal />
+<ProfileDialog />
 <NavDrawer />
 <GlossaryPopover />
 <!-- A toast's character slots (slots.ts) draw as badges: names always show as badges. -->
