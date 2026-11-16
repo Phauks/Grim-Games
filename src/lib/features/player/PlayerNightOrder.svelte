@@ -51,7 +51,8 @@
 				{/each}
 			</ol>
 		{/snippet}
-		<!-- Each night closes from its header on screen, remembered here (Trevor, 2026-10-19). -->
+		<!-- Each night closes from its header on screen, remembered here (Trevor, 2026-10-19), a
+		     filled band like the Script sheet's Players (Trevor, 2026-11-16). -->
 		<section data-night={n.night}>
 			{#if flat}
 				<h2>{title}</h2>
@@ -60,6 +61,7 @@
 				<Collapsible
 					{title}
 					storageKey="play:night-{n.night}"
+					band="fill"
 					count={n.entries.filter((e) => e.kind === 'character').length}
 					>{@render list()}</Collapsible
 				>
