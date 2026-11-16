@@ -6,6 +6,7 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import BagDrawRows from './BagDrawRows.svelte';
 	import { gameSettings } from './game-settings.svelte.ts';
 
@@ -18,6 +19,8 @@
 	let { gameId }: { gameId: string } = $props();
 
 	const values = $derived(gameSettings.of(gameId));
+	/** The open game's room: whether its spectators may message (Trevor, 2026-11-16: in Game settings). */
+	const host = roomHost();
 	type Tab = 'day' | 'bag';
 	const tabs: { value: Tab; label: string }[] = [
 		{ value: 'day', label: t('settings.groupDay') },
@@ -46,6 +49,13 @@
 					}))}
 					defaultValue="candles"
 					onChange={(setupForPlayers) => gameSettings.set(gameId, { setupForPlayers })}
+				/>
+				<!-- Off until the game has a room, so the row never appears later and moves the others. -->
+				<SettingToggle
+					label={t('room.spectators.mayMessage')}
+					checked={!host.inbox.spectatorsMuted}
+					disabled={!host.code}
+					onChange={(on) => host.inbox.allowSpectators(on)}
 				/>
 			{:else}
 				<BagDrawRows {values} onChange={(change) => gameSettings.set(gameId, change)} />
