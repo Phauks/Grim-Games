@@ -20,9 +20,11 @@
 		/** Where the pane shows beside the board, if it can (none on a phone). */
 		beside?: BesidePlacement;
 		children: Snippet;
+		/** Fills the box it is in, not the screen: the final grimoire's dialog (2026-11-15). */
+		fill?: boolean;
 	}
 
-	let { grimoire, watching, beside = $bindable(), children }: Props = $props();
+	let { grimoire, watching, beside = $bindable(), fill = false, children }: Props = $props();
 
 	let width = $state(0);
 	let height = $state(0);
@@ -35,7 +37,7 @@
 <svelte:window bind:innerWidth={width} bind:innerHeight={height} />
 
 <!-- The board's height, the screen's within its safe areas, unless it shares it (--panel-room). -->
-<div class="board-pane">
+<div class="board-pane" class:fill>
 	<BesidePane
 		placement={shown ? beside : undefined}
 		label={t('room.players.pane')}
@@ -64,6 +66,12 @@
 <style>
 	.board-pane {
 		--board-room: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+	}
+	.board-pane.fill,
+	.board-pane.fill > :global(.beside),
+	.board-pane.fill > :global(.beside > .main) {
+		--board-room: 100%;
+		height: 100%;
 	}
 	/* The pane's own inset from the screen's edge, as the toolbar's; Players has no sheet edge
 	   to reach out to. */

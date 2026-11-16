@@ -792,8 +792,8 @@
 	/>
 {/snippet}
 
-<BoardPane {grimoire} {watching} bind:beside={paneAt}>
-	<div class="grimoire" class:in-box={!toolbar} bind:this={grimoireEl}>
+<BoardPane {grimoire} {watching} fill={!toolbar} bind:beside={paneAt}>
+	<div class="grimoire" bind:this={grimoireEl}>
 		<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
 		<div
 			class="strip-measure"
@@ -1201,10 +1201,6 @@
 		/* Or, over its pane on an upright tablet, the share BoardPane gives it. */
 		height: var(--panel-room, var(--board-room));
 		min-height: calc(20 * var(--u));
-	}
-	/* In a dialog's body (the final grimoire): that body's height, not the screen's. */
-	.grimoire.in-box {
-		height: 100%;
 	}
 	/* The board page's scroll lock is in GrimoirePage: a board inside a scrolling page (the
 	   final grimoire on a phone, Public Town) leaves that page free to scroll. */
