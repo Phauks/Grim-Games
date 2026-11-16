@@ -113,6 +113,27 @@ export function isOrphan(
 }
 
 /**
+ * Something wrong with a seat that the Storyteller should look at, shown by the warning mark at
+ * the top middle of the seat and said in words when it is tapped (Trevor, 2026-11-15: "a generic
+ * error toggle ... allows it to grow to include other potential issues"). A new kind goes here,
+ * in `seatIssues`, and in SeatIssuesSheet.
+ */
+export type SeatIssue = { kind: 'off-script'; characterId: CharacterId };
+
+/** The seat's issues, in the order the sheet lists them; none for a seat that is fine. */
+export function seatIssues(
+	seat: Seat,
+	script: Script,
+	characters: CharacterLookup,
+	allowed: ReadonlySet<CharacterId> = new Set()
+): SeatIssue[] {
+	const issues: SeatIssue[] = [];
+	if (seat.characterId !== undefined && isOrphan(seat, script, characters, allowed))
+		issues.push({ kind: 'off-script', characterId: seat.characterId });
+	return issues;
+}
+
+/**
  * A death cause that is a character's ability (the Slayer, the Witch), or undefined for the
  * causes with their own words. Screens show that character as a badge (CauseName).
  */

@@ -123,6 +123,7 @@ import ph_hexagon_thin from '~icons/ph/hexagon-thin';
 import ph_hourglass_thin from '~icons/ph/hourglass-thin';
 import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
+import ph_identification_badge_thin from '~icons/ph/identification-badge-thin';
 import ph_identification_card_thin from '~icons/ph/identification-card-thin';
 import ph_image_thin from '~icons/ph/image-thin';
 import ph_image_square_thin from '~icons/ph/image-square-thin';
@@ -231,6 +232,7 @@ import ph_umbrella_thin from '~icons/ph/umbrella-thin';
 import ph_upload_simple_thin from '~icons/ph/upload-simple-thin';
 import ph_user_thin from '~icons/ph/user-thin';
 import ph_user_circle_thin from '~icons/ph/user-circle-thin';
+import ph_user_focus_thin from '~icons/ph/user-focus-thin';
 import ph_user_gear_thin from '~icons/ph/user-gear-thin';
 import ph_user_list_thin from '~icons/ph/user-list-thin';
 import ph_user_plus_thin from '~icons/ph/user-plus-thin';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:hourglass-thin': ph_hourglass_thin,
 	'ph:house-thin': ph_house_thin,
 	'ph:house-simple-thin': ph_house_simple_thin,
+	'ph:identification-badge-thin': ph_identification_badge_thin,
 	'ph:identification-card-thin': ph_identification_card_thin,
 	'ph:image-thin': ph_image_thin,
 	'ph:image-square-thin': ph_image_square_thin,
@@ -478,6 +481,7 @@ const icons: IconMap = {
 	'ph:upload-simple-thin': ph_upload_simple_thin,
 	'ph:user-thin': ph_user_thin,
 	'ph:user-circle-thin': ph_user_circle_thin,
+	'ph:user-focus-thin': ph_user_focus_thin,
 	'ph:user-gear-thin': ph_user_gear_thin,
 	'ph:user-list-thin': ph_user_list_thin,
 	'ph:user-plus-thin': ph_user_plus_thin,

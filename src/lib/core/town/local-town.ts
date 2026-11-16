@@ -30,16 +30,30 @@ export interface LocalSeat {
 	traveller?: CharacterId;
 }
 
+/** A point in % of the ring's area (seat-layout.ts's SeatPoint). */
+export interface LocalPlace {
+	x: number;
+	y: number;
+}
+
 export interface LocalTown {
 	v: typeof LOCAL_TOWN_VERSION;
 	seats: LocalSeat[];
+	/**
+	 * Seats the player dragged to where people really sit (Trevor, 2026-11-15: "arrange tokens
+	 * as desired"), by seat id; the rest sit round the ring. Left out when none are.
+	 */
+	placed?: Record<string, LocalPlace>;
 }
 
 export const emptyTown = (): LocalTown => ({ v: LOCAL_TOWN_VERSION, seats: [] });
 
 /** A stored town, or an empty one when missing or unreadable. */
 export function parseLocalTown(raw: unknown): LocalTown {
-	const stored = (typeof raw === 'object' && raw !== null ? raw : {}) as { seats?: unknown };
+	const stored = (typeof raw === 'object' && raw !== null ? raw : {}) as {
+		seats?: unknown;
+		placed?: unknown;
+	};
 	if (!Array.isArray(stored.seats)) return emptyTown();
 	const seen = new Set<string>();
 	const seats: LocalSeat[] = [];
@@ -56,7 +70,60 @@ export function parseLocalTown(raw: unknown): LocalTown {
 		if (typeof traveller === 'string' && traveller !== '') seat.traveller = traveller;
 		seats.push(seat);
 	}
-	return { v: LOCAL_TOWN_VERSION, seats };
+	return withPlaces({ v: LOCAL_TOWN_VERSION, seats }, parsePlaces(stored));
+}
+
+const isPercent = (n: unknown): n is number =>
+	typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100;
+
+function parsePlaces(stored: { placed?: unknown }): Record<string, LocalPlace> {
+	const raw = stored.placed;
+	if (typeof raw !== 'object' || raw === null) return {};
+	const places: Record<string, LocalPlace> = {};
+	for (const [id, value] of Object.entries(raw)) {
+		const { x, y } = (typeof value === 'object' && value !== null ? value : {}) as Record<
+			string,
+			unknown
+		>;
+		if (isPercent(x) && isPercent(y)) places[id] = { x, y };
+	}
+	return places;
+}
+
+/** The town with `places` for its own seats only, and none kept when there are none. */
+function withPlaces(town: LocalTown, places: Record<string, LocalPlace> | undefined): LocalTown {
+	const ids = new Set(town.seats.map((s) => s.id));
+	const kept = Object.fromEntries(Object.entries(places ?? {}).filter(([id]) => ids.has(id)));
+	const out: LocalTown = { v: town.v, seats: town.seats };
+	if (Object.keys(kept).length) out.placed = kept;
+	return out;
+}
+
+/** The town with its seats drawn at `places` (by seat id) instead of round the ring. */
+export const placeSeats = (town: LocalTown, places: Record<string, LocalPlace>): LocalTown =>
+	withPlaces(town, places);
+
+/**
+ * Two players swap seats (as the board's SwapSeats): each keeps their name, marks, guesses
+ * and notes, and takes the other's place in the seating order.
+ */
+export function swapSeats(town: LocalTown, a: string, b: string): LocalTown {
+	const i = town.seats.findIndex((s) => s.id === a);
+	const j = town.seats.findIndex((s) => s.id === b);
+	if (i < 0 || j < 0 || i === j) return town;
+	const seats = [...town.seats];
+	[seats[i], seats[j]] = [seats[j], seats[i]];
+	return { ...town, seats };
+}
+
+/** A seat moves to `position` in the seating order (as the board's MoveSeat). */
+export function moveSeat(town: LocalTown, id: string, position: number): LocalTown {
+	const from = town.seats.findIndex((s) => s.id === id);
+	if (from < 0) return town;
+	const seats = town.seats.filter((s) => s.id !== id);
+	const to = Math.max(0, Math.min(seats.length, Math.round(position)));
+	seats.splice(to, 0, town.seats[from]);
+	return { ...town, seats };
 }
 
 const cleanName = (name: string) => name.trim().slice(0, MAX_LOCAL_NAME_LENGTH);
@@ -77,7 +144,7 @@ export function withSeatCount(town: LocalTown, count: number): LocalTown {
 	const target = Math.max(0, Math.min(LOCAL_TOWN_MAX_SEATS, Math.round(count)));
 	const seats = town.seats.slice(0, target);
 	while (seats.length < target) seats.push({ id: nextId(seats) });
-	return { ...town, seats };
+	return withPlaces({ ...town, seats }, town.placed);
 }
 
 /** A new town: seven empty seats, with no None, since every game has seats. */

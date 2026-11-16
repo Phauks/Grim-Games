@@ -7,6 +7,7 @@ import {
 	causeFlagText,
 	causeLabel,
 	isOrphan,
+	seatIssues,
 	placingAlignment,
 	recommendedTravellers,
 	reminderFitWarning,
@@ -63,6 +64,18 @@ describe('isOrphan', () => {
 		const allowed = new Set(['zombuul']);
 		expect(isOrphan(seat('zombuul'), tb, characters, allowed)).toBe(false);
 		expect(isOrphan(seat('pukka'), tb, characters, allowed)).toBe(true);
+	});
+});
+
+describe('seatIssues', () => {
+	// Trevor, 2026-11-15: the top-middle mark is a generic issue mark that says what is wrong.
+	it('lists a character not on the script, and nothing for a seat that is fine', () => {
+		expect(seatIssues(seat('zombuul'), tb, characters)).toEqual([
+			{ kind: 'off-script', characterId: 'zombuul' }
+		]);
+		expect(seatIssues(seat('imp'), tb, characters)).toEqual([]);
+		expect(seatIssues(seat(), tb, characters)).toEqual([]);
+		expect(seatIssues(seat('zombuul'), tb, characters, new Set(['zombuul']))).toEqual([]);
 	});
 });
 

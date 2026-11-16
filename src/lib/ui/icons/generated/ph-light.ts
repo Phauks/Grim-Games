@@ -123,6 +123,7 @@ import ph_hexagon_light from '~icons/ph/hexagon-light';
 import ph_hourglass_light from '~icons/ph/hourglass-light';
 import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
+import ph_identification_badge_light from '~icons/ph/identification-badge-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
 import ph_image_light from '~icons/ph/image-light';
 import ph_image_square_light from '~icons/ph/image-square-light';
@@ -231,6 +232,7 @@ import ph_umbrella_light from '~icons/ph/umbrella-light';
 import ph_upload_simple_light from '~icons/ph/upload-simple-light';
 import ph_user_light from '~icons/ph/user-light';
 import ph_user_circle_light from '~icons/ph/user-circle-light';
+import ph_user_focus_light from '~icons/ph/user-focus-light';
 import ph_user_gear_light from '~icons/ph/user-gear-light';
 import ph_user_list_light from '~icons/ph/user-list-light';
 import ph_user_plus_light from '~icons/ph/user-plus-light';
@@ -370,6 +372,7 @@ const icons: IconMap = {
 	'ph:hourglass-light': ph_hourglass_light,
 	'ph:house-light': ph_house_light,
 	'ph:house-simple-light': ph_house_simple_light,
+	'ph:identification-badge-light': ph_identification_badge_light,
 	'ph:identification-card-light': ph_identification_card_light,
 	'ph:image-light': ph_image_light,
 	'ph:image-square-light': ph_image_square_light,
@@ -478,6 +481,7 @@ const icons: IconMap = {
 	'ph:upload-simple-light': ph_upload_simple_light,
 	'ph:user-light': ph_user_light,
 	'ph:user-circle-light': ph_user_circle_light,
+	'ph:user-focus-light': ph_user_focus_light,
 	'ph:user-gear-light': ph_user_gear_light,
 	'ph:user-list-light': ph_user_list_light,
 	'ph:user-plus-light': ph_user_plus_light,

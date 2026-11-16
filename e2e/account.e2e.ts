@@ -514,7 +514,8 @@ test('Account in the menu keeps the account icon with a character token chosen',
 	await expect(page.getByRole('button', { name: 'Change icon' })).toHaveCount(0);
 	const settings = await openSettingsDialog(page);
 	await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
-	await settings.getByRole('button', { name: 'Change character token' }).tap();
+	const profile = page.getByRole('dialog', { name: 'Profile', exact: true });
+	await profile.getByRole('button', { name: 'Change character token' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Character token' });
 	await picker.getByRole('searchbox').fill('Fortune Teller');
 	await picker
@@ -522,8 +523,8 @@ test('Account in the menu keeps the account icon with a character token chosen',
 		.first()
 		.tap();
 	await expect(picker).toBeHidden();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
+	await profile.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(profile).toBeHidden();
 
 	const link = (await openMenu(page)).getByRole('link', { name: 'Account' });
 	await expect(link.getByTestId('profile-icon')).toHaveCount(0);

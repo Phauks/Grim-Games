@@ -2065,7 +2065,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	// 2026-10-23).
 	await expect(page.getByRole('button', { name: /, Goon\b/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /not on the script/ })).toHaveCount(0);
-	await expect(page.locator('.mark.orphan')).toHaveCount(0);
+	await expect(page.getByTestId('issue-mark')).toHaveCount(0);
 	await page.getByTestId('mode-menu').tap();
 	await page
 		.getByRole('dialog', { name: 'Game info', exact: true })

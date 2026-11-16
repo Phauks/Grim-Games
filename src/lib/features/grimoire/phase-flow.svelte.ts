@@ -115,16 +115,17 @@ export class PhaseFlow {
 	 * Execution, from the bank or the day view: the board asks for the executed player, with an
 	 * execution already logged today picked to start with. Before Start game the sheet opens
 	 * instead, as it warns (Trevor, 2026-11-01), and with the Atheist on the script, which
-	 * offers the Storyteller.
+	 * offers the Storyteller. `inDay`: the day view stays open and its mini grimoire asks
+	 * instead of the board (Trevor, 2026-11-15).
 	 */
-	startExecution(): void {
+	startExecution(inDay = false): void {
 		const { game, characters, notStarted, setDayOpen, hand } = this.#context();
 		// The Atheist's Storyteller is chosen on the sheet, as the board has no seat for them.
 		if (notStarted || storytellerNominee(game, characters)) {
 			this.endDayOpen = true;
 			return;
 		}
-		setDayOpen(false);
+		if (!inDay) setDayOpen(false);
 		hand.putDown();
 		const entry = game.today.entries.findLast(
 			(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
