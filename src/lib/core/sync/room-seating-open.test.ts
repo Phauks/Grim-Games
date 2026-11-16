@@ -5,6 +5,7 @@ import {
 	dropOnto,
 	giveSeat,
 	seatOffers,
+	seatToPick,
 	placedSeat,
 	hostView,
 	join,
@@ -52,6 +53,27 @@ describe('seating open', () => {
 		expect(publish(r, 'g1', table('Ana')).seatingOpen).toBe(true);
 		expect(publish(r, 'g2', table('Ana')).seatingOpen).toBeUndefined();
 		expect(setSeatingOpen(r, false).seatingOpen).toBeUndefined();
+	});
+});
+
+describe('seatToPick', () => {
+	it('asks a phone with no seat to pick one while a seat is free or seating is open', () => {
+		// Trevor, 2026-11-16: players joining didn't know they should pick a seat.
+		const r = room();
+		expect(seatToPick(playerView(r, 'bo'))).toBe(true);
+		expect(seatToPick(playerView(r, 'ana'))).toBe(false);
+		const full = publish(r, 'g1', table('Ana', 'Dan', 'Cy'));
+		expect(seatToPick(playerView(full, 'bo'))).toBe(false);
+		expect(seatToPick(playerView(setSeatingOpen(full, true), 'bo'))).toBe(true);
+		// A seat named only by its number is free.
+		expect(seatToPick(playerView(publish(r, 'g1', table('Ana', 'Seat 2', 'Cy')), 'bo'))).toBe(true);
+	});
+
+	it('asks nothing with no seats, while the next script is chosen, or once the game is over', () => {
+		const view = playerView(room(), 'bo');
+		expect(seatToPick({ ...view, public: table() })).toBe(false);
+		expect(seatToPick({ ...view, choosing: true })).toBe(false);
+		expect(seatToPick({ ...view, ended: { winner: 'good' } })).toBe(false);
 	});
 });
 

@@ -1064,15 +1064,15 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 	const shown = (await st.getByTestId('share-code').textContent())!;
 	const code = shown.replace(/\s/g, '');
 
-	// Joining lands on the script, with the room's row over the tabs; You on the title line
-	// takes a name (plan E2).
+	// Joining lands on the grim while there is a seat to pick (Trevor, 2026-11-16), with the
+	// room's row over the tabs; You on the title line takes a name (plan E2).
 	await page.goto(`/join/${code}`);
 	const row = page.getByTestId('you-row');
 	await expect(page.getByTestId('join-status')).toHaveText('');
 	// No "set your name" box at the top, not even before a name (Trevor, 2026-10-27: "I just
 	// want that whole thing gone").
 	await expect(row).toBeHidden();
-	await expect(page.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	const sheet = await openProfile(page);
 	// The name has its own modal with Save; Settings' other rows change at once (Trevor,
 	// 2026-10-27).
