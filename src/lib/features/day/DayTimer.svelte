@@ -64,6 +64,11 @@
 		 * the clock then shows, as players' phones do.
 		 */
 		town?: { can: boolean; called: boolean };
+		/**
+		 * Asks before the timer starts, which starts it once answered (the board's while it is
+		 * still night: "Start the day?", Trevor 2026-11-16).
+		 */
+		beforeStart?: (start: () => void) => void;
 	}
 
 	let {
@@ -73,7 +78,8 @@
 		readOnly = false,
 		shown,
 		quiet,
-		town
+		town,
+		beforeStart
 	}: Props = $props();
 
 	/** This device's timer, which every button works; `shown` only shows. */
@@ -203,7 +209,8 @@
 		icon={timer.running ? 'timerPause' : 'timerStart'}
 		label={timer.running ? t('day.timerPause') : t('day.timerStart')}
 		disabled={readOnly || (!timer.running && !timer.startable)}
-		onclick={() => live.toggle()}
+		onclick={() =>
+			!timer.running && beforeStart ? beforeStart(() => live.toggle()) : live.toggle()}
 	/>
 	{#if variant === 'full'}
 		<IconButton
@@ -251,7 +258,7 @@
 	<!-- The timer's own controls and settings, over the board; nothing leads to Settings. -->
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
-			<DayTimer {alive} inSheet {quiet} {town} {readOnly} />
+			<DayTimer {alive} inSheet {quiet} {town} {readOnly} {beforeStart} />
 			<TimerSoundToggle />
 			<Select
 				label={t('day.timerSoundTitle')}

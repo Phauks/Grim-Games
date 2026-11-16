@@ -160,6 +160,7 @@ import ph_monitor_bold from '~icons/ph/monitor-bold';
 import ph_moon_bold from '~icons/ph/moon-bold';
 import ph_moon_stars_bold from '~icons/ph/moon-stars-bold';
 import ph_note_pencil_bold from '~icons/ph/note-pencil-bold';
+import ph_notebook_bold from '~icons/ph/notebook-bold';
 import ph_notepad_bold from '~icons/ph/notepad-bold';
 import ph_paint_brush_bold from '~icons/ph/paint-brush-bold';
 import ph_paint_bucket_bold from '~icons/ph/paint-bucket-bold';
@@ -412,6 +413,7 @@ const icons: IconMap = {
 	'ph:moon-bold': ph_moon_bold,
 	'ph:moon-stars-bold': ph_moon_stars_bold,
 	'ph:note-pencil-bold': ph_note_pencil_bold,
+	'ph:notebook-bold': ph_notebook_bold,
 	'ph:notepad-bold': ph_notepad_bold,
 	'ph:paint-brush-bold': ph_paint_brush_bold,
 	'ph:paint-bucket-bold': ph_paint_bucket_bold,

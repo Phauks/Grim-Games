@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -87,7 +88,7 @@ test('day and night sound plays on phones in the room once the night begins, nev
 		.getByRole('button', { name: 'Start game', exact: true })
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 

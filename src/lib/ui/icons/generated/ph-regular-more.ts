@@ -70,6 +70,7 @@ import ph_lock from '~icons/ph/lock';
 import ph_lock_open from '~icons/ph/lock-open';
 import ph_megaphone_simple from '~icons/ph/megaphone-simple';
 import ph_monitor from '~icons/ph/monitor';
+import ph_notebook from '~icons/ph/notebook';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
 import ph_pause_circle from '~icons/ph/pause-circle';
@@ -184,6 +185,7 @@ const icons: IconMap = {
 	'ph:lock-open': ph_lock_open,
 	'ph:megaphone-simple': ph_megaphone_simple,
 	'ph:monitor': ph_monitor,
+	'ph:notebook': ph_notebook,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
 	'ph:pause-circle': ph_pause_circle,

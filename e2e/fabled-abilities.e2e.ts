@@ -1,3 +1,4 @@
+import { paneDay, closePane } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -47,8 +48,8 @@ test('any living player uses the Doomsayer once, and their ally dies by it', asy
 	await choose(page, 1, 'Clockmaker');
 	await choose(page, 2, 'Dreamer');
 	await addFabled(page, 'Doomsayer');
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 
 	const use = day.locator('li[data-character="doomsayer"]').getByTestId('day-use-anyone');
@@ -77,7 +78,7 @@ test('any living player uses the Doomsayer once, and their ally dies by it', asy
 	await expect(user.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(user).toBeHidden();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(boardSeat(page, 'Seat 2')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });

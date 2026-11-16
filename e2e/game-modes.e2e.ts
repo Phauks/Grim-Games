@@ -1,3 +1,4 @@
+import { paneDay } from './players.ts';
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
@@ -2054,7 +2055,7 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	await page.getByRole('listbox').getByRole('option', { name: 'The Demon', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	const announcements = page.getByTestId('announcements');
 	await expect(announcements.getByTestId('dont-announce')).toHaveText('Don’t announce');
 	await expect(announcements.getByTestId('spoken')).toHaveCount(0);

@@ -25,6 +25,7 @@ export const day = {
 	'day.outcomeProblem.used': 'Already used',
 	'day.outcomeProblem.jinxed': 'A jinx keeps it from this player',
 	'day.execution': 'Execution',
+	'day.startDay': 'Start the day?',
 	'day.executionChoose': 'Choose',
 	/** Start game with seats still empty (Trevor, 2026-11-01): a warning, never a lock. */
 	'day.startNoCharacter': 'Players without a character:',

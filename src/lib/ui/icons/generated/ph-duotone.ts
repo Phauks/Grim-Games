@@ -160,6 +160,7 @@ import ph_monitor_duotone from '~icons/ph/monitor-duotone';
 import ph_moon_duotone from '~icons/ph/moon-duotone';
 import ph_moon_stars_duotone from '~icons/ph/moon-stars-duotone';
 import ph_note_pencil_duotone from '~icons/ph/note-pencil-duotone';
+import ph_notebook_duotone from '~icons/ph/notebook-duotone';
 import ph_notepad_duotone from '~icons/ph/notepad-duotone';
 import ph_paint_brush_duotone from '~icons/ph/paint-brush-duotone';
 import ph_paint_bucket_duotone from '~icons/ph/paint-bucket-duotone';
@@ -412,6 +413,7 @@ const icons: IconMap = {
 	'ph:moon-duotone': ph_moon_duotone,
 	'ph:moon-stars-duotone': ph_moon_stars_duotone,
 	'ph:note-pencil-duotone': ph_note_pencil_duotone,
+	'ph:notebook-duotone': ph_notebook_duotone,
 	'ph:notepad-duotone': ph_notepad_duotone,
 	'ph:paint-brush-duotone': ph_paint_brush_duotone,
 	'ph:paint-bucket-duotone': ph_paint_bucket_duotone,

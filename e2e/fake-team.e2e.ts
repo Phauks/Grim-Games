@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickNumber } from './number-select.ts';
 import { toBoard } from './new-game.ts';
@@ -72,7 +73,7 @@ test('the Storyteller fakes a seat as a Minion, marked on the board and woken at
 	await setFake(page, 1, 'Poisoner');
 
 	// The first night wakes the fake Poisoner on Seat 1.
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -82,7 +83,7 @@ test('the Storyteller fakes a seat as a Minion, marked on the board and woken at
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== 'Fake Poisoner'; i++) await next.tap();
 	await expect(name).toHaveText('Fake Poisoner');

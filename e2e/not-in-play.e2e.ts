@@ -1,9 +1,10 @@
-import { chooseExecution } from './execution.ts';
+import { paneDay, closePane } from './players.ts';
+import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 
 // Seats not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game sits down at
 // the table before the night they join at. The seat is greyed with a "Not in play" pill and
@@ -23,7 +24,7 @@ async function startGame(page: Page) {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
-const daySheet = (page: Page) => page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+const daySheet = (page: Page) => page.getByTestId('pane-day');
 const seatSheet = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
 const endNight = (page: Page) =>
 	page
@@ -33,8 +34,8 @@ const endNight = (page: Page) =>
 
 /** Ends the day with no execution, which starts tonight's night at Dusk. */
 async function execution(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await daySheet(page).getByRole('button', { name: 'Execution' }).tap();
+	await paneDay(page);
+	await startExecution(page);
 	await chooseExecution(page);
 	await expect(daySheet(page)).toBeHidden();
 	await expect(endNight(page)).toBeEnabled();
@@ -46,24 +47,24 @@ async function endTheNight(page: Page) {
 	const ask = page.getByRole('alertdialog', { name: 'End the night?' });
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
-	await daySheet(page).getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(daySheet(page)).toBeHidden();
 }
 
 async function aliveCount(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await expect(page.getByTestId('alive-count')).toBeVisible();
 	const text = await page.getByTestId('alive-count').textContent();
-	await daySheet(page).getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(daySheet(page)).toBeHidden();
 	return text;
 }
 
 /** The walk-through under the board, stepped forward to `title`. */
 async function walkTo(page: Page, title: string): Promise<Locator> {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip).toBeVisible();
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
 	await expect(name).toHaveText(title);

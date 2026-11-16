@@ -38,3 +38,23 @@ export async function chooseExecution(page: Page, choice = 'No execution'): Prom
 	}
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
+
+/** The reminder bank's end button: Execution by day, End night by night. */
+export const bankExecution = (page: Page) =>
+	page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'Execution', exact: true });
+
+/**
+ * Asks the day's Execution from the bank, the only Execution since the Day moved into the pane
+ * (Trevor, 2026-11-16); a phone's pane closes first, as it covers the bank.
+ */
+export async function startExecution(page: Page): Promise<void> {
+	const sheet = page.getByRole('dialog', { name: 'Game', exact: true });
+	if (await sheet.isVisible()) {
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+	await bankExecution(page).tap();
+}

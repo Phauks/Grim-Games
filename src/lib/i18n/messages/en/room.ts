@@ -43,7 +43,10 @@ export const room = {
 	'room.players.away': 'Away',
 	'room.players.noPhone': 'No phone',
 	'room.players.gameNotes': 'Game notes',
-	'room.players.pane': 'Game notes and Players',
+	'room.players.pane': 'Game',
+	'room.pane.day': 'Day',
+	'room.pane.night': 'Night',
+	'room.pane.notes': 'Notes',
 	'room.players.notesHeading': 'Notes',
 	'room.players.hasNotes': 'Has notes',
 	'room.players.notes': {

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 
 /**
  * The Bounty Hunter's "[1 Townsfolk is evil]" (M22,
@@ -52,8 +52,8 @@ test('the Bounty Hunter asks for an evil Townsfolk and tells them', async ({ pag
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 
 	// The first night: Starting alignment, right after Dusk.
-	const strip = page.getByTestId('night-strip');
-	const name = strip.locator('.step .name strong');
+	const strip = walkThrough(page);
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 5 && (await name.textContent()) !== 'Starting alignment'; i++)

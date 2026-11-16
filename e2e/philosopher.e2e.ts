@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { placeFromStep } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 
 /**
  * The Philosopher's choice on its night step (https://wiki.bloodontheclocktower.com/Philosopher;
@@ -39,7 +39,7 @@ async function setUp(page: Page, first = 'Philosopher') {
 
 /** Starts the night and opens `character`'s step. */
 async function openStep(page: Page, character: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -48,7 +48,7 @@ async function openStep(page: Page, character: string) {
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== character; i++) await next.tap();
 	await expect(name).toHaveText(character);

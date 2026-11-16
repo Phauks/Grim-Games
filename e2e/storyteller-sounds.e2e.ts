@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -55,7 +56,7 @@ async function startNight(page: Page): Promise<void> {
 		.getByRole('button', { name: 'Start game', exact: true })
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	await expect(page.getByTestId('night-strip').or(ask)).toBeVisible();
+	await expect(walkThrough(page).or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
 

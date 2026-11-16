@@ -1,3 +1,4 @@
+import { paneDay, closePane } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
@@ -36,8 +37,8 @@ const boardSeat = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
 async function openDay(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	return day;
 }
@@ -85,7 +86,7 @@ test("the Harpy's mad player who breaks madness asks who of the two dies", async
 	await expect(ask.getByRole('checkbox', { name: 'Dies: Seat 3' })).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
 });
@@ -146,7 +147,7 @@ test('the Big Wig asks whom a nominee chose, who might die for breaking madness 
 		.tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
 });

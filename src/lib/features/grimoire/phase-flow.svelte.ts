@@ -112,20 +112,19 @@ export class PhaseFlow {
 	}
 
 	/**
-	 * Execution, from the bank or the day view: the board asks for the executed player, with an
-	 * execution already logged today picked to start with. Before Start game the sheet opens
-	 * instead, as it warns (Trevor, 2026-11-01), and with the Atheist on the script, which
-	 * offers the Storyteller. `inDay`: the day view stays open and its mini grimoire asks
-	 * instead of the board (Trevor, 2026-11-15).
+	 * Execution, from the bank: the board asks for the executed player, with an execution
+	 * already logged today picked to start with. Before Start game the sheet opens instead, as
+	 * it warns (Trevor, 2026-11-01), and with the Atheist on the script, which offers the
+	 * Storyteller.
 	 */
-	startExecution(inDay = false): void {
+	startExecution(): void {
 		const { game, characters, notStarted, setDayOpen, hand } = this.#context();
 		// The Atheist's Storyteller is chosen on the sheet, as the board has no seat for them.
 		if (notStarted || storytellerNominee(game, characters)) {
 			this.endDayOpen = true;
 			return;
 		}
-		if (!inDay) setDayOpen(false);
+		setDayOpen(false);
 		hand.putDown();
 		const entry = game.today.entries.findLast(
 			(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
@@ -271,7 +270,8 @@ export class PhaseFlow {
 		);
 	}
 
-	endNight(): void {
+	/** Ends the night; `then` runs once the day has started (the timer's Start the day?). */
+	endNight(then?: () => void): void {
 		// The Savant's information is set before Dawn (Trevor, 2026-11-06), then the day starts.
 		this.#context().askSavant(() => {
 			const { grimoire, nw, setDayOpen } = this.#context();
@@ -281,6 +281,7 @@ export class PhaseFlow {
 			grimoire.afterDawnAsk(() => {
 				// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 				if (preferences.current.assistance.dayAfterNight) setDayOpen(true);
+				then?.();
 			});
 		});
 	}

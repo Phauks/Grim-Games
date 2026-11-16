@@ -19,10 +19,15 @@
 		room?: string;
 		/** The pane's own contents; leave out while it is off. */
 		pane?: Snippet;
+		/**
+		 * The pane on its own panel colour up to its edge, as a sheet's, rather than over the
+		 * screen's background (the board's pane, Trevor 2026-11-16).
+		 */
+		solid?: boolean;
 		children: Snippet;
 	}
 
-	let { placement, label, room, pane, children }: Props = $props();
+	let { placement, label, room, pane, solid = false, children }: Props = $props();
 	const on = $derived(placement && pane ? placement : undefined);
 
 	let aside = $state<HTMLElement>();
@@ -41,7 +46,7 @@
 	});
 </script>
 
-<div class="beside" data-beside={on} style:--beside-room={room}>
+<div class="beside" data-beside={on} data-solid={solid || undefined} style:--beside-room={room}>
 	<div class="main">{@render children()}</div>
 	{#if on && pane}
 		<aside class="pane" aria-label={label} data-testid="beside-pane" bind:this={aside}>
@@ -91,6 +96,9 @@
 		--pin-top: 0rem;
 		min-height: 0;
 		overflow-y: auto;
+	}
+	.beside[data-solid] .pane {
+		background: var(--dialog-background, var(--surface));
 	}
 	.beside[data-beside='under'] .pane {
 		border-top: 1px solid var(--border); /* px-ok: a hairline, as the bar's */

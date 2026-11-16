@@ -9,27 +9,34 @@
 	import StorytellerPane from './StorytellerPane.svelte';
 
 	/**
-	 * The board with the Storyteller's Game notes and Players (plan M86, Trevor 2026-11-15:
-	 * "I really like seeing the notes right next to the game grim"): beside it where the screen
-	 * is wide, under it on an upright tablet, as player Notes are (plan E3); over the screen on
-	 * a phone, which has room for neither. A spectator's board has none.
+	 * The board with the Storyteller's pane: the Day, the Night, Game notes and Players (the grim
+	 * as the home screen, Trevor 2026-11-16). Beside it where the screen is wide, under it on an
+	 * upright tablet, as player Notes are (plan E3), and always shown there, so the board never
+	 * changes size; over the screen on a phone, which has room for neither. A spectator's board
+	 * has none.
 	 */
 	interface Props {
 		grimoire: Grimoire;
 		watching: boolean;
 		/** Where the pane shows beside the board, if it can (none on a phone). */
 		beside?: BesidePlacement;
+		/** The Day tab's contents. */
+		day: Snippet;
+		/** The Night tab's contents. */
+		night: Snippet;
 		children: Snippet;
 	}
 
-	let { grimoire, watching, beside = $bindable(), children }: Props = $props();
+	let { grimoire, watching, beside = $bindable(), day, night, children }: Props = $props();
 
 	let width = $state(0);
 	let height = $state(0);
 	$effect(() => {
 		beside = watching ? undefined : besidePlacement(width, height, rootRem());
 	});
-	const shown = $derived(!watching && sidePane.open);
+	$effect(() => {
+		sidePane.beside = !!beside;
+	});
 </script>
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height} />
@@ -37,16 +44,17 @@
 <!-- The board's height, the screen's within its safe areas, unless it shares it (--panel-room). -->
 <div class="board-pane">
 	<BesidePane
-		placement={shown ? beside : undefined}
+		placement={beside}
 		label={t('room.players.pane')}
 		room="var(--board-room)"
-		pane={shown && beside ? pane : undefined}>{@render children()}</BesidePane
+		solid
+		pane={beside ? pane : undefined}>{@render children()}</BesidePane
 	>
 </div>
 
 {#snippet pane()}
 	<div class="side-pane">
-		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} />
+		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} {day} {night} />
 	</div>
 {/snippet}
 
@@ -57,7 +65,7 @@
 		size="full"
 		scroll={false}
 	>
-		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} />
+		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} {day} {night} />
 	</Dialog>
 {/if}
 

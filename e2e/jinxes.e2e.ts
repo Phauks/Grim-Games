@@ -1,7 +1,9 @@
+import { startExecution } from './execution.ts';
+import { paneDay, closePane } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder, putRunReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 
 // Jinxes on characters already built (L109): the Plague Doctor's ability that goes to a
 // Minion instead of the Storyteller, and the Pit-Hag's jinxes with the Goon, Damsel and Village
@@ -49,7 +51,7 @@ const bankNight = (page: Page, name: 'Start game' | 'Run Night Order' | 'End nig
 
 /** The walk-through under the board, moved on to the step `title`. */
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
 		await page
@@ -61,7 +63,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
@@ -79,7 +81,7 @@ async function toSecondNight(page: Page, executed: number, deathAsk?: string) {
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	const sheet = await openSeat(page, executed);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
@@ -277,8 +279,8 @@ test('the Leviathan chooses the Sage at night, and the Sage acts without dying',
 
 /** The day sheet: Setup before the first night, Day N after it. */
 async function openDay(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	return day;
 }
@@ -357,7 +359,7 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	await expect(page.getByText('That player has already nominated today.')).toHaveCount(0);
 	// About to die: executed from the day's Execution, and the game ends.
 	const day = await openDay(page);
-	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await startExecution(page);
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
 	await page.getByRole('option', { name: 'Storyteller', exact: true }).tap();
@@ -425,7 +427,7 @@ test("the Vizier isn't declared with the Investigator, and the Magician is out o
 
 	// The player is tapped on the board (Trevor, 2026-11-06); the Vizier's Executed at once
 	// opens the Execution sheet with them chosen.
-	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await startExecution(page);
 	await page.locator('[data-testid="seat"][aria-label^="Seat 2:"]').tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	const now = ask.getByTestId('outcome-execute-now');
@@ -571,7 +573,7 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 		.tap();
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	const executeSeat1 = async () => {
-		await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+		await startExecution(page);
 		// Tapped on the board (Trevor, 2026-11-06); the Vizier's save opens the sheet.
 		await page.locator('[data-testid="seat"][aria-label^="Seat 1:"]').tap();
 		const ask = page.getByRole('alertdialog', { name: 'End the day?' });
@@ -976,7 +978,7 @@ test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the p
 
 	// The Alchemist's own step first, then the step for the Summoner ability they hold.
 	const strip = await walkTo(page, 'Alchemist');
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	await next.tap();
 	for (let i = 0; i < 30 && (await name.textContent()) !== 'Alchemist'; i++) await next.tap();
@@ -1073,8 +1075,8 @@ test('the Engineer who removes the Summoner gives the Storyteller its ability', 
 	await page.keyboard.press('Escape');
 	await expect(step).toBeHidden();
 	// The Summoner's step, now the Storyteller's: before the Engineer's on the first night.
-	const strip = page.getByTestId('night-strip');
-	const name = strip.locator('.step .name strong');
+	const strip = walkThrough(page);
+	const name = strip.locator('[data-walk-name]');
 	const back = strip.getByRole('button', { name: 'Previous step' });
 	for (let i = 0; i < 10 && (await name.textContent()) !== 'Summoner'; i++) await back.tap();
 	await expect(name).toHaveText('Summoner');

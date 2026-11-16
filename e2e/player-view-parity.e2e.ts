@@ -1,3 +1,5 @@
+import { paneDay, closePane } from './players.ts';
+import { walkThrough } from './night-step.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
@@ -52,7 +54,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
@@ -65,7 +67,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 		.tap();
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day).toBeVisible();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
@@ -105,7 +107,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 
 	// The Storyteller's gold votes badge holds both numbers, so the row keeps five cells
 	// (Trevor, 2026-10-28, option A).
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await expect(day).toBeVisible();
 	const votes = day.getByTestId('votes-needed');
 	await expect(votes.getByTestId('exile-needed')).toHaveText('44');
@@ -123,7 +125,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 		.getByRole('button', { name: 'Close' })
 		.tap();
 	await expect(lines).toBeHidden();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 
 	// The grim cover's Player view is the same view.

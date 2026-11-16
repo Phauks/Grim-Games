@@ -1,3 +1,4 @@
+import { paneDay } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
@@ -118,7 +119,7 @@ test('Back to town can be called before the time is up, and stops the timer', as
 	await expect(page.getByText('Couldn’t reach the players’ phones.')).toHaveCount(0);
 
 	// The same in the day view and on the grim cover.
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await expect(
 		page.getByTestId('day-toolbar').getByRole('button', { name: 'Back to town' })
 	).toBeEnabled();
@@ -128,7 +129,7 @@ test('Back to town can be called before the time is up, and stops the timer', as
 		'Back to town'
 	);
 	await page.keyboard.press('Escape');
-	await expect(page.getByRole('dialog', { name: /^(Day|Setup)( \d+)?$/ })).toBeHidden();
+	await expect(page.getByTestId('pane-day')).toBeHidden();
 	await page.getByTestId('cover-button').tap();
 	await expect(
 		page
@@ -182,7 +183,7 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	expect(await buttons(dayTimer)).toEqual(fromGrim);
 	// And the day's own Timer sheet holds the same timer again.

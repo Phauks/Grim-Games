@@ -1,3 +1,5 @@
+import { closePane } from './players.ts';
+import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -85,7 +87,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
@@ -149,7 +151,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 
 	// Always a sun (Trevor, 2026-10-29): the timer's own sheet on the board has no choice of
 	// how players see it.
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const controls = page.getByTestId('timer-sheet');

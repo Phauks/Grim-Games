@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
@@ -71,11 +70,12 @@
 		onExecute?: (seatId: SeatId, cause: CharacterId) => void;
 		/** Back to town on the timer (the grimoire's, Trevor 2026-11-01); none in the spike. */
 		town?: { can: boolean; called: boolean };
-		side?: Snippet;
+		/** Shows the day timer; the board beside the Storyteller's pane has its own. */
+		timer?: boolean;
 	}
 
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one History entry.
-	let { game, assistance, onOpenNight, onSavant, onExecute, town, side }: Props = $props();
+	let { game, assistance, onOpenNight, onSavant, onExecute, town, timer = true }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
 
@@ -433,14 +433,13 @@
 
 <div class="panel">
 	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), section headers under it (pinnedRow);
-	     a wide day's left column, with the day sheet's mini grimoire under the counts (side). -->
+	     a wide day's left column. -->
 	<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
-		<DayTimer alive={block.alive} {quiet} {town} />
+		{#if timer}<DayTimer alive={block.alive} {quiet} {town} />{/if}
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
 		<DayCounts {game} />
-		{@render side?.()}
 	</div>
 	<!-- Beside the toolbar on a wide screen (Trevor, 2026-10-23: L45), under it on a phone. -->
 	<div class="sections">

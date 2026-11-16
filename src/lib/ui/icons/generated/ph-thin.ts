@@ -160,6 +160,7 @@ import ph_monitor_thin from '~icons/ph/monitor-thin';
 import ph_moon_thin from '~icons/ph/moon-thin';
 import ph_moon_stars_thin from '~icons/ph/moon-stars-thin';
 import ph_note_pencil_thin from '~icons/ph/note-pencil-thin';
+import ph_notebook_thin from '~icons/ph/notebook-thin';
 import ph_notepad_thin from '~icons/ph/notepad-thin';
 import ph_paint_brush_thin from '~icons/ph/paint-brush-thin';
 import ph_paint_bucket_thin from '~icons/ph/paint-bucket-thin';
@@ -412,6 +413,7 @@ const icons: IconMap = {
 	'ph:moon-thin': ph_moon_thin,
 	'ph:moon-stars-thin': ph_moon_stars_thin,
 	'ph:note-pencil-thin': ph_note_pencil_thin,
+	'ph:notebook-thin': ph_notebook_thin,
 	'ph:notepad-thin': ph_notepad_thin,
 	'ph:paint-brush-thin': ph_paint_brush_thin,
 	'ph:paint-bucket-thin': ph_paint_bucket_thin,

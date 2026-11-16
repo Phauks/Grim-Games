@@ -12,7 +12,14 @@ import {
 	noteText,
 	noteTitle
 } from './notes.ts';
-import { closePane, openPane, openPlayers, openPlayerSheet, storytellerPane } from './players.ts';
+import {
+	closePane,
+	openPane,
+	openPlayers,
+	openPlayerSheet,
+	storytellerPane,
+	paneDay
+} from './players.ts';
 import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
@@ -36,7 +43,7 @@ import {
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 import { openInfoTokens } from './toolbar.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
@@ -164,7 +171,7 @@ async function lastStep(strip: Locator) {
 }
 
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
@@ -181,7 +188,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
@@ -758,8 +765,8 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// The last setup step opens the board, whose bank starts with the setup reminders.
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
+	await paneDay(page);
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -1724,7 +1731,7 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	await expect(logo).toBeVisible();
 	const logoBefore = (await logo.boundingBox())!;
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
 		.toBeLessThan(1);
@@ -1810,10 +1817,10 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 
 	// The night starts by asking for it, after Dusk (core withTravellerAlignmentStep).
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
-	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	const strip = walkThrough(page);
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dusk');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Traveller alignment');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Traveller alignment');
 	await strip.locator('button.step').tap();
 	const step = nightStep(page, 'Traveller alignment');
 	await step.getByRole('button', { name: 'Evil' }).tap();
@@ -2454,7 +2461,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
 	const box = await backdrop.boundingBox();
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 	await expect(backdrop).toHaveAttribute('style', image!);
 	expect(await backdrop.boundingBox()).toEqual(box);
 	expect(await node!.evaluate((el) => el.isConnected)).toBe(true);
@@ -2697,7 +2704,7 @@ test('a character in play twice wakes once for each player, each step showing it
 	await expect(strip).toContainText('Seat 1');
 	await expect(strip).not.toContainText('Seat 2');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Empath');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Empath');
 	await expect(strip).toContainText('Seat 2');
 	await expect(strip).not.toContainText('Seat 1,');
 	// Each step's band is its player's alignment: the evil Empath's is red.
@@ -2763,7 +2770,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
 
 	// Walk through: one step at a time under the board, with Previous and Next.
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await walkTo(page, 'Poisoner');
 	const at = (await strip.getAttribute('data-step'))!;
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2913,8 +2920,8 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 		'Holds the Empath ability'
 	);
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -3112,7 +3119,7 @@ test("the Courtier's step moves its Drunk token on each night", async ({ page })
 	await putReminder(page, 'Drunk 1', 2);
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	const step = await openStep(page, 'Courtier');
 	const rows = step.getByTestId('countdown');
@@ -3149,7 +3156,7 @@ test("with the Toymaker in play the Demon's step offers No attack", async ({ pag
 	await putReminder(page, 'Final Night: No Attack', 2);
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	// Opened by its name: the reminder line makes the strip's step taller, and a tap at its middle
 	// lands on the opened step's own icon, which opens the Imp's entry over it.
@@ -3200,7 +3207,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	const doctor = await openSeat(page, 1);
 	await doctor.getByRole('combobox', { name: 'Status: Alive' }).tap();
@@ -3350,7 +3357,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await endNight(page);
 	// The day opens after End night; the execution is marked on the board (Trevor, 2026-10-20).
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	const executed = await openSeat(page, 2);
 	await executed.getByRole('combobox', { name: 'Status: Alive' }).tap();
@@ -3890,11 +3897,11 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 
 	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
 	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
@@ -3906,7 +3913,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		.tap();
 	await closeBin(page);
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await day.getByTestId('prevented-button').tap();
 	const prevented = page.getByRole('dialog', { name: 'What didn’t happen' });
 	await expect(prevented.getByTestId('prevented')).toContainText('chose');
@@ -3959,7 +3966,7 @@ test('game notes and Players have a button beside the grim cover, styled like it
 	// No token in the corner any more.
 	await expect(page.getByTestId('game-notes-token')).toHaveCount(0);
 
-	const pane = await openPane(page, 'Game notes');
+	const pane = await openPane(page, 'Notes');
 	await expect(page.getByTestId('storyteller-pane')).toBeVisible();
 	const gameNotes = pane.getByTestId('game-notes');
 	await addNote(page, gameNotes, { title: 'Bluffs' });
@@ -4005,7 +4012,7 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	// title, starting as a "+ New note" with a dashed edge; behind their own button beside
 	// the grim cover (Trevor, 2026-11-01);
 	// each written where it sits (Trevor, 2026-11-02).
-	const gameNotesPane = await openPane(page, 'Game notes');
+	const gameNotesPane = await openPane(page, 'Notes');
 	const gameNotes = gameNotesPane.getByTestId('game-notes');
 	const add = gameNotes.getByTestId('new-note');
 	const cards = noteRows(gameNotes);
@@ -4533,7 +4540,7 @@ test("Back puts the board's entry back only once the open dialog has gone", asyn
 	await expect.poll(async () => (await pushedOver()).length).toBeGreaterThan(0);
 	await page.evaluate(() => ((window as unknown as { pushedOver: boolean[] }).pushedOver = []));
 
-	await page.getByTestId('night-strip').getByRole('button', { name: 'About Dusk' }).tap();
+	await walkThrough(page).getByRole('button', { name: 'About Dusk' }).tap();
 	const glossary = page.getByRole('dialog', { name: 'Glossary' });
 	await expect(glossary).toBeVisible();
 	await page.goBack();
@@ -4671,7 +4678,7 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 
 /** Picks how the walked-through step's reminders are shown. */
 async function focusMode(page: Page, mode: string) {
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Character reminders' }).tap();
+	await walkThrough(page).getByRole('button', { name: 'Character reminders' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Character reminders' })
 		.getByRole('combobox', { name: "Show this character's reminders" })
@@ -4706,7 +4713,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 		await closeSheet(page);
 	}
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip).toContainText('Poisoner');
@@ -4827,7 +4834,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 		await closeSheet(page);
 	}
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip).toContainText('Merch');
@@ -5038,8 +5045,8 @@ test('the Storm Catcher named character is picked before the day and kept at its
 }) => {
 	test.slow();
 	await stormCatcherGame(page);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
@@ -5808,10 +5815,10 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {
-		names.push((await strip.locator('.name strong').textContent()) ?? '');
+		names.push((await strip.locator('[data-walk-name]').textContent()) ?? '');
 		const next = strip.getByRole('button', { name: 'Next step' });
 		// The last step; End night ends the night (Trevor, 2026-10-18).
 		if (await lastStep(strip)) break;
@@ -5988,7 +5995,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	};
 	// Trevor (2026-10-19): Start game before the first night.
 	await begin();
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip).toBeVisible();
 	// While a night runs it is End night, in the same place (Trevor, 2026-10-18).
 	await expect(start).toHaveCount(0);
@@ -6015,7 +6022,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await chooseExecution(page);
 	await expect(strip).toBeVisible();
 	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
-	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dusk');
 	await expect(strip).toHaveAttribute('data-step', '1');
 	// Dusk has no number: the count is the one on the tokens' leaves (Trevor, 2026-11-04).
 	await expect(strip.locator('.count')).toHaveCount(0);
@@ -6562,7 +6569,7 @@ test('the night walk-through rises into place, and appears at once with animatio
 	});
 	const animations = () =>
 		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	await expect.poll(animations).toBeGreaterThan(0);
@@ -6790,10 +6797,10 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 		.tap();
 	await closeSheet(page);
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dawn');
 	const end = bankNight(page, 'End night');
 	await expect(end).not.toHaveAttribute('data-hint');
 	await next.tap();
@@ -6980,9 +6987,9 @@ test('Seat 7’s optional rules: speaking twice, voting once a day, never shown 
 	await closeSheet(page);
 	// The protector wakes on the first night, in a step of the rule's own after Dusk.
 	await walkTo(page, 'Dusk');
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('The Ballad of Seat 7');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('The Ballad of Seat 7');
 	await expect(strip).toContainText('chosen to protect the seat no one plays');
 });
 
@@ -7196,9 +7203,9 @@ test('a player whose character changed since dawn is woken that night to learn i
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	// Just before Dawn, the last step.
-	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dawn');
 	await strip.getByRole('button', { name: 'Previous step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Imp');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Imp');
 	await expect(strip).toContainText('Sam');
 	await expect(strip).toContainText('Wake this player.');
 	await expect(strip).toContainText('You are');
@@ -7523,10 +7530,10 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 	await expect(ask.getByTestId('setup-left')).toContainText('Red Herring');
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await expect(walkThrough(page)).toHaveCount(0);
 	await bankNight(page, 'Start game').tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 });
 
 test('Start game with players without a character asks first, listing them', async ({ page }) => {
@@ -7546,7 +7553,7 @@ test('Start game with players without a character asks first, listing them', asy
 	await expect(empty).toContainText('Seat 2');
 	await expect(empty).not.toContainText('Seat 1');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 });
 
 test('a Fool marked dead is offered to survive their first death', async ({ page }) => {
@@ -7805,21 +7812,21 @@ async function startWithRule(
 /** From a night's walk-through, through the day, to the next night's Dusk. */
 async function nextNight(page: Page) {
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: /^Day \d+$/ });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(day).toBeHidden();
 	// The night's strip slides away before the next night can start.
-	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await expect(walkThrough(page)).toHaveCount(0);
 	await walkTo(page, 'Dusk');
 }
 
 /** Every step name in tonight's walk-through, from the current step on. */
 async function stepNames(page: Page): Promise<string[]> {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const names: string[] = [];
 	for (let i = 0; i < 30; i++) {
-		names.push((await strip.locator('.step .name strong').textContent()) ?? '');
+		names.push((await strip.locator('[data-walk-name]').textContent()) ?? '');
 		if (await lastStep(strip)) break;
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	}
@@ -7905,10 +7912,8 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	await walkTo(page, 'Dusk');
 	expect(await stepNames(page)).not.toContain('Council of the Dead');
 	for (let night = 2; night <= 4; night++) await nextNight(page);
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
-	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
-		'Council of the Dead'
-	);
+	await walkThrough(page).getByRole('button', { name: 'Next step' }).tap();
+	await expect(walkThrough(page).locator('[data-walk-name]')).toHaveText('Council of the Dead');
 });
 
 // One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
@@ -7945,10 +7950,8 @@ test('a game mode that sets a night step adds it to the night, headed by the mod
 		.tap();
 	await closeSheet(page);
 	await walkTo(page, 'Dusk');
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
-	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
-		'Dead Wake'
-	);
+	await walkThrough(page).getByRole('button', { name: 'Next step' }).tap();
+	await expect(walkThrough(page).locator('[data-walk-name]')).toHaveText('Dead Wake');
 });
 
 test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
@@ -8085,7 +8088,7 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	// Dawn puts his "not nominated" token on (wiki How to Run).
 	const token = (label: string) =>
@@ -8134,7 +8137,7 @@ test('the Flowergirl and Town Crier steps show their answer as the Yes/No card',
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	// Each step asks its day's fact (Trevor, 2026-11-03: not at Execution); No answers it.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
@@ -8181,7 +8184,7 @@ test('the Harlot step asks the chosen player, then shows the Harlot their charac
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(day).toBeHidden();
 	await (
 		await walkTo(page, 'Harlot')
@@ -8450,7 +8453,7 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	const strip = await walkTo(page, 'Huntsman');
 	// https://wiki.bloodontheclocktower.com/Damsel: the Minions learn of the Damsel at Minion
 	// info, so the Damsel's own step doesn't follow (it wakes only for a Damsel made mid-game).
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(name).not.toHaveText('Huntsman');
 	await expect(name).not.toHaveText('Damsel');

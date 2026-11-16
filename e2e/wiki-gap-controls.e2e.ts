@@ -1,9 +1,10 @@
+import { paneDay } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { boardSeat, inHand, putReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough } from './night-step.ts';
 
 // The controls for wiki examples the engine now runs (M17a-g): the Wizard's wish, the
 // Yaggababble's phrase count, the Angel's Something Bad, the Ojo's named character, the
@@ -61,7 +62,7 @@ const bank = (page: Page) => page.locator('[data-tray]');
 async function toDay1(page: Page) {
 	await bank(page).getByRole('button', { name: 'Start game', exact: true }).tap();
 	const start = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(start)).toBeVisible();
 	if (await start.isVisible()) await start.getByRole('button', { name: 'Confirm' }).tap();
 	await endNight(page);
@@ -76,19 +77,19 @@ async function endNight(page: Page) {
 	await expect(dayView(page)).toBeVisible();
 }
 
-const dayView = (page: Page) => page.getByRole('dialog', { name: /^Day \d+$/ });
+const dayView = (page: Page) => page.getByTestId('pane-day');
 
 /** The day ended with no execution, from the day view, into the night. */
 async function endDay(page: Page) {
 	await dayView(page).getByRole('button', { name: 'Execution', exact: true }).tap();
 	await chooseExecution(page);
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 }
 
 /** Opens tonight's step for `title` from the walk-through under the board. */
 async function openStep(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
-	const name = strip.locator('.step .name strong');
+	const strip = walkThrough(page);
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
@@ -114,7 +115,7 @@ test('the Wizard’s wish is recorded from its day row, and its reminder goes', 
 	test.setTimeout(90_000);
 	await newGame(page, 'Wish Check', ['wizard', 'chef', 'empath', 'spy', 'imp']);
 	await cast(page, ['Wizard', 'Chef', 'Empath', 'Spy', 'Imp']);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await expect(page.getByText('may make a wish')).toHaveCount(1);
 
 	const chip = page.getByTestId('wish');
@@ -252,7 +253,7 @@ test('with the Knaves, an info step asks which Storyteller the player went to', 
 	await addRuleCharacter(page, 'Knaves');
 	await bank(page).getByRole('button', { name: 'Start game', exact: true }).tap();
 	const start = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(start)).toBeVisible();
 	if (await start.isVisible()) await start.getByRole('button', { name: 'Confirm' }).tap();
 	const step = await openStep(page, 'Chef');

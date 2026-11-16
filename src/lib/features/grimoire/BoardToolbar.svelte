@@ -34,7 +34,8 @@
 		/** The Grimoire is shown to a player: nothing over it but the X that ends it. */
 		showing?: boolean;
 		onStopShowing?: () => void;
-		onDay: () => void;
+		/** A spectator's Day, to look at; the Storyteller's is in the pane beside the board. */
+		onDay?: () => void;
 		onInfo: () => void;
 		onScript: () => void;
 		onShare: () => void;
@@ -139,10 +140,11 @@
 		     "View-Only" label on a spectator's board (Trevor, 2026-11-15). -->
 		<span class="spacer"></span>
 		<!-- A spectator opens the Day to look at, Script and Share as players do; Info tokens,
-		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). -->
-		<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
-			><span class="tool-label">Day</span></Button
-		>
+		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). The Storyteller's
+		     Day is a tab of the pane (Trevor, 2026-11-16). -->
+		{#if watching && onDay}<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
+				><span class="tool-label">Day</span></Button
+			>{/if}
 		<!-- On the narrowest phones Info tokens is in More, so the pane's button keeps its place
 		     by the grim cover (Trevor, 2026-11-15); Share never moves there. Not a spectator's. -->
 		{#if !watching}<Button
