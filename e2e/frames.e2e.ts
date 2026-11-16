@@ -28,6 +28,28 @@ async function openProfile(page: Page) {
 	return dialog;
 }
 
+/**
+ * Picks the character that represents the player, as a detail (Trevor, 2026-11-16: "remove
+ * character token, integrate any functionality in profile with add detail").
+ */
+async function pickCharacterToken(page: Page, character: string) {
+	const profile = page.getByRole('dialog', { name: 'Profile', exact: true });
+	await profile.getByTestId('profile-detail-new').tap();
+	const form = page.getByRole('dialog', { name: 'New detail' });
+	await form.getByRole('combobox', { name: 'Detail' }).tap();
+	await page.getByRole('option', { name: 'Character token', exact: true }).tap();
+	await form.getByRole('button', { name: 'Pick character' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character token' });
+	await picker.getByRole('searchbox').fill(character);
+	await picker
+		.getByRole('button', { name: new RegExp(character) })
+		.first()
+		.tap();
+	await expect(picker).toBeHidden();
+	await form.getByRole('button', { name: 'Save' }).tap();
+	await expect(form).toBeHidden();
+}
+
 /** Opens a drop-down and taps one choice, as a finger would. */
 async function pick(page: Page, label: string, option: string) {
 	await page.getByRole('combobox', { name: label }).tap();
@@ -84,13 +106,17 @@ test("the Board has no frame of its own: laurels are each player's", async ({ pa
 test('the Profile warns that the look on a seat must never hint at a character', async ({
 	page
 }) => {
-	// Plan R14 (Trevor, 2026-10-29): a fair-play warning, not a lock during the game.
+	// Plan R14 (Trevor, 2026-10-29): a fair-play warning, not a lock during the game. Behind an
+	// info button, so it isn't so loud (Trevor, 2026-11-16).
 	await page.goto('/');
 	const dialog = await openProfile(page);
-	const notice = dialog.getByTestId('fair-play');
-	await expect(notice).toContainText('Never change it during a game to hint at a character');
-	await expect(notice).toBeVisible();
-	await expect(dialog.getByRole('button', { name: 'Change character token' })).toBeEnabled();
+	const info = dialog.getByRole('button', { name: 'Fair play' });
+	await expect(info).toBeVisible();
+	await expect(dialog.getByText('Never change it during a game')).toHaveCount(0);
+	await info.tap();
+	await expect(page.getByTestId('fair-play-full')).toContainText(
+		'Never change it during a game to hint at a character'
+	);
 });
 
 test('a player picks a laurel form, its colour and its motion, and keeps them', async ({
@@ -165,20 +191,28 @@ test('every motion can be picked and keeps the laurel (Trevor, 2026-10-28)', asy
 	await expect(preview.locator('.sparkle')).toHaveCount(6);
 });
 
-test('tapping the seat in the Profile shows it large, over the Profile', async ({ page }) => {
+test('tapping the seat in the Profile shows the profile as others see it, over the Profile', async ({
+	page
+}) => {
+	// Trevor, 2026-11-16: "pressing the profile in profile should showcase what it looks like to
+	// other people".
 	await page.goto('/');
 	const dialog = await openProfile(page);
+	await choose(page, 'Your laurel', 'Olive');
+	await dialog.getByRole('button', { name: 'Edit your name' }).tap();
+	const modal = page.getByRole('dialog', { name: 'Your name' });
+	await modal.getByRole('textbox', { name: 'Your name' }).fill('Pixelation');
+	await modal.getByRole('button', { name: 'Save' }).tap();
 	const small = await dialog.getByTestId('profile-preview').boundingBox();
-	const smallSeat = await dialog.getByTestId('profile-preview').locator('.seat-disc').boundingBox();
-	await dialog.getByTestId('profile-preview').tap();
-	const big = page.getByRole('dialog', { name: 'Preview', exact: true });
-	await expect(big).toBeVisible();
-	const disc = big.getByTestId('profile-big-preview').locator('.seat-disc');
-	await expect(disc).toBeVisible();
-	expect((await disc.boundingBox())?.width ?? 0).toBeGreaterThan((smallSeat?.width ?? 0) * 1.5);
+	await dialog.getByRole('button', { name: 'See your profile as others do' }).tap();
+	const shown = page.getByTestId('player-profile');
+	await expect(shown).toBeVisible();
+	await expect(shown.locator('svg[data-frame^="laurel-olive"]')).toBeAttached();
+	const others = page.getByRole('dialog', { name: 'Pixelation' });
+	await expect(others).toBeVisible();
 	// Over the Profile: the Profile underneath has not moved.
-	await big.getByRole('button', { name: 'Close' }).tap();
-	await expect(big).toBeHidden();
+	await others.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(others).toBeHidden();
 	expect(await dialog.getByTestId('profile-preview').boundingBox()).toEqual(small);
 });
 
@@ -270,15 +304,8 @@ test('a representative character stays in the Profile, off every seat (Trevor, 2
 	await page.goto('/');
 	const dialog = await openProfile(page);
 	await choose(page, 'Your laurel', 'Olive');
-	await expect(dialog.getByTestId('character-icon')).toHaveText('None');
-	await dialog.getByRole('button', { name: 'Change character token' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Character token' });
-	await picker.getByRole('searchbox').fill('Fortune Teller');
-	await picker
-		.getByRole('button', { name: /Fortune Teller/ })
-		.first()
-		.tap();
-	await expect(picker).toBeHidden();
+	await expect(dialog.getByTestId('character-icon')).toHaveCount(0);
+	await pickCharacterToken(page, 'Fortune Teller');
 	await expect(dialog.getByTestId('character-icon')).toContainText('Fortune Teller');
 
 	// Laurels and avatars are enough: the seat and the Profile button keep the initials and
@@ -294,12 +321,13 @@ test('a representative character stays in the Profile, off every seat (Trevor, 2
 	await page.reload();
 	const again = await openProfile(page);
 	await expect(again.getByTestId('character-icon')).toContainText('Fortune Teller');
+	// Deleting the detail leaves the initials alone again.
 	await again.getByRole('button', { name: 'Change character token' }).tap();
 	await page
-		.getByRole('dialog', { name: 'Character token' })
-		.getByRole('button', { name: 'None' })
+		.getByRole('dialog', { name: 'Edit detail' })
+		.getByRole('button', { name: 'Delete detail' })
 		.tap();
-	await expect(again.getByTestId('character-icon')).toHaveText('None');
+	await expect(again.getByTestId('character-icon')).toHaveCount(0);
 });
 
 test('the Profile seat keeps clear of the text under it, laurel and name (Trevor, 2026-11-03)', async ({
@@ -307,7 +335,10 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
-	const notice = dialog.getByTestId('fair-play');
+	// What sits under the seat: History's counts beside a wide screen's choices, else the
+	// choices themselves.
+	const stats = dialog.getByTestId('profile-stats');
+	const notice = (await stats.count()) ? stats : dialog.getByTestId('player-frame-setting');
 	const preview = dialog.getByTestId('profile-preview');
 	// The text's place under the seat; the dialog may scroll while picking.
 	const gap = async () => (await notice.boundingBox())!.y - (await preview.boundingBox())!.y;
@@ -319,14 +350,7 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 	await modal.getByRole('button', { name: 'Save' }).tap();
 	await choose(page, 'Your laurel', 'Olive');
 	await choose(page, 'Motion', 'Pulse');
-	await dialog.getByRole('button', { name: 'Change character token' }).tap();
-	const picker = page.getByRole('dialog', { name: 'Character token' });
-	await picker.getByRole('searchbox').fill('Fortune Teller');
-	await picker
-		.getByRole('button', { name: /Fortune Teller/ })
-		.first()
-		.tap();
-	await expect(picker).toBeHidden();
+	await pickCharacterToken(page, 'Fortune Teller');
 
 	// Picking them moved nothing, seen from the dialog's top (the seat stays pinned while the
 	// choices under it scroll).

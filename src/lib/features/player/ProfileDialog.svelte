@@ -14,8 +14,8 @@
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
-	import CharacterIconRow from './CharacterIconRow.svelte';
 	import FlavourTextRow from './FlavourTextRow.svelte';
+	import PlayerProfileDialog from './PlayerProfileDialog.svelte';
 	import ProfileDetailsRows from './ProfileDetailsRows.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { profileDialog } from './profile-dialog.svelte.ts';
@@ -33,11 +33,15 @@
 	const history = new HistorySummary();
 	onMount(() => history.load());
 
-	// Tapping the seat shows it large, over the Profile (Trevor, 2026-10-28), so nothing moves.
-	let enlarged = $state(false);
+	// Tapping the seat shows the profile as everyone else at the table sees it, over the
+	// Profile so nothing moves (Trevor, 2026-11-16).
+	let showing = $state(false);
 	let paneWidth = $state(0);
-	let bigWidth = $state(0);
 	let screenHeight = $state(0);
+	const words = $derived({
+		...(playerSettings.current.flavour ? { tagline: playerSettings.current.flavour } : {}),
+		...(playerSettings.current.details ? { details: playerSettings.current.details } : {})
+	});
 
 	/**
 	 * The room a seat shown by itself needs round it, as a share of its size, so the widest
@@ -55,9 +59,6 @@
 		wide
 			? Math.min((paneWidth * 0.36) / (1 + 2 * ROOM), screenHeight * 0.3)
 			: Math.min((paneWidth * 0.36) / (1 + 2 * ROOM), screenHeight * 0.14)
-	);
-	const bigSize = $derived(
-		Math.max(0, Math.min((bigWidth * 0.95) / (1 + 2 * ROOM), (screenHeight * 0.6) / (1 + 2 * ROOM)))
 	);
 </script>
 
@@ -85,21 +86,21 @@
 			<button
 				type="button"
 				class="enlarge"
-				aria-label={t('player.bigPreview')}
+				aria-label={t('player.seeAsOthers')}
 				data-testid="profile-preview"
 				style:padding={room(seatSize)}
-				onclick={() => (enlarged = true)}
+				onclick={() => (showing = true)}
 				>{#if seatSize}{@render seat(seatSize)}{/if}</button
 			>
-			{#if wide}
-				<!-- Everyone at the table sees this look, so it mustn't hint at a character
-				     (Trevor, 2026-10-29: a warning, not a lock). -->
-				<FairPlayNotice kind="profile" />
-				<StatCards stats={history.counts} testid="profile-stats" />
-			{/if}
+			<!-- Everyone at the table sees this look, so it mustn't hint at a character (Trevor,
+			     2026-10-29: a warning, not a lock), behind an info button in the corner so it isn't
+			     so loud (2026-11-16). -->
+			<span class="fair-play"><FairPlayNotice kind="profile" info /></span>
+			{#if wide}<div class="stats">
+					<StatCards stats={history.counts} testid="profile-stats" />
+				</div>{/if}
 		</div>
 		<div class="choices">
-			{#if !wide}<FairPlayNotice kind="profile" />{/if}
 			<!-- The laurel round this player's seat token, sent with their initials (L4, A1). -->
 			<SettingFrame
 				label={t('player.frame')}
@@ -119,9 +120,6 @@
 			<PlayerNameRow player={joinedRoom.player} />
 			<!-- A line about themselves, their tag-line on their profile (2026-10-28, 2026-11-01). -->
 			<FlavourTextRow />
-			<!-- The character that represents them, in their Profile only (Trevor, 2026-10-28; off
-			     the board, 2026-11-03). -->
-			<CharacterIconRow />
 			<!-- Their own details, such as "Favorite script", all optional (Trevor, 2026-11-01).
 			     Last, so adding one moves nothing above it. -->
 			<ProfileDetailsRows />
@@ -129,11 +127,14 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={enlarged} title={t('player.bigPreview')} size="wide">
-	<div class="big" bind:clientWidth={bigWidth} data-testid="profile-big-preview">
-		{#if bigSize}<span style:padding={room(bigSize)}>{@render seat(bigSize)}</span>{/if}
-	</div>
-</Dialog>
+<PlayerProfileDialog
+	bind:open={showing}
+	{name}
+	avatar={playerSettings.current.avatar}
+	picture={avatarPicture.url}
+	frame={playerSettings.current.frame}
+	{words}
+/>
 
 <style>
 	.layout {
@@ -163,6 +164,16 @@
 	.wide .pinned {
 		border-bottom: 0;
 	}
+	/* In the corner, beside the seat's own room, so it moves nothing. */
+	.fair-play {
+		position: absolute;
+		inset-block-start: var(--space-3);
+		inset-inline-start: 0;
+	}
+	/* The totals from the left edge (Trevor, 2026-11-16), not bunched in the middle. */
+	.stats {
+		justify-self: stretch;
+	}
 	.choices {
 		display: grid;
 		min-width: 0;
@@ -173,11 +184,6 @@
 		border-radius: 50%;
 		background: none;
 		color: inherit;
-		cursor: zoom-in;
-	}
-	.big {
-		display: grid;
-		justify-items: center;
-		padding-block: var(--space-3);
+		cursor: pointer;
 	}
 </style>
