@@ -15,7 +15,7 @@ export const shell = {
 	'shell.lastGameLeave': 'Leave room',
 	'shell.lastGameLeaveTitle': 'Leave the room?',
 	'shell.lastGameLeaveBody':
-		'This phone stops following the room and it leaves Join game. Its code joins it again.',
+		'This phone leaves the room, and its seat if it has one. Its code joins it again.',
 	'shell.lastGameDeleteTown': 'Delete town',
 	'shell.lastGameDeleteTownTitle': 'Delete this town?',
 	'shell.lastGameDeleteTownBody':
@@ -23,6 +23,8 @@ export const shell = {
 	'shell.leave.title': 'Leave the game?',
 	'shell.leave.saved': 'Opens again from Join game',
 	'shell.leave.room': 'You stay in the room',
+	'shell.leave.roomGone': 'You leave the room',
+	'shell.leave.roomToggle': 'Leave the room',
 	'shell.leave.town': 'Your town stays on this phone',
 	'shell.leave.notes': 'Your notes stay on this phone',
 	'shell.navSectionGames': 'Play',

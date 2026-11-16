@@ -10,8 +10,10 @@
 </script>
 
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ResumeGameRow from './ResumeGameRow.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 
 	/**
 	 * Leaving a game in progress, for the Storyteller, a player in a room and a players-only
@@ -22,12 +24,29 @@
 		open?: boolean;
 		title: string;
 		card: LeaveCard;
-		onConfirm: () => void;
+		/**
+		 * A room's game: a Leave the room switch, off to start with, so a player or spectator
+		 * can leave the room too rather than stay on in it (Trevor, 2026-11-16, option A).
+		 * `onConfirm` hears whether it was on.
+		 */
+		room?: boolean;
+		onConfirm: (leaveRoom: boolean) => void;
 	}
 
-	let { open = $bindable(false), title, card, onConfirm }: Props = $props();
+	let { open = $bindable(false), title, card, room = false, onConfirm }: Props = $props();
+	let leaveRoom = $state(false);
+	const shown = $derived(room && leaveRoom ? { ...card, when: t('shell.leave.roomGone') } : card);
+	// Each time it opens, the switch starts off: staying in the room is the usual way out.
+	$effect(() => {
+		if (open) leaveRoom = false;
+	});
 </script>
 
-<ConfirmDialog bind:open {title} closeButton={false} {onConfirm}>
-	<ResumeGameRow {...card} testid="leave-game-card" />
+<ConfirmDialog bind:open {title} closeButton={false} onConfirm={() => onConfirm(room && leaveRoom)}>
+	<ResumeGameRow {...shown} testid="leave-game-card" />
+	{#if room}<Toggle
+			label={t('shell.leave.roomToggle')}
+			checked={leaveRoom}
+			onChange={(on) => (leaveRoom = on)}
+		/>{/if}
 </ConfirmDialog>

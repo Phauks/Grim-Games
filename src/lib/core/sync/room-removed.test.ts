@@ -7,6 +7,7 @@ import {
 	isRemoved,
 	isRemovedProbe,
 	join,
+	leaveRoom,
 	letBackIn,
 	newRoom,
 	openVote,
@@ -62,6 +63,33 @@ describe('removeMember', () => {
 	it('does nothing for a phone that is not in the room', () => {
 		const r = room();
 		expect(removeMember(r, 'nobody')).toBe(r);
+	});
+});
+
+// Leave game (Trevor, 2026-11-16: "a way to leave the game if they don't want to be in it",
+// "for spectators or players").
+describe('leaveRoom', () => {
+	it('takes a seated player out of the room with their seat, and lists them nowhere', () => {
+		const r = leaveRoom(room(), 'alex');
+		expect(r.members.map((m) => m.memberId)).toEqual(['jo']);
+		expect(isRemoved(r, 'alex')).toBe(false);
+		expect(hostView(r).removed).toBeUndefined();
+	});
+
+	it("takes a spectator out with their vote, so they don't stay on as a spectator", () => {
+		const r = leaveRoom(room(), 'jo');
+		expect(r.members.map((m) => m.memberId)).toEqual(['alex']);
+		expect(r.vote?.votes).toEqual({});
+	});
+
+	it('lets the phone join again with its code, as a new phone with no seat', () => {
+		const back = join(leaveRoom(room(), 'alex'), 'alex')!;
+		expect(back.members.find((m) => m.memberId === 'alex')).toEqual({ memberId: 'alex' });
+	});
+
+	it('does nothing for a phone that is not in the room', () => {
+		const r = room();
+		expect(leaveRoom(r, 'nobody')).toBe(r);
 	});
 });
 
