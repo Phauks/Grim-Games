@@ -63,21 +63,31 @@ test('spectators message the Storyteller, under Spectators, until it is turned o
 	// Every message says whether a consult was asked for (Trevor, 2026-11-06).
 	await expect(alex.getByTestId('inbox-no-consult')).toHaveText('No consult');
 
-	// The Storyteller turns them off: the spectator may not send now.
-	const allow = spectators.getByRole('checkbox', {
+	// The Storyteller turns them off in Game settings (Trevor, 2026-11-16): the spectator may not send now.
+	await closePane(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Game settings' })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Game settings' });
+	const allow = settings.getByRole('checkbox', {
 		name: 'Spectators can message',
 		includeHidden: true
 	});
 	await expect(allow).toBeChecked();
-	await spectators.getByText('Spectators can message', { exact: true }).tap();
+	await settings.getByText('Spectators can message', { exact: true }).tap();
 	await expect(allow).not.toBeChecked();
 	await expect(phone.getByTestId('message-button')).toBeDisabled();
-	// What they sent stays.
-	await expect(alex.getByTestId('inbox-item')).toHaveCount(1);
 
 	// And back on.
-	await spectators.getByText('Spectators can message', { exact: true }).tap();
+	await settings.getByText('Spectators can message', { exact: true }).tap();
 	await expect(allow).toBeChecked();
 	await expect(phone.getByTestId('message-button')).toBeEnabled();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	// What they sent stays.
+	const again = await openPlayerSheet(page, 'Alex');
+	await expect(again.getByTestId('inbox-item')).toHaveCount(1);
+	await closePane(page);
 	await phone.context().close();
 });

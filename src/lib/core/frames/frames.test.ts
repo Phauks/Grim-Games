@@ -12,7 +12,6 @@ import {
 	FRAME_MOTIONS,
 	frameById,
 	frameId,
-	frameMaskSvg,
 	frameOf,
 	isFrameUnlocked,
 	parseFrameId,
@@ -139,12 +138,6 @@ describe('frames', () => {
 
 	it('knows how far the widest frame reaches past the token, the laurels', () => {
 		expect(FRAME_REACH).toBeCloseTo((50 / LAUREL_FACE_RADIUS - 1) / 2);
-	});
-
-	it('makes a mask of the outline in one paint, with no page colours in it', () => {
-		const svg = frameMaskSvg(frameById('ring') as Frame);
-		expect(svg).toContain('<circle');
-		expect(svg).not.toContain('var(');
 	});
 
 	it('has room for an unlock rule (achievements, A1)', () => {

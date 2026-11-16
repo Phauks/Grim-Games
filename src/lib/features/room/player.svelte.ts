@@ -393,8 +393,8 @@ export class RoomPlayer {
 		return this.#socket.send(message);
 	}
 
-	/** Count off (plan J40): the number this player counted to, going clockwise. */
-	count(number: number): boolean {
+	/** Count off (plan J40): the number this player counted to, going clockwise; `null` lets it go. */
+	count(number: number | null): boolean {
 		return this.#socket.send({ type: 'count', number });
 	}
 

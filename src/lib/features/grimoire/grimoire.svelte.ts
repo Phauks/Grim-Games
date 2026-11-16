@@ -321,6 +321,16 @@ export class Grimoire {
 		seatLayouts.write(this.game.gameId, layout);
 	}
 
+	/** Two players swap places (SeatArranging's `SeatTable`), one History entry. */
+	swap(seatA: SeatId, seatB: SeatId): boolean {
+		return this.run({ type: 'SwapSeats', seatA, seatB });
+	}
+
+	/** A seat moves to `position` in the seating order (SeatArranging's `SeatTable`). */
+	move(seatId: SeatId, position: number): void {
+		this.run({ type: 'MoveSeat', seatId, position });
+	}
+
 	get game() {
 		return this.open.game;
 	}

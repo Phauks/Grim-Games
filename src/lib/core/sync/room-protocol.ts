@@ -88,7 +88,8 @@ export type ClientMessage =
 	| { type: 'sit'; place: { x: number; y: number } }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
-	| { type: 'count'; number: number } // Count off (plan J40): the number this player counted to.
+	/** Count off (plan J40): the number this player counted to, or `null` to let theirs go. */
+	| { type: 'count'; number: number | null }
 	/** Travellers choose (room-traveller-pick.ts): hold one, `null` to let it go, then confirm. */
 	| { type: 'hold-traveller'; pickId: string; characterId: CharacterId | null }
 	| { type: 'confirm-traveller'; pickId: string }
