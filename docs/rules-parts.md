@@ -88,7 +88,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Changes character.** Its night step makes a chosen player another character.
 
 - Part: `src/lib/core/data/parts/changes-character.ts`
-- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
+- Read by: `core/modes/draft-seats.ts`, `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
 
 ### choosesLikeDemon
 
@@ -326,7 +326,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Only jinxes.** Its ability is only the jinxes, so a game never starts with it in play.
 
 - Part: `src/lib/core/data/parts/jinxes-only.ts`
-- Read by: `core/data/script-rules.ts`
+- Read by: `core/data/script-rules.ts`, `features/player/player-script.ts`
 
 ### keepsAbility
 

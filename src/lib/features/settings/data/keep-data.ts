@@ -1,3 +1,5 @@
+import { installRoute, type BrowserInfo } from '#lib/core/install/install-route.ts';
+
 /**
  * Keeping this device's saved data (Storage plan, Trevor 2026-10-18: "follow your
  * recommendation"). Without persistent storage a browser may clear the app's games and
@@ -31,28 +33,16 @@ export function keepData(): () => void {
 	return () => removeEventListener('appinstalled', ask);
 }
 
-export interface BrowserInfo {
-	userAgent: string;
-	/** Touch points: an iPad asking for the desktop site says "Macintosh" but has them. */
-	maxTouchPoints: number;
-	/** Opened from the Home Screen (navigator.standalone or display-mode: standalone). */
-	standalone: boolean;
-}
-
 /**
  * Safari on an iPhone or iPad, not opened from the Home Screen: the one case where the
- * seven-day deletion applies, so Settings > Data offers Add to Home Screen.
+ * seven-day deletion applies, so Settings > Data offers Add to Home Screen. An app's own web
+ * view (the Google app) says Safari too, but has no Add to Home Screen (install-route.ts).
  */
-export function needsHomeScreen({ userAgent, maxTouchPoints, standalone }: BrowserInfo): boolean {
-	if (standalone) return false;
-	const ios =
-		/iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1);
-	// Other iOS browsers name themselves; only Safari has the Add to Home Screen this row describes.
-	const safari = /Safari\//.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(userAgent);
-	return ios && safari;
+export function needsHomeScreen(browser: BrowserInfo): boolean {
+	return installRoute(browser, false) === 'ios-safari';
 }
 
-/** This browser, for needsHomeScreen. */
+/** This browser, for needsHomeScreen and the Install app dialog. */
 export function thisBrowser(): BrowserInfo {
 	const standalone =
 		(navigator as Navigator & { standalone?: boolean }).standalone === true ||

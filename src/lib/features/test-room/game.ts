@@ -122,9 +122,11 @@ export async function playGame(
 	);
 	st.send({ type: 'seating', open: false });
 
+	// The Storyteller locks who is 1 (Trevor, 2026-11-16), a phone, which then holds 1.
+	const top = st.host?.members.find((m) => m.name)?.memberId;
 	await step(
 		'Every phone taps its number in the count off',
-		() => st.send({ type: 'count-off' }),
+		() => st.send({ type: 'count-off', ...(top ? { first: { memberId: top } } : {}) }),
 		() => (st.host?.countOff?.tokens.length ?? 0) >= bots.length,
 		() => `${st.host?.countOff?.tokens.length ?? 0} numbers held`
 	);

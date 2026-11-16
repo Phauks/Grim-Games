@@ -104,24 +104,34 @@ test('spectators and Grim view message the Storyteller, under Spectators, until 
 	await expect(pat.getByTestId('room-player-where')).toHaveText('Grim view');
 	await expect(pat.getByTestId('inbox-item')).toContainText('Lovely game so far');
 
-	// The Storyteller turns them off: neither may send now.
-	const allow = spectators.getByRole('checkbox', {
+	// The Storyteller turns them off in Game settings (Trevor, 2026-11-16): neither may send now.
+	await closePane(page);
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Game settings' })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Game settings' });
+	const allow = settings.getByRole('checkbox', {
 		name: 'Spectators can message',
 		includeHidden: true
 	});
 	await expect(allow).toBeChecked();
-	await spectators.getByText('Spectators can message', { exact: true }).tap();
+	await settings.getByText('Spectators can message', { exact: true }).tap();
 	await expect(allow).not.toBeChecked();
 	await expect(phone.getByTestId('message-button')).toBeDisabled();
 	await expect(viewer.getByTestId('message-button')).toBeDisabled();
-	// What they sent stays.
-	await expect(pat.getByTestId('inbox-item')).toHaveCount(1);
 
 	// And back on.
-	await spectators.getByText('Spectators can message', { exact: true }).tap();
+	await settings.getByText('Spectators can message', { exact: true }).tap();
 	await expect(allow).toBeChecked();
 	await expect(phone.getByTestId('message-button')).toBeEnabled();
 	await expect(viewer.getByTestId('message-button')).toBeEnabled();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	// What they sent stays.
+	const again = await openPlayerSheet(page, 'Pat');
+	await expect(again.getByTestId('inbox-item')).toHaveCount(1);
+	await closePane(page);
 	await phone.context().close();
 	await viewer.context().close();
 });

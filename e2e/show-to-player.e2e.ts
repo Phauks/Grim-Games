@@ -86,6 +86,38 @@ test('a shown card fills the screen with its words, never past it', async ({ pag
 	expect(await shown.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 });
 
+test('a shown character stops growing before its name is cut or a word breaks', async ({
+	page
+}) => {
+	// Trevor (2026-11-16): on a phone the Washerwoman read "WASH..." and her ability ran one
+	// word to a line, with the period on a line of its own.
+	await page.goto('/info-tokens');
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Washerwoman');
+	await page.getByRole('button', { name: 'Washerwoman', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const caption = page.getByTestId('shown-character').locator('.caption');
+	await expect(caption).toContainText('particular Townsfolk.');
+	const name = caption.locator('.band-name');
+	await expect.poll(() => name.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+	// "Townsfolk." stays whole on one line.
+	const rows = await caption.locator('.ring-ability').evaluate((el) => {
+		const node = [...el.childNodes].find((n) => n.textContent?.includes('Townsfolk.'))!;
+		const at = node.textContent!.indexOf('Townsfolk.');
+		const range = document.createRange();
+		range.setStart(node, at);
+		range.setEnd(node, at + 'Townsfolk.'.length);
+		return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+	});
+	expect(rows).toBe(1);
+	// The row's ring keeps its normal size while the words grow (Trevor, 2026-11-16: B).
+	const ring = await caption.locator('.ring').evaluate((el) => el.getBoundingClientRect().width);
+	const rem = await page.evaluate(() =>
+		parseFloat(getComputedStyle(document.documentElement).fontSize)
+	);
+	expect(ring).toBeLessThanOrEqual(4.4 * 1.5 * rem + 1);
+});
+
 test('a shown token fits the screen at any token size', async ({ page }) => {
 	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
 	// only now, so the player's view fits the token to the screen at the largest size too.

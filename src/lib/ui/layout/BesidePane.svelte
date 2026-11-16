@@ -24,12 +24,29 @@
 
 	let { placement, label, room, pane, children }: Props = $props();
 	const on = $derived(placement && pane ? placement : undefined);
+
+	let aside = $state<HTMLElement>();
+	/** As the keyboard opens and the pane shrinks above it, the field being typed in stays shown. */
+	$effect(() => {
+		const viewport = window.visualViewport;
+		if (!viewport || !aside) return;
+		const box = aside;
+		const keep = () => {
+			const focused = document.activeElement;
+			if (focused instanceof HTMLElement && box.contains(focused))
+				requestAnimationFrame(() => focused.scrollIntoView({ block: 'nearest' }));
+		};
+		viewport.addEventListener('resize', keep);
+		return () => viewport.removeEventListener('resize', keep);
+	});
 </script>
 
 <div class="beside" data-beside={on} style:--beside-room={room}>
 	<div class="main">{@render children()}</div>
 	{#if on && pane}
-		<aside class="pane" aria-label={label} data-testid="beside-pane">{@render pane()}</aside>
+		<aside class="pane" aria-label={label} data-testid="beside-pane" bind:this={aside}>
+			{@render pane()}
+		</aside>
 	{/if}
 </div>
 
@@ -52,20 +69,25 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
+	/* With the on-screen keyboard up (keyboard-inset.ts), the pane ends above it and starts at
+	   the top of what is shown, so a note being typed in it stays in view (Trevor, 2026-11-16). */
 	.beside[data-beside='side'] .pane {
 		position: sticky;
-		top: 0;
-		height: var(--room);
+		top: var(--keyboard-top, 0rem);
+		height: calc(var(--room) - var(--keyboard-inset, 0rem) - var(--keyboard-top, 0rem));
 		padding-inline-start: var(--space-3);
 		border-inline-start: 1px solid var(--border); /* px-ok: a hairline, as the bar's */
 	}
+	/* Under, the pane keeps its two fifths and the content above gives up what the keyboard
+	   covers, so the pane sits just above the keyboard. */
 	.beside[data-beside='under'] {
+		--kept: calc(var(--keyboard-inset, 0rem) + var(--keyboard-top, 0rem));
 		gap: 0;
-		height: var(--room);
-		grid-template-rows: 3fr 2fr;
+		height: calc(var(--room) - var(--kept));
+		grid-template-rows: minmax(0, 1fr) calc(0.4 * var(--room));
 	}
 	.beside[data-beside='under'] .main {
-		--panel-room: calc(0.6 * var(--room) - var(--space-2));
+		--panel-room: max(0rem, calc(0.6 * var(--room) - var(--space-2) - var(--kept)));
 		--pin-top: 0rem;
 		min-height: 0;
 		overflow-y: auto;

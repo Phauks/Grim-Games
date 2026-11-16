@@ -12,6 +12,13 @@ import type {
 	LedgerRoom,
 	LedgerSite
 } from '../src/lib/core/sync/game-ledger.ts';
+import {
+	combineTallies,
+	parseGameTally,
+	SCRIPT_RATING_ID,
+	type GameTally,
+	type ScriptRating
+} from '../src/lib/core/feedback/index.ts';
 import { remote, type DataBinding } from './shared-data.ts';
 
 export interface GameLedgerEnv {
@@ -28,6 +35,8 @@ export interface GameLedgerApi {
 	opened(room: LedgerRoom): Promise<void>;
 	record(game: LedgerGame): Promise<void>;
 	list(since?: number): Promise<GameHistory>;
+	rateGame(gameId: string, scriptId: string, tally: GameTally, now: number): Promise<void>;
+	scriptRating(scriptId: string): Promise<ScriptRating>;
 }
 
 /** The longest a script name kept here may be. */
@@ -76,6 +85,13 @@ export class GameLedger extends DurableObject implements GameLedgerApi {
 				opened INTEGER NOT NULL
 			);
 			CREATE INDEX IF NOT EXISTS room_opened ON room (opened);
+			CREATE TABLE IF NOT EXISTS script_rating (
+				game TEXT PRIMARY KEY,
+				script TEXT NOT NULL,
+				tally TEXT NOT NULL,
+				updated INTEGER NOT NULL
+			);
+			CREATE INDEX IF NOT EXISTS script_rating_script ON script_rating (script);
 		`);
 	}
 
@@ -123,6 +139,37 @@ export class GameLedger extends DurableObject implements GameLedgerApi {
 			.toArray()
 			.map((r): LedgerRoom => ({ site: r.site as LedgerSite, room: r.room, opened: r.opened }));
 		return { games, rooms };
+	}
+
+	/**
+	 * A game's part of its script's public rating (Trevor, 2026-11-16): numbers only, keyed by
+	 * a hash of the script's name and author. A game sent again replaces its own part.
+	 */
+	async rateGame(gameId: string, scriptId: string, raw: GameTally, now: number): Promise<void> {
+		const tally = parseGameTally(raw);
+		if (!tally || !SCRIPT_RATING_ID.test(scriptId) || !/^[\w-]{1,64}$/.test(gameId)) return;
+		this.sql.exec(
+			`INSERT INTO script_rating (game, script, tally, updated) VALUES (?, ?, ?, ?)
+			 ON CONFLICT (game) DO UPDATE SET script = excluded.script, tally = excluded.tally,
+			   updated = excluded.updated`,
+			gameId,
+			scriptId,
+			JSON.stringify(tally),
+			now
+		);
+	}
+
+	/** A script's public rating over every game counted. */
+	async scriptRating(scriptId: string): Promise<ScriptRating> {
+		if (!SCRIPT_RATING_ID.test(scriptId)) return combineTallies([]);
+		const tallies = this.sql
+			.exec<{ tally: string }>('SELECT tally FROM script_rating WHERE script = ?', scriptId)
+			.toArray()
+			.flatMap((row) => {
+				const tally = parseGameTally(JSON.parse(row.tally));
+				return tally ? [tally] : [];
+			});
+		return combineTallies(tallies);
 	}
 }
 

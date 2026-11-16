@@ -6,12 +6,18 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
+	import {
+		playerJinxes,
+		playerNight,
+		sheetCharacters,
+		sheetRuleCharacters
+	} from './player-script.ts';
 	import NightStrip from './NightStrip.svelte';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import { tick, type Snippet } from 'svelte';
 	import QrCode from '#lib/ui/primitives/QrCode.svelte';
+	import { largestFit } from '#lib/ui/largest-fit.ts';
 	import {
 		PAPER_MM,
 		PRINT_DEFAULTS,
@@ -61,10 +67,17 @@
 	const ruleCharacter = (c: { type: string }) => c.type === 'fabled' || c.type === 'loric';
 	const front = $derived(settings.front);
 	const back = $derived(settings.back);
+	// The jinxes-only character (the Djinn) only where its side's switch asks (Trevor, 2026-11-16).
 	const frontCharacters = $derived(
-		front.ruleCharacters ? characters : characters.filter((c) => !ruleCharacter(c))
+		front.ruleCharacters
+			? sheetRuleCharacters(characters, front.jinxesOnly)
+			: characters.filter((c) => !ruleCharacter(c))
 	);
-	const backCharacters = $derived(back.ruleCharacters ? characters.filter(ruleCharacter) : []);
+	const backCharacters = $derived(
+		back.ruleCharacters
+			? sheetRuleCharacters(characters.filter(ruleCharacter), back.jinxesOnly)
+			: []
+	);
 	const backJinxes = $derived(back.jinxes && jinxes.length > 0);
 	const backRules = $derived(back.rules ? rules : []);
 	const logo = $derived(front.logo ? scriptLogo(script) : undefined);
@@ -87,6 +100,7 @@
 	let backZoom = $state(1);
 	let frontPage = $state<HTMLElement>();
 	let backPage = $state<HTMLElement>();
+	let backName = $state<HTMLElement>();
 	const fits = (page: HTMLElement) => page.scrollHeight <= page.clientHeight + 1;
 
 	/**
@@ -118,6 +132,15 @@
 		await tick();
 	}
 
+	/** The back's name shrinks until it fits one line, however long it is (Trevor, 2026-11-16). */
+	function fitName(name: HTMLElement) {
+		const at = (scale: number) => {
+			name.style.setProperty('--name-scale', String(scale));
+			return name.scrollWidth <= name.clientWidth + 1;
+		};
+		at(largestFit(at, { min: 0.3, max: 1 }));
+	}
+
 	/** Lays both sides out to one page each; call once the sheet and its icons have loaded. */
 	export async function fit() {
 		await loadOfficialData().catch(() => undefined);
@@ -144,6 +167,7 @@
 		}
 		// The back's type starts small, so a short back grows to fill its page.
 		if (backPage) await zoomToFit(backPage, (z) => (backZoom = z), 1.5);
+		if (backName) fitName(backName);
 	}
 </script>
 
@@ -224,15 +248,13 @@
 			{#snippet backPageSnippet()}
 				<section class="page back" bind:this={backPage}>
 					<div class="fit" style:zoom={backZoom} style:--character-ring-scale={back.iconScale}>
-						<!-- Title and player counts share the top, so both nights fit below them. -->
+						<!-- The name on one line across the top, the player counts under it, and the QR
+						     code's corner kept on the right (Trevor, 2026-11-16). -->
 						<header class="back-head">
-							<h1>{script.name}</h1>
-							{#if back.counts}
-								<div class="counts">
-									<h2>{t('player.breakdown')}</h2>
-									<SetupTable />
-								</div>
-							{/if}
+							<div class="back-title">
+								<h1 bind:this={backName}>{script.name}</h1>
+								{#if back.counts}<SetupTable printed />{/if}
+							</div>
 							{@render qrSlot(back.qr)}
 						</header>
 						{#if back.night}<PlayerNightOrder {nights} flat />{/if}
@@ -334,6 +356,14 @@
 		color: var(--type-ink);
 		box-shadow: inset 0 0 0 1px var(--type-ink);
 	}
+	/* The counts' tabs and team tints go to outlines too. */
+	.print-sheet[data-friendly] :global(.setup-table.printed th[scope='col']) {
+		background: none;
+		color: var(--accent);
+	}
+	.print-sheet[data-friendly] :global(.setup-table.printed td) {
+		background: none;
+	}
 	.print-sheet[data-friendly] :global(.ring) {
 		background: var(--print-paper);
 	}
@@ -419,10 +449,24 @@
 		font-size: 1.6rem;
 	}
 	.back-head {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: start;
 		gap: var(--space-3);
+	}
+	.back-title {
+		display: grid;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	/* One line under an accent rule; fitName shrinks a long name to fit it. */
+	.back-title h1 {
+		padding-bottom: var(--space-1);
+		border-bottom: 0.15em solid var(--accent);
+		font-size: calc(2rem * var(--name-scale, 1));
+		line-height: 1.1;
+		white-space: nowrap;
+		overflow: hidden;
 	}
 	/* Beside the QR code's corner, which keeps the right edge whether it shows or not. */
 	.ccc {
@@ -446,9 +490,5 @@
 		padding: 0.4rem;
 		background: var(--print-paper);
 		color: var(--print-ink);
-	}
-	.counts h2 {
-		margin: 0;
-		font-size: 0.8rem;
 	}
 </style>

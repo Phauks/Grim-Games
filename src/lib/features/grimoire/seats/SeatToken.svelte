@@ -14,6 +14,7 @@
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
+	import { seatPictureOf } from './seat-picture.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import type { TrueCharacterMark } from './true-character-marks.ts';
 	import type { SeatIssue } from '#lib/features/grimoire/board.ts';
@@ -127,7 +128,8 @@
 	/** Abilities the Storyteller gave in their own words (Gain ability, M34), in the pill. */
 	const custom = $derived(seat.customAbilities ?? []);
 	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
-	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
+	const pictureOf = seatPictureOf();
+	const picture = $derived(seat.avatar ? pictureOf(seat.seatId) : undefined);
 	/** What the seated player has sent that the Storyteller hasn't read (plan M86). */
 	const messages = $derived.by(() => {
 		const host = roomHost();

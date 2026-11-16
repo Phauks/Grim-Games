@@ -633,10 +633,13 @@ test('Install app at the bottom of Settings uses the browser prompt, or the iPho
 	expect(button!.height).toBeGreaterThanOrEqual(43.9);
 	await install.tap();
 	if (testInfo.project.name === 'phone') {
-		const steps = page.getByRole('dialog', { name: 'Add to Home Screen' });
-		await expect(steps.getByTestId('install-steps')).toContainText(
-			'Tap Share, then Add to Home Screen'
-		);
+		const steps = page.getByRole('dialog', { name: 'Install app' }).getByTestId('install-steps');
+		await expect(steps.getByRole('listitem')).toHaveText([
+			/Tap ⋯ beside the address/,
+			/Tap Share/,
+			/Tap Add to Home Screen/,
+			/Tap Add/
+		]);
 	} else {
 		await expect
 			.poll(() => page.evaluate(() => (window as { __prompted?: number }).__prompted))

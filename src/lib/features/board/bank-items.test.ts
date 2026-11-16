@@ -13,7 +13,7 @@ import {
 	playerBankItems,
 	type BankOptions
 } from './bank-items.ts';
-import { extraReminders } from './reminders.ts';
+import { extraReminders, hasUnlimitedReminders } from './reminders.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -281,5 +281,13 @@ describe('tokens that never run out', () => {
 
 	it('never marks a placed copy as an extra', () => {
 		expect(extraReminders(withBootlegger(3), characters).size).toBe(0);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Amnesiac
+	// Wiki: "The Storyteller decides what the Amnesiac's ability is. It may be the same ability as another character in Blood On The Clocktower, something similar, or something original."
+	// Wiki: "Use the Amnesiac's "?" reminders if you need to."
+	// Trevor (2026-11-16): "Making amnesiac an infinite reminder token."
+	it("never runs out of the Amnesiac's, whose ability the Storyteller makes up", () => {
+		expect(hasUnlimitedReminders('amnesiac' as never, characters)).toBe(true);
 	});
 });
