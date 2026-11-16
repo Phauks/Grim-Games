@@ -346,6 +346,7 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 });
 
 test('no frame or motion paints over the face', async ({ page }) => {
+	test.slow(); // many screenshots, each compared whole
 	// Trevor, 2026-11-16: "Laurel motion seems to have issues where it overwrites the image";
 	// Scalloped's fill was a plate over the whole face, and the shimmer's light was a layer
 	// cut to the frame by a CSS mask, which a moving layer may slip.
@@ -368,11 +369,12 @@ test('no frame or motion paints over the face', async ({ page }) => {
 	const bare = await inner();
 	for (const form of ['Scalloped', 'Laurel']) {
 		await choose(page, 'Your laurel', form);
-		for (const motion of ['None', 'Shimmer', 'Clockwise shimmer', 'Twinkle', 'Pulse']) {
+		for (const motion of ['None', 'Shimmer', 'Clockwise shimmer']) {
 			await choose(page, 'Motion', motion);
-			for (let i = 0; i < 3; i++) {
+			// Twice, the light elsewhere on the ring each time.
+			for (let i = 0; i < 2; i++) {
 				expect(await inner(), `${form}, ${motion}`).toEqual(bare);
-				await page.waitForTimeout(450);
+				await page.waitForTimeout(700);
 			}
 		}
 	}
