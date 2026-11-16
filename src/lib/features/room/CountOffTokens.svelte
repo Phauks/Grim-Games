@@ -13,9 +13,11 @@
 	interface Props {
 		view: CountOffView;
 		onTap: (number: number) => void;
+		/** The numbers that can be tapped now; on a phone, none until 1 is locked. */
+		enabled?: (number: number) => boolean;
 	}
 
-	let { view, onTap }: Props = $props();
+	let { view, onTap, enabled = () => true }: Props = $props();
 
 	const holders = $derived(new Map(view.tokens.map((token) => [token.number, token])));
 	const numbers = $derived(Array.from({ length: view.size }, (_, i) => i + 1));
@@ -35,6 +37,7 @@
 					: t('room.countOff.free', { number })}
 				aria-pressed={holder?.mine ?? false}
 				data-testid="count-off-token"
+				disabled={!enabled(number)}
 				onclick={() => onTap(number)}>{number}</button
 			>
 			<span class="name"
@@ -79,6 +82,11 @@
 		background: var(--accent);
 		color: var(--on-accent);
 		box-shadow: var(--button-ring);
+	}
+	/* Not tappable yet (1 not locked) or not by this phone (1 is the Storyteller's). */
+	.token:disabled {
+		cursor: default;
+		opacity: 0.5;
 	}
 	.name {
 		max-width: 100%;

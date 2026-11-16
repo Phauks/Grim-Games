@@ -68,6 +68,11 @@ export interface PlayerSettings {
 	 * set from the Notes button in the tabs' bar, and remembered.
 	 */
 	notesBeside: boolean;
+	/**
+	 * On-screen script sheets list the jinxes-only character (the Djinn) under Fabled. Off by
+	 * default: the Jinxes section is its rule (Trevor, 2026-11-16, as the printed sheet).
+	 */
+	showJinxesOnly: boolean;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -93,6 +98,8 @@ export interface PrintSide {
 	jinxes: boolean;
 	/** The script's Fabled and Loric. */
 	ruleCharacters: boolean;
+	/** The jinxes-only character (the Djinn) among them; off by default (Trevor, 2026-11-16). */
+	jinxesOnly: boolean;
 	/** The game mode and special rules, when printing from a game that has them. */
 	rules: boolean;
 	/**
@@ -147,6 +154,7 @@ export const PRINT_DEFAULTS: PrintSettings = {
 		nightStrips: true,
 		jinxes: true,
 		ruleCharacters: true,
+		jinxesOnly: false,
 		rules: false,
 		qr: false,
 		columns: 'auto',
@@ -159,6 +167,7 @@ export const PRINT_DEFAULTS: PrintSettings = {
 		counts: true,
 		jinxes: false,
 		ruleCharacters: false,
+		jinxesOnly: false,
 		rules: true,
 		qr: false,
 		iconScale: 1
@@ -204,6 +213,7 @@ export function readPrint(raw: unknown): PrintSettings {
 			nightStrips: flag(f.nightStrips, flag(r.nightStrips, d.front.nightStrips)),
 			jinxes: flag(f.jinxes, flag(r.jinxes, d.front.jinxes)),
 			ruleCharacters: flag(f.ruleCharacters, info ? false : d.front.ruleCharacters),
+			jinxesOnly: flag(f.jinxesOnly, d.front.jinxesOnly),
 			rules: flag(f.rules, d.front.rules),
 			qr: flag(f.qr, d.front.qr),
 			columns: PRINT_COLUMNS.find((c) => c === (f.columns ?? r.columns)) ?? d.front.columns,
@@ -216,6 +226,7 @@ export function readPrint(raw: unknown): PrintSettings {
 			counts: flag(b.counts, info ? false : d.back.counts),
 			jinxes: flag(b.jinxes, info ? true : d.back.jinxes),
 			ruleCharacters: flag(b.ruleCharacters, info ? true : d.back.ruleCharacters),
+			jinxesOnly: flag(b.jinxesOnly, d.back.jinxesOnly),
 			rules: flag(b.rules, d.back.rules),
 			qr: flag(b.qr, d.back.qr),
 			iconScale: iconScale(b.iconScale)
@@ -239,7 +250,8 @@ const DEFAULTS: PlayerSettings = {
 	townMatchShape: true,
 	sheetBackground: 'theme',
 	reminderLines: DEFAULT_REMINDER_LINES,
-	notesBeside: false
+	notesBeside: false,
+	showJinxesOnly: false
 };
 
 function read(): PlayerSettings {
@@ -257,7 +269,8 @@ function read(): PlayerSettings {
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ?? DEFAULTS.sheetBackground,
 			reminderLines: parseReminderLines(raw.reminderLines),
-			notesBeside: raw.notesBeside === true
+			notesBeside: raw.notesBeside === true,
+			showJinxesOnly: raw.showJinxesOnly === true
 		};
 	} catch {
 		return DEFAULTS;

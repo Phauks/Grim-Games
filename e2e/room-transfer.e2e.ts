@@ -42,6 +42,8 @@ async function openTransfer(page: Page, board: string, code: string): Promise<st
 		`${code.slice(0, 3)} ${code.slice(3)}`
 	);
 	await expect(dialog.getByTestId('transfer-code')).toHaveText(/^\d{4} \d{4}$/);
+	// "T-" marks it as a transfer code; it is never typed (Trevor, 2026-11-16).
+	await expect(dialog.getByText('T-', { exact: true })).toBeVisible();
 	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [12]:\d\d$/);
 	// The transfer code starts hidden behind dots (Trevor, 2026-11-01); the eye shows it
 	// (2026-10-31), and nothing in the dialog moves.
@@ -75,6 +77,8 @@ async function typeTransferCode(other: Page, code: string) {
 	// on from the last box), then the new one goes in whole, as a pasted code does.
 	const form = other.getByTestId('transfer-claim');
 	const field = form.getByRole('textbox', { name: 'Transfer code' });
+	// The same "T-" stands before the boxes, and only the digits are typed (Trevor, 2026-11-16).
+	await expect(form.getByText('T-', { exact: true })).toBeVisible();
 	if (await field.inputValue()) await form.getByRole('button', { name: 'Clear' }).tap();
 	await expect(field).toHaveValue('');
 	await field.fill(code);

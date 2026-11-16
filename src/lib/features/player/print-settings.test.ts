@@ -43,6 +43,12 @@ describe('print settings', () => {
 		expect(read.front.ruleCharacters).toBe(false);
 	});
 
+	it('leaves the Djinn off both sides until its switch is on (Trevor, 2026-11-16)', () => {
+		const read = readPrint({});
+		expect([read.front.jinxesOnly, read.back.jinxesOnly]).toEqual([false, false]);
+		expect(readPrint({ front: { jinxesOnly: true } }).front.jinxesOnly).toBe(true);
+	});
+
 	it('reads no back, from the drop-down or the older switch', () => {
 		expect(readPrint({ back: 'none' }).back.enabled).toBe(false);
 		expect(readPrint({ back: false }).back.enabled).toBe(false);

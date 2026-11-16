@@ -15,6 +15,7 @@ import {
 import { MAX_DEALT_PLAYERS } from '#lib/core/rules/setup/distribution.ts';
 import { scriptJinxes, type ScriptJinx } from '#lib/core/rules/jinxes/jinxes.ts';
 import { scriptRulesCarrier, withScriptRules } from '#lib/core/data/script-rules.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { isNightMarker, nightOrder } from '#lib/core/rules/night/night-order.ts';
 import { type Night } from '#lib/core/model/overrides.ts';
 
@@ -45,6 +46,27 @@ export function sheetCharacters(script: LoadedScript, data: GameData): Character
 		(c) => c.edition === script.edition && c.type === 'traveller' && !listed.has(c.id)
 	);
 	return [...own, ...travellers];
+}
+
+/**
+ * Whether a character's ability is only the jinxes (its `jinxesOnly` part, the Djinn). Its rule
+ * is the Jinxes section, so the script sheet leaves it out unless asked (Trevor, 2026-11-16), as
+ * the Script Tool's printout does (https://wiki.bloodontheclocktower.com/Djinn).
+ */
+export const isJinxesOnly = (character: Character): boolean =>
+	rulesOfCharacter(character)?.jinxesOnly === true;
+
+/** `characters` without the jinxes-only ones, unless `show`. */
+export function sheetRuleCharacters<C extends Character>(
+	characters: readonly C[],
+	show: boolean
+): readonly C[] {
+	return show ? characters : characters.filter((c) => !isJinxesOnly(c));
+}
+
+/** The name of the official jinxes-only character, for the switch that shows it. */
+export function jinxesOnlyName(data: GameData): string | undefined {
+	return data.characters.find(isJinxesOnly)?.name;
 }
 
 /**

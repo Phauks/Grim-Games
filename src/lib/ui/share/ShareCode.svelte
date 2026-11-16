@@ -22,9 +22,11 @@
 		 * hidden (Trevor, 2026-11-01: "room transfer code should start hidden").
 		 */
 		hideable?: boolean;
+		/** Fixed text before the code that is never typed ("T-" on a transfer code). */
+		prefix?: string;
 	}
 
-	let { label, value, testid = 'share-code', status, hideable = false }: Props = $props();
+	let { label, value, testid = 'share-code', status, hideable = false, prefix }: Props = $props();
 
 	let hidden = $state(untrack(() => hideable));
 	/** One dot per character, spaces kept, so the hidden code reads as the same shape. */
@@ -41,7 +43,8 @@
 	</div>
 	<div class="code-row">
 		<!-- The code keeps its place while hidden, under the dots, so nothing moves. -->
-		<p class="code" aria-labelledby={id}>
+		<p class="code" class:prefixed={!!prefix} aria-labelledby={id}>
+			{#if prefix}<span class="prefix">{prefix}</span>{/if}
 			<span class="value" class:concealed={hidden} data-testid={testid} aria-hidden={hidden}>
 				{value ?? '··· ···'}
 			</span>
@@ -91,10 +94,21 @@
 		letter-spacing: 0.08em;
 		font-variant-numeric: tabular-nums;
 		display: grid;
+		grid-template-columns: auto auto;
+		justify-content: start;
+		white-space: nowrap;
 	}
 	.value,
 	.mask {
+		grid-area: 1 / 2;
+	}
+	/* Eight digits, the prefix, Copy and the eye share a phone's row without running off it. */
+	.code.prefixed {
+		font-size: min(2.6rem, 8vw);
+	}
+	.prefix {
 		grid-area: 1 / 1;
+		color: var(--on-surface-muted);
 	}
 	.concealed {
 		visibility: hidden;

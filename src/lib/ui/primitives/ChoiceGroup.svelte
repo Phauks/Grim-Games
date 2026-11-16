@@ -17,8 +17,11 @@
 		value: T;
 		options: Option[];
 		onChange: (value: T) => void;
-		/** `cards` wraps large tappable cards; `row` is a compact line (icons). */
-		layout?: 'cards' | 'row';
+		/**
+		 * `cards` wraps large tappable cards; `row` is a compact line (icons); `joined` is one
+		 * full-width pill split into its options (Official or Custom; Trevor, 2026-11-16).
+		 */
+		layout?: 'cards' | 'row' | 'joined';
 		/** Custom content for one option; defaults to its label. */
 		item?: Snippet<[Option]>;
 		/**
@@ -170,6 +173,37 @@
 		display: block;
 		font-family: var(--font-control);
 		width: 100%;
+	}
+	/* One pill: the options share their edges, only the outer ends are rounded. */
+	:global([data-scope='radio-group'][data-layout='joined']) .options {
+		display: flex;
+		gap: 0;
+	}
+	:global([data-scope='radio-group'][data-layout='joined'] [data-part='item']) {
+		flex: 1 1 0;
+		min-width: 0;
+		justify-content: center;
+		text-align: center;
+		border-radius: 0;
+	}
+	:global(
+		[data-scope='radio-group'][data-layout='joined'] [data-part='item'] + [data-part='item']
+	) {
+		margin-inline-start: -1px; /* px-ok: the hairline edges overlap (--card-border is 1px) */
+	}
+	:global([data-scope='radio-group'][data-layout='joined'] [data-part='item']:first-child) {
+		border-start-start-radius: var(--radius-full);
+		border-end-start-radius: var(--radius-full);
+	}
+	:global([data-scope='radio-group'][data-layout='joined'] [data-part='item']:last-child) {
+		border-start-end-radius: var(--radius-full);
+		border-end-end-radius: var(--radius-full);
+	}
+	/* The chosen option's whole edge shows over its neighbours'. */
+	:global(
+		[data-scope='radio-group'][data-layout='joined'] [data-part='item'][data-state='checked']
+	) {
+		z-index: var(--z-above);
 	}
 	:global([data-scope='radio-group'][data-layout='row'] [data-part='item']) {
 		justify-content: center;

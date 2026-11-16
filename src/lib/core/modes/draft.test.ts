@@ -20,12 +20,13 @@ import {
 	answerAbility,
 	answerAsk,
 	answerHidden,
-	draftTotal,
 	startDraft,
 	takeOffer,
 	turnOffer,
-	type DraftConfig
+	type DraftConfig,
+	type DraftState
 } from './draft.ts';
+import { draftTotal } from './draft-counts.ts';
 import { SUSHI_BUFFET } from './library/sushi-buffet.ts';
 import { hiddenAsTownsfolk, pickableCharacters } from './pool.ts';
 
@@ -519,7 +520,7 @@ describe('a reserved hidden character', () => {
 	const marionette = () => reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
 
 	it('is found from its token’s target rule', () => {
-		expect(marionette()).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon' });
+		expect(marionette()).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon', alsoAt: 3 });
 		expect(reservedHidden(data.characters).map((r) => r.id)).not.toContain('drunk');
 	});
 
@@ -620,7 +621,7 @@ describe('a drafted character whose neighbours turn into another type', () => {
 	it('turns its two neighbours, but not one that drafted a Minion', () => {
 		const s = start();
 		const picks = ['chef', 'lordoftyphon', 'empath', 'monk', 'saint', 'butler', 'washerwoman'];
-		expect(conversions({ ...s, picks, slots: none })).toEqual([
+		expect(conversions({ ...s, picks, slots: none, line: 2 })).toEqual([
 			{
 				characterId: 'lordoftyphon',
 				seat: 1,
@@ -631,14 +632,15 @@ describe('a drafted character whose neighbours turn into another type', () => {
 			}
 		]);
 		const both = ['poisoner', 'lordoftyphon', 'empath', 'monk', 'saint', 'butler', 'chef'];
-		const done = { ...s, picks: both, slots: none };
+		// The Poisoner drafted first is one of its two Minions already.
+		const done = { ...s, picks: both, slots: none, line: 1 };
 		expect(conversions(done)[0].seats).toEqual([2]);
 	});
 
 	it('wraps round: the last seat’s neighbour is the first', () => {
 		const s = start();
 		const picks = ['chef', 'empath', 'monk', 'saint', 'butler', 'washerwoman', 'lordoftyphon'];
-		const done = { ...s, picks, slots: none };
+		const done = { ...s, picks, slots: none, line: 2 };
 		expect(conversions(done)[0].seats).toEqual([0, 5]);
 	});
 
@@ -688,5 +690,187 @@ describe('a drafted character that turns its own player into another type', () =
 		const next = takeOffer(s, s.offer[0], seeded(8));
 		expect(next.picks).toEqual([s.offer[0]]);
 		expect(next.turnedBy).toBeUndefined();
+	});
+});
+
+/** Drafts every seat: the Storyteller takes the last option of each question, players the first. */
+function draftAll(start: DraftState, random: () => number, first: string[] = []): DraftState {
+	let s = start;
+	const want = [...first];
+	for (let guard = 0; guard < 100; guard++) {
+		if (s.ask) s = answerAsk(s, s.ask.options.at(-1)!, random);
+		else if (s.choice) s = answerHidden(s, false, random);
+		else if (s.ability) s = answerAbility(s, undefined, random);
+		else if (seatsLeft(s) === 0 && !s.turnedBy) break;
+		else {
+			const id = !s.forcedBy && want.length > 0 ? want.shift()! : s.offer[0];
+			s = takeOffer({ ...s, offer: s.forcedBy ? s.offer : [id] }, id, random);
+		}
+	}
+	return s;
+}
+
+const official = data.characters.filter((c) =>
+	['townsfolk', 'outsider', 'minion', 'demon'].includes(c.type)
+);
+const draftable = [...pickableCharacters(SUSHI_BUFFET, official), ...draftedTurned(official)];
+const typeOf = (id: string) => data.byId.get(id)?.type;
+const countOf = (s: DraftState, type: string) => s.picks.filter((id) => typeOf(id) === type).length;
+
+// https://wiki.bloodontheclocktower.com/Legion
+describe('a drafted Legion', () => {
+	const start = (seed: number) =>
+		startDraft({ ...config, modifiers: true }, baseCounts(10), draftable, seeded(seed));
+
+	it('is most players, every other Demon seat a copy of it and no Minions', () => {
+		// Wiki: "The recommended number of good and evil players is the reverse of the normal. For example, for a 10-player game, there are roughly seven Legion and three good players."
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const s = draftAll(start(seed), seeded(seed), ['legion']);
+			const demons = s.picks.filter((id) => typeOf(id) === 'demon');
+			expect(demons.length).toBeGreaterThan(5);
+			expect(demons.length).toBeLessThan(10);
+			expect(new Set(demons)).toEqual(new Set(['legion']));
+			expect(countOf(s, 'minion')).toBe(0);
+		}
+	});
+
+	it('offers only "most" players as the Demon count', () => {
+		const random = seeded(2);
+		const s = takeOffer({ ...start(2), offer: ['legion'] }, 'legion', random);
+		expect(s.ask?.type).toBe('demon');
+		expect(s.ask?.options).toEqual([6, 7, 8, 9]);
+	});
+
+	it('spreads its copies over the seats still to draft, each offered only Legion', () => {
+		const seats = new Set<number>();
+		for (const seed of [11, 12, 13, 14, 15, 16]) {
+			const s = draftAll(start(seed), seeded(seed), ['legion']);
+			s.picks.forEach((id, i) => {
+				if (id === 'legion' && i > 0) seats.add(i);
+			});
+		}
+		// Not always the next players in a row.
+		expect(seats.size).toBeGreaterThan(6);
+	});
+
+	it('is not offered once a Minion is drafted', () => {
+		// Wiki: "The players that are not Legion may be Townsfolk or Outsiders, in any combination."
+		const pool = ['poisoner', 'legion', 'imp', 'chef', 'empath'].map((id) => data.byId.get(id)!);
+		const random = seeded(4);
+		let s = startDraft({ ...config, modifiers: true, offers: [9] }, baseCounts(5), pool, random);
+		s = takeOffer({ ...s, offer: ['poisoner'] }, 'poisoner', random);
+		expect(s.offer.sort()).toEqual(['chef', 'empath', 'imp']);
+	});
+});
+
+// A character whose setup change can no longer apply isn't offered (Trevor, 2026-11-16).
+describe('a setup change that can no longer apply', () => {
+	const pick = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+
+	it('keeps the Summoner out once a Demon is drafted', () => {
+		// Wiki: "You get 3 bluffs. On the 3rd night, choose a player: they become an evil Demon of your choice. [No Demon]"
+		const pool = pick('imp', 'summoner', 'poisoner', 'chef', 'empath', 'monk', 'clockmaker');
+		const random = seeded(3);
+		let s = startDraft({ ...config, modifiers: true, offers: [9] }, baseCounts(5), pool, random);
+		s = takeOffer({ ...s, offer: ['imp'] }, 'imp', random);
+		expect(s.offer).not.toContain('summoner');
+		expect(s.offer).toContain('poisoner');
+	});
+
+	it('still offers it when nothing else fills the seat, then asks the Storyteller', () => {
+		const pool = pick('imp', 'summoner', 'chef', 'empath', 'monk');
+		const random = seeded(3);
+		let s = startDraft({ ...config, modifiers: true, offers: [3] }, baseCounts(5), pool, random);
+		for (const id of ['imp', 'chef', 'empath', 'monk'])
+			s = takeOffer({ ...s, offer: [id] }, id, random);
+		expect(s.offer).toEqual(['summoner']);
+		s = takeOffer(s, 'summoner', random);
+		expect(s.ask).toEqual({ characterId: 'summoner', type: 'demon', options: [1], current: 1 });
+		expect(canRedraft(s)).toBe(true);
+	});
+
+	it('keeps a Baron out when fewer than two seats can become Outsiders', () => {
+		// Wiki: "There are extra Outsiders in play. [+2 Outsiders]"
+		const pool = pick('baron', 'poisoner', 'imp', 'chef', 'empath', 'monk', 'clockmaker');
+		const random = seeded(5);
+		let s = startDraft({ ...config, modifiers: true, offers: [9] }, baseCounts(5), pool, random);
+		for (const id of ['imp', 'chef', 'empath']) s = takeOffer({ ...s, offer: [id] }, id, random);
+		// One Townsfolk seat and the Minion seat left.
+		expect(s.slots).toMatchObject({ townsfolk: 1, minion: 1 });
+		expect(s.offer).not.toContain('baron');
+	});
+
+	it('lets an Atheist who may be the Drunk be offered after evil is drafted', () => {
+		const pool = pick('atheist', 'imp', 'chef', 'empath', 'poisoner');
+		const random = seeded(6);
+		let s = startDraft(
+			{ ...config, modifiers: true, offers: [9], hidden: ['drunk'] },
+			baseCounts(5),
+			pool,
+			random
+		);
+		s = takeOffer({ ...s, offer: ['imp'] }, 'imp', random);
+		expect(s.offer).toContain('atheist');
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Marionette
+describe('the Marionette’s kept seat', () => {
+	const reserve = () => reservedHidden(data.characters).find((r) => r.id === 'marionette')!;
+	const start = (players: number, seed: number) =>
+		startDraft(
+			{ ...config, modifiers: true, reserve: reserve() },
+			baseCounts(players),
+			draftable,
+			seeded(seed)
+		);
+
+	it('keeps a second Minion seat with three Minions, turned into a Minion at the end', () => {
+		// Wiki: "If there are three Minions in play, remove another Minion token and add another Townsfolk token. During the first night, swap a good player’s character token with a not-in-play Minion character token."
+		const s = draftAll(start(13, 3), seeded(3), ['imp']);
+		expect(baseCounts(13).minion).toBe(3);
+		expect(countOf(s, 'minion')).toBe(1);
+		expect(conversions(s)).toEqual([
+			{ characterId: 'marionette', seat: -1, type: 'minion', players: 'chosen', count: 1 }
+		]);
+	});
+
+	it('is dropped when Legion leaves no Minions', () => {
+		const s = draftAll(start(10, 4), seeded(4), ['legion']);
+		expect(s.reserved).toBeUndefined();
+		expect(countOf(s, 'minion')).toBe(0);
+	});
+
+	it('goes back to a Minion seat when a Summoner leaves no Demon to sit beside', () => {
+		// Wiki: "The Marionette neighbors the Demon. There are no players sitting in between the Marionette and the Demon."
+		const s = draftAll(start(10, 5), seeded(5), ['summoner']);
+		expect(s.reserved).toBeUndefined();
+		expect(countOf(s, 'minion')).toBe(baseCounts(10).minion);
+		expect(countOf(s, 'demon')).toBe(0);
+	});
+
+	it('stays beside a drafted Kazali, who turns one fewer', () => {
+		const s = draftAll(start(10, 6), seeded(6), ['kazali']);
+		expect(s.reserved).toBe(true);
+		expect(conversions(s)[0]).toMatchObject({ characterId: 'kazali', count: 1 });
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Lord_of_Typhon
+describe('the Lord of Typhon’s line', () => {
+	it('keeps every Minion seat for its line, turning players beside its neighbours too', () => {
+		// Wiki: "All evil characters must be in the line at setup."
+		const random = seeded(9);
+		const s = draftAll(
+			startDraft({ ...config, modifiers: true }, baseCounts(10), draftable, random),
+			random,
+			['lordoftyphon']
+		);
+		expect(countOf(s, 'minion')).toBe(0);
+		const [line] = conversions(s);
+		// 2 Minions at 10 players, +1.
+		expect(line.count).toBe(3);
+		// Seat 0's neighbours 9 and 1, then the next one out.
+		expect(line.seats).toEqual([1, 8, 9]);
 	});
 });
