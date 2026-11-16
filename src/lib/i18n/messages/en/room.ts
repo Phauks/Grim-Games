@@ -143,6 +143,13 @@ export const room = {
 	'room.shareGrim.history': 'History',
 	'room.shareGrim.seatNotes': 'Seat notes',
 	'room.shareGrim.gameNotes': 'Game notes',
+	'room.shareGrim.bluffs': 'Demon bluffs',
+	// Changing what's shared after Share grim (Trevor, 2026-11-16, option B)
+	'room.shareGrim.shared': 'Shared grim',
+	'room.shareGrim.withRoom': 'Shared with the room',
+	'room.shareGrim.withRoomHint':
+		'Off takes the grimoire off every phone. Anything they already saw, they keep.',
+	'room.shareGrim.live': 'Changes go to the phones at once.',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
 	// Room transfer (Trevor, 2026-10-28).
 	'room.transfer.button': 'Room transfer',
@@ -310,6 +317,10 @@ export const room = {
 	'room.watch.askTitle': 'Share the grimoire?',
 	'room.watch.askBody':
 		'They see the whole grimoire on their phone, live: every seat’s character and reminders. Everyone with Grim view gets the same.',
+	'room.watch.whatsShared': 'What’s shared',
+	'room.watch.liveTitle': 'What Grim view shares',
+	'room.watch.liveBody':
+		'Changes go at once to every phone with Grim view. Anything they already saw, they keep.',
 	'room.watch.tooLarge': 'The grimoire is too large to send to spectators.',
 	'room.watch.pledgeTitle': 'Before you watch',
 	// Public Town: a display in the middle of the table (Trevor, 2026-10-26)

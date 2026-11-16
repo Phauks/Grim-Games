@@ -14,13 +14,16 @@ export interface ShareChoices {
 	seatNotes: boolean;
 	/** The notes on the game as a whole. */
 	gameNotes: boolean;
+	/** The Demon's bluffs, every set (Trevor, 2026-11-16: "allow for letting more or less"). */
+	bluffs: boolean;
 }
 
 /** What goes unless the Storyteller picks otherwise: the history, and none of their notes. */
 export const DEFAULT_SHARE_CHOICES: ShareChoices = {
 	history: true,
 	seatNotes: false,
-	gameNotes: false
+	gameNotes: false,
+	bluffs: false
 };
 
 const SEAT_NOTE_EVENTS = new Set<GameEvent['type']>([
@@ -29,16 +32,22 @@ const SEAT_NOTE_EVENTS = new Set<GameEvent['type']>([
 	'ReminderNoteSet'
 ]);
 const GAME_NOTE_EVENTS = new Set<GameEvent['type']>(['GameNoteSet', 'GameNoteDeleted']);
+const BLUFF_EVENTS = new Set<GameEvent['type']>([
+	'BluffsSet',
+	'BluffSetRemoved',
+	'BluffSetRenamed'
+]);
 
 /**
- * The save to send: notes left out unless chosen, from the history too, since it records each
+ * The save to send: notes and bluffs left out unless chosen, from the history too, since it records each
  * note as it was saved. Without history the applied changes become one first entry, so the
  * game replays to how it ended with nothing to step through. The redo stack never goes.
  */
 export function sharedSave(saved: SavedGame, choices: ShareChoices): SavedGame {
 	const keep = (event: GameEvent) =>
 		(choices.seatNotes || !SEAT_NOTE_EVENTS.has(event.type)) &&
-		(choices.gameNotes || !GAME_NOTE_EVENTS.has(event.type));
+		(choices.gameNotes || !GAME_NOTE_EVENTS.has(event.type)) &&
+		(choices.bluffs || !BLUFF_EVENTS.has(event.type));
 	const applied = saved.log.entries.slice(0, saved.log.cursor);
 	const [first, ...rest] = applied.map((entry) => ({
 		...entry,

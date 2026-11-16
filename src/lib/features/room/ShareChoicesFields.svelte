@@ -31,6 +31,11 @@
 		checked={choices.gameNotes}
 		onChange={(on) => (choices = { ...choices, gameNotes: on })}
 	/>
+	<Toggle
+		label={t('room.shareGrim.bluffs')}
+		checked={choices.bluffs}
+		onChange={(on) => (choices = { ...choices, bluffs: on })}
+	/>
 </div>
 
 <style>
