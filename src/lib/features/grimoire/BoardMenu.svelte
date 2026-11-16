@@ -25,8 +25,10 @@
 	interface Props {
 		open: boolean;
 		/**
-		 * A spectator's board (an admin's, Trevor 2026-10-27): History, Game info and the app's
-		 * items work; every other item shows, disabled, as the board's own controls do.
+		 * A spectator's board (an admin's, Trevor 2026-10-27; anyone watching the grim, 2026-11-15:
+		 * "they should be able to see lunatic bluffs"): History, Demon bluffs (read-only), Game
+		 * info and the app's items. The Storyteller's own items (Players, Game notes, Game
+		 * settings, Seats, Session) are left out, since a spectator never has them.
 		 */
 		watching?: boolean;
 		/** Game info is here only while the board's corner is hidden. */
@@ -133,20 +135,21 @@
 				<h3 id="board-menu-game" class="group-title">Game</h3>
 				<!-- The toolbar's Info tokens, here on the narrowest phones so the pane's button stays
 				     by the grim cover (Trevor, 2026-11-15). Players and Game notes are in that pane. -->
-				<span class="narrow-only"
-					><Button
-						disabled={watching || !onInfo}
-						variant="quiet"
-						icon="info"
-						data-testid="menu-info-tokens"
-						onclick={() => onInfo && fromMenu(onInfo)}>Info tokens</Button
-					></span
-				>
+				{#if !watching}<span class="narrow-only"
+						><Button
+							disabled={!onInfo}
+							variant="quiet"
+							icon="info"
+							data-testid="menu-info-tokens"
+							onclick={() => onInfo && fromMenu(onInfo)}>Info tokens</Button
+						></span
+					>{/if}
 				<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 				<Button
-					disabled={watching || !onBluffs}
+					disabled={!onBluffs}
 					variant="quiet"
 					icon="demon"
+					data-testid="menu-bluffs"
 					onclick={() => onBluffs && fromMenu(onBluffs)}>Demon bluffs</Button
 				>
 				{#if onSoundboard}
@@ -159,9 +162,8 @@
 					>
 				{/if}
 				<!-- This game's own settings, as the start flow's Game settings step set them. -->
-				{#if gameId}
+				{#if gameId && !watching}
 					<Button
-						disabled={watching}
 						variant="quiet"
 						icon="settings"
 						onclick={() => fromMenu(() => (gameSettingsOpen = true))}
@@ -170,29 +172,23 @@
 					</Button>
 				{/if}
 			</section>
-			<section class="group" aria-labelledby="board-menu-seats">
-				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="fabled"
-					onclick={() => fromMenu(onAddRule)}
-				>
-					Add Fabled or Loric
-				</Button>
-				<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
+			{#if !watching}<section class="group" aria-labelledby="board-menu-seats">
+					<h3 id="board-menu-seats" class="group-title">Seats</h3>
+					<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
+					<Button variant="quiet" icon="fabled" onclick={() => fromMenu(onAddRule)}>
+						Add Fabled or Loric
+					</Button>
+					<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
 				     and Count off (J40) are one mode, with the room's parts along its bar. -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="arrange"
-					data-testid="menu-seating"
-					onclick={() => fromMenu(onArrange)}
-				>
-					{t('room.seating.title')}
-				</Button>
-			</section>
+					<Button
+						variant="quiet"
+						icon="arrange"
+						data-testid="menu-seating"
+						onclick={() => fromMenu(onArrange)}
+					>
+						{t('room.seating.title')}
+					</Button>
+				</section>{/if}
 		</div>
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-app">
@@ -201,7 +197,6 @@
 				     open to all settings, and stop limiting to what they can access?"), at its root,
 				     as from the navigation (Trevor, 2026-10-27: "should just go to the root"). -->
 				<Button
-					disabled={watching}
 					variant="quiet"
 					icon="settings"
 					onclick={() => fromMenu(() => settingsDialog.show())}
@@ -227,72 +222,59 @@
 			     somewhat different from the other items in game"; "these all seem related to pre and
 			     post game"): Character selection until Start game, then End game, then what an ended
 			     game offers. Last, below App (Trevor, 2026-11-03: "games, seats, app, session"). -->
-			<section class="group" aria-labelledby="board-menu-session">
-				<h3 id="board-menu-session" class="group-title">Session</h3>
-				{#if onCharacterSelection}
-					<Button
-						disabled={watching}
-						variant="quiet"
-						icon="bag"
-						onclick={() => fromMenu(onCharacterSelection)}
-					>
-						{t('setup.characterSelection')}
-					</Button>
-				{/if}
-				{#if onLatePlayer}
-					<Button
-						variant="quiet"
-						icon="latePlayer"
-						data-testid="menu-late-player"
-						onclick={() => fromMenu(onLatePlayer)}
-					>
-						{t('late-player.button')}
-					</Button>
-				{/if}
-				<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-				{#if ended}
-					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
-						>Reopen game</Button
-					>
-				{/if}
-				<!-- Room transfer (Trevor, 2026-10-30: "room transfer should be above end game"),
+			{#if !watching}<section class="group" aria-labelledby="board-menu-session">
+					<h3 id="board-menu-session" class="group-title">Session</h3>
+					{#if onCharacterSelection}
+						<Button variant="quiet" icon="bag" onclick={() => fromMenu(onCharacterSelection)}>
+							{t('setup.characterSelection')}
+						</Button>
+					{/if}
+					{#if onLatePlayer}
+						<Button
+							variant="quiet"
+							icon="latePlayer"
+							data-testid="menu-late-player"
+							onclick={() => fromMenu(onLatePlayer)}
+						>
+							{t('late-player.button')}
+						</Button>
+					{/if}
+					<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
+					{#if ended}
+						<Button variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
+							>Reopen game</Button
+						>
+					{/if}
+					<!-- Room transfer (Trevor, 2026-10-30: "room transfer should be above end game"),
 				     moved from Share; only while the room is connected, as unavailable items hide. -->
-				{#if !watching && host.status === 'open'}
-					<Button
-						variant="quiet"
-						icon="transfer"
-						data-testid="menu-transfer"
-						onclick={() => fromMenu(() => void openTransfer())}
-					>
-						{t('room.transfer.button')}
-					</Button>
-				{/if}
-				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
-				{#if !ended}
-					<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
-						>End game</Button
-					>
-				{:else if newGame}
-					<Button
-						disabled={watching}
-						variant="quiet"
-						icon="add"
-						onclick={() => fromMenu(() => newGame.begin())}
-					>
-						{t('setup.newGame')}
-					</Button>
-				{/if}
-				{#if ended && onCloseRoom}
-					<Button
-						disabled={watching}
-						variant="danger"
-						icon="close"
-						onclick={() => fromMenu(() => (closeRoomOpen = true))}
-					>
-						{t('room.closeRoom')}
-					</Button>
-				{/if}
-			</section>
+					{#if host.status === 'open'}
+						<Button
+							variant="quiet"
+							icon="transfer"
+							data-testid="menu-transfer"
+							onclick={() => fromMenu(() => void openTransfer())}
+						>
+							{t('room.transfer.button')}
+						</Button>
+					{/if}
+					<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+					{#if !ended}
+						<Button variant="danger" icon="close" onclick={() => fromMenu(onEnd)}>End game</Button>
+					{:else if newGame}
+						<Button variant="quiet" icon="add" onclick={() => fromMenu(() => newGame.begin())}>
+							{t('setup.newGame')}
+						</Button>
+					{/if}
+					{#if ended && onCloseRoom}
+						<Button
+							variant="danger"
+							icon="close"
+							onclick={() => fromMenu(() => (closeRoomOpen = true))}
+						>
+							{t('room.closeRoom')}
+						</Button>
+					{/if}
+				</section>{/if}
 		</div>
 	</div>
 </Dialog>

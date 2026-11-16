@@ -91,11 +91,11 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await admin.keyboard.press('Escape');
 
 	// History, read-only (Trevor, 2026-10-27: "Admin should have access to history"); the
-	// rest of ⋯ shows, disabled.
+	// Storyteller's own items are left out (Trevor, 2026-11-15).
 	await admin.getByRole('button', { name: 'More', exact: true }).tap();
 	const adminMenu = admin.getByRole('dialog', { name: 'Grimoire' });
-	await expect(adminMenu.getByRole('button', { name: 'Add Fabled or Loric' })).toBeDisabled();
-	await expect(adminMenu.getByRole('button', { name: 'End game' })).toBeDisabled();
+	await expect(adminMenu.getByRole('button', { name: 'Add Fabled or Loric' })).toHaveCount(0);
+	await expect(adminMenu.getByRole('button', { name: 'End game' })).toHaveCount(0);
 	await adminMenu.getByRole('button', { name: 'History', exact: true }).tap();
 	const history = admin.getByRole('dialog', { name: 'History' });
 	await expect(history.getByRole('listitem').filter({ hasText: 'Spirit of Ivory' })).toBeVisible();

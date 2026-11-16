@@ -13,8 +13,7 @@
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import SharedBoard from '#lib/features/room/SharedBoard.svelte';
+	import FinalGrimoireDialog from './FinalGrimoireDialog.svelte';
 	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { seatFrame } from '#lib/core/frames/index.ts';
@@ -179,9 +178,9 @@
 	let noteOpen = $state(false);
 
 	/**
-	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), in place of
-	 * the town until switched off (Trevor, 2026-10-24); its History steps through on this
-	 * phone only.
+	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), over the town
+	 * until closed (Trevor, 2026-11-15: full screen, the player's guesses kept under it); its
+	 * History steps through on this phone only.
 	 */
 	const final = $derived(finalGrimoireOf(town, player, code));
 	let showFinal = $state(true);
@@ -412,19 +411,13 @@
 		});
 </script>
 
-{#if final && showFinal}
-	<!-- The finished grimoire brings its own toolbar; the switch puts the town back. -->
-	<div class="tools">
-		<Toggle
-			label={t('room.finalGrimoire')}
-			checked={showFinal}
-			onChange={(on) => (showFinal = on)}
-		/>
-	</div>
-	<div class="final" data-testid="final-grimoire">
-		<SharedBoard shared={final.grimoire} {over} room={final.room} />
-	</div>
-{:else if seats.length === 0 || (!code && !local)}
+{#if final}<FinalGrimoireDialog
+		bind:open={showFinal}
+		grimoire={final.grimoire}
+		{over}
+		room={final.room}
+	/>{/if}
+{#if seats.length === 0 || (!code && !local)}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
 	{#snippet townBoard()}
@@ -708,17 +701,6 @@
 	.row-label {
 		font-family: var(--font-control);
 		font-weight: 600;
-	}
-	/* Over the finished grimoire: its switch alone, at the end. */
-	.tools {
-		display: flex;
-		justify-content: flex-end;
-		margin-bottom: var(--space-2);
-	}
-	/* The Storyteller's board, as tall as it draws itself (a screen high, with History's
-	   Previous and Next inside its foot), so the tabs' bottom bar never covers them. */
-	.final {
-		position: relative;
 	}
 	.none {
 		margin: 0;
