@@ -20,7 +20,6 @@ export const scripts = {
 	'scripts.from.official': 'Official',
 	'scripts.from.paste': 'Pasted',
 	'scripts.from.photo': 'Photo',
-	'scripts.from.none': 'No script',
 	'scripts.from.built': 'Script builder',
 	'scripts.from.scriptTool': 'Script Tool',
 	'scripts.from.botcscripts': 'BotC Scripts {version}',
