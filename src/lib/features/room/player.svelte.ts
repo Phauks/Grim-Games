@@ -35,7 +35,7 @@ import { toast } from '#lib/ui/primitives/toaster.ts';
 
 const STORAGE_KEY = 'grim-games-room-player';
 
-function deviceKey(): string {
+export function deviceKey(): string {
 	const stored = readStored<{ key: string }>(STORAGE_KEY);
 	if (stored?.key) return stored.key;
 	const key = randomKey();
@@ -363,6 +363,11 @@ export class RoomPlayer {
 
 	leaveSeat(): void {
 		this.#socket.send({ type: 'leave-seat' });
+	}
+
+	/** Leaves the room for good (room-connection.ts `leaveRoom`); false while not connected. */
+	leave(): boolean {
+		return this.#socket.send({ type: 'leave' });
 	}
 
 	/** A spectator's choice in the open vote (Specters); a new choice replaces the last. */

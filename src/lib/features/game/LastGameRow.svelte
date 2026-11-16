@@ -4,7 +4,7 @@
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import { forgetGame } from '#lib/features/game/forget-game.ts';
 	import { forgetLocalTown } from '#lib/features/player/local-town.svelte.ts';
-	import { forgetRoom } from '#lib/features/room/player.svelte.ts';
+	import { leaveRoom } from '#lib/features/room/room-connection.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import {
@@ -62,7 +62,7 @@
 		const gone = asking;
 		if (!gone) return;
 		if (gone.kind === 'storyteller') await forgetGame(gone.gameId);
-		else if (gone.kind === 'room') forgetRoom(gone.code);
+		else if (gone.kind === 'room') await leaveRoom(gone.code);
 		else forgetLocalTown(gone.game.visit.key);
 		await lastGame.refresh();
 	}

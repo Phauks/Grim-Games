@@ -2,6 +2,10 @@
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import LeaveGameDialog, { type LeaveCard } from '#lib/features/room/LeaveGameDialog.svelte';
+	import { leaveRoom } from '#lib/features/room/room-connection.ts';
+
+	/** A game being left; `room` is its room's code, when the phone may leave the room too. */
+	type Leaving = { title: string; card: LeaveCard; room?: string };
 
 	interface Props {
 		/** Ask before leaving while this is true. */
@@ -13,7 +17,7 @@
 		 * A game being left, read as it asks: shown as Join game's card for it instead of `body`
 		 * and `title`'s question is the card's own.
 		 */
-		card?: () => { title: string; card: LeaveCard } | undefined;
+		card?: () => Leaving | undefined;
 		/** URLs that are still this screen, so going there doesn't ask (setLeaveGuard). */
 		within?: (url: URL) => boolean;
 		/**
@@ -27,7 +31,7 @@
 
 	let open = $state(false);
 	/** The game being left, as it was when the dialog opened. */
-	let shown = $state<{ title: string; card: LeaveCard }>();
+	let shown = $state<Leaving>();
 	/** The way out the Storyteller asked for, run on Confirm. */
 	let pending: (() => void) | undefined;
 
@@ -47,9 +51,12 @@
 		if (when && unload) event.preventDefault();
 	}
 
-	function leave() {
-		pending?.();
+	async function leave(room?: string) {
+		const go = pending;
 		pending = undefined;
+		// Out of the room first, so it is gone from the screen the phone goes to.
+		if (room) await leaveRoom(room);
+		go?.();
 	}
 </script>
 
@@ -63,7 +70,8 @@
 		bind:open
 		title={shown.title}
 		card={shown.card}
-		onConfirm={leave}
-	/>{:else}<ConfirmDialog bind:open {title} onConfirm={leave}>
+		room={!!shown.room}
+		onConfirm={(out) => void leave(out ? shown?.room : undefined)}
+	/>{:else}<ConfirmDialog bind:open {title} onConfirm={() => void leave()}>
 		<p>{body}</p>
 	</ConfirmDialog>{/if}

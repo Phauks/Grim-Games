@@ -269,7 +269,7 @@
 	 * Leaving a game, not just a script: a room's, or a players-only town with seats, as Join
 	 * game lists it (Trevor, 2026-11-06). A script only being read keeps the plain question.
 	 */
-	function leaveCard(): { title: string; card: LeaveCard } | undefined {
+	function leaveCard(): { title: string; card: LeaveCard; room?: string } | undefined {
 		if (!script) return undefined;
 		const logo = scriptLogo(script);
 		const named = { name: script.name, ...(logo ? { logo } : {}) };
@@ -280,7 +280,8 @@
 				inRoom === lastRoom() && roomTable.storyteller
 					? t('room.recentLine', { code, name: roomTable.storyteller })
 					: code;
-			return { title, card: { ...named, line, when: t('shell.leave.room') } };
+			// Players and spectators alike may leave the room too (Trevor, 2026-11-16).
+			return { title, card: { ...named, line, when: t('shell.leave.room') }, room: inRoom };
 		}
 		const seats = key ? (keptLocalTown(key)?.seats ?? []) : [];
 		if (join || seats.length === 0) return undefined;

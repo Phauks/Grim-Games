@@ -27,15 +27,33 @@ export function removeMember(room: RoomState, memberId: string): RoomState {
 		...(member.name === undefined ? {} : { name: member.name }),
 		...look
 	};
+	return { ...withoutMember(room, memberId), removed: [...(room.removed ?? []), removed] };
+}
+
+/**
+ * The phone left the room itself (Trevor, 2026-11-16: "a way to leave the game if they don't
+ * want to be in it", so they don't stay on as a spectator): it goes with its seat, vote and
+ * ballot, and isn't listed or turned away, so its code joins it again as a new phone.
+ */
+export function leaveRoom(room: RoomState, memberId: string): RoomState {
+	if (!room.members.some((m) => m.memberId === memberId)) return room;
+	return withoutMember(room, memberId);
+}
+
+function withoutMember(room: RoomState, memberId: string): RoomState {
 	const next: RoomState = {
 		...room,
-		members: room.members.filter((m) => m.memberId !== memberId),
-		removed: [...(room.removed ?? []), removed]
+		members: room.members.filter((m) => m.memberId !== memberId)
 	};
 	if (room.vote?.votes[memberId] !== undefined) {
 		const { [memberId]: _gone, ...votes } = room.vote.votes;
 		void _gone;
 		next.vote = { ...room.vote, votes };
+	}
+	if (room.scriptVote?.ballots[memberId]) {
+		const { [memberId]: _gone, ...ballots } = room.scriptVote.ballots;
+		void _gone;
+		next.scriptVote = { ...room.scriptVote, ballots };
 	}
 	return next;
 }

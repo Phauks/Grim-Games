@@ -14,6 +14,7 @@ import {
 	isScript,
 	isSharedGrimoire,
 	letBackIn,
+	leaveRoom,
 	removeMember,
 	join,
 	markHere,
@@ -85,7 +86,15 @@ import {
 	type RoomFriendsChange,
 	type RoomFriendsView
 } from './room-friends.ts';
-import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './room-sockets.ts';
+import {
+	closeSocket,
+	memberSockets,
+	openSockets,
+	refuseRemoved,
+	send,
+	sendText,
+	type Attachment
+} from './room-sockets.ts';
 import {
 	accountTags,
 	linkAccount,
@@ -319,8 +328,8 @@ export class Room extends DurableObject<RoomEnv> {
 				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
 				if (built !== room) await this.save((room = built));
 				send(ws, hostView(room, this.present()));
-				send(ws, { type: 'watchers', count: this.watchers() });
-				if (this.admins() > 0) send(ws, { type: 'grimoire-wanted', on: true });
+				send(ws, { type: 'watchers', count: openSockets(this.ctx, 'viewer') });
+				if (openSockets(this.ctx, 'admin') > 0) send(ws, { type: 'grimoire-wanted', on: true });
 				return;
 			}
 			if (message.role === 'viewer') {
@@ -401,6 +410,10 @@ export class Room extends DurableObject<RoomEnv> {
 				room = setName(room, id, message);
 			} else if (message.type === 'leave-seat') {
 				room = unseat(room, id);
+			} else if (message.type === 'leave') {
+				// Gone from the room, not turned into a spectator (Trevor, 2026-11-16).
+				for (const socket of memberSockets(this.ctx, id)) closeSocket(socket, 1000, 'Left');
+				room = leaveRoom(room, id);
 			} else if (message.type === 'look') {
 				const avatars = await this.ctx.storage.get<Record<string, string>>('avatars');
 				const next = setLook(room, id, message, avatars?.[id]);
@@ -529,7 +542,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
 				// A transfer that brings the game keeps the latest for the device taking over.
 				await keepsTransferGame(room, this.ctx.storage, view);
-				if (!room.viewerKeyHash && this.admins() === 0) return;
+				if (!room.viewerKeyHash && openSockets(this.ctx, 'admin') === 0) return;
 				// Kept only for the view-only link; an admin's copy is passed on and never stored.
 				if (room.viewerKeyHash) await this.ctx.storage.put('grimoire', view);
 				const text = JSON.stringify(view);
@@ -549,10 +562,7 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'remove': {
 				room = removeMember(room, message.memberId);
-				for (const socket of this.ctx.getWebSockets()) {
-					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player' && to.memberId === message.memberId) refuseRemoved(socket);
-				}
+				for (const socket of memberSockets(this.ctx, message.memberId)) refuseRemoved(socket);
 				break;
 			}
 			case 'let-back-in':
@@ -724,44 +734,16 @@ export class Room extends DurableObject<RoomEnv> {
 		}
 	}
 
-	/** Viewers still connected, leaving out one that is going. */
-	private watchers(going?: WebSocket): number {
-		let count = 0;
-		for (const socket of this.ctx.getWebSockets()) {
-			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'viewer' && socket !== going && socket.readyState === WebSocket.OPEN)
-				count++;
-		}
-		return count;
-	}
-
-	/** Admins watching from Live games now, leaving out one that is going. */
-	private admins(going?: WebSocket): number {
-		let count = 0;
-		for (const socket of this.ctx.getWebSockets()) {
-			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'admin' && socket !== going && socket.readyState === WebSocket.OPEN)
-				count++;
-		}
-		return count;
-	}
-
 	/** Tells the Storyteller's device whether an admin wants the whole grimoire now. */
 	private tellGrimoireWanted(going?: WebSocket): void {
-		const text = JSON.stringify({ type: 'grimoire-wanted', on: this.admins(going) > 0 });
-		for (const socket of this.ctx.getWebSockets()) {
-			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'host') sendText(socket, text);
-		}
+		const on = openSockets(this.ctx, 'admin', going) > 0;
+		this.toHosts(JSON.stringify({ type: 'grimoire-wanted', on }));
 	}
 
 	/** Sends the Storyteller's device how many are watching. */
 	private tellWatchers(going?: WebSocket): void {
-		const text = JSON.stringify({ type: 'watchers', count: this.watchers(going) });
-		for (const socket of this.ctx.getWebSockets()) {
-			const who = socket.deserializeAttachment() as Attachment | null;
-			if (who?.role === 'host') sendText(socket, text);
-		}
+		const count = openSockets(this.ctx, 'viewer', going);
+		this.toHosts(JSON.stringify({ type: 'watchers', count }));
 	}
 
 	/** What a transfer needs from this room (room-transfer.ts). */

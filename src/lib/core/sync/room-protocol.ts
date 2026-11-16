@@ -53,6 +53,8 @@ export type ClientMessage =
 	/** The player's name (the Storyteller seats them); older apps also send a seat, ignored. */
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'leave-seat' }
+	/** The phone leaves the room for good (room-removed.ts `leaveRoom`); its code joins again. */
+	| { type: 'leave' }
 	/** The player's avatar, frame and uploaded picture (plan R6); a missing one clears it. */
 	| {
 			type: 'look';
