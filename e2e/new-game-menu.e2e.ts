@@ -22,10 +22,11 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 
-	// Ended: New game is where End game was, at the foot of Session (Trevor,
-	// 2026-10-27, 2026-10-30), and opens straight away.
+	// Ended: End game stays, disabled (Trevor, 2026-11-15: "There should always be a game end
+	// button"), and New game is under it at the foot of Session (2026-10-27, 2026-10-30),
+	// opening straight away.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(menu.getByRole('button', { name: 'End game' })).toHaveCount(0);
+	await expect(menu.getByRole('button', { name: 'End game' })).toBeDisabled();
 	await expect(
 		menu.getByRole('region', { name: 'Session', exact: true }).getByRole('button').last()
 	).toHaveText('New game');

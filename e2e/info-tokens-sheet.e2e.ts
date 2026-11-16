@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { openInfoTokens } from './toolbar.ts';
 
 // The info-token sheet the grimoire board opens from its header (Trevor, 2026-10-16).
 
@@ -187,7 +188,7 @@ test('a card to show with long character names keeps the sheet its width', async
 			.tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'Info tokens' }).tap();
+	await openInfoTokens(page);
 	await page
 		.getByRole('button', { name: 'Add These characters are not in play to the cards to show' })
 		.tap();

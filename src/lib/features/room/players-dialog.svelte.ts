@@ -1,9 +1,12 @@
 import type { SeatId } from '#lib/core/model/index.ts';
+import { sidePane } from './side-pane.svelte.ts';
 
-/** Whether the Storyteller's Players is open: from the board's ⋯ on every screen. */
+/**
+ * The Storyteller's Players, now the Players tab of the board's pane (plan M86), and the
+ * dialogs Players opens.
+ */
 class PlayersDialog {
-	open = $state(false);
-	/** A seat whose sheet should open, from its pen mark or its ⋯ Notes. */
+	/** A seat whose sheet should open, from its note mark. */
 	seat = $state<SeatId>();
 	/** Count off (plan J40), from the board's ⋯. */
 	countOff = $state(false);
@@ -15,7 +18,7 @@ class PlayersDialog {
 	notTraveller: (() => void) | undefined;
 
 	show(): void {
-		this.open = true;
+		sidePane.show('players');
 	}
 
 	/**
@@ -30,8 +33,8 @@ class PlayersDialog {
 
 	/** Opens Players on one player's sheet, with their notes (Trevor, 2026-10-29). */
 	showSeat(seatId: SeatId): void {
-		this.open = true;
 		this.seat = seatId;
+		sidePane.show('players');
 	}
 }
 

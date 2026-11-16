@@ -2,25 +2,26 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import NoteList from '#lib/ui/notes/NoteList.svelte';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { sidePane } from '#lib/features/room/side-pane.svelte.ts';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { gameNotesDialog } from './game-notes-dialog.svelte.ts';
+	import StorytellerPane from './hosting/StorytellerPane.svelte';
 
 	/**
-	 * The game's own notes, beside the grim cover and styled like it (Trevor, 2026-11-01: "place
-	 * the notes button next to the grim cover button"), in every game, on the board and the day
-	 * alike. They open over the screen, out of Players, which now holds only the players.
+	 * The Storyteller's Game notes and Players, beside the grim cover and styled like it (Trevor,
+	 * 2026-11-01: "place the notes button next to the grim cover button"). On the board it shows
+	 * and hides their pane (plan M86, Trevor 2026-11-15: "move the players button out of ... and
+	 * into the header"), with a count of what waits from players, so it never leaves the bar;
+	 * on the day it opens them over the screen.
 	 */
 	interface Props {
 		game: OpenGame;
 		/** How a note is saved: the board's, with its toasts, or the game's own. */
 		run?: (command: Command) => boolean;
 		outlined?: boolean;
-		/**
-		 * The board's: opened from More too, and on a phone narrower than the toolbar's eight
-		 * buttons need (a 390-wide iPhone), only from More, so ⋯ stays on the screen.
-		 */
+		/** The board's: the pane's own button, pressed while it shows. */
 		board?: boolean;
 	}
 
@@ -31,49 +32,45 @@
 		board = false
 	}: Props = $props();
 
+	const host = roomHost();
+	const unread = $derived(host.code ? host.inbox.unread : 0);
+	const label = $derived(
+		unread
+			? `${t('room.players.pane')}, ${t('room.inbox.unread', { count: unread })}`
+			: t('room.players.pane')
+	);
 	let local = $state(false);
-	const open = {
-		get value() {
-			return board ? gameNotesDialog.open : local;
-		},
-		set value(v: boolean) {
-			if (board) gameNotesDialog.open = v;
-			else local = v;
-		}
-	};
-	const notes = $derived(game.game.notes ?? []);
-	const viewOnly = $derived(game.viewOnly);
 </script>
 
-<span class="notes-slot" class:on-board={board}
+<span class="notes-slot"
 	><IconButton
 		icon="notes"
-		label={t('room.players.gameNotes')}
+		{label}
 		data-testid="game-notes-button"
 		{outlined}
-		onclick={() => (open.value = true)}
-	/></span
+		aria-pressed={board ? sidePane.open : undefined}
+		onclick={() => (board ? sidePane.toggle() : (local = true))}
+	/>{#if unread}<span class="count"><CountBadge count={unread} warn={host.inbox.urgent} /></span
+		>{/if}</span
 >
-<Dialog bind:open={() => open.value, (v) => (open.value = v)} title={t('room.players.gameNotes')}>
-	<!-- Each written where it sits (Trevor, 2026-11-02). -->
-	<div data-testid="game-notes">
-		<NoteList
-			{notes}
-			readonly={viewOnly}
-			onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
-			onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
-		/>
-	</div>
-</Dialog>
+{#if !board}
+	<Dialog bind:open={local} title={t('room.players.pane')} size="full" scroll={false}>
+		<StorytellerPane {game} {run} />
+	</Dialog>
+{/if}
 
 <style>
+	/* The count sits inside the button's corner, as More's did, so the button keeps its size. */
 	.notes-slot {
-		display: contents;
+		position: relative;
+		display: inline-flex;
+		flex: none;
 	}
-	/* Eight 44px buttons and their gaps need 412px; narrower, the board's are in More. */
-	@media (max-width: 411.98px) {
-		.notes-slot.on-board {
-			display: none;
-		}
+	.count {
+		position: absolute;
+		top: 0.15em;
+		right: 0.15em;
+		font-size: 0.75rem;
+		pointer-events: none;
 	}
 </style>
