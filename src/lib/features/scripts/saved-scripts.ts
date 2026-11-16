@@ -31,6 +31,8 @@ export type ScriptSource =
 	| { kind: 'paste' }
 	/** Read from a photo of its printed sheet (plan M54). */
 	| { kind: 'photo' }
+	/** New game's Script: None for a Local Grim game: every official character (2026-11-16). */
+	| { kind: 'none' }
 	/**
 	 * Made on the Script builder page. `variationOf`: the script it was edited from, when that
 	 * wasn't made from scratch here (Trevor, 2026-10-17: edits are marked as variations, and
@@ -114,6 +116,8 @@ export function describeSource(source: ScriptSource): string {
 			return t('scripts.from.paste');
 		case 'photo':
 			return t('scripts.from.photo');
+		case 'none':
+			return t('scripts.from.none');
 		case 'built':
 			return t('scripts.from.built');
 		case 'file':

@@ -6,6 +6,8 @@
 	interface Option {
 		value: T;
 		label: string;
+		/** Shown but not choosable, as `disabled` for one option. */
+		disabled?: boolean;
 	}
 
 	interface Props {
@@ -70,6 +72,7 @@
 		{#each options as option (option.value)}
 			<RadioGroup.Item
 				value={option.value}
+				disabled={option.disabled}
 				onclick={clearable && !disabled && option.value === value
 					? (event: MouseEvent) => {
 							// Not passed on to the radio, which would choose it again.
@@ -183,8 +186,16 @@
 		flex: 1 1 0;
 		min-width: 0;
 		justify-content: center;
+		padding-inline: var(--space-2);
 		text-align: center;
 		border-radius: 0;
+	}
+	/* On the narrowest phone at the largest text a long name is cut short, never wider. */
+	:global([data-scope='radio-group'][data-layout='joined'] [data-part='item-text']) {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	:global(
 		[data-scope='radio-group'][data-layout='joined'] [data-part='item'] + [data-part='item']
