@@ -84,6 +84,10 @@ export const shell = {
 	'shell.updateUnsupported': 'Not available in this browser',
 	'shell.updateReady': 'Update ready',
 	'shell.updateSaved': 'Your game is saved and reopens after refreshing.',
+	'shell.updateNewFormat': "This update can't open the game in progress.",
+	'shell.updateLosesGameTitle': 'Update now?',
+	'shell.updateLosesGame':
+		"The game in progress won't open after this update. Finish it first, or update and start a new game.",
 	'shell.updateLater': 'Later',
 	'shell.updateRefresh': 'Update',
 	'shell.whatChanged': 'What changed',

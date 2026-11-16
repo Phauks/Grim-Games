@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { SAVED_GAME_VERSION } from '../src/lib/core/engine/saved-game-version.ts';
+import { toBoard } from './new-game.ts';
 import { openSettingsDialog, theMenu } from './shell.ts';
 
 // Trevor (2026-10-16): the update prompt opens a list of what changed since the running build.
@@ -485,15 +487,22 @@ test('About shows what a ready build changed, in a dialog', async ({ page, reque
 
 // Trevor (2026-10-27): phones ran builds hours old, so a downloaded build takes over by itself
 // where that interrupts nothing; the update card stays for a game on screen.
-/** A build waiting to take over, which does when told to, as the real worker does. */
-async function fakeTakeOver(page: Page) {
-	await page.addInitScript(() => {
+/**
+ * A build waiting to take over, which does when told to, as the real worker does. With
+ * `savedGame`, it answers what it is (waiting-build.ts) with that saved-game format.
+ */
+async function fakeTakeOver(page: Page, savedGame?: number) {
+	await page.addInitScript((savedGame) => {
 		const seen: unknown[] = [];
 		const listeners: Array<() => void> = [];
 		const active = { state: 'activated', postMessage() {}, addEventListener() {} };
 		const waiting = {
 			state: 'installed',
-			postMessage: (message: unknown) => {
+			postMessage: (message: { type?: string }, ports?: MessagePort[]) => {
+				if (message?.type === 'BUILD_INFO') {
+					if (savedGame !== undefined) ports?.[0]?.postMessage({ savedGame, notes: null });
+					return;
+				}
 				seen.push(message);
 				sessionStorage.setItem('taken-over', '1');
 				registration.waiting = null;
@@ -522,7 +531,7 @@ async function fakeTakeOver(page: Page) {
 			}
 		});
 		(window as unknown as { seen: unknown[] }).seen = seen;
-	});
+	}, savedGame);
 }
 
 type Seen = { seen: unknown[]; samePage?: boolean };
@@ -586,4 +595,71 @@ test('a Settings file gone from the running build reloads the page instead of fa
 	await expect.poll(() => loads).toBe(2);
 	const dialog = await openSettingsDialog(page);
 	await expect(dialog).toBeVisible();
+});
+
+/** A game on its board, opened before any update waits. */
+async function gameOnBoard(page: Page) {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+}
+
+/** The app goes to the background (`hidden`) or comes back. */
+async function setVisibility(page: Page, state: 'hidden' | 'visible') {
+	await page.evaluate((state) => {
+		Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+		document.dispatchEvent(new Event('visibilitychange'));
+	}, state);
+}
+
+// Saved games are never migrated (Trevor, 2026-11-10): a build that reads another format can't
+// reopen the game on screen, so it never takes a game over by itself, and Update asks first.
+test('a waiting build that cannot open the game in progress never takes it over unasked', async ({
+	page
+}) => {
+	await page.clock.install();
+	await gameOnBoard(page);
+	await fakeTakeOver(page, SAVED_GAME_VERSION + 1);
+	await page.reload();
+	const card = page.getByTestId('update-banner');
+	await expect(card.getByText("This update can't open the game in progress.")).toBeVisible();
+
+	await setVisibility(page, 'hidden');
+	await page.clock.runFor(90_000);
+	await setVisibility(page, 'visible');
+	expect(await page.evaluate(() => (window as unknown as Seen).seen)).toEqual([]);
+
+	await card.getByRole('button', { name: 'Update' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Update now?' });
+	await expect(ask).toBeVisible();
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(ask).toBeHidden();
+	expect(await page.evaluate(() => (window as unknown as Seen).seen)).toEqual([]);
+
+	await card.getByRole('button', { name: 'Update' }).tap();
+	const loaded = page.waitForEvent('load');
+	await ask.getByRole('button', { name: 'Confirm' }).tap();
+	await loaded;
+	expect(await page.evaluate(() => sessionStorage.getItem('taken-over'))).toBe('1');
+});
+
+test('a waiting build that opens the same games still takes a board over from the background', async ({
+	page
+}) => {
+	await page.clock.install();
+	await gameOnBoard(page);
+	await fakeTakeOver(page, SAVED_GAME_VERSION);
+	await page.reload();
+	const card = page.getByTestId('update-banner');
+	await expect(card.getByText('Your game is saved and reopens after refreshing.')).toBeVisible();
+
+	await setVisibility(page, 'hidden');
+	const loaded = page.waitForEvent('load');
+	await page.clock.runFor(31_000);
+	await loaded;
+	expect(await page.evaluate(() => sessionStorage.getItem('taken-over'))).toBe('1');
 });

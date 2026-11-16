@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { readSavedGame, SavedGameError } from '#lib/core/engine/index.ts';
+	import { readSavedGame, savedOlder, SavedGameError } from '#lib/core/engine/index.ts';
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 	import { parseSeatPictures } from '#lib/core/sync/room-pictures.ts';
@@ -83,7 +83,11 @@
 			const tooNew = e instanceof SavedGameError && e.problem === 'too-new';
 			// The Storyteller's app is newer: offer its build rather than a dead end.
 			if (tooNew) lookForNewerBuild();
-			onProblem?.(tooNew ? t('room.grimoireTooNew') : errorMessage(e));
+			// The Storyteller's app is older: it hears of this build from the room (host-view).
+			const tooOld = e instanceof SavedGameError && savedOlder(next.saved);
+			onProblem?.(
+				tooNew ? t('room.grimoireTooNew') : tooOld ? t('room.grimoireTooOld') : errorMessage(e)
+			);
 		}
 	}
 </script>

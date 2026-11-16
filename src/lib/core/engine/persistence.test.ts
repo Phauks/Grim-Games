@@ -7,6 +7,7 @@ import {
 	SavedGameError,
 	listSavedGames,
 	readSavedGame,
+	savedOlder,
 	summariseSavedGame,
 	toSavedGame,
 	withGameId
@@ -130,6 +131,14 @@ describe('saved games', () => {
 		expect(problem(() => readSavedGame({ ...saved, schemaVersion: SAVED_GAME_VERSION - 1 }))).toBe(
 			'invalid'
 		);
+	});
+
+	it('tells a game saved in an older format from anything else', () => {
+		const { saved } = savedGame();
+		expect(savedOlder({ ...saved, schemaVersion: SAVED_GAME_VERSION - 1 })).toBe(true);
+		expect(savedOlder(saved)).toBe(false);
+		expect(savedOlder({ ...saved, schemaVersion: SAVED_GAME_VERSION + 1 })).toBe(false);
+		expect(savedOlder({ gameId: 'g' })).toBe(false);
 	});
 });
 

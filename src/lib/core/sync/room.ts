@@ -106,6 +106,8 @@ export interface RoomState {
 	roles?: RoomRoles;
 	/** When the Storyteller's app was built (room-version.ts). */
 	storytellerBuiltAt?: string;
+	/** The newest build a phone joined with (room-version.ts `setNewestBuild`). */
+	newestBuiltAt?: string;
 	/** Reports of players' pictures and the Storyteller's verdicts, this game (room-pictures.ts). */
 	pictures?: RoomPictures;
 	/** Players' messages to the Storyteller, this game (room-messages.ts). */
@@ -246,6 +248,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.messages?.length) view.messages = room.messages;
 	if (room.spectatorsMuted) view.spectatorsMuted = true;
 	if (room.removed?.length) view.removed = room.removed;
+	if (room.newestBuiltAt) view.newestBuiltAt = room.newestBuiltAt;
 	if (room.seatingOpen) view.seatingOpen = true;
 	const grimViewers = grimViewersOf(room);
 	if (grimViewers.length) view.grimViewers = grimViewers;

@@ -6,9 +6,9 @@ import {
 	type Screen
 } from './auto-update.svelte.ts';
 
-const home: Screen = { inGame: false, reloadLoses: false, dialogOpen: false };
-const board: Screen = { inGame: true, reloadLoses: false, dialogOpen: false };
-const bagDraw: Screen = { inGame: true, reloadLoses: true, dialogOpen: false };
+const home: Screen = { inGame: false, reloadLoses: false, dialogOpen: false, newFormat: false };
+const board: Screen = { inGame: true, reloadLoses: false, dialogOpen: false, newFormat: false };
+const bagDraw: Screen = { inGame: true, reloadLoses: true, dialogOpen: false, newFormat: false };
 
 // Trevor (2026-10-27): a downloaded build takes over by itself when that interrupts nothing.
 describe('taking a downloaded build by itself', () => {
@@ -33,5 +33,20 @@ describe('taking a downloaded build by itself', () => {
 	it('never reloads a bag draw or an open dialog from the background', () => {
 		expect(takesUpdateAfterAway(true, AWAY_MS * 10, bagDraw)).toBe(false);
 		expect(takesUpdateAfterAway(true, AWAY_MS * 10, { ...board, dialogOpen: true })).toBe(false);
+	});
+});
+
+// Saved games are never migrated (Trevor, 2026-11-10), so a build that reads another format
+// can't reopen the game on screen: it never takes a game over by itself.
+describe('a waiting build that reads another saved-game format', () => {
+	it('never takes over a game on screen after a while in the background', () => {
+		expect(takesUpdateAfterAway(true, AWAY_MS * 10, { ...board, newFormat: true })).toBe(false);
+		expect(takesUpdateAfterAway(true, AWAY_MS, { ...home, newFormat: true })).toBe(true);
+	});
+
+	it('is not taken on the way into a game, only elsewhere', () => {
+		expect(takesUpdateOnNavigate(true, { ...home, newFormat: true }, false, true)).toBe(false);
+		expect(takesUpdateOnNavigate(true, { ...home, newFormat: true }, false, false)).toBe(true);
+		expect(takesUpdateOnNavigate(true, home, false, true)).toBe(true);
 	});
 });

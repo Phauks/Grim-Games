@@ -169,7 +169,11 @@
 			return;
 		}
 		// Outside a game, a downloaded build takes over on the way to the next page.
-		if (navigation.type !== 'leave' && updateOnNavigate(to.href, !showsAppShell(page.data))) {
+		const toGame = navigation.to?.route.id?.startsWith('/grimoire/[gameId]') ?? false;
+		if (
+			navigation.type !== 'leave' &&
+			updateOnNavigate(to.href, !showsAppShell(page.data), toGame)
+		) {
 			navigation.cancel();
 		}
 	});
@@ -207,7 +211,7 @@
 {#snippet toastText(text: string)}<Sentence {text} fill={characterBadge} />{/snippet}
 <Toaster describe={toastText} />
 <InstallDialog />
-<UpdateBanner />
+<UpdateBanner gamePage={!showsAppShell(page.data)} />
 
 <style>
 	/* The sidebar (wide screens only) beside the page. */

@@ -36,6 +36,17 @@ export function setStorytellerBuild(room: RoomState, builtAt: unknown): RoomStat
 	return { ...room, storytellerBuiltAt: builtAt };
 }
 
+/**
+ * The room with the newest build a phone joined it with, or the same room when the phone's is
+ * no newer or bad. Phones take updates outside a game sooner than the Storyteller's board
+ * does, so the Storyteller hears of a newer build from them (update-review, 2026-11-16).
+ */
+export function setNewestBuild(room: RoomState, builtAt: unknown): RoomState {
+	if (!isBuiltAt(builtAt)) return room;
+	if (room.newestBuiltAt && Date.parse(room.newestBuiltAt) >= Date.parse(builtAt)) return room;
+	return { ...room, newestBuiltAt: builtAt };
+}
+
 /** True when `theirs` was built after `mine`: a newer build is out there. */
 export function isNewerBuild(theirs: string | undefined, mine: string): boolean {
 	return isBuiltAt(theirs) && isBuiltAt(mine) && Date.parse(theirs) > Date.parse(mine);

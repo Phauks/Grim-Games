@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { isBuiltAt, isNewerBuild, newRoom, playerView, setStorytellerBuild } from './room.ts';
+import {
+	hostView,
+	isBuiltAt,
+	isNewerBuild,
+	newRoom,
+	playerView,
+	setNewestBuild,
+	setStorytellerBuild
+} from './room.ts';
 
 const EARLIER = '2026-10-25T10:00:00.000Z';
 const LATER = '2026-10-26T10:00:00.000Z';
@@ -28,5 +36,25 @@ describe('the Storyteller build a room passes on to phones', () => {
 		// A Storyteller app from before builds were sent says nothing.
 		expect(isNewerBuild(undefined, EARLIER)).toBe(false);
 		expect(isBuiltAt('not a date')).toBe(false);
+	});
+});
+
+// Phones update outside a game sooner than the Storyteller's board, so the Storyteller hears of
+// a newer build from them.
+describe('the newest phone build a room passes on to the Storyteller', () => {
+	it('keeps the newest valid build time a phone joined with', () => {
+		const room = setNewestBuild(newRoom('hash'), EARLIER);
+		expect(room.newestBuiltAt).toBe(EARLIER);
+		expect(setNewestBuild(room, LATER).newestBuiltAt).toBe(LATER);
+		expect(setNewestBuild(setNewestBuild(room, LATER), EARLIER).newestBuiltAt).toBe(LATER);
+		expect(setNewestBuild(room, EARLIER)).toBe(room);
+		expect(setNewestBuild(room, 'yesterday')).toBe(room);
+		// A phone from before builds were sent says nothing.
+		expect(setNewestBuild(room, undefined)).toBe(room);
+	});
+
+	it("tells the Storyteller's device", () => {
+		expect(hostView(setNewestBuild(newRoom('hash'), LATER)).newestBuiltAt).toBe(LATER);
+		expect(hostView(newRoom('hash'))).not.toHaveProperty('newestBuiltAt');
 	});
 });

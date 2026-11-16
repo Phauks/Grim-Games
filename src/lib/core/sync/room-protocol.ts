@@ -44,7 +44,10 @@ export type ClientMessage =
 			role: 'host' | 'player' | 'town' | 'claim';
 			key: string;
 			protocol?: number;
-			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
+			/**
+			 * When this app's build was made (ISO). The Storyteller's is passed on to phones, and
+			 * the newest phone's to the Storyteller.
+			 */
 			builtAt?: string;
 			/** From the Storyteller: its app shows players' messages (room-messages.ts). */
 			inbox?: boolean;
@@ -259,6 +262,8 @@ export interface HostView {
 	countOff?: CountOffView; // The count off, while one is open (plan J40).
 	travellerPick?: TravellerPickHostView; // Travellers choosing on their phones.
 	grimViewers?: string[]; // Members with Grim view.
+	/** The newest build a phone joined with: a Storyteller app built earlier looks for it. */
+	newestBuiltAt?: string;
 }
 
 export interface VoteTally {
