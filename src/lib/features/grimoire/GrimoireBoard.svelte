@@ -999,10 +999,14 @@
 		onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
 		onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 		onGameInfo={() => (modeMenuOpen = true)}
-		onCharacterSelection={startedAt === undefined && !setUp && !watching
+		onCharacterSelection={startedAt === undefined && !setUp && !watching && !ended
 			? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 			: undefined}
-		onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !watching
+		onLatePlayer={startedAt === undefined &&
+		setUp &&
+		game.pastDays.length === 0 &&
+		!watching &&
+		!ended
 			? () => latePlayer?.start()
 			: undefined}
 		onAddRule={() => rules?.add()}
