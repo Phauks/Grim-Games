@@ -779,6 +779,26 @@ test('a title that only seemed to fit beside the buttons goes under them, never 
 	);
 });
 
+test("the Grim tab's board and its reminder tray fit above the tab bar, with no scrolling", async ({
+	page
+}) => {
+	// Trevor, 2026-11-16 (B): the tray sat behind the tab bar until the page was scrolled. On
+	// Trevor's phone's screen; a shorter one keeps 60dvh of ring and scrolls rather than crowd
+	// the seats under a token in hand.
+	if (test.info().project.name === 'phone') await page.setViewportSize({ width: 448, height: 997 });
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const town = page.getByTestId('player-grim');
+	const bar = page.locator('[data-bottom-bar]');
+	// The tray is the town's foot (tray-ring.ts), so the town's bottom is the tray's.
+	await expect(async () => {
+		const box = (await town.boundingBox())!;
+		const barBox = (await bar.boundingBox())!;
+		expect(box.y + box.height).toBeLessThanOrEqual(barBox.y + 1);
+	}).toPass();
+	expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('the header shares the script from an icon and has no Code button', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);

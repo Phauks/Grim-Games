@@ -7,6 +7,7 @@
  */
 import { ACCOLADES } from '#lib/core/feedback/feedback.ts';
 import type { ClientMessage, PlayerView } from '#lib/core/sync/room-protocol.ts';
+import { countOffLocked } from '#lib/core/sync/room-count-off.ts';
 
 /** The taps a fast tool makes every bot do at once. */
 export const BOT_ACTIONS = ['seat', 'count', 'role', 'vote', 'rate', 'message'] as const;
@@ -66,12 +67,12 @@ export function action(kind: BotAction, view: PlayerView, self: BotSelf): Client
 		}
 		case 'count': {
 			const count = view.countOff;
-			if (!count || count.tokens.some((t) => t.mine)) return null;
+			if (!count || !countOffLocked(count) || count.tokens.some((t) => t.mine)) return null;
 			const held = new Set(count.tokens.map((t) => t.number));
 			const free = Array.from({ length: count.size }, (_, i) => i + 1).filter((n) => !held.has(n));
 			// Its own place round the table if free, as players count in order; else the first free.
 			const number = free.includes(self.index + 1) ? self.index + 1 : free[0];
-			return number === undefined ? null : { type: 'count', number };
+			return number === undefined ? null : { type: 'count', number, free: true };
 		}
 		case 'role':
 			return view.role ? { type: 'role-seen' } : null;

@@ -387,9 +387,12 @@ export class RoomPlayer {
 		return this.#socket.send(message);
 	}
 
-	/** Count off (plan J40): the number this player counted to, going clockwise; `null` lets it go. */
-	count(number: number | null): boolean {
-		return this.#socket.send({ type: 'count', number });
+	/**
+	 * Count off (plan J40): the number this player counted to, going clockwise; `null` lets it go.
+	 * `free`: only if no one holds it yet.
+	 */
+	count(number: number | null, free?: true): boolean {
+		return this.#socket.send({ type: 'count', number, ...(free ? { free } : {}) });
 	}
 
 	/** Travellers choose (room-traveller-pick.ts): holds one, or `null` lets this phone's go. */

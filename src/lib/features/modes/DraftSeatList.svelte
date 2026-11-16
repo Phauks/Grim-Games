@@ -15,9 +15,9 @@
 		/** What each seat drafted. */
 		kept: (seat: number) => Character | undefined;
 		onPick: (seat: number) => void;
-		/** The last row's button, picking no seat. */
-		last: string;
-		onLast: () => void;
+		/** The last row's button, picking no seat; none when a seat must be picked. */
+		last?: string;
+		onLast?: () => void;
 		testid: string;
 	}
 
@@ -36,7 +36,7 @@
 				/>{/if}
 		</li>
 	{/each}
-	<li><Button onclick={onLast}>{last}</Button></li>
+	{#if last && onLast}<li><Button onclick={onLast}>{last}</Button></li>{/if}
 </ul>
 
 <style>
