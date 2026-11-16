@@ -244,7 +244,7 @@
 		color: var(--on-surface-muted);
 		font: inherit;
 		cursor: pointer;
-		transition: transform 0.15s;
+		transition: transform var(--duration-fast);
 	}
 	span.caret {
 		cursor: default;

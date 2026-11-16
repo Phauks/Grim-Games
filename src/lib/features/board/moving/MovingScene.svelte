@@ -15,11 +15,10 @@
 		id: MovingId;
 		params: MovingParams;
 		fps: MovingMotion['fps'];
-		speed: number;
 		still: boolean;
 		paused: boolean;
 	}
-	let { id, params, fps, speed, still, paused }: Props = $props();
+	let { id, params, fps, still, paused }: Props = $props();
 	const SCENES = { vortex: Vortex, fire: Fire, rain: Rain, stars: Stars, yinyang: YinYang };
 	const Scene = $derived(SCENES[id]);
 
@@ -75,7 +74,7 @@
 		// What is left over waits for the next frame, so it is not also counted in this one:
 		// counting it twice made capped frames uneven.
 		const left = fps === 'screen' ? 0 : Math.max(0, Math.min(accum - period, period));
-		const step = Math.min(accum - left, 0.1) * speed;
+		const step = Math.min(accum - left, 0.1);
 		accum = left;
 		clock.t = (clock.t + step) % LOOP;
 		drawn++;

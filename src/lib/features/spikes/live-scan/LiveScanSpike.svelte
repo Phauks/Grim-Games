@@ -714,10 +714,8 @@
 			opacity: 0.8;
 		}
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.taken::before {
-			animation: none;
-		}
+	:global(:root[data-motion-off]) .taken::before {
+		animation: none;
 	}
 	.spike {
 		display: flex;

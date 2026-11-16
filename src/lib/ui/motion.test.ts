@@ -6,7 +6,7 @@ describe('parseDuration', () => {
 		expect(parseDuration(' 240ms ')).toBe(240);
 		expect(parseDuration('0.3s')).toBe(300);
 	});
-	it('is 0 for reduced motion or anything unreadable', () => {
+	it('is 0 with animations off or anything unreadable', () => {
 		expect(parseDuration('0ms')).toBe(0);
 		expect(parseDuration('')).toBe(0);
 		expect(parseDuration('fast')).toBe(0);

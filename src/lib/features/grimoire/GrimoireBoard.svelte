@@ -1246,7 +1246,7 @@
 	/* Everything but a held seat and its reminders darkens (Trevor, 2026-10-26; BoardSeats). */
 	.holding :global(.chip-slot:not(.on-held-seat)) {
 		opacity: 0.35;
-		transition: opacity 0.15s;
+		transition: opacity var(--duration-fast);
 	}
 	.tap-probe {
 		position: absolute;

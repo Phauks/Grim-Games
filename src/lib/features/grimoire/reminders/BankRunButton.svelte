@@ -78,7 +78,7 @@
 		height: 1.6em;
 	}
 	/* Next past the last step points here (Trevor, 2026-10-19): a ring that pulses, or just
-	   shows under reduced motion (the duration tokens are 0ms then). An inset ring on the
+	   shows with animations off (the duration tokens are 0ms then). An inset ring on the
 	   cell's own edge, so it follows its rounded corners (Trevor, 2026-10-20: it sat in from
 	   the edges). */
 	.run[data-hint] {

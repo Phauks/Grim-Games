@@ -199,9 +199,10 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	// The switch off: no more dragging. Done leaves Seating with seating locked.
 	await lock.tap();
 	await expect(unlock).toBeVisible();
+	// The tap's hover wash clears once the pointer leaves, a frame or so later on CI's tablet.
 	await page.mouse.move(0, 0);
-	// The tap's pressed tint fades out over a transition, so wait for it to settle.
-	await expect.poll(() => fill(unlock)).toEqual(await fill(countOff));
+	const plain = await fill(countOff);
+	await expect.poll(() => fill(unlock)).toEqual(plain);
 	await expect(line).toHaveCount(0);
 	await unlock.tap();
 	await expect(lock).toBeVisible();

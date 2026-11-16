@@ -61,7 +61,7 @@ export interface FrameProgress {
  * across it or round it either way, or the whole frame turning either way (sway dropped,
  * Trevor 2026-10-28: "I don't like it"), then Pulse, Breathe, Twinkle, Regrow and Flicker
  * (Trevor, 2026-10-28: "add the additional motion settings"). Plain CSS on the whole frame,
- * so a full town stays smooth; reduced motion keeps every frame still.
+ * so a full town stays smooth; animations off keep every frame still.
  */
 export const FRAME_MOTIONS = [
 	'none',

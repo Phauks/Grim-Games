@@ -502,13 +502,11 @@
 		transform-box: fill-box;
 		transform-origin: center;
 	}
-	@media (prefers-reduced-motion: no-preference) {
-		.sun .glow {
-			animation: sun-glow 4s ease-in-out infinite;
-		}
-		.sun .disc {
-			animation: sun-swell 4s ease-in-out infinite;
-		}
+	:global(:root:not([data-motion-off])) .sun .glow {
+		animation: sun-glow 4s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .sun .disc {
+		animation: sun-swell 4s ease-in-out infinite;
 	}
 	@keyframes sun-glow {
 		0%,

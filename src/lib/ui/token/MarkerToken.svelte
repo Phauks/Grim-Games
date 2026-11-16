@@ -130,21 +130,19 @@
 		transform-box: fill-box;
 		transform-origin: center;
 	}
-	/* Still when the device asks for less motion, and on paper. */
-	@media (prefers-reduced-motion: no-preference) {
-		.rays {
-			animation: turn 24s linear infinite;
-		}
-		/* The day sun's slow swell (PlayersDayStatus). */
-		.sun {
-			animation: swell 4s ease-in-out infinite;
-		}
-		.star {
-			animation: twinkle 2.6s ease-in-out infinite;
-		}
-		.star.second {
-			animation-delay: -1.3s;
-		}
+	/* Still while animations are off, and on paper. */
+	:global(:root:not([data-motion-off])) .rays {
+		animation: turn 24s linear infinite;
+	}
+	/* The day sun's slow swell (PlayersDayStatus). */
+	:global(:root:not([data-motion-off])) .sun {
+		animation: swell 4s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .star {
+		animation: twinkle 2.6s ease-in-out infinite;
+	}
+	:global(:root:not([data-motion-off])) .star.second {
+		animation-delay: -1.3s;
 	}
 	@keyframes turn {
 		to {
