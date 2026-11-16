@@ -24,6 +24,8 @@
 	});
 	const shimmer = $derived(frame.motion?.startsWith('shimmer') ? frame.motion : undefined);
 	const id = $props.id();
+	/** Where a mask lets the light through; never seen itself. */
+	const SHOW = 'white'; // colour-ok: a mask's paint, read only for where it is
 	/** The light round the ring: a soft wedge, brightest near its leading edge. */
 	const WEDGE = [0.15, 0.4, 0.75, 1, 0.6, 0.25].map((opacity, i) => {
 		const from = ((300 + i * 10) * Math.PI) / 180;
@@ -39,8 +41,8 @@
 			cx={part.cx}
 			cy={part.cy}
 			r={part.r}
-			fill={part.fill ? 'white' : 'none'}
-			stroke={part.stroke ? 'white' : 'none'}
+			fill={part.fill ? SHOW : 'none'}
+			stroke={part.stroke ? SHOW : 'none'}
 			stroke-width={part.width}
 			opacity={part.opacity}
 		/>{:else if part.shape === 'ellipse'}<ellipse
@@ -49,14 +51,14 @@
 			rx={part.rx}
 			ry={part.ry}
 			transform="rotate({part.rotate} {part.cx} {part.cy})"
-			fill={part.fill ? 'white' : 'none'}
-			stroke={part.stroke ? 'white' : 'none'}
+			fill={part.fill ? SHOW : 'none'}
+			stroke={part.stroke ? SHOW : 'none'}
 			stroke-width={part.width}
 			opacity={part.opacity}
 		/>{:else}<path
 			d={part.d}
-			fill={part.fill ? 'white' : 'none'}
-			stroke={part.stroke ? 'white' : 'none'}
+			fill={part.fill ? SHOW : 'none'}
+			stroke={part.stroke ? SHOW : 'none'}
 			stroke-width={part.width}
 			stroke-linecap="round"
 			stroke-linejoin="round"
