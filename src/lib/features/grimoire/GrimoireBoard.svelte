@@ -66,11 +66,9 @@
 		boardAspect
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
-	import { SeatArranging, type SeatTable } from '#lib/features/board/seat-arranging.svelte.ts';
-	import {
-		enterSeating,
-		seatingRequested
-	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
+	import { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
+	import { gameSeatTable } from './seats/game-seat-table.ts';
+	import { enterSeating, seatingRequested } from './seats/seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
@@ -322,14 +320,8 @@
 	const heldDrag = $derived(remDrag.held);
 
 	// ── Arranging seats (seat-arranging.svelte.ts) ──
-	/** The game's seats as arranging keeps them: each move and swap is in History. */
-	const seatTable: SeatTable = {
-		setLayout: (next) => grimoire.setLayout(next),
-		swap: (seatA, seatB) => grimoire.run({ type: 'SwapSeats', seatA, seatB }),
-		move: (seatId, position) => void grimoire.run({ type: 'MoveSeat', seatId, position })
-	};
 	const seatArr: SeatArranging = new SeatArranging(() => ({
-		table: seatTable,
+		table: gameSeatTable(grimoire),
 		seating: game.seating,
 		layout,
 		points,
