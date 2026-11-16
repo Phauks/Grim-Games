@@ -75,13 +75,22 @@ const valid = (room: RoomState, number: unknown): number is number =>
 	number >= 1 &&
 	number <= countOffSize(room);
 
-/** A phone taps its number: it holds that one only, and whoever held it must tap again. */
+/**
+ * A phone taps its number: it holds that one only, and whoever held it must tap again. `null`
+ * lets its number go, for a player who tapped the wrong one (Trevor, 2026-11-16: "they
+ * couldn't unselect a seat once it had been selected").
+ */
 export function takeCount(room: RoomState, memberId: string, number: unknown): RoomState {
 	const member = room.members.find((m) => m.memberId === memberId);
-	if (!room.countOff || !member?.name || !valid(room, number)) return room;
-	const counts = room.countOff.counts.filter(
-		(c) => c.number !== number && !('memberId' in c && c.memberId === memberId)
-	);
+	if (!room.countOff || !member?.name) return room;
+	const others = room.countOff.counts.filter((c) => !('memberId' in c && c.memberId === memberId));
+	if (number === null) {
+		return others.length === room.countOff.counts.length
+			? room
+			: { ...room, countOff: { counts: others } };
+	}
+	if (!valid(room, number)) return room;
+	const counts = others.filter((c) => c.number !== number);
 	return { ...room, countOff: { counts: [...counts, { number, memberId }] } };
 }
 
