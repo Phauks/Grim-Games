@@ -160,7 +160,9 @@
 	 */
 	const dividers = $state<Record<string, HTMLElement>>({});
 	const captionW = $state<Record<string, number>>({});
-	let scrolled = $state(0);
+	// Pulled up, the row goes, and it comes back scrolled to its start: so do the captions
+	// (Trevor, 2026-11-16: after the bin, the ∞ sat left of the handle bar, over other tokens).
+	let scrolled = $derived(row?.scrollLeft ?? 0);
 	/**
 	 * Measured after it is drawn (Trevor, 2026-10-22: the ∞ sat over the Reminders, not its own
 	 * token): a stretch's line moves once the spacers and token widths are known, so the

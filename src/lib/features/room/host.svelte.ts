@@ -10,7 +10,12 @@
  */
 import type { Script } from '#lib/core/data/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
-import { sharedSave, toSavedGame, type ShareChoices } from '#lib/core/engine/index.ts';
+import {
+	sharedSave,
+	toSavedGame,
+	type SavedGame,
+	type ShareChoices
+} from '#lib/core/engine/index.ts';
 import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import type { GamePhase, PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import type {
@@ -19,6 +24,8 @@ import type {
 	PublicGameState
 } from '#lib/core/sync/public-projection.ts';
 import { seatChanges } from '#lib/core/sync/room-seating.ts';
+import { seatPictures } from '#lib/core/sync/room-pictures.ts';
+import { watchedParts } from '#lib/core/sync/watched-table.ts';
 import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
@@ -50,7 +57,7 @@ import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { gameFeedback } from './game-feedback.svelte.ts';
 import { sha256Hex } from '#lib/core/codes/hash.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
-import { uploadRoomImage } from './room-images.ts';
+import { BoardLook } from './board-look.svelte.ts';
 import { roomImagePath } from '#lib/core/sync/room-images.ts';
 import { RoomInbox } from './inbox.svelte.ts';
 import { viewerKeyFromPassword } from './viewer.svelte.ts';
@@ -125,12 +132,7 @@ export class RoomHost {
 	#phase = $state.raw<{ gameId: string; phase: GamePhase }>();
 	#town = $state.raw<{ gameId: string; number: number }>(); // Back to town's day, Town till over.
 	#corner = $state<{ gameId: string; corner: PublicCorner }>(); // For phones' corners (showCorner).
-	/** The open board's background, vignette and logo, for every shared grim (showLook). */
-	#look = $state<{ gameId: string; look: PublicLook }>();
-	/** The board's own picture while its look has one, and its name in the room once uploaded. */
-	#picture = $state.raw<Blob>();
-	#uploaded = $state.raw<{ picture: Blob; code: string; hash: string }>();
-	#aspect = $state.raw<{ gameId: string; aspect: number }>(); // The board's width ÷ height.
+	#board = new BoardLook(); // The open board's look and shape, for every shared grim.
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -139,6 +141,8 @@ export class RoomHost {
 	#game: OpenGame | undefined;
 	#stopWatching: (() => void) | undefined;
 	#published: { gameId: string; state: PublicGameState } | undefined;
+	/** The same, for the grimoire sent to other devices to follow; only #publish writes it. */
+	#table = $state.raw<{ gameId: string; state: PublicGameState }>();
 	#script: Script | undefined;
 
 	constructor() {
@@ -301,14 +305,10 @@ export class RoomHost {
 			// The whole grimoire, for Grim view while it is on.
 			$effect(() => {
 				if (!this.viewerKey && !this.#grimoireWanted && !this.sendingGame) return;
+				const { gameId } = game.game;
 				const saved = toSavedGame(game.session, Date.now());
-				this.#queueGrimoire({
-					saved: saved as unknown as Record<string, unknown>,
-					...(notes?.() ?? storedNotes(game.game.gameId)),
-					timer: liveDayTimer.shared,
-					...this.lookOf(game.game.gameId),
-					...this.#aspectOf(game.game.gameId)
-				});
+				const drawn = this.#drawn(gameId, saved, notes?.() ?? storedNotes(gameId));
+				this.#queueGrimoire({ ...drawn, timer: liveDayTimer.shared });
 			});
 			$effect(() => {
 				// Where the board draws the seats, so phones draw the town the same way (plan J13).
@@ -318,7 +318,7 @@ export class RoomHost {
 					this,
 					game.game,
 					game.characters,
-					{ ...layout, ...this.#aspectOf(game.game.gameId) },
+					{ ...layout, ...this.#board.aspectOf(game.game.gameId) },
 					corner
 				);
 				this.#publish({ gameId: game.game.gameId, state });
@@ -373,38 +373,12 @@ export class RoomHost {
 	 * draw the town on the same one, whatever each device's own settings (Trevor, 2026-10-26).
 	 */
 	showLook(gameId: string, look: PublicLook, picture?: Blob): void {
-		const shown = { gameId, look: $state.snapshot(look) as PublicLook };
-		if (JSON.stringify(shown) !== JSON.stringify(this.#look)) this.#look = shown;
-		this.#picture = look.background === 'image' ? picture : undefined;
-		this.#uploadPicture();
-	}
-
-	/** Uploads the board's picture to the open room, once, so the table's grims show it too. */
-	#uploadPicture(): void {
-		const picture = this.#picture;
-		const code = this.code;
-		const stored = readStored<StoredRoom>(STORAGE_KEY);
-		if (!picture || !code || stored?.code !== code) return;
-		if (this.#uploaded?.picture === picture && this.#uploaded.code === code) return;
-		uploadRoomImage(code, stored.key, picture)
-			.then((hash) => {
-				if (this.#picture === picture && this.code === code)
-					this.#uploaded = { picture, code, hash };
-			})
-			// Not shared until the next try (a new look, or the room again): no background.
-			.catch(() => undefined);
+		this.#board.show(gameId, look, picture, this.code);
 	}
 
 	/** The board's look, while it is this game's (showLook). */
 	lookOf(gameId: string): { look?: PublicLook } {
-		if (this.#look?.gameId !== gameId) return {};
-		const { look } = this.#look;
-		const uploaded = this.#uploaded;
-		const named =
-			look.background === 'image' &&
-			uploaded?.picture === this.#picture &&
-			uploaded?.code === this.code;
-		return { look: named ? { ...look, image: uploaded!.hash } : look };
+		return this.#board.lookOf(gameId, this.code);
 	}
 
 	/**
@@ -412,13 +386,20 @@ export class RoomHost {
 	 * keeps each seat at the board's place round the ring (Trevor, 2026-10-27).
 	 */
 	showAspect(gameId: string, aspect: number | undefined): void {
-		if (aspect === undefined) return;
-		if (this.#aspect?.gameId !== gameId || this.#aspect.aspect !== aspect)
-			this.#aspect = { gameId, aspect };
+		this.#board.showAspect(gameId, aspect);
 	}
 
-	#aspectOf(gameId: string): { aspect?: number } {
-		return this.#aspect?.gameId === gameId ? { aspect: this.#aspect.aspect } : {};
+	/** A grimoire drawn on another device: the game, its notes, look and shape, and watchedParts. */
+	#drawn(gameId: string, saved: SavedGame, notes: BoardNotes): SharedGrimoire {
+		const table = this.#table?.gameId === gameId ? this.#table.state : undefined;
+		const over = this.ended?.gameId === gameId ? this.ended : undefined;
+		return {
+			saved: saved as unknown as Record<string, unknown>,
+			...notes,
+			...this.lookOf(gameId),
+			...this.#board.aspectOf(gameId),
+			...watchedParts(seatPictures(this.members), table, over)
+		};
 	}
 
 	/** Lets the players of game `gameId` see their own characters, or hides them again. */
@@ -511,12 +492,7 @@ export class RoomHost {
 		const message = {
 			type: 'reveal',
 			gameId,
-			grimoire: {
-				saved: saved as unknown as Record<string, unknown>,
-				...(notes ?? storedNotes(gameId)),
-				...this.lookOf(gameId),
-				...this.#aspectOf(gameId)
-			}
+			grimoire: this.#drawn(gameId, saved, notes ?? storedNotes(gameId))
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
 		if (!this.#socket?.send(message)) return false;
@@ -609,7 +585,7 @@ export class RoomHost {
 	#connect(room: StoredRoom): void {
 		this.#socket?.stop();
 		this.code = room.code;
-		this.#uploadPicture();
+		this.#board.upload(room.code);
 		this.#socket = new RoomSocket(
 			room.code,
 			{
@@ -724,6 +700,7 @@ export class RoomHost {
 		// The board's notes change with every reminder moved; the table only when it does.
 		if (JSON.stringify(published) === JSON.stringify(this.#published)) return;
 		this.#published = published;
+		this.#table = published;
 		this.#resend();
 	}
 

@@ -41,6 +41,7 @@
 		look,
 		picture,
 		pictureRoom,
+		watched,
 		notebook,
 		testid
 	}: Props = $props();
@@ -108,6 +109,7 @@
 				{picture}
 				{pictureRoom}
 				{notebook}
+				{watched}
 			/>
 		{/if}
 	</div>
