@@ -3,8 +3,8 @@ import { openSettingsDialog } from './shell.ts';
 
 /**
  * Moving backgrounds (M43, Trevor 2026-11-03: "let's implement this"): picked among the
- * background tiles, customised in their own dialog with a preview, held still by Reduce
- * motion or the Player switch (Trevor, 2026-11-05: "Storyteller's, with a still switch").
+ * background tiles, customised in their own dialog with a preview, held still while
+ * animations are off (Trevor, 2026-11-16).
  */
 
 async function openSection(page: Page, section: string) {
@@ -85,28 +85,28 @@ test('a still background is customised: Stone made into slate (M72)', async ({ p
 	await editor.getByRole('button', { name: 'Cancel' }).tap();
 });
 
-test('a moving background holds still with Reduce motion or its switch in Board', async ({
-	page
-}) => {
+test('a moving background holds still while animations are off', async ({ page }) => {
+	// Off by the device's Reduce motion (Match device), then by the app's own Animations
+	// setting (Trevor, 2026-11-16: one switch for every role).
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await page.goto('/');
 	let dialog = await openSection(page, 'Board');
 	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
+	const thirty = dialog.getByRole('checkbox', {
+		name: 'Animated background at 30 frames a second'
+	});
 	await dialog.getByRole('button', { name: 'Stars' }).tap();
 	await expect(preview).toHaveAttribute('data-still', '');
-	// Told to ignore Reduce motion, it moves.
-	await dialog.getByRole('combobox', { name: 'Animated background with Reduce motion' }).tap();
-	await page.getByRole('option', { name: 'Move as usual' }).tap();
-	await expect(preview).not.toHaveAttribute('data-still', '');
-
-	// Each device's own switch holds it still whatever Reduce motion says, beside the other
-	// motion rows in Board (Trevor, 2026-11-06: moved from Player), and greys them out.
-	await dialog.getByText('Hold animated backgrounds still', { exact: true }).tap();
-	await expect(preview).toHaveAttribute('data-still', '');
-	await expect(
-		dialog.getByRole('combobox', { name: 'Animated background with Reduce motion' })
-	).toBeDisabled();
+	await expect(thirty).toBeDisabled();
 	await page.getByRole('button', { name: 'Close' }).first().tap();
-	dialog = await openSection(page, 'Player');
+
+	// Animations On moves it whatever the device says.
+	dialog = await openSection(page, 'Theme');
+	await dialog.getByRole('combobox', { name: 'Animations' }).tap();
+	await page.getByRole('option', { name: 'On', exact: true }).tap();
+	await page.getByRole('button', { name: 'Close' }).first().tap();
+	dialog = await openSection(page, 'Board');
+	await expect(preview).not.toHaveAttribute('data-still', '');
+	await expect(thirty).toBeEnabled();
 	await expect(dialog.getByText('Hold animated backgrounds still', { exact: true })).toHaveCount(0);
 });

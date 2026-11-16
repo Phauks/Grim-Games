@@ -95,10 +95,9 @@
 	--u: calc(1rem / var(--text-scale));
 }
 
-@media (prefers-reduced-motion: reduce) {
-	:root {
-		--duration-fast: 0ms;
-		--duration-normal: 0ms;
-		--duration-slow: 0ms;
-	}
+/* Animations off (ui/animations.svelte.ts): every motion token is 0ms. */
+:root[data-motion-off] {
+	--duration-fast: 0ms;
+	--duration-normal: 0ms;
+	--duration-slow: 0ms;
 }

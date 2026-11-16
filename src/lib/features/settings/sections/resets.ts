@@ -29,7 +29,7 @@ const pick = <K extends keyof Preferences>(...keys: K[]): Pick<Preferences, K> =
  * back to their defaults. Saved games, scripts, notes and backgrounds you added stay.
  */
 export const resets = {
-	theme: () => preferences.update(pick('themeId', 'colors')),
+	theme: () => preferences.update(pick('themeId', 'colors', 'animations')),
 	text: () =>
 		preferences.update({
 			...pick('textScale', 'textAlign'),

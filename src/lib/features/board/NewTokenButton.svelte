@@ -79,9 +79,7 @@
 			box-shadow: 0 0 calc(0.4 * var(--u)) calc(0.1 * var(--u)) var(--on-surface);
 		}
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.new-token[data-glow] {
-			animation: none;
-		}
+	:global(:root[data-motion-off]) .new-token[data-glow] {
+		animation: none;
 	}
 </style>

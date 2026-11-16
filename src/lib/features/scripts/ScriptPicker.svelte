@@ -568,10 +568,8 @@
 			display: none;
 		}
 	}
-	@media (prefers-reduced-motion: reduce) {
-		.pane {
-			transition: none;
-		}
+	:global(:root[data-motion-off]) .pane {
+		transition: none;
 	}
 	/* The same height whichever source is chosen; rows scroll inside it. */
 	.body {

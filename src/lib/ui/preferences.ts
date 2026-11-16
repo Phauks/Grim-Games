@@ -62,6 +62,12 @@ export interface Preferences {
 	 * zoomed the app by accident); Text size enlarges everything instead.
 	 */
 	allowZoom: boolean;
+	/**
+	 * Whether anything in the app moves on this device (Trevor, 2026-11-16: one switch for
+	 * players, Storytellers and spectators): follow the device's Reduce motion, or always on
+	 * or off.
+	 */
+	animations: Animations;
 	iconSet: IconSetId | null;
 	iconOverrides: Partial<Record<IconSlot, string>>;
 	/** Character token and reminder token sizes, and any token colours the user changed. */
@@ -265,6 +271,9 @@ export function parseScale(input: unknown, range: ScaleRange, fallback = 1): num
 	return Math.round((range.min + steps * range.step) * 1000) / 1000;
 }
 
+export const ANIMATIONS = ['device', 'on', 'off'] as const;
+export type Animations = (typeof ANIMATIONS)[number];
+
 export const TEXT_ALIGNS = ['left', 'justify'] as const;
 export type TextAlign = (typeof TEXT_ALIGNS)[number];
 
@@ -277,6 +286,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	characterIconScale: 1,
 	textAlign: 'left',
 	allowZoom: false,
+	animations: 'device',
 	iconSet: null,
 	iconOverrides: {},
 	tokenAppearance: DEFAULT_TOKEN_APPEARANCE,
@@ -352,6 +362,9 @@ export function parsePreferences(raw: unknown): Preferences {
 			: DEFAULT_PREFERENCES.textAlign,
 		allowZoom:
 			typeof input.allowZoom === 'boolean' ? input.allowZoom : DEFAULT_PREFERENCES.allowZoom,
+		animations: (ANIMATIONS as readonly unknown[]).includes(input.animations)
+			? (input.animations as Animations)
+			: DEFAULT_PREFERENCES.animations,
 		iconSet: isIconSetId(input.iconSet) ? input.iconSet : null,
 		iconOverrides,
 		tokenAppearance: parseTokenAppearance(input.tokenAppearance),

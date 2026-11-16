@@ -3,7 +3,6 @@ import {
 	MOVING_BACKGROUNDS,
 	MOVING_IDS,
 	movingDefaults,
-	movingRun,
 	parseMoving,
 	parseMovingMotion,
 	type MovingId,
@@ -13,7 +12,7 @@ import {
 import { formatParam, matchingPreset, paramPreset } from './params.ts';
 
 /** How a device moves a background when nothing is saved. */
-const DEFAULT_MOTION = { fps: 'screen', reduceMotion: 'still', still: false } as const;
+const DEFAULT_MOTION = { fps: 'screen' } as const;
 const movingPreset = (id: MovingId, name: string) => paramPreset(MOVING_BACKGROUNDS[id], name);
 const presetOf = (id: MovingId, params: MovingParams) =>
 	matchingPreset(MOVING_BACKGROUNDS[id], params);
@@ -61,25 +60,10 @@ describe('moving backgrounds', () => {
 		expect(parsed?.params).not.toHaveProperty('extra');
 	});
 
-	it('reads motion settings, falling back to drawing every refresh and holding still', () => {
+	it('reads the frame rate, falling back to drawing every refresh', () => {
 		expect(parseMovingMotion(undefined)).toEqual(DEFAULT_MOTION);
-		expect(parseMovingMotion({ fps: '30', reduceMotion: 'gentle', still: true })).toEqual({
-			fps: '30',
-			reduceMotion: 'gentle',
-			still: true
-		});
-		expect(parseMovingMotion({ fps: 12, reduceMotion: 'fast' })).toEqual(DEFAULT_MOTION);
-	});
-
-	it('holds still with Reduce motion on, unless told otherwise', () => {
-		const rain = { id: 'rain' as const, params: movingDefaults('rain') };
-		expect(movingRun(rain, DEFAULT_MOTION, true).still).toBe(true);
-		expect(movingRun(rain, DEFAULT_MOTION, false)).toMatchObject({ still: false, speed: 1 });
-		expect(movingRun(rain, { ...DEFAULT_MOTION, still: true }, false).still).toBe(true);
-		const gentle = movingRun(rain, { ...DEFAULT_MOTION, reduceMotion: 'gentle' }, true);
-		expect(gentle).toMatchObject({ still: false, speed: 0.35 });
-		expect(gentle.params.lightning).toBe(0);
-		expect(movingRun(rain, { ...DEFAULT_MOTION, reduceMotion: 'ignore' }, true).speed).toBe(1);
+		expect(parseMovingMotion({ fps: '30' })).toEqual({ fps: '30' });
+		expect(parseMovingMotion({ fps: 12 })).toEqual(DEFAULT_MOTION);
 	});
 
 	it('keeps lightning to one flash every few seconds at most', () => {

@@ -32,6 +32,7 @@
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
 	import { buildInfo } from '#lib/build-info.ts';
 	import { buildSwitch } from '#lib/features/about/build-switch.ts';
+	import AnimationsSetting from '#lib/features/settings/AnimationsSetting.svelte';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 
 	interface Props {
@@ -156,6 +157,8 @@
 	<!-- Settings, Report an issue and the switch to the other build do something rather than go
 	     somewhere, so they are buttons, not menu rows (Trevor, 2026-10-29). -->
 	<div class="actions">
+		<!-- Animations on or off from any screen, for every role (Trevor, 2026-11-16). -->
+		<AnimationsSetting variant="switch" />
 		{#each actions as action (action.id)}
 			<Button
 				icon={action.icon}
