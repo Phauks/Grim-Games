@@ -310,3 +310,36 @@ test("a players-only town's Travellers and ghost votes work as the board's", asy
 	await expect(guesses.getByRole('button', { name: /Barista/ })).toHaveCount(0);
 	await expect(seats.nth(0)).not.toHaveAttribute('aria-label', /Traveller/);
 });
+
+// Trevor, 2026-11-16: an "Off-script characters" toggle on a Local Grim seat's sheet lets a
+// guess be any official character, and the game remembers it.
+test('a Local Grim seat guesses an off-script character once the toggle is on', async ({
+	page
+}) => {
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const seats = page.getByTestId('grim-seat');
+	await seats.nth(1).tap();
+	const sheet = page.getByRole('dialog', { name: /Seat 2/ });
+	const offScript = sheet.getByRole('checkbox', { name: 'Off-script characters' });
+	await expect(offScript).not.toBeChecked();
+	// Pukka is not on Trouble Brewing, so the list leaves it out until the toggle is on.
+	await expect(sheet.getByRole('button', { name: 'Pukka', exact: true })).toHaveCount(0);
+	await sheet.getByText('Off-script characters', { exact: true }).tap();
+	await expect(offScript).toBeChecked();
+	await sheet.getByRole('searchbox').first().fill('Pukka');
+	await sheet.getByRole('button', { name: 'Pukka', exact: true }).tap();
+	await expect(
+		sheet.getByTestId('seat-guesses').getByRole('button', { name: /Pukka/ })
+	).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// Remembered for the game: another seat's sheet, after a reload, still shows it on.
+	await page.reload();
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	await seats.nth(2).tap();
+	const next = page.getByRole('dialog', { name: /Seat 3/ });
+	await expect(next.getByRole('checkbox', { name: 'Off-script characters' })).toBeChecked();
+	await expect(next.getByRole('button', { name: 'Pukka', exact: true })).toBeAttached();
+});

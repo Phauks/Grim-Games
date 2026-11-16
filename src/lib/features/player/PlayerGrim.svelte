@@ -75,10 +75,9 @@
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
-	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
-	import { toggleGhostVote as toggleVote } from './local-town.svelte.ts';
-	import { setTraveller } from '#lib/core/town/local-town.ts';
-	import type { Character } from '#lib/core/data/index.ts';
+	import { localGuessKey, localPickable, localSeats, localTown } from './local-town.svelte.ts';
+	import { saveLocalTown, toggleGhostVote as toggleVote } from './local-town.svelte.ts';
+	import { setOffScript, setTraveller } from '#lib/core/town/local-town.ts';
 	import LocalSeatCount from './LocalSeatCount.svelte';
 	import LocalSeatRows from './LocalSeatRows.svelte';
 	import { seatLabel } from './seat-label.ts';
@@ -340,19 +339,13 @@
 				: toggleGuess(guesses, chosen.seatId, characterId)
 		);
 	}
-	/**
-	 * A players-only game's seat picker lists the Travellers as a character type of their own
-	 * (Trevor, 2026-11-10): the script's first, then every other official one, since a Traveller
-	 * can join any game.
-	 */
-	const pickable = $derived.by((): readonly Character[] => {
-		if (!local) return script.characters;
-		const listed = new Set(script.characters.map((c) => c.id));
-		const others = (officialData.current?.characters ?? []).filter(
-			(c) => c.type === 'traveller' && !listed.has(c.id)
-		);
-		return [...script.characters, ...others];
-	});
+	// A players-only game's picker adds other Travellers, and with Off script any character.
+	const offScript = $derived(!!local && !!localTown(local).offScript);
+	const pickable = $derived(
+		local
+			? localPickable(script.characters, officialData.current?.characters ?? [], offScript)
+			: script.characters
+	);
 	/** What the seat picker shows as chosen: a Traveller's seat its Traveller, else the guesses. */
 	const picked = $derived(
 		!chosen
@@ -679,6 +672,11 @@
 		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
 		onGuess={guess}
 	/>
+	{#if local}<Toggle
+			label={t('player.grim.offScript')}
+			checked={offScript}
+			onChange={(on) => saveLocalTown(local!, setOffScript(localTown(local!), on))}
+		/>{/if}
 	{#if local || !current?.traveller}<CharacterPicker
 			characters={pickable}
 			selected={picked}
