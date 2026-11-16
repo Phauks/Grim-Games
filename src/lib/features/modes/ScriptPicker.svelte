@@ -41,12 +41,29 @@
 	const CUSTOM = '__custom__';
 	const editions = OFFICIAL_EDITIONS.map((e) => ({ value: e.id as ScriptChoice, label: e.name }));
 	const isEdition = (v: ScriptChoice) => editions.some((e) => e.value === v);
-	const choices = $derived([...editions, { value: CUSTOM, label: t('modes.scriptSearch.custom') }]);
+	/**
+	 * Official or Custom, one choice (Trevor, 2026-11-15: "make it official and custom one of
+	 * those controls where only one can be selected"): only that kind's controls are shown,
+	 * in one space as tall as the taller kind, so switching moves nothing below.
+	 */
+	const OFFICIAL = '__official__';
+	const kinds = $derived([
+		{ value: OFFICIAL, label: t('modes.scriptKind.official') },
+		{ value: CUSTOM, label: t('modes.scriptSearch.custom') }
+	]);
 	// Custom until a base script is picked; a custom script chosen elsewhere (Play on Search) is Custom.
 	let customPicked = $state(false);
 	const custom = $derived(customPicked || !isEdition(value));
+	/** The official script Official goes back to: the last one chosen, else the first. */
+	let lastEdition = $state<ScriptChoice>(
+		untrack(() => (isEdition(value) ? value : editions[0]!.value))
+	);
+	$effect(() => {
+		if (isEdition(value)) lastEdition = value;
+	});
 
 	function choose(next: ScriptChoice) {
+		if (next === OFFICIAL) next = lastEdition;
 		if (next !== CUSTOM) {
 			customPicked = false;
 			return onChange(next);
@@ -132,19 +149,31 @@
 
 <div class="picker">
 	<ChoiceGroup
-		{label}
-		{hideLabel}
-		value={custom ? CUSTOM : value}
-		options={choices}
+		label={t('modes.scriptKind.label')}
+		hideLabel
+		value={custom ? CUSTOM : OFFICIAL}
+		options={kinds}
 		onChange={choose}
 	/>
-	<div class="custom">
-		<Button variant="field" icon="search" data-testid="custom-script" onclick={openSheet}>
-			<span class="name">{(custom && chosen?.label) || t('common.none')}</span>
-		</Button>
+	<!-- Both kinds in one cell: the hidden one keeps its height, so nothing below moves. -->
+	<div class="kinds">
+		<div class="kind" class:hidden={custom} inert={custom}>
+			<ChoiceGroup
+				{label}
+				{hideLabel}
+				value={custom ? '' : value}
+				options={editions}
+				onChange={choose}
+			/>
+		</div>
+		<div class="kind custom" class:hidden={!custom} inert={!custom}>
+			<Button variant="field" icon="search" data-testid="custom-script" onclick={openSheet}>
+				<span class="name">{(custom && chosen?.label) || t('common.none')}</span>
+			</Button>
+		</div>
 	</div>
 	<div class="chosen" data-testid="chosen-script">
-		<span class="version">
+		<span class="version" class:hidden={!custom} inert={!custom}>
 			<Select
 				label={t('modes.scriptSearch.version')}
 				hideLabel
@@ -176,10 +205,21 @@
 		gap: var(--space-2);
 		min-width: 0;
 	}
+	.kinds {
+		display: grid;
+		min-width: 0;
+	}
+	.kind {
+		grid-area: 1 / 1;
+		min-width: 0;
+	}
+	.hidden {
+		visibility: hidden;
+	}
 	/* The whole row, a long name cut short, so nothing beside or under it moves. */
 	.custom {
 		display: grid;
-		min-width: 0;
+		align-content: start;
 	}
 	.custom :global(.button > span) {
 		min-width: 0;

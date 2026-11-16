@@ -856,7 +856,15 @@ test('Play starts a new game with a found script, without saving it', async ({ p
 	await page.goto('/new');
 	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
 	await expect(field).toHaveText('None');
-	await expect(script.getByRole('radio', { name: 'Custom' })).not.toBeChecked();
+	await expect(
+		page
+			.getByRole('radiogroup', { name: 'Official or custom' })
+			.getByRole('radio', { name: 'Custom' })
+	).not.toBeChecked();
+	await page
+		.getByRole('radiogroup', { name: 'Official or custom' })
+		.getByText('Custom', { exact: true })
+		.tap();
 	await field.tap();
 	const sheet = page.getByTestId('script-sheet');
 	await expect(sheet.getByRole('button').filter({ hasText: 'Big Town' })).toHaveCount(1);

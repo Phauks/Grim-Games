@@ -37,6 +37,28 @@ test('"not in play" asks which bluff set when there are several', async ({ page 
 	await expect(shown(page)).not.toContainText('Chef');
 });
 
+test("tapping a character's icon in the picker chooses it, like the rest of its row", async ({
+	page
+}) => {
+	await openSheet(page);
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Empath');
+	const row = page
+		.getByTestId('character-picker')
+		.locator('.ring-row:has(button[data-character-id="empath"])');
+	// Trevor, 2026-11-15: the icon once opened the character's info and still took the tap.
+	// A tap where the icon is drawn, landing on whatever is there.
+	const ring = await row.locator('.ring').boundingBox();
+	if (!ring) throw new Error('No icon');
+	await page.touchscreen.tap(ring.x + ring.width / 2, ring.y + ring.height / 2);
+	await expect(row.getByRole('button', { name: 'Empath', exact: true })).toHaveAttribute(
+		'aria-current',
+		'true'
+	);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown(page).getByRole('img', { name: /Empath token/ })).toBeVisible();
+});
+
 test('the sheet shows a character card and edits and deletes a custom card', async ({ page }) => {
 	await openSheet(page);
 	await page.getByRole('button', { name: 'You are', exact: true }).tap();
