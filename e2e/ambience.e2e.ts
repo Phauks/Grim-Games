@@ -1,4 +1,5 @@
 import { walkThrough } from './night-step.ts';
+import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -37,7 +38,7 @@ test('day and night sound plays on phones in the room once the night begins, nev
 		if (path.startsWith('/sounds/ambience/')) fetched.push(path);
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	// Any tap lets the page make sounds later (browsers' rule).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await page.goto(board);

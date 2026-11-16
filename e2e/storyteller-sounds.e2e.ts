@@ -1,4 +1,5 @@
 import { walkThrough } from './night-step.ts';
+import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -93,7 +94,7 @@ test('a player is asked on joining, plays nothing until they say yes, and is not
 
 	// The answer is kept: back in the room, nobody asks again.
 	await phone.reload();
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	await phone.waitForTimeout(500);
 	await expect(question).toBeHidden();
 

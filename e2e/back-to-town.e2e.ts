@@ -1,4 +1,5 @@
 import { paneDay, boardTimer } from './players.ts';
+import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
@@ -50,7 +51,7 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 		};
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	// Any tap lets the page make sounds later (browsers' rule).
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
@@ -210,7 +211,7 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 		};
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
@@ -270,7 +271,7 @@ test('the day timer reaching 0:00 calls Back to town, even by taking time off', 
 		navigator.vibrate = () => (calls.push('vibrate'), true);
 	});
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);

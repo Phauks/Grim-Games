@@ -64,7 +64,7 @@ export const shell = {
 	'shell.switchToProduction': 'Switch to production',
 	'shell.switchBuildTitle':
 		'Opens this page on the other build. Each build keeps its own saved games, Library and settings on this device.',
-	'shell.aboutIntro': '{app} is a digital toolkit for players of social deduction games.',
+	'shell.aboutIntro': 'A digital toolkit for players of social deduction games.',
 	'shell.aboutVersion': 'Version',
 	'shell.aboutCommit': 'Commit',
 	'shell.officialNotice':

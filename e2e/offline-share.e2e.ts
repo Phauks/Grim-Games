@@ -140,7 +140,7 @@ test('a scanned script stays, though the phone was last in a room playing anothe
 	// The room is still open, but the phone left it, so reopening the app keeps the script.
 	await phone.reload();
 	await expect(phone.getByRole('heading', { name: 'Pocket Brew', level: 1 })).toBeVisible();
-	await expect(phone.getByTestId('you-row')).toHaveCount(0);
+	await expect(phone.getByTestId('player-status-row')).toHaveCount(0);
 	await expect(phone.getByRole('heading', { name: 'Pocket Brew', level: 1 })).toBeVisible();
 	// The room is still in Your games, to join again.
 	await phone.goto('/join');

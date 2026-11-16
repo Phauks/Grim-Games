@@ -1,4 +1,5 @@
 import { paneDay } from './players.ts';
+import { expectInRoom } from './player-status.ts';
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
@@ -1566,13 +1567,13 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
 	// Only phones connected now count: the room keeps every phone that joined (2026-10-25).
 	const leaverContext = await browser.newContext({ ...testInfo.project.use });
 	const leaver = await leaverContext.newPage();
 	await leaver.goto(`/join/${code}`);
-	await expect(leaver.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(leaver);
 	await expect(page.getByTestId('specters-room')).toHaveText('0/2 spectators voted');
 	await leaverContext.close();
 	await expect(page.getByTestId('specters-room')).toHaveText('0/1 spectators voted');
@@ -1828,9 +1829,7 @@ test('Official or Custom: only one kind of script is shown, and the sheet finds 
 	// sources and Add script, never leaving New game.
 	await page.goto('/new');
 	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
-	// None, a Local Grim game's alone (2026-11-16), is shown but can't be chosen here.
-	await expect(kinds.getByRole('radio')).toHaveCount(3);
-	await expect(kinds.getByRole('radio', { name: 'None' })).toBeDisabled();
+	await expect(kinds.getByRole('radio')).toHaveCount(2);
 	const official = kinds.getByRole('radio', { name: 'Official' });
 	const custom = kinds.getByRole('radio', { name: 'Custom' });
 	const script = page.getByRole('radiogroup', { name: 'Script' });

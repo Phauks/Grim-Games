@@ -250,6 +250,8 @@ export class RoomPlayer {
 					if (this.view?.grimView) this.grimView = m.grimoire;
 				} else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				} else if (m.type === 'unreveal') {
+					if (this.revealed?.gameId === m.gameId) this.revealed = undefined;
 				} else if (m.type === 'call-town') {
 					hearCallTown(m.sound);
 					toast(t('room.callTownHeard'));

@@ -47,6 +47,8 @@ export class RoomTown {
 					if (!m.ended) this.revealed = undefined;
 				} else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
+				} else if (m.type === 'unreveal') {
+					if (this.revealed?.gameId === m.gameId) this.revealed = undefined;
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'grimoire' && admin) this.grimoire = m.grimoire;
 				else if (m.type === 'town-sound') {

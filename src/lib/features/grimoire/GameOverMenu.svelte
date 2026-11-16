@@ -2,6 +2,8 @@
 	import { DEFAULT_SHARE_CHOICES, type ShareChoices } from '#lib/core/engine/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import ShareChoicesFields from '#lib/features/room/ShareChoicesFields.svelte';
@@ -11,7 +13,9 @@
 	 * "you could have B replace the timer?"), clear of the script's logo in the seat ring. The
 	 * pill says who won and opens what is about this game: Share grim, Export game and Player
 	 * feedback. Reopen game and New game stay only in ⋯ ("perhaps we don't include them here,
-	 * and only in the ...?"). Share grim asks what goes with the grimoire, a switch each.
+	 * and only in the ...?"). Share grim asks what goes with the grimoire, a switch each; once
+	 * shared it reads Shared grim, whose switches change what the phones have at once, with one to
+	 * stop sharing (Trevor, 2026-11-16, option B: "allow for letting more or less").
 	 */
 	interface Props {
 		winner?: 'good' | 'evil';
@@ -21,26 +25,33 @@
 		watching: boolean;
 		onExport: () => void;
 		onFeedback?: () => void;
-		/** Only while the room is connected and the grimoire hasn't gone to the phones yet. */
-		onShareGrim?: (choices: ShareChoices) => void;
+		/** Only while the room is connected. */
+		shareGrim?: {
+			/** What went with the grimoire, while the phones have it. */
+			shared?: ShareChoices;
+			share: (choices: ShareChoices) => void;
+			stop: () => void;
+		};
 	}
 
-	let { winner, text, watching, onExport, onFeedback, onShareGrim }: Props = $props();
+	let { winner, text, watching, onExport, onFeedback, shareGrim }: Props = $props();
 
 	let shareOpen = $state(false);
+	let liveOpen = $state(false);
 	/** The grimoire's characters and reminders always go; the rest is the Storyteller's call. */
 	let choices = $state.raw<ShareChoices>(DEFAULT_SHARE_CHOICES);
 
 	const items = $derived([
-		...(onShareGrim
+		...(shareGrim
 			? [
 					{
 						value: 'share-grim',
-						label: t('room.shareGrim.button'),
+						label: t(shareGrim.shared ? 'room.shareGrim.shared' : 'room.shareGrim.button'),
 						icon: 'shareGrim' as const,
 						onSelect: () => {
-							choices = DEFAULT_SHARE_CHOICES;
-							shareOpen = true;
+							choices = shareGrim.shared ?? DEFAULT_SHARE_CHOICES;
+							if (shareGrim.shared) liveOpen = true;
+							else shareOpen = true;
 						}
 					}
 				]
@@ -86,11 +97,33 @@
 <ConfirmDialog
 	bind:open={shareOpen}
 	title={t('room.shareGrim.title')}
-	onConfirm={() => onShareGrim?.(choices)}
+	onConfirm={() => shareGrim?.share(choices)}
 >
 	<p class="dialog-text">{t('room.shareGrim.body')}</p>
 	<ShareChoicesFields bind:choices />
 </ConfirmDialog>
+
+<Dialog bind:open={liveOpen} title={t('room.shareGrim.shared')}>
+	<div data-testid="shared-grim">
+		<SettingToggle
+			label={t('room.shareGrim.withRoom')}
+			description={t('room.shareGrim.withRoomHint')}
+			checked={!!shareGrim?.shared}
+			disabled={!shareGrim}
+			onChange={(on) => (on ? shareGrim?.share(choices) : shareGrim?.stop())}
+		/>
+		<p class="dialog-text">{t('room.shareGrim.live')}</p>
+		<ShareChoicesFields
+			bind:choices={
+				() => choices,
+				(next) => {
+					choices = next;
+					if (shareGrim?.shared) shareGrim.share(next);
+				}
+			}
+		/>
+	</div>
+</Dialog>
 
 <style>
 	.dialog-text {

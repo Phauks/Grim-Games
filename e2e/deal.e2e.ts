@@ -69,7 +69,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 2, 'Alex');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '2');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
 	// Nothing to see before the deal: the status line shows the game, not Your character
 	// (Trevor, 2026-11-03: no button of its own).
@@ -323,7 +323,7 @@ test('a phone that joins is named on a seat and gets its character from Deal', a
 		.getByRole('alertdialog', { name: 'Deal at random?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await expect(phone.getByTestId('your-character')).toBeVisible();
 	await page.goto(board);
 	await expect(page.getByRole('button', { name: /^Seat 1: Phone/ })).toBeVisible();
@@ -354,7 +354,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await setPlayerName(phone, 'Sam');
 	await phone.keyboard.press('Escape');
 	await nameSeat(page, board, 1, 'Sam');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await expect(phone.getByRole('button', { name: 'Settings: Sam' })).toBeVisible();
 	await page.goto(`${board}/players`);
 	await page.getByTestId('roles-show').tap();

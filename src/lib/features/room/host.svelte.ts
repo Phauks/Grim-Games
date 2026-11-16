@@ -205,11 +205,7 @@ export class RoomHost {
 		const members = on ? [...others, memberId] : others;
 		if (!this.#socket?.send({ type: 'grim-viewers', members })) return false;
 		this.grimViewers = members;
-		if (choices) {
-			this.grimChoices = choices;
-			const stored = readStored<StoredRoom>(STORAGE_KEY);
-			if (stored) writeStored(STORAGE_KEY, { ...stored, grimChoices: choices });
-		}
+		if (choices) this.setGrimChoices(choices);
 		return true;
 	}
 
@@ -415,8 +411,11 @@ export class RoomHost {
 
 	/** The game that is over (End game), with how, as phones are told (Share grim, R5). */
 	ended = $state.raw<{ gameId: GameId; winner?: 'good' | 'evil'; reason?: string }>();
-	/** The final grimoire the room's phones were sent (Share grim, R5), for the player view too. */
-	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
+	/**
+	 * The final grimoire the room's phones were sent (Share grim, R5), for the player view too,
+	 * and what went with it, for changing that live (Trevor, 2026-11-16, option B).
+	 */
+	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire; choices: ShareChoices }>();
 
 	/**
 	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
@@ -433,8 +432,25 @@ export class RoomHost {
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
 		if (!this.#socket?.send(message)) return false;
-		this.revealed = { gameId, grimoire: message.grimoire };
+		this.revealed = { gameId, grimoire: message.grimoire, choices };
 		return true;
+	}
+
+	/**
+	 * Stops sharing the final grimoire (Trevor, 2026-11-16, option B: "allow for letting more or
+	 * less"): the room drops it and its phones stop showing it. False when offline.
+	 */
+	unreveal(gameId: GameId): boolean {
+		if (!this.#socket?.send({ type: 'unreveal', gameId })) return false;
+		if (this.revealed?.gameId === gameId) this.revealed = undefined;
+		return true;
+	}
+
+	/** Changes what goes to everyone with Grim view, sent at once, and remembers it. */
+	setGrimChoices(choices: ShareChoices): void {
+		this.grimChoices = choices;
+		const stored = readStored<StoredRoom>(STORAGE_KEY);
+		if (stored) writeStored(STORAGE_KEY, { ...stored, grimChoices: choices });
 	}
 
 	/**

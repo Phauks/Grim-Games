@@ -151,6 +151,8 @@ export type ClientMessage =
 	 * once the game `gameId` is over, and kept until it is reopened or a new game starts.
 	 */
 	| { type: 'reveal'; gameId: string; grimoire: SharedGrimoire }
+	/** Takes the finished grimoire of `gameId` back off the phones (Trevor, 2026-11-16, B). */
+	| { type: 'unreveal'; gameId: string }
 	/** The Storyteller reopened the game `gameId`: it runs again (protocol 2). */
 	| { type: 'reopen-game'; gameId: string }
 	/** The Storyteller is (or no longer is) choosing the next script. */
@@ -365,6 +367,8 @@ export interface RevealView {
 export type ServerMessage =
 	| HostView
 	| RevealView
+	/** The Storyteller stopped sharing the finished grimoire of `gameId` (Share grim, B). */
+	| { type: 'unreveal'; gameId: string }
 	| PlayerView
 	| TownView
 	| ScriptView

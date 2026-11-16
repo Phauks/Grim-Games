@@ -611,14 +611,16 @@
 				? 'Evil won'
 				: 'Winner not recorded'
 	);
-	/** Share grim (R5), while the room is connected and before the phones have the grimoire. */
+	/** Share grim (R5) while the room is connected, and changing or stopping it (2026-11-16). */
 	const shareGrim = $derived(
-		!watching &&
-			roomHost().status === 'open' &&
-			roomHost().ended?.gameId === game.gameId &&
-			roomHost().revealed?.gameId !== game.gameId
-			? (choices: ShareChoices) =>
-					roomHost().reveal(grimoire.open, choices) || toast(t('room.shareGrim.failed'))
+		!watching && roomHost().status === 'open' && roomHost().ended?.gameId === game.gameId
+			? {
+					shared:
+						roomHost().revealed?.gameId === game.gameId ? roomHost().revealed?.choices : undefined,
+					share: (choices: ShareChoices) =>
+						roomHost().reveal(grimoire.open, choices) || toast(t('room.shareGrim.failed')),
+					stop: () => roomHost().unreveal(game.gameId) || toast(t('room.shareGrim.failed'))
+				}
 			: undefined
 	);
 	/** The day timer is always on the board until the game ends (Trevor, 2026-10-17). */
@@ -946,8 +948,7 @@
 			></BoardCorner>
 			<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 			{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-			<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
-			     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
+			<!-- The day timer (2026-10-17), Back to town at its front, not in Export (2026-11-01). -->
 			<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
 				<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
 				<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
@@ -969,7 +970,7 @@
 							{watching}
 							onExport={() => (exportOpen = true)}
 							onFeedback={watching ? undefined : () => (feedbackOpen = true)}
-							onShareGrim={shareGrim}
+							{shareGrim}
 						/>
 					</div>
 				{/if}

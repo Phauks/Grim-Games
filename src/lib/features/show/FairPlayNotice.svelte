@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 
 	interface Props {
@@ -16,11 +17,17 @@
 		 * does (Grim view while watching, Trevor 2026-10-28: "Too verbose").
 		 */
 		short?: boolean;
+		/**
+		 * Only an info button that opens the warning, where the plain line was too loud (the
+		 * Profile, Trevor 2026-11-16).
+		 */
+		info?: boolean;
 	}
 
-	let { kind, short = false }: Props = $props();
+	let { kind, short = false, info = false }: Props = $props();
 	let open = $state(false);
 	let anchor = $state<HTMLElement>();
+	let button = $state<HTMLButtonElement>();
 	const text = $derived(
 		kind === 'secret'
 			? t('show.fairPlay.secret')
@@ -46,6 +53,19 @@
 			<li>{t('show.fairPlay.watchIntegrity')}</li>
 		</ul>
 	</div>
+{:else if info}
+	<IconButton
+		icon="info"
+		label={t('show.fairPlay.profileTitle')}
+		bind:ref={button}
+		aria-haspopup="dialog"
+		aria-expanded={open}
+		data-testid="fair-play"
+		onclick={() => (open = true)}
+	/>
+	<Popover bind:open title={t('show.fairPlay.profileTitle')} anchor={button}>
+		<p class="full" data-testid="fair-play-full">{text}</p>
+	</Popover>
 {:else if short}
 	<button
 		type="button"

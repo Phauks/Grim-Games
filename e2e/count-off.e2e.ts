@@ -112,7 +112,7 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	await expect(page.getByRole('button', { name: /^Seat 3: Ana/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Seat 4: Dan/ })).toBeVisible();
 	await expect(sheet).toBeHidden();
-	await expect(ana.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(ana.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 	// Seating's own Done leaves the mode, and its controls with it.
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Done' }).tap();

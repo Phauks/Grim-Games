@@ -110,7 +110,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await sheet.getByRole('textbox', { name: 'Player name' }).fill('Alex');
 	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
 	await page.keyboard.press('Escape');
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 
 	// The Storyteller opens Room transfer and brings the game.
 	const transferCode = await openTransfer(page, board, code);
@@ -164,7 +164,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await expect(
 		other.getByRole('list', { name: 'Players in the room' }).getByRole('listitem')
 	).toContainText(['Alex']);
-	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
+	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await phoneContext.close();
 	await otherContext.close();
 });
