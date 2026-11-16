@@ -95,6 +95,9 @@
 	/* A pale wash of a colour behind a pressed or chosen control. */
 	--accent-wash: color-mix(in srgb, var(--accent) 20%, transparent);
 	--good-wash: color-mix(in srgb, var(--good) 20%, transparent);
+	/* The printed player counts' team tints behind dark team-coloured numbers. */
+	--print-good-tint: color-mix(in srgb, var(--good) 12%, transparent);
+	--print-evil-tint: color-mix(in srgb, var(--evil) 12%, transparent);
 	/* A spent ghost vote (DeadBadge, the seat sheet's toggle): grey, the same on every theme. */
 	--ghost-used: rgb(130 126 136); /* colour-ok: the badge looks the same on every theme */
 	--ghost-used-rim: rgb(90 86 96); /* colour-ok: the badge looks the same on every theme */
