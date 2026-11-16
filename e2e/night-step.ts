@@ -24,6 +24,11 @@ export const walkNext = (page: Page) =>
 
 /** Opens tonight's step from the strip on a phone; beside the board the pane already shows it. */
 export async function openWalkStep(page: Page): Promise<void> {
+	// The Game sheet may already be open on it (it follows the walk); a tap would land in it.
+	if (await page.getByRole('dialog', { name: 'Game' }).isVisible()) return;
 	const strip = page.getByTestId('night-strip');
-	if (await strip.isVisible()) await strip.locator('button.step').tap();
+	if (!(await strip.isVisible())) return;
+	// At its corner: its text names characters, and each name opens that character.
+	await strip.locator('button.step').tap({ position: { x: 4, y: 4 } });
+	await page.getByRole('dialog', { name: 'Game' }).waitFor();
 }
