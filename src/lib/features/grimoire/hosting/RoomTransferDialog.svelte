@@ -92,6 +92,7 @@
 			label={t('room.transfer.code')}
 			value={transfer.code}
 			testid="transfer-code"
+			prefix={t('room.transfer.prefix')}
 			hideable
 		/>
 		<!-- Always in its place, so the switches below never move. -->

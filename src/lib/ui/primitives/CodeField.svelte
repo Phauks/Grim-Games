@@ -11,6 +11,9 @@
 	 * `onenter` when given (a form with two codes has no implicit submit). The X clears the
 	 * whole code, like every other text field.
 	 *
+	 * A `prefix` ("T-" on a transfer code) stands before the boxes as fixed text: it is not
+	 * part of the value and is never typed.
+	 *
 	 * Room codes, transfer codes and the draw PIN change all the time, so password managers
 	 * and autofill are told to leave the field alone (Trevor, 2026-11-05). A sign-in code is a
 	 * TextField with `one-time-code`, not this.
@@ -40,6 +43,8 @@
 		onenter?: () => void;
 		/** The last box was just filled. */
 		oncomplete?: () => void;
+		/** Fixed text before the boxes that is never typed ("T-" on a transfer code). */
+		prefix?: string;
 	}
 
 	let {
@@ -54,7 +59,8 @@
 		large = false,
 		enterkeyhint = 'go',
 		onenter,
-		oncomplete
+		oncomplete,
+		prefix
 	}: Props = $props();
 
 	let focused = $state(false);
@@ -100,6 +106,7 @@
 		.join(' ')}
 >
 	<span class="boxes" class:centred class:large aria-hidden="true">
+		{#if prefix}<span class="prefix">{prefix}</span>{/if}
 		{#each { length }, i (i)}
 			<span
 				class="box"
@@ -175,6 +182,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.box:first-child,
+	.prefix + .box,
 	.group-end + .box {
 		border-inline-start: 0;
 		border-start-start-radius: var(--radius-md);
@@ -202,6 +210,22 @@
 	.large .box {
 		flex: 1 1 0;
 		height: calc(1.7 * var(--tap-target));
+		font-size: 2.3rem;
+	}
+	/*
+	 * The prefix marks what kind of code it is and is never typed: muted, in the boxes' type
+	 * (Trevor, 2026-11-16: "T dash, but they don't need to put in the T on either side").
+	 */
+	.prefix {
+		display: grid;
+		place-items: center;
+		flex: 0 0 auto;
+		padding-inline-end: var(--space-2);
+		color: var(--on-surface-muted);
+		font: var(--font-control);
+		font-size: 1.4rem;
+	}
+	.large .prefix {
 		font-size: 2.3rem;
 	}
 	/* The box being typed into carries the field's focus ring. */
