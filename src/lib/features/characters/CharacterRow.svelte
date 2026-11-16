@@ -336,6 +336,14 @@
 	button.ring {
 		cursor: pointer;
 	}
+	/*
+	 * A choosable row without its own info button: the ring lets a tap through to the row's
+	 * button under it, so tapping the icon chooses the row like the rest of it (Trevor,
+	 * 2026-11-15: a tap on the icon of "This character is" did nothing).
+	 */
+	.ring-row[data-interactive] span.ring {
+		pointer-events: none;
+	}
 	.ring img {
 		width: 88%;
 		height: 88%;

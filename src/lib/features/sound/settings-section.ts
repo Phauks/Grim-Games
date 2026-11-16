@@ -14,6 +14,7 @@ registerSettingsSection({
 		preferences.update({
 			soundVolume: DEFAULT_PREFERENCES.soundVolume,
 			timerSound: DEFAULT_PREFERENCES.timerSound,
+			timerSoundOn: DEFAULT_PREFERENCES.timerSoundOn,
 			timerVibrate: DEFAULT_PREFERENCES.timerVibrate,
 			ambienceOn: DEFAULT_PREFERENCES.ambienceOn,
 			ambienceLevel: DEFAULT_PREFERENCES.ambienceLevel,

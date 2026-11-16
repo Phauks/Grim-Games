@@ -1503,15 +1503,14 @@ test('New game shows each script’s author under its name, and its versions in 
 	});
 	await page.goto('/new');
 	const custom = page
-		.getByRole('radiogroup', { name: 'Script' })
+		.getByRole('radiogroup', { name: 'Official or custom' })
 		.getByText('Custom', { exact: true });
 	// Under the picker once chosen, on a line that was already there (Trevor, 2026-10-19):
-	// Custom chooses the most recent custom script. Its version is a drop-down, empty and
-	// disabled until then.
+	// Custom chooses the most recent custom script. Its version is a drop-down, kept in
+	// place but hidden while an official script is chosen (Trevor, 2026-11-15).
 	const line = page.getByTestId('chosen-script');
 	const version = page.getByRole('combobox', { name: 'Script version' });
-	await expect(version).toBeDisabled();
-	await expect(version).not.toContainText('v');
+	await expect(version).toBeHidden();
 	const before = await line.boundingBox();
 	await custom.tap();
 	await expect(page.getByTestId('chosen-script').getByTestId('script-byline')).toHaveText(
@@ -1574,7 +1573,10 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 		)
 	);
 	await page.goto('/new');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
+	await page
+		.getByRole('radiogroup', { name: 'Official or custom' })
+		.getByText('Custom', { exact: true })
+		.tap();
 	const version = page.getByRole('combobox', { name: 'Script version' });
 	await expect(version).toContainText('v2.1');
 	await version.tap();
@@ -1688,8 +1690,11 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	});
 	await page.goto('/new');
 	const version = page.getByRole('combobox', { name: 'Script version' });
-	await expect(version).not.toContainText('N/A');
-	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
+	await expect(version).toBeHidden();
+	await page
+		.getByRole('radiogroup', { name: 'Official or custom' })
+		.getByText('Custom', { exact: true })
+		.tap();
 	await expect(page.getByTestId('custom-script')).toHaveText('No Version Test');
 	await expect(version).toHaveText('N/A');
 	await expect(version).toBeDisabled();
@@ -1699,18 +1704,31 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	).toBeDisabled();
 });
 
-test('any script beyond the base three is found in the Choose a script sheet', async ({ page }) => {
-	// Trevor, 2026-10-19: easy to reach with 50 scripts; 2026-11-06, option B: one sheet with
-	// this device's scripts, online sources and Add script, never leaving New game.
+test('Official or Custom: only one kind of script is shown, and the sheet finds the rest', async ({
+	page
+}) => {
+	// Trevor, 2026-11-15: "make it official and custom one of those controls where only one
+	// can be selected"; 2026-11-06, option B: one sheet with this device's scripts, online
+	// sources and Add script, never leaving New game.
 	await page.goto('/new');
+	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
+	await expect(kinds.getByRole('radio')).toHaveCount(2);
+	const official = kinds.getByRole('radio', { name: 'Official' });
+	const custom = kinds.getByRole('radio', { name: 'Custom' });
 	const script = page.getByRole('radiogroup', { name: 'Script' });
-	// The base three and Custom; the field under them is Custom's, and tapping it chooses
-	// Custom (Trevor, backlog L6).
-	await expect(script.getByRole('radio')).toHaveCount(4);
-	const custom = script.getByRole('radio', { name: 'Custom' });
 	const field = page.getByTestId('custom-script');
-	await expect(custom).not.toBeChecked();
+	await expect(official).toBeChecked();
+	await expect(script.getByRole('radio')).toHaveCount(3);
+	await expect(script).toBeVisible();
+	await expect(field).toBeHidden();
+	// Switching moves nothing below.
+	const create = page.getByRole('button', { name: 'Create game' });
+	const before = await create.boundingBox();
+	await kinds.getByText('Custom', { exact: true }).tap();
+	await expect(custom).toBeChecked();
+	await expect(script).toBeHidden();
 	await expect(field).toHaveText('None');
+	expect(await create.boundingBox()).toEqual(before);
 	await field.tap();
 	const sheet = page.getByTestId('script-sheet');
 	await expect(sheet).toBeVisible();
@@ -1725,8 +1743,10 @@ test('any script beyond the base three is found in the Choose a script sheet', a
 	).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	await expect(custom).toBeChecked();
 	await expect(page).toHaveURL(/\/new$/);
+	// Official goes back to the official script chosen last.
+	await kinds.getByText('Official', { exact: true }).tap();
+	await expect(script.getByRole('radio', { name: 'Trouble Brewing' })).toBeChecked();
 });
 
 test('special rules stack on a mode: two at once, a conflict warns, and the game starts anyway', async ({

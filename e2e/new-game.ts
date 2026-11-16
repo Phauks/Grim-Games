@@ -11,16 +11,35 @@ const BASE_THREE = ['Trouble Brewing', 'Bad Moon Rising', 'Sects & Violets'];
  */
 export async function pickScript(page: Page, name: string): Promise<void> {
 	if (BASE_THREE.includes(name)) {
+		await chooseScriptKind(page, 'Official');
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText(name, { exact: true }).tap();
 		return;
 	}
-	const field = page.getByTestId('custom-script');
-	await field.tap();
+	const field = await openCustomSheet(page);
 	const sheet = page.getByTestId('script-sheet');
 	await sheet.getByRole('searchbox', { name: 'Find a script' }).fill(name);
 	await sheet.getByRole('button').filter({ hasText: name }).first().tap();
 	await expect(sheet).toBeHidden();
 	await expect(field).toHaveText(name);
+}
+
+/**
+ * Official or Custom above the script (Trevor, 2026-11-15): only that kind's controls can be
+ * tapped.
+ */
+export async function chooseScriptKind(page: Page, kind: 'Official' | 'Custom'): Promise<void> {
+	const kinds = page.getByRole('radiogroup', { name: 'Official or custom' });
+	await kinds.getByText(kind, { exact: true }).tap();
+	await expect(kinds.getByRole('radio', { name: kind })).toBeChecked();
+}
+
+/** Chooses Custom and opens the Choose a script sheet from its field; returns the field. */
+export async function openCustomSheet(page: Page) {
+	await chooseScriptKind(page, 'Custom');
+	const field = page.getByTestId('custom-script');
+	await field.tap();
+	await expect(page.getByTestId('script-sheet')).toBeVisible();
+	return field;
 }
 
 /**

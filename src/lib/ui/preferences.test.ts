@@ -81,6 +81,7 @@ describe('parsePreferences', () => {
 			ownWording: true,
 			soundVolume: 0.35,
 			timerSound: 'buzzer',
+			timerSoundOn: false,
 			timerMode: 'up',
 			reminderRemoval: 'auto',
 			countingReminders: 'auto',
@@ -133,6 +134,10 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
 		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
 		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
+		// Silence is the on/off switch, not a sound (Trevor, 2026-11-15).
+		expect(parsePreferences({ timerSound: 'none' }).timerSound).toBe('bell');
+		expect(parsePreferences({}).timerSoundOn).toBe(true);
+		expect(parsePreferences({ timerSoundOn: false }).timerSoundOn).toBe(false);
 		expect(parsePreferences({}).timerVibrate).toBe(true);
 		expect(parsePreferences({}).ownWording).toBe(false);
 		expect(parsePreferences({ timerVibrate: false }).timerVibrate).toBe(false);
