@@ -780,7 +780,10 @@
 	/>
 {/snippet}
 
-<BoardPane {grimoire} watching={watching || mini} bind:beside={paneAt}>
+{#if mini}{@render boardBody()}{:else}<BoardPane {grimoire} {watching} bind:beside={paneAt}
+		>{@render boardBody()}</BoardPane
+	>{/if}
+{#snippet boardBody()}
 	<div class="grimoire" class:mini bind:this={grimoireEl}>
 		<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
 		{#if !mini}<div
@@ -983,7 +986,7 @@
 			{/if}
 		</div>
 	</div>
-</BoardPane>
+{/snippet}
 
 {#if !mini}
 	{#if !watching}
