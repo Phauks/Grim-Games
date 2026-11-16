@@ -25,6 +25,7 @@
 	} from '#lib/features/offline/stale-build.svelte.ts';
 	import { keepData } from '#lib/features/settings/data/keep-data.ts';
 	import { installApp } from '#lib/features/settings/install-app.svelte.ts';
+	import InstallDialog from '#lib/features/settings/InstallDialog.svelte';
 	import AppNav from '#lib/features/shell/AppNav.svelte';
 	import NavDrawer from '#lib/features/shell/NavDrawer.svelte';
 	import {
@@ -200,6 +201,7 @@
 {#snippet characterBadge(id: string)}<CharacterPiece template="badge" characterId={id} />{/snippet}
 {#snippet toastText(text: string)}<Sentence {text} fill={characterBadge} />{/snippet}
 <Toaster describe={toastText} />
+<InstallDialog />
 <UpdateBanner />
 
 <style>

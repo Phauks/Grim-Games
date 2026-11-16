@@ -44,6 +44,11 @@ export interface LocalTown {
 	 * as desired"), by seat id; the rest sit round the ring. Left out when none are.
 	 */
 	placed?: Record<string, LocalPlace>;
+	/**
+	 * The seat picker also lists characters not on the script (Trevor, 2026-11-16, option A:
+	 * a switch on the seat's sheet, kept for this game).
+	 */
+	offScript?: true;
 }
 
 export const emptyTown = (): LocalTown => ({ v: LOCAL_TOWN_VERSION, seats: [] });
@@ -53,6 +58,7 @@ export function parseLocalTown(raw: unknown): LocalTown {
 	const stored = (typeof raw === 'object' && raw !== null ? raw : {}) as {
 		seats?: unknown;
 		placed?: unknown;
+		offScript?: unknown;
 	};
 	if (!Array.isArray(stored.seats)) return emptyTown();
 	const seen = new Set<string>();
@@ -70,7 +76,17 @@ export function parseLocalTown(raw: unknown): LocalTown {
 		if (typeof traveller === 'string' && traveller !== '') seat.traveller = traveller;
 		seats.push(seat);
 	}
-	return withPlaces({ v: LOCAL_TOWN_VERSION, seats }, parsePlaces(stored));
+	const town: LocalTown = { v: LOCAL_TOWN_VERSION, seats };
+	if (stored.offScript === true) town.offScript = true;
+	return withPlaces(town, parsePlaces(stored));
+}
+
+/** Whether the seat picker lists characters off the script too. */
+export function setOffScript(town: LocalTown, on: boolean): LocalTown {
+	const out: LocalTown = { ...town };
+	if (on) out.offScript = true;
+	else delete out.offScript;
+	return out;
 }
 
 const isPercent = (n: unknown): n is number =>
@@ -94,7 +110,8 @@ function parsePlaces(stored: { placed?: unknown }): Record<string, LocalPlace> {
 function withPlaces(town: LocalTown, places: Record<string, LocalPlace> | undefined): LocalTown {
 	const ids = new Set(town.seats.map((s) => s.id));
 	const kept = Object.fromEntries(Object.entries(places ?? {}).filter(([id]) => ids.has(id)));
-	const out: LocalTown = { v: town.v, seats: town.seats };
+	const out: LocalTown = { ...town };
+	delete out.placed;
 	if (Object.keys(kept).length) out.placed = kept;
 	return out;
 }

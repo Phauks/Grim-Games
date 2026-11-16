@@ -62,6 +62,7 @@ import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-t
 import ph_club_thin from '~icons/ph/club-thin';
 import ph_coffee_thin from '~icons/ph/coffee-thin';
 import ph_coin_thin from '~icons/ph/coin-thin';
+import ph_compass_thin from '~icons/ph/compass-thin';
 import ph_copy_thin from '~icons/ph/copy-thin';
 import ph_copy_simple_thin from '~icons/ph/copy-simple-thin';
 import ph_corners_in_thin from '~icons/ph/corners-in-thin';
@@ -82,6 +83,7 @@ import ph_download_simple_thin from '~icons/ph/download-simple-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
 import ph_envelope_simple_thin from '~icons/ph/envelope-simple-thin';
 import ph_eraser_thin from '~icons/ph/eraser-thin';
+import ph_export_thin from '~icons/ph/export-thin';
 import ph_eye_thin from '~icons/ph/eye-thin';
 import ph_eye_closed_thin from '~icons/ph/eye-closed-thin';
 import ph_eye_slash_thin from '~icons/ph/eye-slash-thin';
@@ -173,6 +175,7 @@ import ph_play_thin from '~icons/ph/play-thin';
 import ph_play_circle_thin from '~icons/ph/play-circle-thin';
 import ph_plus_thin from '~icons/ph/plus-thin';
 import ph_plus_circle_thin from '~icons/ph/plus-circle-thin';
+import ph_plus_square_thin from '~icons/ph/plus-square-thin';
 import ph_poker_chip_thin from '~icons/ph/poker-chip-thin';
 import ph_printer_thin from '~icons/ph/printer-thin';
 import ph_prohibit_thin from '~icons/ph/prohibit-thin';
@@ -311,6 +314,7 @@ const icons: IconMap = {
 	'ph:club-thin': ph_club_thin,
 	'ph:coffee-thin': ph_coffee_thin,
 	'ph:coin-thin': ph_coin_thin,
+	'ph:compass-thin': ph_compass_thin,
 	'ph:copy-thin': ph_copy_thin,
 	'ph:copy-simple-thin': ph_copy_simple_thin,
 	'ph:corners-in-thin': ph_corners_in_thin,
@@ -331,6 +335,7 @@ const icons: IconMap = {
 	'ph:drop-thin': ph_drop_thin,
 	'ph:envelope-simple-thin': ph_envelope_simple_thin,
 	'ph:eraser-thin': ph_eraser_thin,
+	'ph:export-thin': ph_export_thin,
 	'ph:eye-thin': ph_eye_thin,
 	'ph:eye-closed-thin': ph_eye_closed_thin,
 	'ph:eye-slash-thin': ph_eye_slash_thin,
@@ -422,6 +427,7 @@ const icons: IconMap = {
 	'ph:play-circle-thin': ph_play_circle_thin,
 	'ph:plus-thin': ph_plus_thin,
 	'ph:plus-circle-thin': ph_plus_circle_thin,
+	'ph:plus-square-thin': ph_plus_square_thin,
 	'ph:poker-chip-thin': ph_poker_chip_thin,
 	'ph:printer-thin': ph_printer_thin,
 	'ph:prohibit-thin': ph_prohibit_thin,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -14,6 +15,7 @@
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { reloadApp, storageUse } from '../data/device-data.ts';
 	import { needsHomeScreen, thisBrowser } from '../data/keep-data.ts';
+	import { installApp } from '../install-app.svelte.ts';
 	import {
 		clearItems,
 		measureStorage,
@@ -133,7 +135,9 @@
 		description={t('settings.homeScreenHelp')}
 	>
 		{#snippet control()}
-			<p class="steps" data-testid="home-screen-steps">{t('settings.homeScreenSteps')}</p>
+			<Button icon="installApp" data-testid="home-screen-install" onclick={() => installApp.start()}
+				>{t('settings.installApp')}</Button
+			>
 		{/snippet}
 	</SettingRow>
 {/if}
@@ -222,9 +226,6 @@
 </ConfirmDialog>
 
 <style>
-	.steps {
-		margin: 0;
-	}
 	.tools {
 		display: flex;
 		align-items: center;

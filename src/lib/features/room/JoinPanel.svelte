@@ -36,6 +36,7 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
+	import { seatToPick } from '#lib/core/sync/room-seating-open.ts';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -64,6 +65,13 @@
 		 * own row for the last room shows nothing then.
 		 */
 		entry?: boolean;
+		/** Told whether this phone has no seat yet and could take one (seatToPick). */
+		onSeatToPick?: (unseated: boolean) => void;
+		/**
+		 * While this phone has a seat to pick, the status box says Select seat and opens this
+		 * (Trevor, 2026-11-16: away from the Grim tab, where seats are picked).
+		 */
+		selectSeat?: () => void;
 		/** Above the code form, in its column (Home's last game and New game, plan M69). */
 		lead?: Snippet;
 		/** Above the games to resume, in their column (Home's player card, Trevor 2026-11-06). */
@@ -77,6 +85,8 @@
 		onStoryteller,
 		onSeated,
 		onVoting,
+		onSeatToPick,
+		selectSeat,
 		entry = true,
 		lead,
 		aside
@@ -159,6 +169,10 @@
 	});
 	/** The seat this phone sits in, for tests to read; the screen doesn't say it. */
 	const mySeat = $derived(seats.find((x) => x.seatId === mine)?.seatNumber);
+	const unseated = $derived(inRoom && !!view && seatToPick(view));
+	$effect(() => onSeatToPick?.(unseated));
+	/** Select seat in the status box, away from the Grim tab (Trevor, 2026-11-16). */
+	const askSeat = $derived(unseated && !view?.endedGameId ? selectSeat : undefined);
 	const summary = $derived.by(() => {
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
 		if (view.choosing) return t('room.choosing');
@@ -479,6 +493,7 @@
 		seatNumber={mySeat}
 		character={view?.role ? () => yourCharacter?.show() : undefined}
 		characterUntil={view?.roleUntil}
+		selectSeat={askSeat}
 	/>
 	{#if player}<YourCharacter
 			bind:this={yourCharacter}

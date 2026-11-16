@@ -186,9 +186,9 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(sheet).toBeHidden();
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
-	// Joining moves the phone to the script (Trevor, 2026-10-23: "when joining game, spawn on
-	// script"); the Room tab keeps the seat's state.
-	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	// A phone with a seat to pick lands on its Grim, where seats are picked (Trevor,
+	// 2026-11-16; a seated phone still lands on the script, 2026-10-23).
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	// In a room, Share script hands on the room, as the board's does (Trevor, 2026-10-23).
 	await phone.getByRole('button', { name: 'Share script' }).tap();
 	const passOn = phone.getByRole('dialog', { name: 'Share', exact: true });
@@ -1223,7 +1223,8 @@ test('a phone that joins gets the game script before anyone has a seat', async (
 	// The link opens the player view on its Room tab, and the room's script becomes its script
 	// (Trevor, 2026-10-19: no separate room page, then "Read the script").
 	await expect(phone.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
-	await expect(phone.getByRole('tab', { name: 'Script' })).toHaveAttribute('aria-selected', 'true');
+	// Every seat is open, so it lands on the Grim to pick one (Trevor, 2026-11-16).
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 	await expect(phone.getByRole('tabpanel', { name: 'Script' })).toBeVisible();
