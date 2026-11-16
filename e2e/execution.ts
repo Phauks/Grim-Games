@@ -56,5 +56,19 @@ export async function startExecution(page: Page): Promise<void> {
 		await page.keyboard.press('Escape');
 		await expect(sheet).toBeHidden();
 	}
+	// Before Day 1 the bank ends the first night instead: ended here, as the Day's Execution
+	// used to skip it.
+	const endNight = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'End night', exact: true });
+	await expect(bankExecution(page).or(endNight)).toBeVisible();
+	if (await endNight.isVisible()) {
+		await endNight.tap();
+		const ask = page.getByRole('alertdialog', { name: 'End the night?' });
+		if (await ask.isVisible({ timeout: 2000 }).catch(() => false))
+			await ask.getByRole('button', { name: 'Confirm' }).tap();
+		await expect(bankExecution(page)).toBeVisible();
+	}
 	await bankExecution(page).tap();
 }
