@@ -23,7 +23,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 	import type { ReminderDragging } from '#lib/features/board/reminder-drag.svelte.ts';
-	import type { SeatArranging } from '#lib/features/grimoire/seats/seat-arranging.svelte.ts';
+	import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import type { SeatHints } from '#lib/features/grimoire/seats/seat-hints.svelte.ts';
 	import type { PhaseFlow } from './phase-flow.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
