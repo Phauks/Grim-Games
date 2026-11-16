@@ -171,6 +171,7 @@ export const day = {
 	'day.timerMore': '30 seconds more',
 	'day.timerSoundButton': 'Timer sound: {sound}',
 	'day.timerSoundTitle': 'Timer sound',
+	'day.timerSoundOn': 'Sound when time is up',
 	'day.timerVibrate': 'Vibrate',
 	'day.timerPerPlayer': 'Seconds per living player',
 	'day.timerPerPlayerSeconds': { one: '{count} second', other: '{count} seconds' },
