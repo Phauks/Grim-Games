@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { ShareChoices } from '#lib/core/engine/index.ts';
+	import { DEFAULT_SHARE_CHOICES, type ShareChoices } from '#lib/core/engine/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import ShareChoicesFields from '#lib/features/room/ShareChoicesFields.svelte';
 
 	/**
 	 * Game over, in the day timer's place once the game has ended (Trevor, 2026-11-15, option B:
@@ -29,7 +29,7 @@
 
 	let shareOpen = $state(false);
 	/** The grimoire's characters and reminders always go; the rest is the Storyteller's call. */
-	let choices = $state<ShareChoices>({ history: true, seatNotes: false, gameNotes: false });
+	let choices = $state.raw<ShareChoices>(DEFAULT_SHARE_CHOICES);
 
 	const items = $derived([
 		...(onShareGrim
@@ -39,7 +39,7 @@
 						label: t('room.shareGrim.button'),
 						icon: 'shareGrim' as const,
 						onSelect: () => {
-							choices = { history: true, seatNotes: false, gameNotes: false };
+							choices = DEFAULT_SHARE_CHOICES;
 							shareOpen = true;
 						}
 					}
@@ -86,35 +86,15 @@
 <ConfirmDialog
 	bind:open={shareOpen}
 	title={t('room.shareGrim.title')}
-	onConfirm={() => onShareGrim?.($state.snapshot(choices))}
+	onConfirm={() => onShareGrim?.(choices)}
 >
 	<p class="dialog-text">{t('room.shareGrim.body')}</p>
-	<div class="choices" data-testid="share-grim-choices">
-		<Toggle
-			label={t('room.shareGrim.history')}
-			checked={choices.history}
-			onChange={(on) => (choices.history = on)}
-		/>
-		<Toggle
-			label={t('room.shareGrim.seatNotes')}
-			checked={choices.seatNotes}
-			onChange={(on) => (choices.seatNotes = on)}
-		/>
-		<Toggle
-			label={t('room.shareGrim.gameNotes')}
-			checked={choices.gameNotes}
-			onChange={(on) => (choices.gameNotes = on)}
-		/>
-	</div>
+	<ShareChoicesFields bind:choices />
 </ConfirmDialog>
 
 <style>
 	.dialog-text {
 		margin: 0;
-	}
-	.choices {
-		display: grid;
-		margin-top: var(--space-3);
 	}
 	/* The board's old Game over label, now the menu's button, in the winning team's colour;
 	   repeated class to win over a menu button's own look, padding and open colour. */

@@ -10,7 +10,6 @@ export type Attachment =
 	| { role: 'host' }
 	/** `showing`: the app is on the phone's screen, so Back to town isn't pushed to it too. */
 	| { role: 'player'; memberId: string; showing?: boolean }
-	| { role: 'viewer' }
 	| { role: 'town' }
 	| { role: 'admin' }
 	/** A device typing a transfer code (room-transfer.ts), by its new host key's hash. */

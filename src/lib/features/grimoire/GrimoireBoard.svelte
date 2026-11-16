@@ -21,7 +21,7 @@
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount, untrack, type Snippet } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import LateSeatOnBoard from '#lib/features/late-player/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
@@ -162,8 +162,6 @@
 		 * the app's items live.
 		 */
 		watchedHistory?: boolean;
-		/** Beside ☰ on a spectator's board: Grim view's message to the Storyteller (2026-11-03). */
-		watchLead?: Snippet;
 		/** Small, read-only, only the seats, in the day view (Trevor, 2026-11-15). */
 		mini?: boolean;
 		/** A mini grimoire's Execution: its seats pick the executed player (Trevor, 2026-11-15). */
@@ -177,7 +175,6 @@
 		watchedTimer,
 		over,
 		watchedHistory = false,
-		watchLead,
 		mini = false,
 		pick
 	}: Props = $props();
@@ -824,7 +821,7 @@
 							outlined
 							board
 						/>
-					{:else}{@render watchLead?.()}{/if}
+					{/if}
 				{/snippet}
 			</BoardToolbar>{/if}
 

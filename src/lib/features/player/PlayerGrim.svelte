@@ -180,7 +180,7 @@
 	/**
 	 * The finished grimoire the Storyteller shared at game end (Share grim, R5), over the town
 	 * until closed (Trevor, 2026-11-15: full screen, the player's guesses kept under it); its
-	 * History steps through on this phone only.
+	 * History steps through on this phone only. Or Grim view's, live (2026-11-16).
 	 */
 	const final = $derived(finalGrimoireOf(town, player, code));
 	let showFinal = $state(true);
@@ -189,7 +189,7 @@
 		if (final) arrivedAt = Date.now();
 	});
 	const over = $derived<EndedGame | undefined>(
-		final ? ({ endedAt: arrivedAt, ...final.ended } as EndedGame) : undefined
+		final && !final.live ? ({ endedAt: arrivedAt, ...final.ended } as EndedGame) : undefined
 	);
 
 	const nameOf = (seat: PublicSeat) =>
@@ -416,6 +416,7 @@
 {#if final}{#await import('./FinalGrimoireDialog.svelte') then { default: FinalGrimoireDialog }}<FinalGrimoireDialog
 			bind:open={showFinal}
 			grimoire={final.grimoire}
+			live={final.live}
 			{over}
 			room={final.room}
 		/>{/await}{/if}
@@ -601,7 +602,7 @@
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
-		final={!!final}
+		final={final && (final.live ? 'live' : 'final')}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
 		info={{ meta: script.meta, table, roomCode: friendRoom }}

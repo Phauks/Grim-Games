@@ -159,8 +159,7 @@ describe('room transfer', () => {
 	it('hands the room over with its players, leaving the old Storyteller’s things behind', () => {
 		const before: RoomState = {
 			...openTransfer(room(), CODE_HASH, true, 0),
-			viewerKeyHash: 'viewers',
-			viewerPassword: true,
+			grimViewers: ['alex'],
 			messages: [{ id: 'm', memberId: 'alex', text: 'psst', at: 1 }]
 		} as RoomState;
 		const after = completeTransfer(before, 'new-host');
@@ -169,8 +168,7 @@ describe('room transfer', () => {
 		expect(after.gameId).toBe('g1');
 		expect(after.public).toEqual(before.public);
 		expect(after.transfer).toBeUndefined();
-		expect(after.viewerKeyHash).toBeUndefined();
-		expect(after.viewerPassword).toBeUndefined();
+		expect(after.grimViewers).toBeUndefined();
 		expect(after.messages).toBeUndefined();
 	});
 

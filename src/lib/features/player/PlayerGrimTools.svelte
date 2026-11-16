@@ -22,8 +22,8 @@
 	interface Props {
 		/** The board's shape has arrived, so the town can take it. */
 		shaped: boolean;
-		/** The Storyteller shared the final grimoire: its switch shows. */
-		final: boolean;
+		/** The Storyteller shared the final grimoire, or gave Grim view: its switch shows. */
+		final?: 'final' | 'live';
 		showFinal: boolean;
 		onFinal: (on: boolean) => void;
 		/** Game info for this town, read only (TownGameInfo). */
@@ -69,7 +69,11 @@
 {#snippet row()}<div class="grim-tools" data-testid="grim-tools">
 		{#if seats}<span class="corner-select">{@render seats()}</span>{/if}
 		{#if final}<span class="corner-pill"
-				><Toggle label={t('room.finalGrimoire')} checked={showFinal} onChange={onFinal} /></span
+				><Toggle
+					label={t(final === 'live' ? 'room.watch.title' : 'room.finalGrimoire')}
+					checked={showFinal}
+					onChange={onFinal}
+				/></span
 			>{/if}
 		<span class="corner-button"
 			><HideContentsButton

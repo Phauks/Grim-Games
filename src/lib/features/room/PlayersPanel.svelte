@@ -13,7 +13,6 @@
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import { GRIM_VIEW_PREFIX } from '#lib/core/sync/room-messages.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
@@ -26,6 +25,7 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import GiveSeatDialog from './GiveSeatDialog.svelte';
+	import GrimViewSwitch from './GrimViewSwitch.svelte';
 
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
@@ -57,10 +57,8 @@
 		seatId?: SeatId;
 		name: PlayerName;
 		member?: RoomMember;
-		/** Whose messages are theirs: the phone's member id, or a Grim view device's. */
+		/** Whose messages are theirs: the phone's member id. */
 		inboxId?: string;
-		/** Watching on Grim view, with no phone in the room. */
-		grimView?: true;
 	}
 	// Every seat is a player, phone or not (Trevor, 2026-10-29: "every player has a seat. and it
 	// would still be player management for the non-phone users"), in seat order; then the phones
@@ -72,25 +70,12 @@
 			return { key: seat.seatId, seatId: seat.seatId, name, member, inboxId: member?.memberId };
 		})
 	);
-	// Spectators, in their own section (Trevor, 2026-11-03): the phones with no seat, who see the
-	// Grim as players do, then whoever has messaged from Grim view.
-	const spectators = $derived<Entry[]>([
-		...host.unseatedInGame.flatMap((m) =>
+	// Spectators, in their own section (Trevor, 2026-11-03): the phones with no seat.
+	const spectators = $derived<Entry[]>(
+		host.unseatedInGame.flatMap((m) =>
 			m.name ? [{ key: m.memberId, name: m.name, member: m, inboxId: m.memberId }] : []
-		),
-		...[
-			...new Map(
-				host.inbox.messages
-					.filter((m) => m.memberId.startsWith(GRIM_VIEW_PREFIX))
-					.map((m) => [m.memberId, m.name] as const)
-			)
-		].map(([id, name]) => ({
-			key: id,
-			name: (name ?? t('room.spectators.unnamed')) as PlayerName,
-			inboxId: id,
-			grimView: true as const
-		}))
-	]);
+		)
+	);
 	const entries = $derived([...players, ...spectators]);
 
 	const phoneOf = (entry: Entry): Phone =>
@@ -102,7 +87,6 @@
 	} as const;
 
 	function where(entry: Entry): string {
-		if (entry.grimView) return t('room.spectators.grimView');
 		const n = seatIndex(entry.seatId);
 		const seat = n ? t('common.seat', { number: n }) : t('room.noSeat');
 		return t('room.players.where', { seat, state: t(PHONE_TEXT[phoneOf(entry)]) });
@@ -198,8 +182,7 @@
 			{@render disc(entry)}
 			<span class="who">
 				{@render nameAndCharacter(entry)}
-				{#if entry.grimView}<span class="muted">{t('room.spectators.grimView')}</span>
-				{:else if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
+				{#if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
 			</span>
 			<!-- Two fixed slots, so rows line up and never shift as notes and messages come and go. -->
 			<span class="slot notes" data-testid="room-player-notes"
@@ -237,8 +220,8 @@
 					</ul>
 				{/if}
 			</Collapsible>
-			<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view.
-		     Whether they may message is in Game settings (Trevor, 2026-11-16). -->
+			<!-- Spectators (Trevor, 2026-11-03): phones with no seat. Whether they may message is in
+		     Game settings (Trevor, 2026-11-16). -->
 			<Collapsible
 				title={t('room.spectators')}
 				storageKey="players-spectators"
@@ -304,6 +287,12 @@
 					>{t('room.giveSeat')}</Button
 				>
 			{/if}
+			<!-- Grim view, under Give a seat (Trevor, 2026-11-16, option A). -->
+			{#if entry.member && host.code}<GrimViewSwitch
+					memberId={entry.member.memberId}
+					name={entry.name}
+					disabled={viewOnly}
+				/>{/if}
 			{#if entry.inboxId}
 				{@const count = inboxCount(entry.inboxId)}
 				<Collapsible

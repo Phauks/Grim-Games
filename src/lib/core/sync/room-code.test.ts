@@ -66,17 +66,10 @@ describe('scanned codes (plan J2)', () => {
 		});
 	});
 
-	it('reads a Grim view link with its key, and only with one', () => {
-		expect(scannedRoom('https://grimbinder.com/watch/482913#k3y')).toEqual({
-			kind: 'watch',
-			code: '482913',
-			key: 'k3y'
-		});
-		expect(scannedRoom('https://grimbinder.com/watch/482913')).toBeNull();
-	});
-
 	it('turns down anything else', () => {
 		expect(scannedRoom('hello')).toBeNull();
+		// Grim view's old link: Grim view is now given per person (2026-11-16).
+		expect(scannedRoom('https://grimbinder.com/watch/482913#k3y')).toBeNull();
 		expect(scannedRoom('https://grimbinder.com/play#e=bmr')).toBeNull();
 		expect(scannedRoom('https://grimbinder.com/join/48291')).toBeNull();
 		expect(scannedRoom('javascript:alert(1)//join/482913')).toBeNull();

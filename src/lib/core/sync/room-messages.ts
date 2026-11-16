@@ -38,17 +38,7 @@ export interface PlayerMessage {
 	read?: true;
 	/** The player asks the Storyteller for a word in private (Trevor, 2026-10-27: "add a checkmark to request a storyteller consult"). */
 	consult?: true;
-	/**
-	 * From someone watching on Grim view, who is no member (`memberId` is then
-	 * `GRIM_VIEW_PREFIX` and their device's id): the name their Profile gave, if any.
-	 */
-	name?: string;
 }
-
-/** Starts the `memberId` of a message from Grim view (Trevor, 2026-11-03). */
-export const GRIM_VIEW_PREFIX = 'grim-view:';
-/** A Grim view name is cut to this. */
-export const MAX_VIEWER_NAME_LENGTH = 40;
 
 /** A message's text, trimmed and cut to length; `null` when there is nothing to send. */
 export function cleanMessage(raw: unknown): string | null {
@@ -80,45 +70,17 @@ export function sendMessage(
 		)
 	)
 		return room;
-	return addMessage(room, { memberId }, raw, at, id, consult);
-}
-
-/** Whether people watching on Grim view may message: the link is on and spectators may. */
-export function viewersMayMessage(room: RoomState): boolean {
-	return !!room.inbox && !!room.viewerKeyHash && !room.spectatorsMuted;
-}
-
-/**
- * A message from someone watching on Grim view (Trevor, 2026-11-03: "those with grim view
- * could also message storyteller"). They are no member, so their device names itself with
- * `from`, a random id it keeps, and `name`, its Profile's name; the same limits apply as to
- * a phone, counted per device.
- */
-export function sendViewerMessage(
-	room: RoomState,
-	message: { from?: unknown; name?: unknown; text?: unknown; consult?: unknown },
-	at: number,
-	id: string
-): RoomState {
-	const { from, name, text: raw, consult } = message;
-	if (!viewersMayMessage(room) || typeof from !== 'string' || !/^[\w-]{8,64}$/.test(from)) {
-		return room;
-	}
-	const who = typeof name === 'string' ? cleanMessage(name.replace(/\s+/g, ' ')) : null;
-	const sender: Pick<PlayerMessage, 'memberId' | 'name'> = { memberId: GRIM_VIEW_PREFIX + from };
-	if (who) sender.name = who.slice(0, MAX_VIEWER_NAME_LENGTH).trim();
-	return addMessage(room, sender, raw, at, id, consult);
+	return addMessage(room, memberId, raw, at, id, consult);
 }
 
 function addMessage(
 	room: RoomState,
-	sender: Pick<PlayerMessage, 'memberId' | 'name'>,
+	memberId: string,
 	raw: unknown,
 	at: number,
 	id: string,
 	consult?: unknown
 ): RoomState {
-	const { memberId } = sender;
 	const text = cleanMessage(raw) ?? '';
 	if (!text && consult !== true) return room;
 	const all = room.messages ?? [];
@@ -128,7 +90,7 @@ function addMessage(
 	if (used + text.length > MAX_ROOM_MESSAGE_CHARS) return room;
 	const last = mine.at(-1);
 	if (last && at - last.at < MESSAGE_GAP_MS) return room;
-	const message: PlayerMessage = { id, ...sender, text, at };
+	const message: PlayerMessage = { id, memberId, text, at };
 	if (consult === true) message.consult = true;
 	const phase = parsePlayersPhase(room.public?.now);
 	if (phase) message.phase = phase;

@@ -4,14 +4,9 @@
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Tabs from '#lib/ui/primitives/Tabs.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScriptSharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
-	import CopyButton from '#lib/ui/share/CopyButton.svelte';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
@@ -23,28 +18,11 @@
 
 	let { game }: Props = $props();
 
-	let tab = $state<'players' | 'grimoire'>('players');
-
 	const host = roomHost();
 	$effect(() => host.attach(game));
 
-	/**
-	 * Grim view by password alone (Trevor, 2026-10-26: "access password locked by storyteller
-	 * ... default to a new password per game (that can be customizable)"): a phone with the
-	 * room code and it watches. Enter sets it; the eye shows it, as the Storyteller reads it out.
-	 */
-	let password = $derived(host.viewerPassword ?? '');
-	function setPassword() {
-		if (password.trim() !== (host.viewerPassword ?? '')) void host.setViewerPassword(password);
-	}
-
-	/** New code or New password asks first; which one stays set while the dialog closes. */
+	/** New code asks first. */
 	let refreshOpen = $state(false);
-	let refreshKind = $state<'room' | 'watch'>('room');
-	function askRefresh(kind: 'room' | 'watch') {
-		refreshKind = kind;
-		refreshOpen = true;
-	}
 	const connected = $derived(host.status === 'open');
 	// Seated players, and others from this game, stay listed while their phone sleeps; the room
 	// also keeps phones from earlier games, which are left out (2026-10-25).
@@ -115,72 +93,9 @@
 	the board names with it ("I wanna drop the seat picking").
 -->
 
-<!-- Two tabs (Trevor, 2026-10-31, picked from four mocked placements; it reverses 2026-10-22's
-     "combine tabs"): Players, the code and QR they join with; Grimoire, everything that hands
-     the grimoire to phones, Grim view while the game runs and Share grim once it is over.
-     Steady, so switching never moves the tabs or what is under them. -->
-<Tabs
-	bind:value={tab}
-	steady
-	label={t('room.title')}
-	tabs={[
-		{ value: 'players', label: t('room.tab.players') },
-		{ value: 'grimoire', label: t('room.tab.grimoire') }
-	]}
->
-	{#snippet panel(value)}
-		{#if value === 'players'}{@render players()}{:else}{@render grimoire()}{/if}
-	{/snippet}
-</Tabs>
-
-{#snippet grimoire()}
-	<!-- Grim view (Specters, Trevor 2026-10-18): no QR or link of its own (Trevor, 2026-10-26:
-	     "a second QR code for spoilers is unnecessary"), only a password with the room code. -->
-	<section class="grimoire" data-testid="watch-link">
-		<SettingToggle
-			label={t('room.watch.toggle')}
-			description={t('room.watch.hint')}
-			checked={!!host.viewerKey}
-			disabled={!host.code}
-			onChange={(on) => void host.setViewers(on)}
-		/>
-		<div class="password">
-			<TextField
-				label={t('room.watch.password')}
-				bind:value={password}
-				maxlength={64}
-				type="secret"
-				disabled={!host.viewerKey}
-				oncommit={setPassword}
-				testid="grim-view-password"
-				plain
-			/>
-			<!-- Copy beside it, as the join code and link have (Trevor, 2026-10-27). -->
-			<CopyButton
-				label={t('room.watch.copy')}
-				text={host.viewerPassword}
-				failed={t('room.watch.copyFailed')}
-				disabled={!host.viewerKey}
-			/>
-			<!-- A new one in one step, not off and on (Trevor, 2026-10-20). -->
-			<IconButton
-				icon="refresh"
-				label={t('room.watch.refresh')}
-				disabled={!host.viewerKey}
-				onclick={() => askRefresh('watch')}
-			/>
-		</div>
-		<!-- Who is watching, in its place before the room connects; a grimoire too large to send
-		     says so here instead. -->
-		<p class="status" role="status" data-testid="status-watching">
-			{host.grimoireTooLarge
-				? t('room.watch.tooLarge')
-				: connected
-					? t('room.watching', { count: host.watchers })
-					: ''}
-		</p>
-	</section>
-{/snippet}
+<!-- One screen (Trevor, 2026-11-16): Grim view is given per person on Players, so the
+     Grimoire tab and its password went. -->
+{@render players()}
 
 {#snippet players()}
 	<!-- Laid out the same before the room opens, so the code and QR arrive without a reflow.
@@ -202,7 +117,7 @@
 				disabled: host.opening,
 				// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
 				// game is, and a new code replaces it, deleting the old room.
-				onclick: () => (host.code ? askRefresh('room') : void host.open())
+				onclick: () => (host.code ? (refreshOpen = true) : void host.open())
 			}
 		}}
 	/>
@@ -225,26 +140,16 @@
 
 <ConfirmDialog
 	bind:open={refreshOpen}
-	title={refreshKind === 'room' ? t('room.refreshTitle') : t('room.watch.refreshTitle')}
+	title={t('room.refreshTitle')}
 	danger
-	onConfirm={() => void (refreshKind === 'room' ? host.refreshRoom() : host.refreshViewers())}
+	onConfirm={() => void host.refreshRoom()}
 >
-	<p class="dialog-text">
-		{refreshKind === 'room' ? t('room.refreshText') : t('room.watch.refreshText')}
-	</p>
+	<p class="dialog-text">{t('room.refreshText')}</p>
 </ConfirmDialog>
 
 <style>
 	.dialog-text {
 		margin: 0;
-	}
-	.grimoire {
-		display: grid;
-		gap: var(--space-2);
-		align-content: start;
-		min-width: 0;
-		max-width: 32rem;
-		padding-top: var(--space-3);
 	}
 	.connection {
 		display: flex;
@@ -262,15 +167,6 @@
 	.dot.live {
 		border-color: var(--good);
 		background: var(--good);
-	}
-	.password {
-		display: flex;
-		align-items: flex-end;
-		gap: var(--space-2);
-	}
-	.password > :global(:first-child) {
-		flex: 1;
-		min-width: 0;
 	}
 	.status {
 		min-height: 1.4em;
