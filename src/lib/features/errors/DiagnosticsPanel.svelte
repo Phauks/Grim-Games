@@ -50,12 +50,7 @@
 	</PageSection>
 
 	{#each diagnostics?.sections ?? [] as section (section.id)}
-		<PageSection
-			title={label(section.title)}
-			level={3}
-			collapsible
-			storageKey="{KEY}{section.id}"
-		>
+		<PageSection title={label(section.title)} level={3} collapsible storageKey="{KEY}{section.id}">
 			<dl data-section={section.id}>
 				{#each section.rows.filter((row) => !hideRows.includes(row.label)) as row (row.label)}
 					<dt>{label(row.label)}</dt>
