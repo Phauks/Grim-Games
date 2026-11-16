@@ -19,6 +19,7 @@ export interface SeatLabelParts {
 	note: boolean;
 }
 
+/* eslint-disable grim/names-as-badges -- the seat button's accessible name (aria-label) only */
 export function seatLabel(seat: PublicSeat, parts: SeatLabelParts): string {
 	const words = [`${t('common.seat', { number: seat.seatNumber })}: ${parts.name}`];
 	if (parts.mine) words.push(t('player.grim.you'));
@@ -35,3 +36,4 @@ export function seatLabel(seat: PublicSeat, parts: SeatLabelParts): string {
 	if (parts.note) words.push(t('player.grim.hasNote'));
 	return words.join(', ');
 }
+/* eslint-enable grim/names-as-badges */
