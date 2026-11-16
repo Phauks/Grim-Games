@@ -203,7 +203,7 @@
 	:global(
 		[data-scope='radio-group'][data-layout='joined'] [data-part='item'][data-state='checked']
 	) {
-		z-index: 1;
+		z-index: var(--z-above);
 	}
 	:global([data-scope='radio-group'][data-layout='row'] [data-part='item']) {
 		justify-content: center;
