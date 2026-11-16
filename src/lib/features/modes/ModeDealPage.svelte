@@ -14,25 +14,18 @@
 		conversions,
 		turnableSeats,
 		turnOptions,
-		draftedTurned,
-		dealTypes,
 		hiddenAsTownsfolk,
 		pickableCharacters,
 		redraft,
 		refuseOffer,
-		reservedHidden,
 		reservedSeats,
 		seatsLeft,
 		STANDARD,
-		startDraft,
 		takeOffer
 	} from '#lib/core/modes/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import {
-		isReplacedAfterDraw,
-		replacementReminder
-	} from '#lib/core/rules/setup/bag-characters.ts';
+	import { replacementReminder } from '#lib/core/rules/setup/bag-characters.ts';
 	import { scriptJinxes } from '#lib/core/rules/jinxes/jinxes.ts';
 	import { type BagSlot } from '#lib/core/rules/setup/bag-plan.ts';
 	import { splitPlayers } from '#lib/core/rules/setup/distribution.ts';
@@ -55,7 +48,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
 	import { dealTitle } from './deal-title.ts';
-	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
+	import { freshDeal, readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { gameModeOf } from './game-mode.ts';
 	import OfferReels from './OfferReels.svelte';
@@ -113,35 +106,7 @@
 	);
 	let offerSpinning = $state(false);
 
-	function fresh(): DealProgress | undefined {
-		if (assignment?.kind === 'draft')
-			return {
-				kind: 'draft',
-				state: startDraft(
-					{
-						...assignment,
-						recycleUnchosen: record?.roleRecycling ?? assignment.recycleUnchosen,
-						oneTypePerOffer: record?.oneTypePerOffer ?? assignment.oneTypePerOffer,
-						dealsRequired: record?.dealsRequired ?? true,
-						modifiers: mode.setup.setupModifiers?.kind === 'as-chosen',
-						jinxes: record?.jinxedPairs ?? 'allow',
-						ivory: record?.ivoryDraft ?? false,
-						hidden: characters.filter(isReplacedAfterDraw).map((c) => c.id),
-						...(record?.marionette ? { reserve: reservedHidden(characters)[0] } : {})
-					},
-					split.counts,
-					// Lil' Monsta is never dealt, but drafted it turns its player into a Minion.
-					mode.setup.setupModifiers?.kind === 'as-chosen'
-						? [...pickableCharacters(mode, characters), ...draftedTurned(characters)]
-						: pickableCharacters(mode, characters),
-					Math.random,
-					jinxes
-				)
-			};
-		if (assignment?.kind === 'choose-own')
-			return { kind: 'choose', types: dealTypes(split.counts, Math.random), picks: [] };
-		return undefined;
-	}
+	const fresh = () => freshDeal(mode, record, characters, split.counts, jinxes);
 
 	let progress = $state<DealProgress | undefined>();
 	let restarting = $state(false);
@@ -386,17 +351,29 @@
 	 * Minions, the Lord of Typhon's neighbours, who pick their own): the players turn last. A game
 	 * has one Demon, so one such character at most.
 	 */
-	const conversion = $derived(
-		progress?.kind === 'draft' ? conversions(progress.state)[0] : undefined
+	const conversionList = $derived(
+		progress?.kind === 'draft'
+			? conversions(progress.state, reservedAt !== undefined ? [reservedAt] : [])
+			: []
 	);
+	/** Each conversion in turn (the Lord of Typhon's line, then the Marionette's third Minion). */
+	let conversionStep = $state(0);
+	let turnedSoFar = $state<Record<number, CharacterId>>({});
+	const conversion = $derived(conversionList[conversionStep]);
 	const convertSeats = $derived(
 		progress?.kind === 'draft' && conversion
-			? turnableSeats(progress.state, conversion, [drunkAt, reservedAt])
+			? turnableSeats(progress.state, conversion, [
+					drunkAt,
+					reservedAt,
+					...Object.keys(turnedSoFar).map(Number)
+				])
 			: []
 	);
 	const convertOptions = $derived(
 		progress?.kind === 'draft' && conversion
-			? turnOptions(progress.state, conversion, pickableCharacters(mode, characters))
+			? turnOptions(progress.state, conversion, pickableCharacters(mode, characters)).filter(
+					(c) => !Object.values(turnedSoFar).includes(c.id)
+				)
 			: []
 	);
 	let converting = $state(false);
@@ -422,8 +399,22 @@
 	function afterReserved(at: number | undefined) {
 		placing = false;
 		reservedAt = at;
-		if (conversion && convertSeats.length > 0) converting = true;
-		else void finish();
+		conversionStep = 0;
+		turnedSoFar = {};
+		nextConversion();
+	}
+
+	function nextConversion() {
+		while (conversion && convertSeats.length === 0) conversionStep += 1;
+		if (conversion) converting = true;
+		else void finish(turnedSoFar);
+	}
+
+	function converted(turned: Record<number, CharacterId>) {
+		converting = false;
+		turnedSoFar = { ...turnedSoFar, ...turned };
+		conversionStep += 1;
+		nextConversion();
 	}
 
 	async function finish(turned: Record<number, CharacterId> = {}) {
@@ -691,8 +682,6 @@
 				seatLabel={seatName}
 				{kept}
 				onPick={afterReserved}
-				last={t('common.none')}
-				onLast={() => afterReserved(undefined)}
 				testid="reserved-seats"
 			/>
 		</div>
@@ -700,17 +689,19 @@
 {/if}
 
 {#if conversion && converting}
-	<DraftConversion
-		bind:open={converting}
-		{conversion}
-		by={byId.get(conversion.characterId)}
-		seats={convertSeats}
-		seatLabel={seatName}
-		{kept}
-		characters={convertOptions}
-		offers={progress?.kind === 'draft' ? progress.state.config.offers : [1]}
-		onDone={(turned) => void finish(turned)}
-	/>
+	{#key conversionStep}
+		<DraftConversion
+			bind:open={converting}
+			{conversion}
+			by={byId.get(conversion.characterId)}
+			seats={convertSeats}
+			seatLabel={seatName}
+			{kept}
+			characters={convertOptions}
+			offers={progress?.kind === 'draft' ? progress.state.config.offers : [1]}
+			onDone={converted}
+		/>
+	{/key}
 {/if}
 
 {#if revealing}

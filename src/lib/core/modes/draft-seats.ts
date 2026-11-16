@@ -5,7 +5,11 @@
  * hidden character whose token goes next to another type (the Marionette next to the Demon,
  * https://wiki.bloodontheclocktower.com/Marionette) keeps a seat of its own type out of the
  * draft, and one more Townsfolk is drafted instead. Once everyone has drafted, the Storyteller
- * picks which good neighbour of that type is really it (`reservedSeats`).
+ * picks which good neighbour of that type is really it (`reservedSeats`), and must pick one
+ * (Trevor, 2026-11-16). With three Minions one more seat is kept and a good player becomes that
+ * Minion at the end, as the wiki's How to Run says. Its seat is dropped when a drafted character
+ * leaves none of its type (Legion, the Atheist), and goes back to its type when there is none of
+ * the type it sits beside (the Summoner, Lil' Monsta).
  *
  * Players turned into another type (Grimbits' tool, for the Kazali, the Lord of Typhon and Lil'
  * Monsta): with
@@ -14,9 +18,10 @@
  * becomes (`conversions`). The Kazali's are players the Storyteller picks, as many as the setup
  * counts gave that type less those drafted (https://wiki.bloodontheclocktower.com/Kazali). The
  * Lord of Typhon's are its two neighbours, so the evil players sit in a line with it in the
- * middle (https://wiki.bloodontheclocktower.com/Lord_of_Typhon): when it is drafted, that many
- * open seats of the type become Townsfolk seats, so no one else drafts them, and once everyone has
- * drafted each neighbour picks their Minion from offers, as in the draft (`turnOffer`; Trevor,
+ * middle (https://wiki.bloodontheclocktower.com/Lord_of_Typhon): when it is drafted, every open
+ * seat of the type becomes a Townsfolk seat, so no one else drafts them, and once everyone has
+ * drafted that many players in a line with it, its neighbours first, each pick their Minion from
+ * offers, as in the draft (`turnOffer`; Trevor,
  * 2026-10-27: "the selected ppl can select their minion through the mulligan"). Lil' Monsta's is the
  * player who drafts it, as it is never dealt (https://wiki.bloodontheclocktower.com/Lil%27_Monsta):
  * its setup change applies and that player drafts again, offered only that type
@@ -27,7 +32,6 @@ import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/setup/bag-characters.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/parts/turns-players-into.ts';
-import { neighboursTurned } from '#lib/core/rules/abilities/turns-players.ts';
 import type { DraftState, PendingChange } from './draft.ts';
 
 /** Its own rules (a custom character's) or our rules file's. */
@@ -41,6 +45,11 @@ export interface ReservedHidden {
 	id: CharacterId;
 	type: SeatedType;
 	nextTo: SeatedType;
+	/**
+	 * With at least this many of its type, one more seat of it is kept and a good player turned
+	 * into it at the end (its `changesCharacter.minMinions`: the Marionette's third Minion).
+	 */
+	alsoAt?: number;
 }
 
 /**
@@ -52,8 +61,12 @@ export function reservedHidden(characters: readonly Character[]): ReservedHidden
 	return characters.flatMap((c) => {
 		if ((c.type !== 'minion' && c.type !== 'demon') || !isReplacedAfterDraw(c)) return [];
 		const label = replacementReminder(c)?.label;
-		const nextTo = label ? rulesFor(c)?.reminderTargets?.[label]?.neighbour?.ofType : undefined;
-		return nextTo && isSeated(nextTo) ? [{ id: c.id, type: c.type, nextTo }] : [];
+		const rules = rulesFor(c);
+		const nextTo = label ? rules?.reminderTargets?.[label]?.neighbour?.ofType : undefined;
+		const alsoAt = rules?.changesCharacter?.minMinions;
+		return nextTo && isSeated(nextTo)
+			? [{ id: c.id, type: c.type, nextTo, ...(alsoAt !== undefined ? { alsoAt } : {}) }]
+			: [];
 	});
 }
 
@@ -101,14 +114,12 @@ export interface Conversion {
  * count of the type less those already drafted or reserved (the Kazali's Minions); for
  * `neighbours`, those of its two neighbours not of the type yet (the Lord of Typhon's).
  */
-export function conversions(state: DraftState): Conversion[] {
-	return state.picks.flatMap((id, seat): Conversion[] => {
+export function conversions(state: DraftState, alsoEvil: readonly number[] = []): Conversion[] {
+	const turned = state.picks.flatMap((id, seat): Conversion[] => {
 		const turns = state.turns?.[id];
 		if (!turns) return [];
 		if (turns.players === 'neighbours') {
-			const seats = neighboursTurned(neighbours(state, seat), (i) =>
-				isEvil(state, state.picks[i])
-			).filter((i) => i < state.picks.length);
+			const seats = lineSeats(state, seat, state.line ?? 0, alsoEvil);
 			const { type, players } = turns;
 			return seats.length > 0
 				? [{ characterId: id, seat, type, players, count: seats.length, seats }]
@@ -122,6 +133,46 @@ export function conversions(state: DraftState): Conversion[] {
 			? [{ characterId: id, seat, type: turns.type, players: turns.players, count }]
 			: [];
 	});
+	// The reserved character's extra seat (the Marionette's third Minion): a good player the
+	// Storyteller picks becomes one, unless a drafted character already turns players into it.
+	const reserve = state.config.reserve;
+	const extra = state.reserved ? (state.reservedExtra ?? 0) : 0;
+	if (reserve && extra > 0 && !turned.some((c) => c.type === reserve.type))
+		turned.push({
+			characterId: reserve.id,
+			seat: -1,
+			type: reserve.type,
+			players: 'chosen',
+			count: extra
+		});
+	return turned;
+}
+
+/**
+ * The good seats (by pick index) a character turns to make its line `count` long, nearest first
+ * and taking each side in turn, so it stays in the middle; evil seats already in the line (and
+ * `alsoEvil`, a seat that is secretly evil) extend it without being turned
+ * (https://wiki.bloodontheclocktower.com/Lord_of_Typhon: "All evil characters must be in the line
+ * at setup").
+ */
+function lineSeats(
+	state: DraftState,
+	seat: number,
+	count: number,
+	alsoEvil: readonly number[]
+): number[] {
+	const n = state.picks.length;
+	const evil = (i: number) => alsoEvil.includes(i) || isEvil(state, state.picks[i]);
+	const out: number[] = [];
+	const reach = { [-1]: 0, [1]: 0 } as Record<number, number>;
+	let side = -1;
+	while (out.length < count && reach[-1] + reach[1] < n - 1) {
+		reach[side] += 1;
+		const i = (seat + side * reach[side] + n) % n;
+		if (!evil(i)) out.push(i);
+		side = -side;
+	}
+	return out.sort((a, b) => a - b);
 }
 
 /**
@@ -181,30 +232,19 @@ export function turnOffer(
 	return offer;
 }
 
-/** The seats either side of `seat` (by pick index) once every seat has drafted. */
-function neighbours(state: DraftState, seat: number): number[] {
-	const left = Object.values(state.slots).reduce((n, open) => n + Math.max(0, open), 0);
-	const n = state.picks.length + left;
-	if (n < 2) return [];
-	const either = new Set([(seat - 1 + n) % n, (seat + 1) % n]);
-	return [...either].filter((i) => i !== seat).sort((a, b) => a - b);
-}
-
 const isEvil = (state: DraftState, id: CharacterId) =>
 	state.types[id] === 'minion' || state.types[id] === 'demon';
 
 /**
- * A drafted character whose neighbours turn into a type (the Lord of Typhon's Minions): as many
- * open seats of it as neighbours not of it already become Townsfolk seats, after its own setup
- * change, so no one else drafts them.
+ * A drafted character whose neighbours turn into a type (the Lord of Typhon's Minions): every
+ * open seat of it becomes a Townsfolk seat, after its own setup change, so no one else drafts
+ * them; at the end that many good players in a line with it are turned (`conversions`).
  */
 export function keptForNeighbours(state: DraftState, id: CharacterId): PendingChange[] {
 	const turns = state.turns?.[id];
 	if (turns?.players !== 'neighbours') return [];
-	const seat = state.picks.lastIndexOf(id);
-	const known = (i: number) => i < state.picks.length && isEvil(state, state.picks[i]);
-	const count = neighboursTurned(neighbours(state, seat), known).length;
-	return count > 0
-		? [{ characterId: id, op: { kind: 'delta', type: turns.type, values: [-count] } }]
-		: [];
+	const drafted = state.picks.filter((x) => state.types[x] === turns.type).length;
+	return [
+		{ characterId: id, op: { kind: 'set', type: turns.type, values: [drafted] }, line: true }
+	];
 }

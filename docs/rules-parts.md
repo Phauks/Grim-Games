@@ -88,7 +88,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Changes character.** Its night step makes a chosen player another character.
 
 - Part: `src/lib/core/data/parts/changes-character.ts`
-- Read by: `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
+- Read by: `core/modes/draft-seats.ts`, `core/rules/abilities/becomes.ts`, `features/grimoire/night/ChangeCharacterStep.svelte`
 
 ### choosesLikeDemon
 
