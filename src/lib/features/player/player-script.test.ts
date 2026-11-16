@@ -4,6 +4,8 @@ import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
 	gameSheetCharacters,
 	groupByType,
+	jinxesOnlyName,
+	sheetRuleCharacters,
 	playerJinxes,
 	playerNight,
 	scriptVersion,
@@ -14,6 +16,20 @@ const data = committedGameData();
 const tb = editionScript('tb', data)!;
 
 describe('player script view', () => {
+	// https://wiki.bloodontheclocktower.com/Djinn
+	// Wiki: "The Djinn’s special rule is described by the Script Tool online, and is printed out automatically when you create a script with a character combination that is jinxed."
+	it('leaves the jinxes-only Fabled off the sheet unless asked (Trevor, 2026-11-16)', () => {
+		const ids = ['spy', 'magician', 'djinn', 'sentinel'];
+		const listed = ids.map((id) => data.byId.get(id)!);
+		expect(sheetRuleCharacters(listed, false).map((c) => c.id)).toEqual([
+			'spy',
+			'magician',
+			'sentinel'
+		]);
+		expect(sheetRuleCharacters(listed, true).map((c) => c.id)).toEqual(ids);
+		expect(jinxesOnlyName(data)).toBe(data.byId.get('djinn')!.name);
+	});
+
 	it('groups Trouble Brewing as on its character sheet', () => {
 		// https://wiki.bloodontheclocktower.com/Trouble_Brewing: 13 Townsfolk, 4 Outsiders, 4 Minions, 1 Demon.
 		expect(groupByType(tb.characters).map((g) => [g.type, g.characters.length])).toEqual([
