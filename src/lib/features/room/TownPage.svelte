@@ -20,6 +20,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { parseAspect } from '#lib/ui/seating/seat-layout.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
@@ -130,10 +131,16 @@
 	const over = $derived<EndedGame | undefined>(
 		final ? ({ endedAt: arrivedAt, ...town?.view?.ended } as EndedGame) : undefined
 	);
-	/** An admin's grimoire, once drawn. */
+	/**
+	 * An admin's grimoire, once drawn. The board stays while each new grimoire comes, so one
+	 * that can't be shown is said in a toast and the next one that can replaces it.
+	 */
 	let boardReady = $state(false);
 	let boardProblem = $state<string>();
-	const showBoard = $derived(admin && !message && !!town?.grimoire && !boardProblem);
+	const showBoard = $derived(admin && !message && !!town?.grimoire);
+	$effect(() => {
+		if (boardProblem) toast(t('room.liveGames.boardProblem'), boardProblem);
+	});
 </script>
 
 {#snippet townCorner(filled: boolean)}

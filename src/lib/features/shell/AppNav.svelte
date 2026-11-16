@@ -4,7 +4,7 @@
 	import { navDrawer } from './nav-drawer.svelte.ts';
 	import { onDestroy } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { APP_NAME } from '#lib/core/app-name.ts';
+	import AppName from './AppName.svelte';
 	import NavList from './NavList.svelte';
 	import NavMenuButton from './NavMenuButton.svelte';
 
@@ -22,7 +22,7 @@
 		<div class="nav-scroll" data-own-scroll>
 			<div class="brand-row">
 				<NavMenuButton />
-				<a class="brand" href={resolve('/')}><span class="name">{APP_NAME}</span></a>
+				<a class="brand" href={resolve('/')}><AppName trim /></a>
 			</div>
 			<NavList />
 			<div class="bottom"><CccLogo /></div>
@@ -65,19 +65,10 @@
 			margin-bottom: var(--space-2);
 		}
 		.brand {
-			font-family: var(--font-heading);
-			font-weight: var(--font-heading-weight);
 			font-size: 1.1rem;
-			letter-spacing: 0.06em;
-			color: var(--heading);
 			text-decoration: none;
 			display: inline-flex;
 			align-items: center;
-		}
-		/* All capitals: trim the line box to them so the name centres on the icon by eye. */
-		.name {
-			text-box: trim-both cap alphabetic;
-			padding-block: 0.1em;
 		}
 		/* The Community Created Content logo, always at the bottom of the menu (Trevor, 2026-10-17). */
 		.bottom {

@@ -2,10 +2,12 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import { dropOnto, isOpenSeat } from '#lib/core/sync/room-seating-open.ts';
+	import { dropOnto, isOpenSeat, seatToPick } from '#lib/core/sync/room-seating-open.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import PlayerNameDialog from '#lib/features/room/PlayerNameDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import { sharedPlace, type SeatPoint } from '#lib/ui/seating/seat-layout.ts';
@@ -49,6 +51,13 @@
 			? ring.seats.flatMap((s, i) => (isOpenSeat(s) ? [{ s, p: ring.points[i] }] : []))
 			: []
 	);
+	/**
+	 * A phone with no name can't sit (the room seats only named phones), so while it has a seat
+	 * to pick the middle asks for one instead (Trevor, 2026-11-16: "make it so they are notified
+	 * to create a name if they don't have one"). Its name saved, the open seats show.
+	 */
+	const nameless = $derived(!!player.view && !me?.name && seatToPick(player.view));
+	let naming = $state(false);
 	const index = $derived(ring.seats.findIndex((s) => s.seatId === me?.seatId));
 	const own = $derived(index >= 0 ? ring.seats[index] : undefined);
 	/** Where the disc sits when not held: its seat, or the middle for a phone with no seat. */
@@ -163,6 +172,10 @@
 {#if offered.length}<p class="line" role="status" data-testid="seating-line">
 		{t('player.seating.tapOpen')}
 	</p>{/if}
+{#if nameless}<div class="ask">
+		<Button variant="accent" onclick={() => (naming = true)}>{t('player.seating.setName')}</Button>
+	</div>{/if}
+<PlayerNameDialog bind:open={naming} {player} />
 {#if open && me}
 	{@const at = drag && moved ? drag.at : home}
 	{#if target}<span
@@ -252,6 +265,15 @@
 	}
 	.disc.unseated {
 		opacity: 0.9;
+	}
+	/* Set your name, where the line would be, taking taps. */
+	.ask {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		z-index: var(--z-above-2);
+		max-width: 90%;
+		transform: translate(-50%, -50%);
 	}
 	.line {
 		position: absolute;

@@ -353,10 +353,15 @@ test('a phone with no seat lands on its Grim with the open seats ringed, and Sel
 	const grimTab = phone.getByRole('tab', { name: 'Grim' });
 	await expect(grimTab).toHaveAttribute('aria-selected', 'true');
 	await expectInRoom(phone);
+	// With no name it can't sit, so the middle asks for one (Trevor, 2026-11-16: "make it so
+	// they are notified to create a name if they don't have one").
+	await expect(phone.getByTestId('seating-offered')).toHaveCount(0);
+	await phone.getByRole('button', { name: 'Set your name' }).tap();
+	const naming = phone.getByRole('dialog', { name: 'Your name' });
+	await naming.getByRole('textbox', { name: 'Your name' }).fill('Ana');
+	await naming.getByRole('button', { name: 'Save' }).tap();
+	await expect(phone.getByRole('button', { name: 'Set your name' })).toHaveCount(0);
 	// Named, the open seats are ringed and the middle says to tap one.
-	await openProfile(phone);
-	await setPlayerName(phone, 'Ana');
-	await phone.keyboard.press('Escape');
 	const offered = phone.getByTestId('seating-offered');
 	const seats = await phone.getByTestId('grim-seat').count();
 	await expect(offered).toHaveCount(seats - 2);
