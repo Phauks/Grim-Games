@@ -602,7 +602,9 @@ test('history, add seat and remove', async ({ page }) => {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
-test('an orphan character is flagged, and old names are not suggested', async ({ page }) => {
+test('an orphan character is flagged, its mark says why, and old names are not suggested', async ({
+	page
+}) => {
 	await startGame(page);
 	let sheet = await openSeat(page, 1);
 	await nameSeat(sheet, 'Zed');
@@ -612,6 +614,16 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 	await picker.getByRole('button', { name: 'Zombuul', exact: true }).tap();
 	await expect(sheet.getByText('Not on the script')).toBeVisible();
 	await expect(seatLabelled(page, 'Seat 1: Zed, Zombuul, not on the script')).toBeAttached();
+	// The top-middle mark is the seat's issue mark: a tap says what is wrong (Trevor,
+	// 2026-11-15: "make it so you can tap to see what the issue is").
+	await closeSheet(page);
+	await page.getByTestId('seat').first().getByTestId('issue-mark').tap();
+	const issues = page.getByRole('dialog', { name: 'Zed', exact: true });
+	await expect(issues.getByTestId('seat-issues')).toContainText('Not on the script');
+	await expect(issues.getByRole('listitem')).toHaveCount(1);
+	await page.keyboard.press('Escape');
+	await expect(issues).toBeHidden();
+	sheet = await openSeat(page, 1);
 
 	// Names come only from the room's phones, never from earlier seats or games (Trevor,
 	// 2026-10-26): with no room, a name used before is not offered.
