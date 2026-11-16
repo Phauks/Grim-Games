@@ -1621,7 +1621,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	const title = page.getByTestId('script-title');
 	if (await title.isVisible())
 		await expect(title.getByTestId('board-watchers')).toHaveAccessibleName('1 watching');
-	await expect(viewer.getByTestId('board-watchers')).toHaveCount(0);
+	await expect(viewer.getByTestId('grim-view-board').getByTestId('board-watchers')).toHaveCount(0);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Edit player name' }).tap();

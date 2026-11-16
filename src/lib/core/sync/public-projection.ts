@@ -113,7 +113,7 @@ export interface PublicCorner {
 	phase?: PublicPhase;
 	/** Game time: since the first night began, until End game; Setup until it has begun. */
 	gameTime?: { begun: boolean; startedAt?: number; endedAt?: number };
-	/** Spectators on the view-only link. */
+	/** Phones with Grim view, connected now. */
 	watchers?: number;
 	/** False when the board hides the author's or Storyteller's line (a build before had both). */
 	author?: false;
