@@ -13,6 +13,7 @@
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import FinalGrimoireDialog from './FinalGrimoireDialog.svelte';
 	import type { EndedGame } from '#lib/features/board/device-notes.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
