@@ -68,6 +68,9 @@ async function giveGrimView(page: Page, viewer: Page, name: string) {
 	await expect(
 		grimView.getByRole('checkbox', { name: 'Grim view', includeHidden: true })
 	).not.toBeChecked();
+	// What's shared waits for Grim view (Trevor, 2026-11-16, option B).
+	const whatsShared = grimView.getByRole('button', { name: 'What’s shared' });
+	await expect(whatsShared).toBeDisabled();
 	await grimView.getByText('Grim view', { exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Share the grimoire?' });
 	await expect(ask).toContainText(name);
@@ -83,6 +86,15 @@ async function giveGrimView(page: Page, viewer: Page, name: string) {
 	await expect(
 		grimView.getByRole('checkbox', { name: 'Grim view', includeHidden: true })
 	).toBeChecked();
+	// Then it changes what goes at once, for everyone with Grim view: here the Demon's bluffs.
+	await whatsShared.tap();
+	const live = page.getByRole('dialog', { name: 'What Grim view shares' });
+	const bluffs = live.getByRole('checkbox', { name: 'Demon bluffs', includeHidden: true });
+	await expect(bluffs).not.toBeChecked();
+	await live.getByText('Demon bluffs', { exact: true }).tap();
+	await expect(bluffs).toBeChecked();
+	await page.keyboard.press('Escape');
+	await expect(live).toBeHidden();
 	await closePane(page);
 	// The phone turns to its Grim tab, and promises first.
 	const pledge = viewer.getByRole('alertdialog', { name: 'Before you watch' });
@@ -532,7 +544,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 
 	// Not on End game: Game over, in the day timer's place, offers Share grim once the game is
 	// over (Trevor, 2026-11-15), with its own icon, and asks what goes with it: History on,
-	// the notes off. Reopen game and New game stay in ⋯ only, and Share grim leaves ⋯.
+	// the notes and Demon bluffs off. Reopen game and New game stay in ⋯ only.
 	const seats = await page.getByTestId('seat').count();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(menu.getByRole('button', { name: 'Reopen game' })).toBeVisible();
@@ -552,10 +564,15 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(share.getByRole('checkbox', { name: 'History' })).toBeChecked();
 	await expect(share.getByRole('checkbox', { name: 'Seat notes' })).not.toBeChecked();
 	await expect(share.getByRole('checkbox', { name: 'Game notes' })).not.toBeChecked();
+	await expect(share.getByRole('checkbox', { name: 'Demon bluffs' })).not.toBeChecked();
 	await share.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	// Once sent it leaves the menu.
+	// Once sent it reads Shared grim, to change what went (Trevor, 2026-11-16, option B).
 	await page.getByTestId('game-over').tap();
-	await expect(page.getByRole('menuitem', { name: 'Share grim' })).toHaveCount(0);
+	await expect(page.getByRole('menuitem')).toHaveText([
+		'Shared grim',
+		'Export game',
+		'Player feedback'
+	]);
 	await page.keyboard.press('Escape');
 	// The phone shows it over its Grim tab, full screen (Trevor, 2026-11-15): the whole board,
 	// every seat, with no Storyteller's toolbar; the town and its guesses stay under it.
@@ -608,6 +625,35 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(viewFinal).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(view).toBeHidden();
+
+	// Shared grim changes what the phones have at once, and can stop sharing (Trevor,
+	// 2026-11-16: "allow for letting more or less"; option B).
+	await page.getByTestId('game-over').tap();
+	await page.getByRole('menuitem', { name: 'Shared grim' }).tap();
+	const shared = page.getByRole('dialog', { name: 'Shared grim' });
+	const withRoom = shared.getByRole('checkbox', { name: 'Shared with the room' });
+	await expect(withRoom).toBeChecked();
+	await expect(shared.getByRole('checkbox', { name: 'History' })).toBeChecked();
+	await shared.getByText('History', { exact: true }).tap();
+	await expect(shared.getByRole('checkbox', { name: 'History' })).not.toBeChecked();
+	await phone.getByText('Final grimoire', { exact: true }).tap();
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	// Only how it ended: nothing to step back through.
+	await expect(final.getByRole('button', { name: 'Previous change' })).toBeDisabled();
+	// Off takes it off the phone, and on sends it again.
+	await shared.getByText('Shared with the room', { exact: true }).tap();
+	await expect(withRoom).not.toBeChecked();
+	await expect(finalDialog).toHaveCount(0);
+	await expect(finalSwitch).toHaveCount(0);
+	await expect(phone.getByTestId('player-grim')).toBeVisible();
+	await shared.getByText('Shared with the room', { exact: true }).tap();
+	await expect(withRoom).toBeChecked();
+	// It opens on the phone again, as when first shared.
+	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(finalDialog).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(shared).toBeHidden();
 
 	// Reopening the game makes the grimoire private again.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

@@ -481,6 +481,17 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				return;
 			}
+			case 'unreveal': {
+				const reveal = await this.ctx.storage.get<RevealView>('reveal');
+				if (typeof message.gameId !== 'string' || reveal?.gameId !== message.gameId) return;
+				await this.ctx.storage.delete('reveal');
+				const text = JSON.stringify({ type: 'unreveal', gameId: message.gameId });
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player' || to?.role === 'town') sendText(socket, text);
+				}
+				return;
+			}
 			case 'script': {
 				// Kept apart from the room, so the table's frequent changes don't resend it.
 				if (!isScript(message.script)) return;

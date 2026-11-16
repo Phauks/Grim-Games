@@ -15,9 +15,10 @@ describe('sharedSave', () => {
 			hidden: false
 		}))
 		.do({ type: 'SetGameNote', title: 'Plan', text: 'Bluff the Empath', hidden: false })
+		.do({ type: 'SetBluffs', set: 0, characterIds: ['empath', 'chef'] })
 		.dies('empath');
 	const saved = toSavedGame(played.session, 0);
-	const everything = { history: true, seatNotes: true, gameNotes: true };
+	const everything = { history: true, seatNotes: true, gameNotes: true, bluffs: true };
 
 	it('sends the whole game when everything is chosen', () => {
 		expect(sharedSave(saved, everything).log).toEqual(saved.log);
@@ -34,6 +35,14 @@ describe('sharedSave', () => {
 		// Each other change is still there to step through.
 		expect(game.seats[played.seat('empath')].dead).toBe(true);
 		expect(sent.log.entries.length).toBe(saved.log.entries.length - 2);
+	});
+
+	// Trevor, 2026-11-16: "you should be able to change what got shared when you share grim".
+	it('leaves the Demon bluffs out unless chosen', () => {
+		expect(replay(sharedSave(saved, everything).log).bluffs).toEqual([['empath', 'chef']]);
+		const sent = sharedSave(saved, { ...everything, bluffs: false });
+		expect(replay(sent.log).bluffs ?? []).toEqual([]);
+		expect(sent.log.entries.length).toBe(saved.log.entries.length - 1);
 	});
 
 	it('keeps one choice of notes without the other', () => {
