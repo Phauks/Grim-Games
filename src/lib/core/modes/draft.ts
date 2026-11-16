@@ -60,15 +60,40 @@
  * Hidden characters reserved at the start (the Marionette) and players turned into another type
  * (the Kazali's, the Lord of Typhon's, Lil' Monsta's Minions) are worked out in `draft-seats.ts`.
  *
+ * Most players are one character (Legion, https://wiki.bloodontheclocktower.com/Legion): with
+ * `modifiers` on, a drafted character whose setup change sets its own type to "most" players and
+ * that may repeat (TPI's `bag-duplicate`) fills that type's other seats with copies of itself, so
+ * no other character of its type is offered. The Storyteller picks the count among "most"
+ * (more than half, leaving at least one other player); each copy goes to a seat still to draft
+ * at random, which is offered only it and can't refuse it.
+ *
+ * A setup change that can't apply (Trevor, 2026-11-16): a character whose change can't be made
+ * with the seats left (a Summoner's "No Demon" once a Demon is drafted, a Baron's +2 Outsiders
+ * with one seat left to turn) is not offered, unless nothing else can fill the open seats; drafted
+ * anyway, the Storyteller is asked with what can be done, or drafts again.
+ *
  * The state is plain data so it can be saved on the device and resumed.
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { type TypeCounts } from '#lib/core/rules/setup/distribution.ts';
 import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
 import { setupModifierFor } from '#lib/core/rules/setup/setup-modifiers.ts';
+import { canDuplicate } from '#lib/core/rules/setup/bag-characters.ts';
 import { type CountOp } from '#lib/core/data/parts/setup-modifier.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/parts/turns-players-into.ts';
 import { isSeated, keptForNeighbours, rulesFor, type ReservedHidden } from './draft-seats.ts';
+import {
+	applyTotal,
+	canApply,
+	draftTotal,
+	fits,
+	fixedFirst,
+	seatsLeft,
+	totalsFor,
+	wantedTotals
+} from './draft-counts.ts';
+
+export { seatsLeft } from './draft-counts.ts';
 
 export {
 	conversions,
@@ -130,6 +155,8 @@ export interface DraftAsk {
 export interface PendingChange {
 	characterId: CharacterId;
 	op: CountOp;
+	/** Its seats are kept for players turned beside the character (`keptForNeighbours`). */
+	line?: boolean;
 }
 
 export interface DraftState {
@@ -188,6 +215,14 @@ export interface DraftState {
 	turns?: Record<CharacterId, TurnsPlayersInto & { usual: number }>;
 	/** `config.reserve` kept its seat out of the draft (there was one of its type to keep). */
 	reserved?: boolean;
+	/** More seats `config.reserve` kept, turned at the end (the Marionette's third Minion). */
+	reservedExtra?: number;
+	/** Pool characters that may repeat (Legion), when `config.modifiers` is on. */
+	repeats?: CharacterId[];
+	/** Types whose open seats only copies of a drafted character fill (Legion's Demons). */
+	copies?: Partial<Record<SeatedType, CharacterId>>;
+	/** Seats a drafted character keeps for players turned beside it (the Lord of Typhon's line). */
+	line?: number;
 }
 
 /** A character dealt to the next seat because `by` needs it in play. */
@@ -212,7 +247,7 @@ export function startDraft(
 		? Object.fromEntries(
 				seated.flatMap((c) => {
 					const ops = setupModifierFor(c)?.ops ?? [];
-					return ops.length > 0 ? [[c.id, ops]] : [];
+					return ops.length > 0 ? [[c.id, fixedFirst(ops)]] : [];
 				})
 			)
 		: undefined;
@@ -263,14 +298,24 @@ export function startDraft(
 			)
 		: {};
 	const reserved = config.reserve !== undefined && counts[config.reserve.type] > 0;
+	// With as many of its type as its rules say (3 Minions), one more seat is kept and turned later.
+	const alsoAt = config.reserve?.alsoAt;
+	const reservedExtra =
+		reserved && config.reserve && alsoAt !== undefined && counts[config.reserve.type] >= alsoAt
+			? 1
+			: 0;
+	const kept = reserved ? 1 + reservedExtra : 0;
 	const slots =
 		reserved && config.reserve
 			? {
 					...counts,
-					[config.reserve.type]: counts[config.reserve.type] - 1,
-					townsfolk: counts.townsfolk + 1
+					[config.reserve.type]: counts[config.reserve.type] - kept,
+					townsfolk: counts.townsfolk + kept
 				}
 			: { ...counts };
+	const repeats = config.modifiers
+		? seated.filter((c) => canDuplicate(c, [])).map((c) => c.id)
+		: [];
 	const state: DraftState = {
 		config,
 		slots,
@@ -287,14 +332,11 @@ export function startDraft(
 		...(Object.keys(orHidden).length > 0 ? { orHidden } : {}),
 		...(Object.keys(gains).length > 0 ? { gains } : {}),
 		...(Object.keys(turns).length > 0 ? { turns } : {}),
-		...(reserved ? { reserved } : {})
+		...(reserved ? { reserved } : {}),
+		...(reservedExtra > 0 ? { reservedExtra } : {}),
+		...(repeats.length > 0 ? { repeats } : {})
 	};
 	return withOffer(state, config.offers[0] ?? 1, random);
-}
-
-/** Seats still to draft. */
-export function seatsLeft(state: DraftState): number {
-	return SEATED_TYPES.reduce((n, type) => n + Math.max(0, state.slots[type]), 0);
 }
 
 export function canRefuse(state: DraftState): boolean {
@@ -314,6 +356,8 @@ export function refuseOffer(state: DraftState, random: Random): DraftState {
 export function takeOffer(state: DraftState, id: CharacterId, random: Random): DraftState {
 	if (!state.offer.includes(id)) return state;
 	const type = state.types[id];
+	// A copy of a drafted character (Legion): its setup change was made with the first.
+	const copy = state.picks.includes(id);
 	const previous: DraftState = { ...state };
 	delete previous.previous;
 	let next = setAside(
@@ -331,6 +375,7 @@ export function takeOffer(state: DraftState, id: CharacterId, random: Random): D
 	delete next.forcedBy;
 	delete next.onlyType;
 	delete next.turnedBy;
+	if (copy) return nextOffer(next, random);
 	const turns = next.turns?.[id];
 	if (turns?.players === 'drafter') {
 		// Not dealt: the player drafts again, of the type it turns them into.
@@ -427,7 +472,7 @@ export function answerAsk(state: DraftState, total: number, random: Random): Dra
 	const ask = state.ask;
 	if (!ask || (total !== ask.current && !ask.options.includes(total))) return state;
 	const [change, ...rest] = state.pending ?? [];
-	let next: DraftState = { ...setTotal(state, ask.type, total), pending: rest };
+	let next: DraftState = { ...applyTotal(state, change, ask.type, total), pending: rest };
 	delete next.ask;
 	if (change?.op.kind === 'any' && change.op.type === 'outsider') next.countSet = true;
 	next = advance(next);
@@ -486,7 +531,25 @@ function nextOffer(state: DraftState, random: Random): DraftState {
 		next = { ...next };
 		delete next.forced;
 	}
+	// A copy goes to this seat as likely as to any seat still to draft, so copies spread at random.
+	const copy = copyType(next);
+	if (copy && random() * seatsLeft(next) < next.slots[copy]) return copyOffer(next, copy);
 	return withOffer(next, next.config.offers[0] ?? 1, random);
+}
+
+/** A type with open seats that only copies fill (Legion's Demons). */
+const copyType = (state: DraftState) =>
+	SEATED_TYPES.find((type) => state.copies?.[type] !== undefined && state.slots[type] > 0);
+
+/** This seat is a copy, which it can't refuse, told which character in play put it there. */
+function copyOffer(state: DraftState, type: SeatedType): DraftState {
+	const id = state.copies?.[type] as CharacterId;
+	return {
+		...state,
+		offer: [id],
+		offerIndex: Math.max(0, state.config.offers.length - 1),
+		forcedBy: id
+	};
 }
 
 /**
@@ -512,52 +575,6 @@ function forceRequired(state: DraftState, id: CharacterId): DraftState {
 	};
 }
 
-/** How many of `type` have been drafted. */
-const drafted = (state: DraftState, type: SeatedType) =>
-	state.picks.filter((id) => state.types[id] === type).length;
-
-/** How many of `type` the game has in all: drafted plus still open. */
-export const draftTotal = (state: DraftState, type: SeatedType) =>
-	drafted(state, type) + Math.max(0, state.slots[type]);
-
-/** The type a change to `type` is balanced against: Townsfolk, or Outsiders for Townsfolk. */
-const balance = (type: SeatedType): SeatedType => (type === 'townsfolk' ? 'outsider' : 'townsfolk');
-
-/** The totals `type` can reach: never below what is drafted, never past the open balance seats. */
-function range(state: DraftState, type: SeatedType): [number, number] {
-	const total = draftTotal(state, type);
-	return [drafted(state, type), total + Math.max(0, state.slots[balance(type)])];
-}
-
-const clamp = (state: DraftState, type: SeatedType, total: number) => {
-	const [min, max] = range(state, type);
-	return Math.min(max, Math.max(min, total));
-};
-
-/** The state with `type`'s total at `total` (clamped), the difference taken from its balance. */
-function setTotal(state: DraftState, type: SeatedType, total: number): DraftState {
-	const diff = clamp(state, type, total) - draftTotal(state, type);
-	if (diff === 0) return state;
-	const other = balance(type);
-	return {
-		...state,
-		slots: { ...state.slots, [type]: state.slots[type] + diff, [other]: state.slots[other] - diff }
-	};
-}
-
-/** The totals a change can give, lowest first. */
-function totalsFor(state: DraftState, op: CountOp): number[] {
-	const [min, max] = range(state, op.type);
-	const current = draftTotal(state, op.type);
-	const totals =
-		op.kind === 'any' || (op.kind === 'set' && op.values === 'most')
-			? Array.from({ length: max - min + 1 }, (_, i) => min + i)
-			: op.kind === 'set'
-				? (op.values as readonly number[]).map((v) => clamp(state, op.type, v))
-				: op.values.map((v) => clamp(state, op.type, current + v));
-	return [...new Set(totals)].sort((a, b) => a - b);
-}
-
 /**
  * Applies pending changes in order until one needs the Storyteller: a choice of counts, or,
  * once an "any number" change has set the Outsiders, a fixed Outsider change (apply or keep).
@@ -570,8 +587,10 @@ function advance(state: DraftState): DraftState {
 		const current = draftTotal(next, op.type);
 		const options = totalsFor(next, op);
 		const keep = op.kind === 'delta' && op.type === 'outsider' && next.countSet === true;
-		if (options.length === 1 && (!keep || options[0] === current)) {
-			next = { ...setTotal(next, op.type, options[0]), pending: rest };
+		// A change that can't give what it asks for is asked, so the Storyteller sees it.
+		const fixed = options[0] === current || wantedTotals(next, op)?.length === 1;
+		if (options.length === 1 && fixed && fits(next, op) && (!keep || options[0] === current)) {
+			next = { ...applyTotal(next, change, op.type, options[0]), pending: rest };
 			continue;
 		}
 		return { ...next, ask: { characterId: change.characterId, type: op.type, options, current } };
@@ -598,10 +617,16 @@ function setAside(state: DraftState, ids: readonly CharacterId[]): DraftState {
  * for small scripts).
  */
 function withOffer(state: DraftState, size: number, random: Random): DraftState {
-	const open = (s: DraftState) => s.pool.some((id) => s.slots[s.types[id]] > 0);
+	const copy = copyType(state);
+	// Only copies' seats are left: the next is one.
+	if (copy && seatsLeft(state) === state.slots[copy]) return copyOffer(state, copy);
+	const open = (s: DraftState) =>
+		s.pool.some((id) => s.slots[s.types[id]] > 0 && s.copies?.[s.types[id]] === undefined);
 	let next = state;
 	if (!open(next) && seatsLeft(next) > 0) {
-		const back = next.discarded.filter((id) => next.slots[next.types[id]] > 0);
+		const back = next.discarded.filter(
+			(id) => next.slots[next.types[id]] > 0 && next.copies?.[next.types[id]] === undefined
+		);
 		next = {
 			...next,
 			pool: [...next.pool, ...back],
@@ -612,7 +637,14 @@ function withOffer(state: DraftState, size: number, random: Random): DraftState 
 }
 
 function makeOffer(state: DraftState, size: number, random: Random): CharacterId[] {
-	let candidates = state.pool.filter((id) => state.slots[state.types[id]] > 0);
+	let candidates = state.pool.filter(
+		(id) => state.slots[state.types[id]] > 0 && state.copies?.[state.types[id]] === undefined
+	);
+	{
+		// A setup change that can't apply: not offered, unless nothing else fills the seats.
+		const applies = candidates.filter((id) => canApply(state, id));
+		if (applies.length > 0) candidates = applies;
+	}
 	if (state.onlyType) {
 		const of = candidates.filter((id) => state.types[id] === state.onlyType);
 		if (of.length > 0) candidates = of;

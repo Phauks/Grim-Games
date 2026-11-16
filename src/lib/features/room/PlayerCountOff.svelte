@@ -17,6 +17,8 @@
 
 	const view = $derived(player.view?.countOff);
 	const first = $derived(view?.tokens.find((token) => token.number === 1));
+	/** Nothing can be tapped until the Storyteller locks 1, and 1 is theirs to set. */
+	const tappable = (number: number) => !!first && number !== 1;
 	let open = $state(false);
 	let seen = '';
 	$effect(() => {
@@ -53,7 +55,8 @@
 	function take(number: number) {
 		const holder = view?.tokens.find((token) => token.number === number);
 		if (!holder) {
-			player.count(number);
+			// Refused if another phone took it first: their name shows, so tap another.
+			player.count(number, true);
 			return;
 		}
 		taking = holder;
@@ -70,9 +73,9 @@
 		<div class="count-off" data-testid="count-off">
 			<p class="from">
 				{#if first}{t('room.countOff.from')}
-					<PlayerBadge name={first.name as PlayerName} />{:else}{t('room.countOff.fromOne')}{/if}
+					<PlayerBadge name={first.name as PlayerName} />{:else}{t('room.countOff.waiting')}{/if}
 			</p>
-			<CountOffTokens {view} onTap={tap} />
+			<CountOffTokens {view} onTap={tap} enabled={tappable} />
 		</div>
 	</Dialog>
 {/if}
