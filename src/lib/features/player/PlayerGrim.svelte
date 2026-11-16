@@ -717,8 +717,7 @@
 		justify-content: flex-end;
 		margin-bottom: var(--space-2);
 	}
-	/* The Storyteller's board, as tall as it draws itself (a screen high, with History's
-	   Previous and Next inside its foot), so the tabs' bottom bar never covers them. */
+	/* The Storyteller's board, as tall as it draws itself, so the tab bar never covers its foot. */
 	.final {
 		position: relative;
 	}
@@ -726,21 +725,24 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* The board's shape (plan J13): the screen's width, and most of its height, so the seats
-	   sit as they do on the Storyteller's board, tall on a phone and wide on a tablet. */
+	/* The board's shape (plan J13): the screen's width, seats as on the Storyteller's board. */
 	.town {
 		position: relative;
-		/* The backdrop and vignette sit under the seats, inside the town (BoardBackdrop). */
-		isolation: isolate;
+		isolation: isolate; /* BoardBackdrop's vignette sits under the seats, in the town */
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		/* No taller than the room above the bottom tab bar, so the ring and its tray show
-		   unscrolled (fitAboveBar, Trevor 2026-11-16: B); never so short the seats crowd. */
-		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
-		/* + the reminder tray (tray-ring.ts); with Notes under the tabs, the room left above
-		   them (Tabs `aside`, --panel-room), tray included. */
+		/* No taller than the room above the tab bar, so ring and tray (--foot-room) show
+		   unscrolled (fitAboveBar, Trevor 2026-11-16: B), or with Notes beside, the room above
+		   them (--panel-room). An upright screen keeps 60dvh of ring: a short phone scrolls. */
+		height: max(var(--floor), min(var(--tall), var(--fit-height, var(--tall))));
 		--tall: var(--panel-room, calc(75dvh + var(--foot-room, 0rem)));
+		--floor: 40dvh;
+	}
+	@media (orientation: portrait) {
+		.town {
+			--floor: calc(60dvh + var(--foot-room, 0rem));
+		}
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {
@@ -780,17 +782,15 @@
 		transform: translate(-50%, -50%);
 		cursor: pointer;
 	}
-	/* Your own seat has a ring (Trevor, 2026-10-26: "special glow or effect on self in grim"),
-	   steady, with no pulse (2026-10-27: "having ring is good enough"). In the text colour, not
-	   the accent, since red or blue would read as an alignment (the accent is red in some themes). */
+	/* Your own seat has a steady ring (Trevor, 2026-10-26/27: "having ring is good enough"), in
+	   the text colour: the accent (red in some themes) would read as an alignment. */
 	.seat[data-mine] :global(.disc) {
 		outline: calc(0.2 * var(--u)) solid var(--on-surface);
 		outline-offset: calc(0.2 * var(--u));
 		border-radius: 50%;
 	}
-	/* A guess is the player's own, so it never looks like something the town was told. Only
-	   the seat's round face: a token's own SVG circle is a .face too, and an outline there
-	   drew dashed square edges round the token (2026-10-28). */
+	/* A guess is the player's own, unlike what the town was told. Only the seat's face: a
+	   token's SVG circle is a .face too, and drew dashed square edges (2026-10-28). */
 	.seat[data-guess] :global(.disc > .face) {
 		opacity: 0.75;
 		outline: calc(0.15 * var(--u)) dashed var(--on-surface-muted);

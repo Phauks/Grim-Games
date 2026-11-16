@@ -782,7 +782,10 @@ test('a title that only seemed to fit beside the buttons goes under them, never 
 test("the Grim tab's board and its reminder tray fit above the tab bar, with no scrolling", async ({
 	page
 }) => {
-	// Trevor, 2026-11-16 (B): the tray sat behind the tab bar until the page was scrolled.
+	// Trevor, 2026-11-16 (B): the tray sat behind the tab bar until the page was scrolled. On
+	// Trevor's phone's screen; a shorter one keeps 60dvh of ring and scrolls rather than crowd
+	// the seats under a token in hand.
+	if (test.info().project.name === 'phone') await page.setViewportSize({ width: 448, height: 997 });
 	await page.goto('/play#e=tb');
 	await page.getByRole('tab', { name: 'Grim' }).tap();
 	const town = page.getByTestId('player-grim');
