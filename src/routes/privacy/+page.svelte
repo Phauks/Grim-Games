@@ -249,6 +249,13 @@
 				keeps them in step; you can stop a device syncing either in Settings, Data.
 			</li>
 			<li>
+				Players' feedback on games you told: when a player sends a rating, accolades or a comment
+				after a game in a live room, the room keeps a copy on the account of each signed-in
+				Storyteller of that game. It holds the player's name and seat only if they turned Anonymous
+				off, never their account. Deleting the game on a device removes it from your account; you
+				can stop a device syncing it in Settings, Data.
+			</li>
+			<li>
 				Your settings: theme, fonts, icons, board, token, Storyteller and sound settings, from the
 				first device you sign in on. Sizes, such as text and token sizes, stay on each device. A
 				background picture you add is not synced; it leaves the device only for a live room you

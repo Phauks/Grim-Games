@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GrimoireBoard from './GrimoireBoard.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import GuidedStep from '#lib/features/grimoire/night/GuidedStep.svelte';
@@ -38,9 +39,7 @@
 	import { setupComplete } from '#lib/core/rules/setup/bag-plan.ts';
 	import { stepNightNumbers } from '#lib/core/rules/night/night-numbers.ts';
 	import {
-		storytellerNominators,
-		todaysNominations,
-		mayNominate,
+		nominationMarks,
 		characterNominationPrompts,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/day/nominations.ts';
@@ -78,8 +77,6 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
-	import { drawnLook } from '#lib/features/board/shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
 	import { endGameRequest } from './end-game-request.svelte.ts';
@@ -88,6 +85,7 @@
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import { provideSeatPictures } from './seats/seat-picture.ts';
+	import { ShownLook } from './shown-look.svelte.ts';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantAsk from '#lib/features/savant/SavantAsk.svelte';
@@ -166,6 +164,10 @@
 		watchedHistory?: boolean;
 		/** Beside ☰ on a spectator's board: Grim view's message to the Storyteller (2026-11-03). */
 		watchLead?: Snippet;
+		/** Small, read-only, only the seats, in the day view (Trevor, 2026-11-15). */
+		mini?: boolean;
+		/** A mini grimoire's Execution: its seats pick the executed player (Trevor, 2026-11-15). */
+		pick?: PhaseFlow;
 	}
 
 	let {
@@ -175,7 +177,9 @@
 		watchedTimer,
 		over,
 		watchedHistory = false,
-		watchLead
+		watchLead,
+		mini = false,
+		pick
 	}: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
@@ -228,28 +232,12 @@
 		};
 	});
 	const layout = $derived(grimoire.layout);
-	// Who nominated and who was nominated today, for the marks on the seats (Track nominations).
-	/**
-	 * A seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they
-	 * happen, as the ghost vote shows on the dead. The dead may still be nominated but not
-	 * nominate (Trevor, 2026-10-24), so they show only the gavel, unless their character may
-	 * (`mayNominate`) or they nominated before they died.
-	 */
-	function seatNominationMarks(seatId: SeatId) {
-		if (!nominatedToday) return undefined;
-		const made = nominatedToday.made.has(seatId);
-		const received = nominatedToday.received.has(seatId);
-		const nominates = made || mayNominate(game, seatId, characters);
-		return { made: nominates ? made : undefined, received };
-	}
-	const nominatedToday = $derived.by(() => {
-		if (!gameSettings.of(game.gameId).trackNominations) return undefined;
-		const today = todaysNominations(game);
-		return {
-			made: new Set([...today.map((n) => n.nominator), ...storytellerNominators(game)]),
-			received: new Set(today.map((n) => n.nominee))
-		};
-	});
+	// Today's nomination marks on the seats, while Track nominations is on; none on the mini.
+	const seatNominationMarks = $derived(
+		!mini && gameSettings.of(game.gameId).trackNominations
+			? nominationMarks(game, characters)
+			: () => undefined
+	);
 	/**
 	 * The walk-through strip under the board takes this much of its height (measured, as it
 	 * scales with text). Tokens are sized as if it weren't there, so starting the night only
@@ -257,11 +245,11 @@
 	 */
 	const STRIP_H = '7.5rem';
 	// The Token size preview in Settings draws at this board's size.
-	$effect(() => rememberBoard({ width, height, seating: game.seating, layout }));
+	$effect(() => void (mini || rememberBoard({ width, height, seating: game.seating, layout })));
 	// Every shared grim keeps each seat at this board's place round the ring (Trevor, 2026-10-27).
 	const aspect = $derived(boardAspect({ width, height }));
 	$effect(() => {
-		if (!watching) roomHost().showAspect(game.gameId, aspect);
+		if (!watching && !mini) roomHost().showAspect(game.gameId, aspect);
 	});
 
 	/** How wide the corner may be now (BoardCorner). */
@@ -347,7 +335,7 @@
 	}));
 	const shown = $derived(seatArr.shown);
 	onMount(() => {
-		if (seatingRequested(game.gameId)) enterSeating(seatArr); // From Character selection.
+		if (!mini && seatingRequested(game.gameId)) enterSeating(seatArr); // From Character selection.
 	});
 	/**
 	 * The seat picked up by a hold (Trevor, 2026-10-26): it lifts and the rest of the board
@@ -360,6 +348,7 @@
 	let lastSeating: readonly SeatId[] = [];
 	$effect(() => {
 		const seating = game.seating;
+		if (mini) return;
 		if (isRotation(lastSeating, seating) && !isDefaultLayout(grimoire.layout))
 			grimoire.setLayout(followSeating(grimoire.layout, lastSeating, seating));
 		lastSeating = seating;
@@ -401,6 +390,7 @@
 	}
 	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
 	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
+		if (mini) return;
 		if (part === 'avatar') openProfile(seatId);
 		else if (watching) readCharacter(game.seats[seatId]?.characterId);
 		else if (part === 'note') editNote(seatId);
@@ -476,6 +466,7 @@
 	}));
 	// The setup flow's last step lands here with its setup reminders in the bank.
 	onMount(() => {
+		if (mini) return;
 		// History's Export opens the board first, so the picture is the board (Trevor, 2026-10-26).
 		if (location.hash === EXPORT_HASH) {
 			exportOpen = true;
@@ -517,7 +508,7 @@
 	// End game asked for from the day sheet (the Fiddle contest) opens over the board.
 	$effect.pre(() => void (endGameRequest.pending && (dayOpen = false)));
 	/** The Savant sheet and the question offering it before Dawn. */
-	let savant: SavantAsk;
+	let savant = $state<SavantAsk>();
 	// ── Assisted night order (Trevor, 2026-10-16): night-walk.svelte.ts ──
 	// Typed, as seat sizes depend on whether the walk-through is open.
 	const nw: NightWalk = new NightWalk((): NightWalkContext => ({
@@ -571,7 +562,7 @@
 		notStarted: phaseNow.kind === 'setup',
 		hand,
 		started: () => status.started(),
-		askSavant: (next) => savant.ask(next)
+		askSavant: (next) => (savant ? savant.ask(next) : next())
 	}));
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History ──
@@ -584,11 +575,11 @@
 			...(ended.winner ? { winner: ended.winner } : {}),
 			...(ended.reason ? { reason: ended.reason } : {})
 		};
-		if (!watching) roomHost().setEnded(game.gameId, over || undefined);
+		if (!watching && !mini) roomHost().setEnded(game.gameId, over || undefined);
 	});
 	// Phones in the room get the game's name-free result page to share (plan R4).
 	$effect(() => {
-		if (watching || !ended || !roomHost().code) return;
+		if (watching || mini || !ended || !roomHost().code) return;
 		const gameId = game.gameId;
 		void untrack(exportGame)
 			.then(gameResult)
@@ -644,6 +635,7 @@
 	// A new day resets the day timer to the time per living player (Trevor, 2026-10-19).
 	$effect(() => {
 		const day = `${game.gameId}:${dayNumber(game)}`;
+		if (mini) return;
 		untrack(() => liveDayTimer.newDay(day, livingByTeam(game).alive));
 	});
 
@@ -656,7 +648,7 @@
 	}
 
 	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
-	$effect(() => markBoardShown());
+	$effect(() => (mini ? undefined : markBoardShown()));
 
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
@@ -680,22 +672,7 @@
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
 	provideSeatPictures(() => (watching ? grimoire : undefined));
 	const secret = $derived(watching && !ended); // Nothing is secret once it is over (2026-11-15).
-	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
-	let ownLook = $state<PublicLook>();
-	let ownPicture = $state.raw<Blob>();
-	const look = $derived(watching ? grimoire.look : ownLook);
-	const logoOpacity = $derived(
-		watching
-			? drawnLook(grimoire.look).logo
-			: boardLooks.current.logo
-				? boardLooks.current.logoOpacity
-				: undefined
-	);
-	function shareLook(shown: PublicLook, picture?: Blob) {
-		ownLook = shown;
-		ownPicture = picture;
-		roomHost().showLook(game.gameId, shown, picture);
-	}
+	const lookNow = new ShownLook(() => ({ grimoire, watching }));
 	let menuOpen = $state(false);
 	/** The board shown to a player who looks at the Grimoire, from their night step. */
 	let showingGrim = $state(false);
@@ -733,8 +710,8 @@
 		characters,
 		layout: { ...layout, aspect },
 		corner: cornerInfo,
-		look,
-		picture: watching ? undefined : ownPicture,
+		look: lookNow.look,
+		picture: lookNow.picture,
 		pictureRoom: watching ? grimoire.room : undefined,
 		watched: watching ? (grimoire.watched ?? {}) : undefined
 	});
@@ -766,7 +743,8 @@
 	 */
 	$effect(() => {
 		const name = storytellerName.current;
-		if (watching || watchedHistory || ended || name === (game.storytellerName ?? '')) return;
+		if (watching || mini || watchedHistory || ended) return;
+		if (name === (game.storytellerName ?? '')) return;
 		untrack(() => grimoire.run({ type: 'SetStorytellerName', name }));
 	});
 
@@ -792,22 +770,27 @@
 	/>
 {/snippet}
 
-<BoardPane {grimoire} {watching} fill={!toolbar} bind:beside={paneAt}>
-	<div class="grimoire" bind:this={grimoireEl}>
+{#if mini || !toolbar}{@render boardBody()}{:else}<BoardPane
+		{grimoire}
+		{watching}
+		bind:beside={paneAt}>{@render boardBody()}</BoardPane
+	>{/if}
+{#snippet boardBody()}
+	<div class="grimoire" class:mini class:fill={!toolbar} bind:this={grimoireEl}>
 		<!-- The strip's share of the board's height, to size tokens without it (sizingHeight). -->
-		<div
-			class="strip-measure"
-			aria-hidden="true"
-			style:--strip-h={STRIP_H}
-			bind:clientHeight={sizing.stripReserve}
-		></div>
+		{#if !mini}<div
+				class="strip-measure"
+				aria-hidden="true"
+				style:--strip-h={STRIP_H}
+				bind:clientHeight={sizing.stripReserve}
+			></div>{/if}
 		<GameBackdrop
 			{game}
 			logo={boardLogo || undefined}
 			watched={watching ? { look: grimoire.look, room: grimoire.room } : undefined}
-			onlook={shareLook}
+			onlook={lookNow.share}
 		/>
-		{#if toolbar}<BoardToolbar
+		{#if !mini && toolbar}<BoardToolbar
 				{grimoire}
 				{watching}
 				{seatArr}
@@ -826,7 +809,7 @@
 				onMore={() => (menuOpen = true)}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26), in the same place on
-		     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too. -->
+			     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too. -->
 				{#snippet lead()}
 					<CoverButton
 						gameId={game.gameId}
@@ -853,6 +836,7 @@
 			class:walking={nw.walk !== undefined && !showingGrim}
 			class:ended={!!ended}
 			class:showing={showingGrim}
+			class:mini
 			inert={showingGrim}
 			style:--tray-h="{chip + 30}px"
 			style:--strip-h={nw.walk && !showingGrim ? STRIP_H : undefined}
@@ -861,12 +845,12 @@
 			bind:this={board}
 		>
 			<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18: his
-			switch and opacity; 2026-10-27: the name when there is no logo). -->
-			{#if logoOpacity !== undefined}
+				switch and opacity; 2026-10-27: the name when there is no logo). -->
+			{#if lookNow.logoOpacity !== undefined}
 				<BoardLogo
 					src={boardLogo || undefined}
 					name={showTitle ? game.script.meta?.name : undefined}
-					opacity={logoOpacity}
+					opacity={lookNow.logoOpacity}
 					height={sizing.sizingHeight > 0
 						? `${Math.round(0.42 * sizing.sizingHeight)}px`
 						: undefined}
@@ -883,7 +867,7 @@
 				{remDrag}
 				{hints}
 				{nw}
-				{watching}
+				watching={watching || mini}
 				{offScriptOk}
 				{nightNumbers}
 				nominations={seatNominationMarks}
@@ -894,300 +878,308 @@
 				onSeat={tapSeat}
 				onReminder={(seatId, id) => holdReminder(id, seatId)}
 				onLooseReminder={(id) => holdReminder(id)}
-				executionPick={flow.picking ? flow : undefined}
+				executionPick={mini ? (pick?.picking ? pick : undefined) : flow.picking ? flow : undefined}
 			/>
-			{#if nw.walk && !ended}
-				<NightStrip
-					{grimoire}
-					steps={nw.steps}
-					night={nw.walk.night}
-					index={nw.walk.index}
-					onIndex={(index) => nw.walk && (nw.walk = { ...nw.walk, index })}
-					onPastEnd={() => flow.endHint++}
-					asleepBy={nw.asleepRule}
-					emptySeatBy={nw.emptySeatRule}
-					attack={nw.attack}
-					onOpen={(step) => {
-						if (!nw.walk) return;
-						nw.guided = { step, night: nw.walk.night };
-						nw.guideOpen = true;
-					}}
-					onClose={() => (nw.walk = undefined)}
-				/>
-			{/if}
-			{#if ended}
-				<HistoryStrip {grimoire} />
+			{#if mini}
+				<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
 			{:else}
-				<ReminderBank
-					bind:this={bank}
-					{gestures}
-					{grimoire}
-					{board}
-					size={chip}
-					focus={nw.walk && nw.step ? stepFocusOf(nw.step, nw.walk.night, characters) : undefined}
-					focusMode={stepFocus.current.mode}
-					onHints={(h) => (hints.tray = h)}
-					run={flow.run}
-					disabled={watching}
-				>
-					{#if flow.picking}<ExecutionPickBar {flow} {game} {characters} />{/if}
-				</ReminderBank>
-			{/if}
-
-			<!-- Measures the tap target, the height every reminder takes on the board. -->
-			<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-			{#if boardRuleCount(game) > 0}
-				{@const tokenSize = Math.max(sizing.tapPx, Math.round(size * 0.5))}
-				<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
-					{@render ruleTokens(tokenSize)}
-				</div>
-			{/if}
-			<BoardCorner
-				{game}
-				{watching}
-				corner={cornerInfo}
-				gamePhase={phase}
-				fitRoom={sizing.fitCorner}
-				{width}
-				{rootFont}
-				{startedAt}
-				endedAt={ended?.endedAt}
-				editable
-				onShare={() => (phonesOpen = true)}
-				bind:titleW={sizing.titleW}
-				bind:titleH={sizing.titleH}
-				bind:room={corner}
-			></BoardCorner>
-			<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
-			{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-			<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
-		     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
-			<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
-				<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
-				<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
-					<DayTimer
-						{...timerFacts(game, characters)}
-						variant="compact"
-						readOnly={watching || !showTimer}
-						shown={watchedTimer}
-						{town}
+				{#if nw.walk && !ended}
+					<NightStrip
+						{grimoire}
+						steps={nw.steps}
+						night={nw.walk.night}
+						index={nw.walk.index}
+						onIndex={(index) => nw.walk && (nw.walk = { ...nw.walk, index })}
+						onPastEnd={() => flow.endHint++}
+						asleepBy={nw.asleepRule}
+						emptySeatBy={nw.emptySeatRule}
+						attack={nw.attack}
+						onOpen={(step) => {
+							if (!nw.walk) return;
+							nw.guided = { step, night: nw.walk.night };
+							nw.guideOpen = true;
+						}}
+						onClose={() => (nw.walk = undefined)}
 					/>
-				</div>
-				<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
+				{/if}
 				{#if ended}
-					<div class="game-over-slot">
-						<GameOverMenu
-							winner={ended.winner}
-							text={endedText}
-							{watching}
-							onExport={() => (exportOpen = true)}
-							onFeedback={watching ? undefined : () => (feedbackOpen = true)}
-							onShareGrim={shareGrim}
-						/>
+					<HistoryStrip {grimoire} />
+				{:else}
+					<ReminderBank
+						bind:this={bank}
+						{gestures}
+						{grimoire}
+						{board}
+						size={chip}
+						focus={nw.walk && nw.step ? stepFocusOf(nw.step, nw.walk.night, characters) : undefined}
+						focusMode={stepFocus.current.mode}
+						onHints={(h) => (hints.tray = h)}
+						run={flow.run}
+						disabled={watching}
+					>
+						{#if flow.picking}<ExecutionPickBar {flow} {game} {characters} />{/if}
+					</ReminderBank>
+				{/if}
+
+				<!-- Measures the tap target, the height every reminder takes on the board. -->
+				<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
+				{#if boardRuleCount(game) > 0}
+					{@const tokenSize = Math.max(sizing.tapPx, Math.round(size * 0.5))}
+					<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
+						{@render ruleTokens(tokenSize)}
 					</div>
 				{/if}
-			</div>
+				<BoardCorner
+					{game}
+					{watching}
+					corner={cornerInfo}
+					gamePhase={phase}
+					fitRoom={sizing.fitCorner}
+					{width}
+					{rootFont}
+					{startedAt}
+					endedAt={ended?.endedAt}
+					editable
+					onShare={() => (phonesOpen = true)}
+					bind:titleW={sizing.titleW}
+					bind:titleH={sizing.titleH}
+					bind:room={corner}
+				></BoardCorner>
+				<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
+				{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
+				<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
+			     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
+				<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
+					<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
+					<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
+						<DayTimer
+							{...timerFacts(game, characters)}
+							variant="compact"
+							readOnly={watching || !showTimer}
+							shown={watchedTimer}
+							{town}
+						/>
+					</div>
+					<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
+					{#if ended}
+						<div class="game-over-slot">
+							<GameOverMenu
+								winner={ended.winner}
+								text={endedText}
+								{watching}
+								onExport={() => (exportOpen = true)}
+								onFeedback={watching ? undefined : () => (feedbackOpen = true)}
+								onShareGrim={shareGrim}
+							/>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
-</BoardPane>
+{/snippet}
 
-{#if !watching}
-	<!-- Sounds for the Storyteller's actions (plan U7). -->
-	<BoardActionSounds
-		now={{
-			phase: phaseNow.kind,
-			executions: game.today.entries.filter((entry) => entry.kind === 'execution').length,
-			ended: !!ended
+{#if !mini}
+	{#if !watching}
+		<!-- Sounds for the Storyteller's actions (plan U7). -->
+		<BoardActionSounds
+			now={{
+				phase: phaseNow.kind,
+				executions: game.today.entries.filter((entry) => entry.kind === 'execution').length,
+				ended: !!ended
+			}}
+		/>
+		<SoundboardDialog bind:open={soundboardOpen} />
+	{/if}
+
+	<!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
+	<BoardMenu
+		bind:open={menuOpen}
+		{watching}
+		gameInfo={cornerHidden}
+		ended={!!ended}
+		onHistory={() => (historyOpen = true)}
+		onInfo={() => (infoOpen = true)}
+		onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
+		onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
+		onGameInfo={() => (modeMenuOpen = true)}
+		onCharacterSelection={startedAt === undefined && !setUp && !watching
+			? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+			: undefined}
+		onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !watching
+			? () => latePlayer?.start()
+			: undefined}
+		onAddRule={() => rules?.add()}
+		onArrange={() => enterSeating(seatArr)}
+		onReopen={() => (reopenOpen = true)}
+		newGame={watching ? undefined : newGameSheet}
+		onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
+		onEnd={() => (endOpen = true)}
+	/>
+	{#if !watching}<NewGameSheet
+			bind:this={newGameSheet}
+			{game}
+			started={startedAt !== undefined}
+			ended={!!ended}
+		/>{/if}
+
+	<ModeMenu
+		{game}
+		bind:open={modeMenuOpen}
+		editable={!watching}
+		{startedAt}
+		endedAt={ended?.endedAt}
+		{phase}
+		{watcherCount}
+		onShare={watching ? undefined : () => (phonesOpen = true)}
+	/>
+	<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
+	<BankReminderDialog
+		{grimoire}
+		{hand}
+		{watching}
+		onRemove={(id) => moveConfirm?.requestReturn(id)}
+	/>
+	<AlignmentAsk {grimoire} />
+	<StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
+	<FirstDeathAsk {grimoire} />
+	<DawnDuskAsks {grimoire} />
+	<ExplosionAsk {grimoire} />
+	<ReincarnateAsk {grimoire} />
+	<NominationAsk {grimoire} bind:asks={nominationAsks} />
+	<EndGameDialogs
+		{grimoire}
+		{ended}
+		{endedText}
+		{phase}
+		bind:endOpen
+		bind:reopenOpen
+		onChange={() => (endedRead += 1)}
+	/>
+
+	<InfoTokensSheet
+		bind:this={infoSheet}
+		bind:open={infoOpen}
+		characters={infoCharacters}
+		inPlay={charactersInPlay(game)}
+		bluffSets={infoBluffSets}
+		onChooseBluffs={() => {
+			infoReturn = undefined;
+			bluffsOpen = true;
+		}}
+		onclose={() => {
+			const back = infoReturn;
+			infoReturn = undefined;
+			back?.();
 		}}
 	/>
-	<SoundboardDialog bind:open={soundboardOpen} />
-{/if}
 
-<!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
-<BoardMenu
-	bind:open={menuOpen}
-	{watching}
-	gameInfo={cornerHidden}
-	ended={!!ended}
-	onHistory={() => (historyOpen = true)}
-	onInfo={() => (infoOpen = true)}
-	onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
-	onGameInfo={() => (modeMenuOpen = true)}
-	onCharacterSelection={startedAt === undefined && !setUp && !watching
-		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
-		: undefined}
-	onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !watching
-		? () => latePlayer?.start()
-		: undefined}
-	onAddRule={() => rules?.add()}
-	onArrange={() => enterSeating(seatArr)}
-	onReopen={() => (reopenOpen = true)}
-	newGame={watching ? undefined : newGameSheet}
-	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
-	onEnd={() => (endOpen = true)}
-/>
-{#if !watching}<NewGameSheet
-		bind:this={newGameSheet}
+	<ReminderAsk {grimoire} />
+
+	<PhaseDialogs {flow} {game} {characters} notStarted={phaseNow.kind === 'setup'} />
+
+	<LeaveGuard {game} {watching} />
+
+	<SeatSheet
+		bind:open={sheetOpen}
+		{grimoire}
+		seatId={selected}
+		onDraw={(id) => {
+			sheetOpen = false;
+			onDraw(id);
+		}}
+		onNotes={(id) => editNote(id)}
+		onReminder={showReminder}
+		onNominated={nominated}
+		onExecute={(seatId) => flow.executeFromSeat(seatId)}
+	/>
+
+	<SeatProfileDialog bind:open={profileOpen} {game} seatId={profileSeat} />
+
+	<!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
+	<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
+
+	<HistoryDialog bind:open={historyOpen} {grimoire} />
+	{#if !watching}<LateSeatOnBoard bind:this={latePlayer} {grimoire} place={startPlacing} />{/if}
+
+	<ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
+	{#if !watching}
+		<GameFeedbackSheet bind:open={feedbackOpen} {game} />
+	{/if}
+
+	<BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
+
+	<!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
+	<Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
+		<RoomPanel game={grimoire.open} />
+	</Dialog>
+
+	<DaySheet
+		bind:open={dayOpen}
+		game={grimoire.open}
+		phase={phaseNow}
+		cover={coverDetails}
+		{coverTimer}
+		{coverActions}
+		onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
+		{town}
+		onEndDay={(inDay) => flow.startExecution(inDay)}
+		mini={miniGrim}
+		pick={flow}
+		onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
+		onSavant={(seatId) => savant?.show(seatId)}
+	/>
+	<SavantAsk bind:this={savant} {grimoire} />
+
+	<GuidedStep
+		bind:open={nw.guideOpen}
+		{grimoire}
+		step={nw.guidedStep}
+		night={nw.guided?.night ?? 'first'}
+		steps={nw.guidedSteps}
+		onStep={(step) => {
+			if (!nw.guided) return;
+			nw.guided = { step, night: nw.guided.night };
+			// The walk-through under the board follows.
+			if (nw.walk && nw.walk.night === nw.guided.night) {
+				const i = nw.steps.findIndex((s) => s.id === step.id);
+				if (i >= 0) nw.walk = { ...nw.walk, index: i };
+			}
+		}}
+		onInfoTokens={(token, filled) => {
+			// A card the step's text names opens over the step, which stays open under it.
+			if (token && infoSheet) return infoSheet.openWith(token, filled);
+			// The sheet opens over the step, which stays open under it (Trevor, 2026-10-20).
+			infoReturn = undefined;
+			infoOpen = true;
+		}}
+		onChooseBluffs={() => (bluffsOpen = true)}
+		onShowGrimoire={() => (showingGrim = true)}
+		onPlace={(reminder, at) => nw.placeOnBoard(reminder, at)}
+		{onDraw}
+	/>
+
+	<AlignmentDraw bind:open={drawOpen} {grimoire} seatId={drawFor} />
+
+	<BluffsSheet
+		bind:open={bluffsOpen}
 		{game}
-		started={startedAt !== undefined}
-		ended={!!ended}
-	/>{/if}
+		{characters}
+		readOnly={watching}
+		dispatch={(command) => grimoire.open.run(command)}
+	/>
 
-<ModeMenu
-	{game}
-	bind:open={modeMenuOpen}
-	editable={!watching}
-	{startedAt}
-	endedAt={ended?.endedAt}
-	{phase}
-	{watcherCount}
-	onShare={watching ? undefined : () => (phonesOpen = true)}
-/>
-<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-<BankReminderDialog
-	{grimoire}
-	{hand}
-	{watching}
-	onRemove={(id) => moveConfirm?.requestReturn(id)}
-/>
-<AlignmentAsk {grimoire} />
-<StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
-<FirstDeathAsk {grimoire} />
-<DawnDuskAsks {grimoire} />
-<ExplosionAsk {grimoire} />
-<ReincarnateAsk {grimoire} />
-<NominationAsk {grimoire} bind:asks={nominationAsks} />
-<EndGameDialogs
-	{grimoire}
-	{ended}
-	{endedText}
-	{phase}
-	bind:endOpen
-	bind:reopenOpen
-	onChange={() => (endedRead += 1)}
-/>
-
-<InfoTokensSheet
-	bind:this={infoSheet}
-	bind:open={infoOpen}
-	characters={infoCharacters}
-	inPlay={charactersInPlay(game)}
-	bluffSets={infoBluffSets}
-	onChooseBluffs={() => {
-		infoReturn = undefined;
-		bluffsOpen = true;
-	}}
-	onclose={() => {
-		const back = infoReturn;
-		infoReturn = undefined;
-		back?.();
-	}}
-/>
-
-<ReminderAsk {grimoire} />
-
-<PhaseDialogs {flow} {game} {characters} notStarted={phaseNow.kind === 'setup'} />
-
-<LeaveGuard {game} {watching} />
-
-<SeatSheet
-	bind:open={sheetOpen}
-	{grimoire}
-	seatId={selected}
-	onDraw={(id) => {
-		sheetOpen = false;
-		onDraw(id);
-	}}
-	onNotes={(id) => editNote(id)}
-	onReminder={showReminder}
-	onNominated={nominated}
-	onExecute={(seatId) => flow.executeFromSeat(seatId)}
-/>
-
-<SeatProfileDialog bind:open={profileOpen} {game} seatId={profileSeat} />
-
-<!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
-<NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
-
-<HistoryDialog bind:open={historyOpen} {grimoire} />
-{#if !watching}<LateSeatOnBoard bind:this={latePlayer} {grimoire} place={startPlacing} />{/if}
-
-<ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
-{#if !watching}
-	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
+	<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={showReminder} />
 {/if}
 
-<BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
+{#snippet miniGrim()}<GrimoireBoard {grimoire} mini pick={flow} />{/snippet}
 
-<!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
-<Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
-	<RoomPanel game={grimoire.open} />
-</Dialog>
-
-{#snippet coverActions()}
-	<GrimCoverActions view={playerView} />
-{/snippet}
+{#snippet coverActions()}<GrimCoverActions view={playerView} />{/snippet}
 
 {#snippet coverTimer()}
 	<!-- The same timer as the board's, Back to town at its front (Trevor, 2026-11-03). -->
 	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" {town} />{/if}
 {/snippet}
-
-<DaySheet
-	bind:open={dayOpen}
-	game={grimoire.open}
-	phase={phaseNow}
-	cover={coverDetails}
-	{coverTimer}
-	{coverActions}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
-	{town}
-	onEndDay={() => flow.startExecution()}
-	onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
-	onSavant={(seatId) => savant.show(seatId)}
-/>
-<SavantAsk bind:this={savant} {grimoire} />
-
-<GuidedStep
-	bind:open={nw.guideOpen}
-	{grimoire}
-	step={nw.guidedStep}
-	night={nw.guided?.night ?? 'first'}
-	steps={nw.guidedSteps}
-	onStep={(step) => {
-		if (!nw.guided) return;
-		nw.guided = { step, night: nw.guided.night };
-		// The walk-through under the board follows.
-		if (nw.walk && nw.walk.night === nw.guided.night) {
-			const i = nw.steps.findIndex((s) => s.id === step.id);
-			if (i >= 0) nw.walk = { ...nw.walk, index: i };
-		}
-	}}
-	onInfoTokens={(token, filled) => {
-		// A card the step's text names opens over the step, which stays open under it.
-		if (token && infoSheet) return infoSheet.openWith(token, filled);
-		// The sheet opens over the step, which stays open under it (Trevor, 2026-10-20).
-		infoReturn = undefined;
-		infoOpen = true;
-	}}
-	onChooseBluffs={() => (bluffsOpen = true)}
-	onShowGrimoire={() => (showingGrim = true)}
-	onPlace={(reminder, at) => nw.placeOnBoard(reminder, at)}
-	{onDraw}
-/>
-
-<AlignmentDraw bind:open={drawOpen} {grimoire} seatId={drawFor} />
-
-<BluffsSheet
-	bind:open={bluffsOpen}
-	{game}
-	{characters}
-	readOnly={watching}
-	dispatch={(command) => grimoire.open.run(command)}
-/>
-
-<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={showReminder} />
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
@@ -1236,6 +1228,13 @@
 	}
 	.board.walking {
 		margin-bottom: calc(var(--strip-h) + var(--tray-h) + 3 * var(--space-2));
+	}
+	.grimoire:is(.mini, .fill) {
+		height: 100%;
+		min-height: 0;
+	}
+	.board.mini {
+		margin: 0;
 	}
 	/* A point on the board with its seat centred on it. */
 	/* While arranging, a press drags a seat instead of scrolling or zooming. */

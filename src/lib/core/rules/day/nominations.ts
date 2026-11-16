@@ -215,6 +215,33 @@ export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLoo
 	return nominationsPerDay(game, seatId, characters) > 0;
 }
 
+/** A seat's nomination marks on the board: whether they nominated today, and were nominated. */
+export interface NominationMarks {
+	/** Undefined when they may not nominate (the dead), so only the gavel shows. */
+	made?: boolean;
+	received: boolean;
+}
+
+/**
+ * Each seat's nomination marks (Trevor, 2026-10-23): on every player, greyed until they happen,
+ * as the ghost vote shows on the dead. The dead may still be nominated but not nominate (Trevor,
+ * 2026-10-24), so they show only the gavel, unless their character may (`mayNominate`) or they
+ * nominated before they died.
+ */
+export function nominationMarks(
+	game: Game,
+	characters: CharacterLookup
+): (seatId: SeatId) => NominationMarks {
+	const today = todaysNominations(game);
+	const made = new Set([...today.map((n) => n.nominator), ...storytellerNominators(game)]);
+	const received = new Set(today.map((n) => n.nominee));
+	return (seatId) => {
+		const did = made.has(seatId);
+		const nominates = did || mayNominate(game, seatId, characters);
+		return { made: nominates ? did : undefined, received: received.has(seatId) };
+	};
+}
+
 /**
  * Whether `nominator`'s next nomination today is an extra one their character allows after the
  * day's first execution (`nominationsAfterExecution`, the Butcher): the once-a-day limits don't

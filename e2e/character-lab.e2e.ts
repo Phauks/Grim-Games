@@ -251,7 +251,12 @@ test('Start on opens the game on a later day', async ({ page }) => {
 	// to end the game, as it should. Cancel it to see the day.
 	const endGame = board.getByRole('alertdialog', { name: 'End game?' });
 	await expect(execution.or(endGame)).toBeVisible();
-	if (await endGame.isVisible()) await endGame.getByRole('button', { name: 'Cancel' }).tap();
+	if (await endGame.isVisible()) {
+		// On a phone the lab's board is below the fold and its dialog's Cancel past the bottom
+		// of the screen, which a tap can't scroll to inside the frame: bring the whole frame up.
+		await frame.locator('iframe').evaluate((el) => el.scrollIntoView({ block: 'end' }));
+		await endGame.getByRole('button', { name: 'Cancel' }).tap();
+	}
 	await expect(execution).toBeVisible();
 	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
