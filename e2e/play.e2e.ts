@@ -779,6 +779,26 @@ test('a title that only seemed to fit beside the buttons goes under them, never 
 	);
 });
 
+test("the Grim tab's board and its reminder tray fit above the tab bar, with no scrolling", async ({
+	page
+}) => {
+	// Trevor, 2026-11-16 (B): the tray sat behind the tab bar until the page was scrolled. On
+	// Trevor's phone's screen; a shorter one keeps 60dvh of ring and scrolls rather than crowd
+	// the seats under a token in hand.
+	if (test.info().project.name === 'phone') await page.setViewportSize({ width: 448, height: 997 });
+	await page.goto('/play#e=tb');
+	await page.getByRole('tab', { name: 'Grim' }).tap();
+	const town = page.getByTestId('player-grim');
+	const bar = page.locator('[data-bottom-bar]');
+	// The tray is the town's foot (tray-ring.ts), so the town's bottom is the tray's.
+	await expect(async () => {
+		const box = (await town.boundingBox())!;
+		const barBox = (await bar.boundingBox())!;
+		expect(box.y + box.height).toBeLessThanOrEqual(barBox.y + 1);
+	}).toPass();
+	expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('the header shares the script from an icon and has no Code button', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
@@ -926,6 +946,36 @@ test('a jinxed character shows its partners beside its name, and tapping shows t
 		.first()
 		.evaluate((li) => getComputedStyle(li).borderBottomStyle);
 	expect(line).toBe('solid');
+});
+
+// Trevor, 2026-11-16: the Djinn's rule is the Jinxes section, so the sheet leaves it out of
+// Fabled, as the printed sheet does, until Settings > Player shows it.
+// https://wiki.bloodontheclocktower.com/Djinn
+// Wiki: "The Djinn’s special rule is described by the Script Tool online, and is printed out automatically when you create a script with a character combination that is jinxed."
+test('the script sheet leaves out the Djinn until Settings shows it', async ({ page }) => {
+	const shared = [
+		{ id: '_meta', name: 'Djinn Sheet' },
+		'spy',
+		'magician',
+		'imp',
+		'djinn',
+		'sentinel'
+	];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Djinn Sheet', level: 1 })).toBeVisible();
+	const copy = page.getByTestId('script-copy');
+	await expect(copy.locator('[data-character="sentinel"]')).toHaveCount(1);
+	await expect(copy.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(copy.getByRole('button', { name: /^Jinxes/ })).toBeVisible();
+
+	await page.getByTestId('you-button').tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
+	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
+	await settings.getByText('Djinn on script sheets', { exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await expect(copy.locator('[data-character="djinn"]')).toHaveCount(1);
 });
 
 test('the title line’s sheet background, Print, Share and settings cog are one kind of button', async ({

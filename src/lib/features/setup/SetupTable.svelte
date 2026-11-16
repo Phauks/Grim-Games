@@ -21,9 +21,14 @@
 		 * out but stay pickable (Trevor, 2026-10-19).
 		 */
 		maxPlayers?: number;
+		/**
+		 * The printed sheet's look: each player count a column under its own tab, good rows
+		 * tinted blue and evil rows red, in ink a printer keeps (Trevor, 2026-11-16).
+		 */
+		printed?: boolean;
 	}
 
-	let { players, onPick, maxPlayers }: Props = $props();
+	let { players, onPick, maxPlayers, printed = false }: Props = $props();
 	const tooMany = (n: number) => maxPlayers !== undefined && n > maxPlayers;
 
 	const columns = Object.keys(BASE_DISTRIBUTION).map(Number);
@@ -39,7 +44,7 @@
 	and the script sheet (Trevor, 2026-10-17; https://wiki.bloodontheclocktower.com/Setup).
 	Fixed size whatever the count.
 -->
-<table class="setup-table" data-testid="setup-table">
+<table class="setup-table" class:printed data-testid="setup-table">
 	<thead>
 		<tr>
 			<th scope="row">{t('setup.players')}</th>
@@ -149,6 +154,54 @@
 	[data-too-many]:not([data-current]) {
 		color: var(--on-surface-muted);
 		opacity: 0.45;
+	}
+	/* Printed: a column per player count under an accent tab, outlined in ink (Trevor,
+	   2026-11-16). The type names and counts take the teams' own colours, dark on paper. */
+	.setup-table.printed {
+		border-collapse: separate;
+		border-spacing: 0.2em 0;
+		font-size: 0.85rem;
+	}
+	.printed th,
+	.printed td {
+		padding: 0.1em 0;
+		border: 0;
+	}
+	.printed th[scope='col'],
+	.printed td {
+		border-inline: 0.1em solid var(--print-ink);
+		font-weight: 700;
+	}
+	.printed th[scope='col'] {
+		border-top: 0.1em solid var(--print-ink);
+		border-radius: 0.5em 0.5em 0 0;
+		background: var(--accent);
+		color: var(--on-accent);
+		font-family: var(--font-heading);
+		font-size: 1.1em;
+	}
+	.printed thead th[scope='row'] {
+		font-weight: 400;
+	}
+	.printed tbody tr:last-child td {
+		border-bottom: 0.1em solid var(--print-ink);
+		border-radius: 0 0 0.5em 0.5em;
+	}
+	.printed tbody tr[data-type='townsfolk'] > *,
+	.printed tbody tr[data-type='outsider'] > * {
+		color: var(--good);
+	}
+	.printed tbody tr[data-type='minion'] > *,
+	.printed tbody tr[data-type='demon'] > * {
+		color: var(--evil);
+	}
+	.printed tbody tr[data-type='townsfolk'] td,
+	.printed tbody tr[data-type='outsider'] td {
+		background: var(--print-good-tint);
+	}
+	.printed tbody tr[data-type='minion'] td,
+	.printed tbody tr[data-type='demon'] td {
+		background: var(--print-evil-tint);
 	}
 	/* The chosen total in gold; its counts below stay red (Trevor, 2026-10-18). */
 	thead [data-current] {

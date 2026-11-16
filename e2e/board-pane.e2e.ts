@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { closePane, storytellerPane } from './players.ts';
+import { closePane, openPane, storytellerPane } from './players.ts';
 
 // The Storyteller's Game notes and Players beside the board (plan M86, Trevor 2026-11-15: "I
 // really like seeing the notes right next to the game grim"; "we should show on a player icon
@@ -89,4 +89,34 @@ test("a seated player's message marks their seat, and the mark opens them in Pla
 	await expect(mark).toHaveCount(0);
 	await closePane(page);
 	await phoneContext.close();
+});
+
+test('beside the board, the pane ends above the on-screen keyboard', async ({ page }) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const pane = await openPane(page, 'Game notes');
+	// A phone shows the pane as a full-screen sheet, which already lifts above the keyboard.
+	const beside = page.getByTestId('beside-pane');
+	test.skip(!(await beside.isVisible()), 'the pane is a sheet on this screen');
+	await expect(pane).toBeVisible();
+	const height = page.viewportSize()!.height;
+	// The keyboard as keyboard-inset.ts measures it (Trevor, 2026-11-16: notes in the Storyteller's
+	// pane must work with the keyboard up).
+	const keyboard = Math.round(height * 0.35);
+	await page.evaluate(
+		(inset) => document.documentElement.style.setProperty('--keyboard-inset', `${inset}px`),
+		keyboard
+	);
+	await expect
+		.poll(async () => {
+			const box = (await beside.boundingBox())!;
+			return box.y + box.height;
+		})
+		.toBeLessThanOrEqual(height - keyboard + 1);
+	await expect(beside).toBeInViewport();
 });

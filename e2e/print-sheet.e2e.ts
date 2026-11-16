@@ -246,26 +246,34 @@ test('rules terms print without their dotted underline unless switched on', asyn
 // Trevor, 2026-10-22 (Ravenswood's info back), 2026-10-29: a switch per item on each side,
 // so the jinxes, Fabled and Loric go on the front, the back or both.
 test('the jinxes, Fabled and Loric go on either side, or both', async ({ page }) => {
-	const shared = [{ id: '_meta', name: 'Info Back' }, 'chef', 'magician', 'spy', 'imp', 'djinn'];
+	const shared = [
+		{ id: '_meta', name: 'Info Back' },
+		'chef',
+		'magician',
+		'spy',
+		'imp',
+		'djinn',
+		'sentinel'
+	];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
 	await expect(page.getByRole('heading', { name: 'Info Back', level: 1 })).toBeVisible();
 	const { preview, fields } = await openSheet(page);
 	const front = preview.locator('.front');
 	const back = preview.locator('.back');
-	await expect(front.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(front.locator('[data-character="sentinel"]')).toHaveCount(1);
 	await expect(front.locator('.jinx')).toHaveCount(1);
-	await expect(back.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(back.locator('[data-character="sentinel"]')).toHaveCount(0);
 	await expect(back.locator('.jinx')).toHaveCount(0);
 
 	// The back's switches: Fabled and Loric, and Jinxes, are the second of each name.
 	await fields.getByText('Fabled and Loric', { exact: true }).nth(1).tap();
 	await fields.getByText('Jinxes', { exact: true }).nth(1).tap();
-	await expect(back.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(back.locator('[data-character="sentinel"]')).toHaveCount(1);
 	await expect(back.locator('.jinx')).toHaveCount(1);
 	// Both sides now; then the front's off.
-	await expect(front.locator('[data-character="djinn"]')).toHaveCount(1);
+	await expect(front.locator('[data-character="sentinel"]')).toHaveCount(1);
 	await fields.getByText('Fabled and Loric', { exact: true }).first().tap();
-	await expect(front.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(front.locator('[data-character="sentinel"]')).toHaveCount(0);
 	await expect(front.locator('[data-character="spy"]')).toHaveCount(1);
 
 	// No back: its rows stay, greyed out, and page 2 goes.
@@ -274,6 +282,27 @@ test('the jinxes, Fabled and Loric go on either side, or both', async ({ page })
 	await expect(
 		fields.getByRole('checkbox', { name: 'Night order', exact: true, includeHidden: true })
 	).toBeDisabled();
+});
+
+// Trevor, 2026-11-16: the Djinn's rule is the Jinxes section, so it prints only when its side's
+// switch is on, as TPI's printout leaves it out. https://wiki.bloodontheclocktower.com/Djinn
+// Wiki: "The Djinn’s special rule is described by the Script Tool online, and is printed out automatically when you create a script with a character combination that is jinxed."
+test('the Djinn prints only when its switch is on', async ({ page }) => {
+	const shared = [{ id: '_meta', name: 'Djinn Print' }, 'chef', 'magician', 'spy', 'imp', 'djinn'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name: 'Djinn Print', level: 1 })).toBeVisible();
+	const { preview, fields } = await openSheet(page);
+	const front = preview.locator('.front');
+	const djinn = fields.getByRole('checkbox', { name: 'Djinn', exact: true, includeHidden: true });
+	await expect(front.locator('.jinx')).toHaveCount(1);
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(0);
+	await expect(djinn.first()).not.toBeChecked();
+	await fields.getByText('Djinn', { exact: true }).first().tap();
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(1);
+	// Greyed out while its side has no Fabled and Loric.
+	await fields.getByText('Fabled and Loric', { exact: true }).first().tap();
+	await expect(djinn.first()).toBeDisabled();
+	await expect(front.locator('[data-character="djinn"]')).toHaveCount(0);
 });
 
 // M56, Trevor 2026-11-05: "allow including a qr code of the script", on either side since
@@ -339,4 +368,34 @@ test('Download PDF saves both sides as a PDF named after the script', async ({ p
 	expect(pdf).toContain('(Washerwoman)');
 	// Saved, the Print screen closes.
 	await expect(screen).toBeHidden();
+});
+
+// Trevor, 2026-11-16: the back's name runs in one line across the top however long it is, the
+// player counts under it, and the right side stays the QR code's.
+test("the back's script name stays on one line above the player counts", async ({ page }) => {
+	const name = 'The Midnight Carnival of Whispering Ravens and Broken Clocks';
+	const shared = [{ id: '_meta', name }, 'chef', 'empath', 'spy', 'imp'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+	const { preview } = await openSheet(page);
+	const back = preview.locator('.back');
+	const title = back.getByRole('heading', { name, level: 1 });
+	const counts = back.getByTestId('setup-table');
+	await expect(counts).toBeVisible();
+	await expect
+		.poll(() =>
+			title.evaluate((h) => {
+				const line = parseFloat(getComputedStyle(h).lineHeight);
+				return h.scrollWidth <= h.clientWidth + 1 && h.getBoundingClientRect().height < line * 2;
+			})
+		)
+		.toBe(true);
+	const [titleBox, countsBox, qrBox] = await Promise.all([
+		title.boundingBox(),
+		counts.boundingBox(),
+		back.getByTestId('print-qr').boundingBox()
+	]);
+	expect(countsBox!.y).toBeGreaterThanOrEqual(titleBox!.y + titleBox!.height - 1);
+	expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(qrBox!.x + 1);
+	expect(countsBox!.x + countsBox!.width).toBeLessThanOrEqual(qrBox!.x + 1);
 });

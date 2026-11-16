@@ -88,8 +88,11 @@ export type ClientMessage =
 	| { type: 'sit'; place: { x: number; y: number } }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
-	/** Count off (plan J40): the number this player counted to, or `null` to let theirs go. */
-	| { type: 'count'; number: number | null }
+	/**
+	 * Count off (plan J40): the number this player counted to, or `null` to let theirs go.
+	 * `free`: only if no one holds it yet, as this phone saw it.
+	 */
+	| { type: 'count'; number: number | null; free?: true }
 	/** Travellers choose (room-traveller-pick.ts): hold one, `null` to let it go, then confirm. */
 	| { type: 'hold-traveller'; pickId: string; characterId: CharacterId | null }
 	| { type: 'confirm-traveller'; pickId: string }
@@ -113,7 +116,7 @@ export type ClientMessage =
 	| { type: 'let-back-in'; memberId: string }
 	/** Lets phones move their own seat, or locks seating (plan J38). */
 	| { type: 'seating'; open: boolean }
-	/** Starts a count off (plan J40); apps from before 2026-10-30 also name who is 1. */
+	/** Starts a count off (plan J40), with who is 1 when it is known already. */
 	| { type: 'count-off'; first?: { memberId: string } | { name: string } }
 	| { type: 'end-count-off' } // Done (once the board has the order) or Cancel.
 	/** Travellers choose on their phones: the Travellers allowed and the seats choosing. */
@@ -127,8 +130,8 @@ export type ClientMessage =
 	| { type: 'close-traveller-pick' }
 	/** Confirms a Traveller for a seat (a player without a phone), or `null` lets its hold go. */
 	| { type: 'traveller-for'; seatId: SeatId; characterId: CharacterId | null }
-	/** Names a number for a player without a phone; no name clears it. */
-	| { type: 'name-count'; number: number; name?: string }
+	/** Gives a number to a phone in the room, or names it for a player without one; neither clears it. */
+	| { type: 'name-count'; number: number; name?: string; memberId?: string }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
 	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }

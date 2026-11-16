@@ -247,12 +247,17 @@ async function keepFirst(page: Page): Promise<string> {
 			);
 	for (let n = 0; n < 6 && (await shown()); n++) {
 		const which = await asked.first().getAttribute('data-testid');
+		const question = await asked.first().innerText();
 		if (which === 'draft-hidden-choice')
 			await asked.first().getByRole('button', { name: 'As drafted' }).tap();
 		else if (which === 'draft-ability')
 			await asked.first().getByRole('button', { name: 'Later' }).tap();
 		else await asked.first().getByRole('button').first().tap();
-		await expect(page.getByTestId(which!)).toBeHidden();
+		// Gone, or the next question (Legion asks its Demons, then its Outsiders).
+		const now = page.getByTestId(which!);
+		await expect
+			.poll(async () => !(await now.isVisible()) || (await now.innerText()) !== question)
+			.toBe(true);
 	}
 	// Lil' Monsta turns its player into a Minion: they draft again, offered Minions only.
 	if (await page.getByTestId('turned-by').isVisible()) return keepFirst(page);
@@ -428,7 +433,12 @@ test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really t
 	);
 	// Five players: 3 Townsfolk, 1 Minion and the Demon; the Minion seat is the Marionette's.
 	expect(state.reserved).toBe(true);
-	expect(state.config.reserve).toEqual({ id: 'marionette', type: 'minion', nextTo: 'demon' });
+	expect(state.config.reserve).toEqual({
+		id: 'marionette',
+		type: 'minion',
+		nextTo: 'demon',
+		alsoAt: 3
+	});
 	expect(state.slots.minion).toBe(0);
 	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
 	await keepFirst(page);
@@ -440,8 +450,8 @@ test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really t
 		(key) => JSON.parse(localStorage.getItem(key)!).state,
 		`grim-games:mode-deal:v1:${gameId}`
 	);
-	// A real Atheist, drafted by chance, leaves no Demon, so no Marionette (its setup change).
-	const hasDemon = drafted.picks.some((id: string) => drafted.types[id] === 'demon');
+	// A drafted Legion, real Atheist or Summoner, by chance, leaves no Marionette seat.
+	const hasDemon = drafted.reserved === true;
 	await page.getByRole('button', { name: 'Finish' }).tap();
 	const drunk = page.getByTestId('draft-hidden');
 	if (
@@ -456,12 +466,117 @@ test('Sushi Buffet with Marionette on: a good neighbour of the Demon is really t
 		return;
 	}
 	const reserved = page.getByTestId('reserved-seats').getByRole('listitem');
-	await expect(reserved.last()).toHaveText('None');
-	// The Demon's two neighbours, then None.
-	await expect(reserved).toHaveCount(3);
+	// The Demon's two neighbours, and no None: its seat was kept, so one must be it (Trevor,
+	// 2026-11-16).
+	await expect(reserved).toHaveCount(2);
+	await expect(reserved.getByRole('button', { name: 'None', exact: true })).toHaveCount(0);
 	await reserved.first().getByRole('button').first().tap();
 	await toBoardAfterDraft(page);
 	await expect(page.getByText('Is The Marionette').first()).toBeVisible();
+});
+
+// https://wiki.bloodontheclocktower.com/Marionette: with three Minions a second Minion seat is
+// kept, and a good player becomes that Minion on the first night.
+test('Sushi Buffet with Marionette on and three Minions: the Storyteller turns a good player into a Minion', async ({
+	page
+}) => {
+	await startIn(page, 'Sushi Buffet', 'Marionette');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	// Every seat drafted, as a game with three Minions would have it.
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		const picks = ['imp', 'chef', 'empath', 'monk', 'soldier'];
+		Object.assign(deal.state, {
+			picks,
+			offer: [],
+			slots: { townsfolk: 0, outsider: 0, minion: 0, demon: 0 },
+			reserved: true,
+			reservedExtra: 1
+		});
+		for (const id of picks) deal.state.types[id] = id === 'imp' ? 'demon' : 'townsfolk';
+		deal.drawn = [1, 2, 3, 4, 5];
+		delete deal.held;
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, `grim-games:mode-deal:v1:${gameId}`);
+	await page.reload();
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const drunk = page.getByTestId('draft-hidden');
+	const reserved = page.getByTestId('reserved-seats');
+	await expect(drunk.or(reserved)).toBeVisible();
+	if (await drunk.isVisible()) await drunk.getByRole('button', { name: 'None', exact: true }).tap();
+	// Seat 1 is the Imp: Seat 2 is the Marionette.
+	await reserved.getByRole('button', { name: 'Seat 2', exact: true }).tap();
+	const convert = page.getByTestId('draft-convert');
+	await expect(convert).toContainText('Which player does this character make a Minion?');
+	// Not the Marionette's seat.
+	await expect(convert.getByRole('button', { name: 'Seat 2', exact: true })).toHaveCount(0);
+	await convert.getByRole('button', { name: 'Seat 4', exact: true }).tap();
+	const minion = page
+		.getByTestId('convert-character')
+		.locator('.list button[data-character-id]')
+		.first();
+	const name = (await minion.innerText()).split('\n')[0].trim();
+	await minion.tap();
+	await expect(page).toHaveURL(BOARD);
+	await expect(page.getByText('Is The Marionette').first()).toBeVisible();
+	await expect(page.getByRole('button', { name: new RegExp(`^Seat 4: .*${name}$`) })).toBeVisible();
+});
+
+// https://wiki.bloodontheclocktower.com/Legion: most players are Legion, the rest good.
+test('Sushi Buffet deals Legion to most players once one drafts it', async ({ page }) => {
+	await startIn(page, 'Sushi Buffet');
+	await drawTile(page);
+	await page.keyboard.press('Escape');
+	const gameId = new URL(page.url()).pathname.split('/')[2];
+	const key = `grim-games:mode-deal:v1:${gameId}`;
+	await page.evaluate((key) => {
+		const deal = JSON.parse(localStorage.getItem(key)!);
+		deal.state.offer = ['legion'];
+		localStorage.setItem(key, JSON.stringify(deal));
+	}, key);
+	await page.reload();
+	await page.getByRole('list', { name: 'Bag' }).locator('button[data-state="held"]').tap();
+	await expect(rows(page).first()).toHaveAttribute('data-character-id', 'legion');
+	const first = rows(page).first();
+	await first.tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// Five players: 3 or 4 Legion, more than half and at least one good player.
+	const ask = page.getByRole('dialog', { name: 'Setup change' });
+	await expect(ask).toContainText('How many Demons in all?');
+	await expect(ask.getByRole('button', { name: /^\d$/ })).toHaveText(['3', '4']);
+	await ask.getByRole('button', { name: '3', exact: true }).tap();
+	await expect(ask).toContainText('How many Outsiders in all?');
+	await ask.getByRole('button', { name: /^\d$/ }).first().tap();
+	await expect(ask).toBeHidden();
+	let forced = 0;
+	for (let seat = 2; seat <= 5; seat++) {
+		await drawTile(page);
+		// A Legion seat is offered only Legion, told why, and can't refuse it.
+		const by = page.getByTestId('forced-by');
+		if ((await by.isVisible()) && (await by.innerText()).includes('Legion')) {
+			forced++;
+			await expect(rows(page)).toHaveCount(1);
+			await expect(page.getByRole('button', { name: 'Refuse offer' })).toBeDisabled();
+		} else await expect(page.locator('[data-character-id="legion"]')).toHaveCount(0);
+		await keepFirst(page);
+	}
+	expect(forced).toBe(2);
+	const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).state, key);
+	expect(state.picks.filter((id: string) => id === 'legion')).toHaveLength(3);
+	expect(state.picks.filter((id: string) => state.types[id] === 'demon')).toHaveLength(3);
+	await page.getByRole('button', { name: 'Finish' }).tap();
+	const drunk = page.getByTestId('draft-hidden');
+	if (
+		await drunk.waitFor({ timeout: 2000 }).then(
+			() => true,
+			() => false
+		)
+	)
+		await drunk.getByRole('button', { name: 'None', exact: true }).tap();
+	await toBoardAfterDraft(page);
+	await expect(page.getByRole('button', { name: /^Seat \d: .*Legion$/ })).toHaveCount(3);
 });
 
 // Grimbits' draft (https://grimbits.com/draft-buffet/): no Minions are drafted with a Kazali, and

@@ -86,7 +86,7 @@ import {
 	accountTags,
 	linkAccount,
 	restartStorytellers,
-	saveFeedbackToAccounts,
+	keepFeedback,
 	notePresence,
 	requestAccount,
 	roomPlayers,
@@ -404,7 +404,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'feedback') {
 				room = receiveFeedback(room, id, message.gameId, message.feedback, crypto.randomUUID());
-				this.ctx.waitUntil(saveFeedbackToAccounts(this.ctx, this.env, room, Date.now()));
+				this.ctx.waitUntil(keepFeedback(this.ctx, this.env, room, Date.now()));
 			} else if (message.type === 'script-ballot') {
 				room = castScriptBallot(room, id, message.voteId, message.choices, Date.now());
 			} else if (message.type === 'role-seen') {
@@ -412,7 +412,7 @@ export class Room extends DurableObject<RoomEnv> {
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'count') {
-				const next = takeCount(room, id, message.number);
+				const next = takeCount(room, id, message.number, message.free);
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'hold-traveller' || message.type === 'confirm-traveller') {
