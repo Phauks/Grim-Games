@@ -369,3 +369,33 @@ test('Download PDF saves both sides as a PDF named after the script', async ({ p
 	// Saved, the Print screen closes.
 	await expect(screen).toBeHidden();
 });
+
+// Trevor, 2026-11-16: the back's name runs in one line across the top however long it is, the
+// player counts under it, and the right side stays the QR code's.
+test("the back's script name stays on one line above the player counts", async ({ page }) => {
+	const name = 'The Midnight Carnival of Whispering Ravens and Broken Clocks';
+	const shared = [{ id: '_meta', name }, 'chef', 'empath', 'spy', 'imp'];
+	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
+	await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
+	const { preview } = await openSheet(page);
+	const back = preview.locator('.back');
+	const title = back.getByRole('heading', { name, level: 1 });
+	const counts = back.getByTestId('setup-table');
+	await expect(counts).toBeVisible();
+	await expect
+		.poll(() =>
+			title.evaluate((h) => {
+				const line = parseFloat(getComputedStyle(h).lineHeight);
+				return h.scrollWidth <= h.clientWidth + 1 && h.getBoundingClientRect().height < line * 2;
+			})
+		)
+		.toBe(true);
+	const [titleBox, countsBox, qrBox] = await Promise.all([
+		title.boundingBox(),
+		counts.boundingBox(),
+		back.getByTestId('print-qr').boundingBox()
+	]);
+	expect(countsBox!.y).toBeGreaterThanOrEqual(titleBox!.y + titleBox!.height - 1);
+	expect(titleBox!.x + titleBox!.width).toBeLessThanOrEqual(qrBox!.x + 1);
+	expect(countsBox!.x + countsBox!.width).toBeLessThanOrEqual(qrBox!.x + 1);
+});
