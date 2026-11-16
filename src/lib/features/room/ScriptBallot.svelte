@@ -199,6 +199,7 @@
 			facts={[{ label: t('room.scriptVote.author'), value: shown.author ?? t('common.none') }]}
 			entries={shown.characters ?? []}
 			data={officialData.current}
+			rated={{ name: shown.name, author: shown.author }}
 		/>
 	{/if}
 </Dialog>

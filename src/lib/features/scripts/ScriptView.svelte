@@ -340,6 +340,7 @@
 	{data}
 	sheet={preview || previewPending ? playerSheet : undefined}
 	extra={rows}
+	rated={{ name: preview?.meta.name ?? '', author: preview?.meta.author }}
 	{lead}
 	{version}
 >

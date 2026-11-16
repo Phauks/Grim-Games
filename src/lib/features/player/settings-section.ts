@@ -21,7 +21,8 @@ registerSettingsSection({
 			matchShape: false,
 			townMatchShape: true,
 			sheetBackground: 'theme',
-			reminderLines: DEFAULT_REMINDER_LINES
+			reminderLines: DEFAULT_REMINDER_LINES,
+			showJinxesOnly: false
 		});
 	},
 	order: 37
