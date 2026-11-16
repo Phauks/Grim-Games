@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_GRIMOIRE_BYTES } from '#lib/core/sync/room.ts';
 import {
+	isClosedStatus,
 	isReportStatus,
 	parseReportDraft,
 	parseReportGamePath,
@@ -129,5 +130,11 @@ describe('report statuses', () => {
 		expect(isReportStatus('in-progress')).toBe(true);
 		expect(REPORT_STATUSES.indexOf('in-progress')).toBe(REPORT_STATUSES.indexOf('accepted') + 1);
 		expect(REPORT_STATUSES.indexOf('done')).toBe(REPORT_STATUSES.indexOf('in-progress') + 1);
+	});
+});
+
+describe('closed reports', () => {
+	it("are the Done and Won't fix ones", () => {
+		expect(REPORT_STATUSES.filter(isClosedStatus)).toEqual(['done', 'declined']);
 	});
 });
