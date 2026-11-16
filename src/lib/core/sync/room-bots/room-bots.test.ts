@@ -45,12 +45,16 @@ describe('room bots', () => {
 		expect(replies(v, first.memory, self).send).toEqual([]);
 	});
 
-	it('taps its own place in the count off, or the first number free', () => {
-		const tokens = [{ number: 3, name: 'Ann' }];
-		expect(sent(view({ countOff: { size: 5, tokens: [] } }))).toEqual([
-			{ type: 'count', number: 3 }
+	it('taps its own place in the count off once 1 is locked, or the first number free', () => {
+		const one = { number: 1, name: 'Top' };
+		expect(sent(view({ countOff: { size: 5, tokens: [] } }))).toEqual([]);
+		expect(sent(view({ countOff: { size: 5, tokens: [one] } }))).toEqual([
+			{ type: 'count', number: 3, free: true }
 		]);
-		expect(sent(view({ countOff: { size: 5, tokens } }))).toEqual([{ type: 'count', number: 1 }]);
+		const tokens = [one, { number: 3, name: 'Ann' }];
+		expect(sent(view({ countOff: { size: 5, tokens } }))).toEqual([
+			{ type: 'count', number: 2, free: true }
+		]);
 	});
 
 	it('holds to see each new character once', () => {

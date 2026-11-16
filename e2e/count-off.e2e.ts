@@ -42,6 +42,15 @@ async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name?:
 	return phone;
 }
 
+/** The Storyteller locks who is at the top of the clock, number 1. */
+async function lockFirst(page: Page, name: string) {
+	await page
+		.getByTestId('count-off-host')
+		.getByRole('combobox', { name: 'Top of the clock' })
+		.tap();
+	await page.getByRole('option', { name, exact: true }).tap();
+}
+
 async function startCountOff(page: Page) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
@@ -66,20 +75,19 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	const ana = await joinAs(browser, testInfo, code, 'Ana');
 	const bo = await joinAs(browser, testInfo, code, 'Bo');
 
-	// Count off, in Seating's top bar (Trevor, 2026-11-01), starts at once: whoever the table picks
-	// as 1 taps it (Trevor, 2026-10-30).
+	// Count off, in Seating's top bar (Trevor, 2026-11-01). The Storyteller locks who is 1 first
+	// (Trevor, 2026-11-16: "lock 1, only allow selecting once a 1 is locked").
 	const host = await startCountOff(page);
-	await expect(host).toContainText('Count clockwise from 1');
-	// Cy has no phone, so the Storyteller names 1 for them.
-	await host.getByRole('button', { name: '1: free' }).tap();
-	const one = page.getByRole('alertdialog', { name: 'Player for 1' });
-	await one.getByRole('textbox').fill('Cy');
-	await one.getByRole('button', { name: 'Confirm' }).tap();
+	const sheet = ana.getByTestId('count-off');
+	await expect(sheet).toContainText('Waiting for the Storyteller to pick who is 1');
+	await expect(sheet.getByRole('button', { name: '2: free' })).toBeDisabled();
+	await lockFirst(page, 'Cy');
 	await expect(host.getByRole('button', { name: '1: Cy' })).toBeVisible();
 
-	// Each phone gets the sheet, with no grim behind it, and taps its number.
-	const sheet = ana.getByTestId('count-off');
+	// Each phone gets the sheet, with no grim behind it, and taps its number in any order; 1 is
+	// the Storyteller's.
 	await expect(sheet).toContainText(/Count clockwise from\s*Cy/);
+	await expect(sheet.getByRole('button', { name: '1: Cy' })).toBeDisabled();
 	await sheet.getByRole('button', { name: '3: free' }).tap();
 	await expect(sheet.getByRole('button', { name: '3: Ana' })).toHaveAttribute(
 		'aria-pressed',
@@ -123,11 +131,13 @@ test('a phone taps its number again to let it go, and a phone with no name gives
 	// seat once it had been selected".
 	test.slow();
 	const code = await openRoom(page);
+	await nameSeat(page, 1, 'Cy');
 	const ana = await joinAs(browser, testInfo, code, 'Ana');
 	const nameless = await joinAs(browser, testInfo, code);
 	const host = await startCountOff(page);
-
+	await lockFirst(page, 'Cy');
 	const sheet = ana.getByTestId('count-off');
+
 	await sheet.getByRole('button', { name: '3: free' }).tap();
 	await expect(host.getByRole('button', { name: '3: Ana' })).toBeVisible();
 	await sheet.getByRole('button', { name: '3: Ana' }).tap();
