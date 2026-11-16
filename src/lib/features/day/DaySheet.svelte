@@ -8,6 +8,7 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import GameNotesButton from '#lib/features/grimoire/GameNotesButton.svelte';
 	import GameLead from '#lib/features/shell/GameLead.svelte';
@@ -15,6 +16,8 @@
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import type { Snippet } from 'svelte';
 	import DayPanel from './DayPanel.svelte';
+	import ExecutionPickBar from '#lib/features/grimoire/ExecutionPickBar.svelte';
+	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import { LiveDay } from './live-day.svelte.ts';
 
 	/**
@@ -29,9 +32,17 @@
 		/**
 		 * Execution, which ends the day (Trevor, 2026-10-22): the board asks who was executed,
 		 * then closes the day sheet and starts tonight's night at Dusk. Without it there is no
-		 * Execution button.
+		 * Execution button. `inDay`: the mini grimoire is shown, so it asks there instead and the
+		 * day stays open (Trevor, 2026-11-15).
 		 */
-		onEndDay?: () => void;
+		onEndDay?: (inDay: boolean) => void;
+		/**
+		 * The board small and read-only in the left column of a wide day (Trevor, 2026-11-15:
+		 * "a smaller read-only version of the grim"); none on a phone, which has no room for it.
+		 */
+		mini?: Snippet;
+		/** The board's Execution, while its executed player is picked on the mini grimoire. */
+		pick?: PhaseFlow;
 		/** Opens the Savant information sheet for a seat (L5). */
 		onSavant?: (seatId: SeatId) => void;
 		/** A mad player broke madness that executes: the board's Execution asks (L84). */
@@ -65,8 +76,14 @@
 		coverActions,
 		onSoundboard,
 		town,
-		phase
+		phase,
+		mini,
+		pick
 	}: Props = $props();
+	/** The mini grimoire's width: 0 while the day is too narrow to show it. */
+	let miniWidth = $state(0);
+	const shown = $derived(!!mini && miniWidth > 0);
+	const picking = $derived(shown && !!pick?.picking);
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
@@ -101,19 +118,69 @@
 				onclick={onSoundboard}
 			/>{/if}{/snippet}
 	<div class="body">
-		<DayPanel game={day} {assistance} {onSavant} {onExecute} {town} />
+		<DayPanel
+			game={day}
+			{assistance}
+			{onSavant}
+			{onExecute}
+			{town}
+			side={mini ? side : undefined}
+		/>
 	</div>
 	{#snippet actions()}
 		<span class="day-name" data-testid="day-name" aria-hidden="true">{title}</span>
-		{#if onEndDay}
-			<Button variant="accent" icon="night" disabled={game.viewOnly} onclick={() => onEndDay?.()}
-				>{t('day.execution')}</Button
+		{#if picking && pick}
+			<!-- Picking on the mini grimoire: as on the board, Cancel and Confirm (2026-11-06). -->
+			<ModalActions
+				onCancel={() => pick.cancelPick()}
+				onConfirm={() => pick.confirmPick()}
+				disabled={pick.picked === undefined}
+			/>
+		{:else if onEndDay}
+			<Button
+				variant="accent"
+				icon="night"
+				disabled={game.viewOnly}
+				onclick={() => onEndDay?.(shown)}>{t('day.execution')}</Button
 			>
 		{/if}
 	{/snippet}
 </Dialog>
 
+{#snippet side()}
+	<!-- Only in a wide day's left column; measured, so a narrow day never draws the board. -->
+	<div class="day-side">
+		<div class="mini-grim" data-testid="day-mini-grim" bind:clientWidth={miniWidth}>
+			{#if shown}{@render mini?.()}{/if}
+		</div>
+		{#if picking && pick}<ExecutionPickBar
+				flow={pick}
+				game={game.game}
+				characters={game.characters}
+				inline
+			/>{/if}
+	</div>
+{/snippet}
+
 <style>
+	/* Under the timer and counts, across the left column (DayPanel's toolbar). */
+	.day-side {
+		display: none;
+		flex-basis: 100%;
+		gap: var(--space-2);
+	}
+	@container day (min-width: 60rem) {
+		.day-side {
+			display: grid;
+		}
+	}
+	/* Square, as the seat ring is round. */
+	.mini-grim {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 1;
+		overflow: hidden;
+	}
 	/* The day's name across from Execution, as the header's title looks. */
 	.day-name {
 		margin-right: auto;
