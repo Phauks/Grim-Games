@@ -17,6 +17,7 @@
 	import type { BotcScriptsEntry } from './botcscripts-api.ts';
 	import { botcCard } from './botcscripts-cards.ts';
 	import ScriptName from './ScriptName.svelte';
+	import ScriptRatingRow from './ScriptRatingRow.svelte';
 	import { pinnedRow } from '#lib/ui/layout/pinned.ts';
 
 	/**
@@ -45,6 +46,11 @@
 		/** More rows of the main info (`dt`/`dd`), e.g. the script's checks. */
 		extra?: Snippet;
 		/**
+		 * The script whose public rating shows in a Rating row (Trevor, 2026-11-16): its own
+		 * name and author, as the script itself gives them. Left out, no Rating row.
+		 */
+		rated?: { name: string; author?: string };
+		/**
 		 * Above the heading, e.g. a Back button. The heading, the name and the actions stay
 		 * pinned to the top of the scrolling details as its header (Trevor, 2026-10-17; 2026-10-18:
 		 * the controls sit in the header of whatever is selected, in Search and the Library).
@@ -52,8 +58,20 @@
 		lead?: Snippet;
 	}
 
-	let { heading, name, logo, facts, entries, data, actions, sheet, version, extra, lead }: Props =
-		$props();
+	let {
+		heading,
+		name,
+		logo,
+		facts,
+		entries,
+		data,
+		actions,
+		sheet,
+		version,
+		extra,
+		rated,
+		lead
+	}: Props = $props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
 </script>
@@ -90,6 +108,7 @@
 			<dd class="version">{@render version()}</dd>
 		{/if}
 		{@render extra?.()}
+		{#if rated}<ScriptRatingRow name={rated.name} author={rated.author} />{/if}
 	</dl>
 	{#if sheet}
 		<div class="sheet" data-testid="script-sheet">{@render sheet()}</div>

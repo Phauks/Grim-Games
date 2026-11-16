@@ -9,6 +9,7 @@ import { curatedSource } from './curated.ts';
 import { handleHomebrewScripts } from './homebrew-scripts.ts';
 import { handleHomebrewWiki } from './homebrew-wiki.ts';
 import { Room, type RoomEnv } from './room.ts';
+import { handleScriptRating } from './script-ratings.ts';
 import { handleRoom } from './room-routes.ts';
 import { handlePushKey, PushKeyStore } from './push.ts';
 import { handleLiveGames, LiveGameIndex, type LiveGamesEnv } from './live-games.ts';
@@ -126,6 +127,8 @@ export default {
 		if (url.pathname === '/api/recap' || url.pathname.startsWith('/api/recap/')) {
 			return handleRecap(request, env);
 		}
+		const rating = await handleScriptRating(request, env, url);
+		if (rating) return rating;
 		const reports = await handleReports(request, env, url);
 		if (reports) return reports;
 		const profile = await handleProfiles(request, env, url);
