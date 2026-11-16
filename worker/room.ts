@@ -47,6 +47,7 @@ import {
 	setChoosing,
 	grimViewersOf,
 	setGrimViewers,
+	setNewestBuild,
 	setStorytellerBuild,
 	supportsProtocol,
 	townView,
@@ -358,8 +359,9 @@ export class Room extends DurableObject<RoomEnv> {
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
 			await linkAccount(this.ctx, ws, { memberId });
 			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
-			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
-			await this.save(markHere(joined, memberId));
+			// Saved even when nothing changed, so the Storyteller sees this phone is here now. A
+			// phone built after the Storyteller's app tells it there is an update to look for.
+			await this.save(markHere(setNewestBuild(joined, message.builtAt), memberId));
 			await notePhones(this.ctx.storage, this.present().size);
 			const script = await this.ctx.storage.get<ScriptView>('script');
 			if (script) send(ws, script);

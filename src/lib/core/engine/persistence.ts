@@ -156,6 +156,15 @@ export function readSavedGame(raw: unknown): SavedGame {
 	return checkCurrent(raw);
 }
 
+/** True when a stored document is a saved game in an older format than this build reads. */
+export function savedOlder(raw: unknown): boolean {
+	return (
+		isRecord(raw) &&
+		Number.isInteger(raw.schemaVersion) &&
+		(raw.schemaVersion as number) < SAVED_GAME_VERSION
+	);
+}
+
 /** A game's script's logo (`scriptLogo`), as the saved games list shows it. */
 export function gameScriptLogo(script: Script): string | undefined {
 	return scriptLogo({

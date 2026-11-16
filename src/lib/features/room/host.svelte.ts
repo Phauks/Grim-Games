@@ -28,6 +28,7 @@ import { seatChanges } from '#lib/core/sync/room-seating.ts';
 import { seatPictures } from '#lib/core/sync/room-pictures.ts';
 import { watchedParts } from '#lib/core/sync/watched-table.ts';
 import {
+	isNewerBuild,
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
 	type ClientMessage,
@@ -41,6 +42,7 @@ import {
 	type TravellerPickHostView,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
+import { lookForNewerBuild } from './newer-build.ts';
 import type {
 	ScriptVoteKind,
 	ScriptVoteOption,
@@ -599,6 +601,8 @@ export class RoomHost {
 	#receive(message: ServerMessage): void {
 		this.onMessage?.(message);
 		if (message.type === 'host-view') {
+			// A phone runs a newer build: offer it here too, through the update card.
+			if (isNewerBuild(message.newestBuiltAt, buildInfo.builtAt)) lookForNewerBuild();
 			this.transfer = message.transfer;
 			if (this.#game) applySeats(this.#game, this.members, message.members);
 			this.members = message.members;
