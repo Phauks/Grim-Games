@@ -199,7 +199,8 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await lock.tap();
 	await expect(unlock).toBeVisible();
 	await page.mouse.move(0, 0);
-	expect(await fill(unlock)).toEqual(await fill(countOff));
+	// The tap's pressed tint fades out over a transition, so wait for it to settle.
+	await expect.poll(() => fill(unlock)).toEqual(await fill(countOff));
 	await expect(line).toHaveCount(0);
 	await unlock.tap();
 	await expect(lock).toBeVisible();
