@@ -7,6 +7,7 @@
  * measured here: the bytes of each stored record, key or cached file.
  */
 import { BUILD_CACHE_PREFIX, RUNTIME_CACHE } from '#lib/features/offline/cache-rules.ts';
+import { emptyCache } from '#lib/features/offline/empty-cache.ts';
 import {
 	clearDatabases,
 	GAMES_DB,
@@ -123,6 +124,21 @@ function databaseBytes(name: string): Promise<number> {
 	});
 }
 
+/**
+ * Counts a cached file's bytes by reading it through. Never as a Blob: Chromium then keeps
+ * counting the file in `navigator.storage.estimate()` after it is cleared, even across a
+ * reload (checked 2026-11-16), so About's Storage used didn't drop after a clear.
+ */
+async function bodyBytes(response: Response): Promise<number> {
+	const reader = response.body?.getReader();
+	if (!reader) return 0;
+	let sum = 0;
+	for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
+		sum += chunk.value.byteLength;
+	}
+	return sum;
+}
+
 async function cacheBytes(matches: (name: string) => boolean): Promise<number | null> {
 	try {
 		let sum = 0;
@@ -131,7 +147,7 @@ async function cacheBytes(matches: (name: string) => boolean): Promise<number | 
 			const cache = await caches.open(name);
 			for (const request of await cache.keys()) {
 				const response = await cache.match(request);
-				if (response) sum += (await response.blob()).size;
+				if (response) sum += await bodyBytes(response);
 			}
 		}
 		return sum;
@@ -186,7 +202,7 @@ export async function clearItems(ids: ReadonlySet<StorageItemId>): Promise<void>
 	if (ids.has('wiki')) removeKeys(localStorage, isWikiKey);
 	if (ids.has('icons')) {
 		try {
-			await caches.delete(RUNTIME_CACHE);
+			await emptyCache(caches, RUNTIME_CACHE);
 		} catch {
 			// No Cache Storage: nothing stored there.
 		}
