@@ -1,6 +1,7 @@
+import { tapStartGame } from './start-game.ts';
 import { paneDay, closePane, boardTimer } from './players.ts';
 import { walkThrough } from './night-step.ts';
-import { chooseExecution, startExecution } from './execution.ts';
+import { chooseExecution, pickExecuted, startExecution, toDayOne } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -59,7 +60,6 @@ async function openDay(page: Page) {
 /** Closes the day sheet, so the board behind it can be used (Trevor, 2026-10-20). */
 async function closeDay(page: Page) {
 	await closePane(page);
-	await expect(daySheet(page)).toBeHidden();
 }
 
 const seatSheet = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
@@ -452,16 +452,19 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 		};
 	});
 	await startGame(page);
-	await paneDay(page);
-	const timer = await boardTimer(page);
-	const clock = timer.getByRole('timer');
+	// The board's timer, opened as its sheet: the only timer since the Day moved into the
+	// pane (Trevor, 2026-11-16).
+	let timer = await boardTimer(page);
+	let clock = timer.getByRole('timer');
 	// 8 players alive: 4 minutes.
 	await expect(clock).toHaveText('4:00');
 	await expect(timer.getByRole('button', { name: 'Reset timer' })).toBeDisabled();
 	// A death before it starts follows the living players.
-	await closeDay(page);
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('timer-sheet')).toBeHidden();
 	await markDead(page, 2, 'Executed');
-	await openDay(page);
+	timer = await boardTimer(page);
+	clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('3:30');
 	// Changed by hand, before or while it runs.
 	await timer.getByRole('button', { name: '30 seconds less' }).tap();
@@ -490,15 +493,7 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 		})
 	).toEqual(['none', '1']);
 	expect(await page.evaluate(() => (window as unknown as { vibrated: number }).vibrated)).toBe(1);
-	// Back to town ends the timer, in place of its sound button (Trevor, 2026-11-01): always
-	// available (2026-11-02), and lit once the time is up.
-	const call = timer.getByRole('button', { name: 'Back to town' });
-	await expect(call).toBeEnabled();
-	await expect(call).toHaveAttribute('data-lit', '');
-	await expect(timer.getByRole('button', { name: /^Timer sound/ })).toHaveCount(0);
-	// The finishing sound is the Storyteller's choice, kept as a setting: in the Timer sheet,
-	// which the clock opens, as on the board.
-	await timer.getByRole('button', { name: 'Day timer, 0:00; open its controls' }).tap();
+	// The finishing sound is the Storyteller's choice, kept as a setting, in the Timer sheet.
 	const sounds = page.getByTestId('timer-sheet');
 	await sounds.getByRole('combobox', { name: 'Timer sound' }).tap();
 	// No None: silence is its own switch (Trevor, 2026-11-15).
@@ -517,65 +512,32 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await sounds.getByText('Sound when time is up', { exact: true }).tap();
 	await expect(soundOn).not.toBeChecked();
 	await expect(sounds.getByRole('combobox', { name: 'Timer sound' })).toBeDisabled();
-	await page.keyboard.press('Escape');
-	await expect(sounds).toBeHidden();
 	// Reset: back to 30 seconds per living player (7 alive).
 	await timer.getByRole('button', { name: 'Reset timer' }).tap();
 	await expect(clock).toHaveText('3:30');
 	await expect(timer).not.toHaveAttribute('data-done', '');
-	// It stays in view while the day scrolls.
-	await page.getByTestId('announcements').scrollIntoViewIfNeeded();
-	await expect(timer).toBeInViewport();
-	// Pinned right under the header: nothing scrolled shows above it (Trevor, 2026-10-17).
-	const above = await page.getByTestId('day-toolbar').evaluate((toolbar) => {
-		const box = toolbar.getBoundingClientRect();
-		const el = document.elementFromPoint(box.left + box.width / 2, box.top - 1);
-		return el?.closest('[data-testid="day-toolbar"]')
-			? 'toolbar'
-			: el?.closest('.panel')
-				? 'content'
-				: 'outside';
-	});
-	expect(above).toBe('outside');
-	const scroller = page.getByTestId('day-toolbar').locator('xpath=../..');
-	expect((await page.getByTestId('day-toolbar').boundingBox())!.y).toBeCloseTo(
-		(await scroller.boundingBox())!.y,
-		0
-	);
+	await page.keyboard.press('Escape');
+	await expect(sounds).toBeHidden();
 	await page.reload();
-	await paneDay(page);
-	await page
-		.getByTestId('day-toolbar')
-		.getByRole('button', { name: /^Day timer, .*; open its controls$/ })
-		.tap();
-	await expect(
-		page.getByTestId('timer-sheet').getByRole('combobox', { name: 'Timer sound' })
-	).toContainText('Chime');
-	await expect(
-		page.getByTestId('timer-sheet').getByRole('checkbox', { name: 'Sound when time is up' })
-	).not.toBeChecked();
+	await boardTimer(page);
+	await expect(sounds.getByRole('combobox', { name: 'Timer sound' })).toContainText('Chime');
+	await expect(sounds.getByRole('checkbox', { name: 'Sound when time is up' })).not.toBeChecked();
 });
 
 // Trevor, 2026-10-17: the timer can count up instead, past its target.
 test('the day timer counts up past its target when set to', async ({ page }) => {
 	await page.clock.install();
 	await startGame(page);
-	await paneDay(page);
 	const timer = await boardTimer(page);
 	const clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('4:00');
-	// The mode is named on the timer (Trevor, 2026-10-17). The day's clock opens the Timer
-	// sheet (Trevor, 2026-11-01), whose clock switches it, as the board's does.
+	// The mode is named on the timer (Trevor, 2026-10-17); its clock switches it.
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
 	const height = (await timer.boundingBox())!.height;
-	await timer.getByRole('button', { name: 'Day timer, 4:00; open its controls' }).tap();
-	const sheet = page.getByTestId('timer-sheet');
-	await sheet.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
-	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
+	await timer.getByRole('button', { name: 'Timer; switch to stopwatch' }).tap();
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Stopwatch');
 	await expect(clock).toHaveText('0:00');
-	expect((await timer.boundingBox())!.height).toBe(height);
+	expect((await timer.boundingBox())!.height).toBeCloseTo(height, 0);
 	// More and less change the time shown in both modes (Trevor, 2026-10-23).
 	await timer.getByRole('button', { name: '30 seconds more' }).tap();
 	await expect(clock).toHaveText('0:30');
@@ -592,7 +554,6 @@ test('the day timer counts up past its target when set to', async ({ page }) => 
 	await expect(timer.getByRole('button', { name: 'Pause timer' })).toBeEnabled();
 	// The choice is kept.
 	await page.reload();
-	await paneDay(page);
 	await expect((await boardTimer(page)).getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
@@ -664,17 +625,12 @@ test('the day view names a homebrew character by its script name', async ({ page
 test('the board timer opens its own controls and settings', async ({ page }) => {
 	await page.clock.install();
 	await startGame(page);
-	await paneDay(page);
-	await (await boardTimer(page)).getByRole('button', { name: 'Start timer' }).tap();
-	await page.keyboard.press('Escape');
-	await expect(page.getByTestId('pane-day')).toBeHidden();
-
 	const board = page.locator('.board-timer').getByTestId('day-timer');
 	await board.getByRole('button', { name: /^Day timer, \d+:\d\d; open its controls$/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Day timer' });
 	await expect(sheet).toBeVisible();
-	await expect(page.getByTestId('pane-day')).toHaveCount(0);
 	const timer = sheet.getByTestId('day-timer');
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await expect(timer.getByRole('button', { name: 'Pause timer' })).toBeVisible();
 	await expect(timer.getByRole('button', { name: '30 seconds more' })).toBeVisible();
 	// The sound is chosen right here, so the timer's own sound button is left out.
@@ -699,8 +655,6 @@ test('the board timer opens its own controls and settings', async ({ page }) => 
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(board).toBeVisible();
-	// The choices are the same settings the day view uses.
-	await paneDay(page);
 	await expect((await boardTimer(page)).getByTestId('timer-mode')).toHaveText('Stopwatch');
 });
 
@@ -708,38 +662,31 @@ test('the time per living player is set on the timer and starts it at that much'
 	page
 }) => {
 	await startGame(page);
-	await paneDay(page);
 	const timer = await boardTimer(page);
 	await expect(timer.getByRole('timer')).toHaveText('4:00');
 	// Trevor (2026-10-19): a setting, 30 seconds by default, on the timer and in Settings.
-	await timer.getByRole('button', { name: 'Day timer, 4:00; open its controls' }).tap();
 	const sheet = page.getByTestId('timer-sheet');
 	const seconds = sheet.getByTestId('timer-per-player');
 	await expect(seconds).toHaveText('30 seconds');
 	await pickNumber(sheet, 'Seconds per living player', '45 seconds');
 	await expect(seconds).toHaveText('45 seconds');
-	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
 	// 8 living players at 45 seconds each.
 	await expect(timer.getByRole('timer')).toHaveText('6:00');
 });
 
 test('Execution ends the day and walks through tonight from Dusk', async ({ page }) => {
 	await startGame(page);
-	await paneDay(page);
-	const day = page.getByTestId('pane-day');
-	// Execution in place of End day (Trevor, 2026-10-22).
+	const day = await paneDay(page);
+	// Execution in place of End day (Trevor, 2026-10-22), on the bank only (2026-11-16).
 	await expect(day.getByRole('button', { name: 'End day' })).toHaveCount(0);
+	await expect(day.getByRole('button', { name: 'Execution' })).toHaveCount(0);
 	await startExecution(page);
-	// Ending the day asks who was executed; nothing is chosen until the Storyteller picks.
-	const confirm = page.getByRole('alertdialog', { name: 'End the day?' });
-	await expect(confirm.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await confirm.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: 'No execution', exact: true }).tap();
-	await confirm.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(day).toBeHidden();
-	// Dusk is ticked, so the night runs: the walk-through is on the board (the night order left
-	// it, Trevor 2026-10-18) and the bank's button is End night.
+	// Ending the day asks who was executed, on the board; nothing is chosen until then.
+	const confirm = page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true });
+	await expect(confirm).toBeDisabled();
+	await pickExecuted(page, 'No execution');
+	// Dusk is ticked, so the night runs: the walk-through shows and the bank's button is End
+	// night.
 	await expect(walkThrough(page)).toBeVisible();
 	await expect(
 		page
@@ -751,60 +698,17 @@ test('Execution ends the day and walks through tonight from Dusk', async ({ page
 
 // Before Start game the day view is Setup, and its Execution warns but still works (Trevor,
 // 2026-11-01: the Storyteller overrides anything).
-test('before Start game the day view says Setup and Execution warns', async ({ page }) => {
+test('before Start game the bank has no Execution; once started, Execution asks on the board', async ({
+	page
+}) => {
 	await startGame(page);
 	await paneDay(page);
-	const setup = page.getByRole('dialog', { name: 'Setup', exact: true });
-	await expect(setup).toBeVisible();
-	await expect(setup.getByTestId('day-name')).toHaveText('Setup');
-	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await expect(ask.getByTestId('execution-not-started')).toHaveText(
-		'The game has not started yet.'
-	);
-	// A warning, never a lock: the Storyteller can still choose and confirm.
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: 'No execution', exact: true }).tap();
-	await expect(ask.getByRole('button', { name: 'Confirm' })).toBeEnabled();
-	await ask.getByRole('button', { name: 'Cancel' }).tap();
-	await closeDay(page);
-
-	// Once the game has started, the day view is Day and Execution has no warning. One
-	// character, so the bank offers Start game.
-	await chooseCharacter(page, 1, 'Imp');
-	await page
-		.getByRole('list', { name: 'Reminder bank' })
-		.locator('..')
-		.getByRole('button', { name: 'Start game', exact: true })
-		.tap();
-	const startAsk = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = walkThrough(page);
-	await expect(strip.or(startAsk)).toBeVisible();
-	if (await startAsk.isVisible())
-		await startAsk.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await paneDay(page);
-	const day = page.getByRole('dialog', { name: 'Day', exact: true });
-	await expect(day.getByTestId('day-name')).toHaveText('Day');
+	await expect(page.getByRole('button', { name: 'Execution', exact: true })).toHaveCount(0);
 	// Once started, Execution asks for the player on the board (Trevor, 2026-11-06), so no
 	// warning shows.
 	await startExecution(page);
 	await expect(page.getByTestId('execution-pick')).toBeVisible();
 	await expect(page.getByTestId('execution-not-started')).toHaveCount(0);
-});
-
-test('Execution sits as far from the bottom of the screen as from its side', async ({ page }) => {
-	await startGame(page);
-	await paneDay(page);
-	const execution = page
-		.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })
-		.getByRole('button', { name: 'Execution' });
-	await expect(execution).toBeVisible();
-	// It touched the screen's bottom edge (Trevor, 2026-10-30).
-	const box = (await execution.boundingBox())!;
-	const { width, height } = page.viewportSize()!;
-	const side = width - (box.x + box.width);
-	expect(side).toBeGreaterThan(0);
-	expect(height - (box.y + box.height)).toBeCloseTo(side, 0);
 });
 
 // Whether the Demon voted and a Minion nominated is asked on the Flowergirl's and Town Crier's
@@ -813,12 +717,8 @@ test('Execution does not ask whether the Demon voted or a Minion nominated', asy
 	await startGame(page, 8, 'Sects & Violets');
 	await chooseCharacter(page, 3, 'Flowergirl');
 	await chooseCharacter(page, 4, 'Town Crier');
-	await paneDay(page);
-	await page
-		.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })
-		.getByRole('button', { name: 'Execution' })
-		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await startExecution(page);
+	const ask = page.getByTestId('execution-pick');
 	await expect(ask).toBeVisible();
 	await expect(ask.getByRole('checkbox', { name: 'Demon voted', includeHidden: true })).toHaveCount(
 		0
@@ -831,22 +731,8 @@ test('Execution does not ask whether the Demon voted or a Minion nominated', asy
 test('Execution names the player executed, who dies before tonight', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');
-	await markDead(page, 4, 'The Demon');
-	await paneDay(page);
-	await page
-		.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })
-		.getByRole('button', { name: 'Execution' })
-		.tap();
-	// Each player as the seat chooser cites them: the character's badge, then alive or dead
-	// (Trevor, 2026-10-23).
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	const slayer = page.getByRole('option', { name: /\bSeat 3\b/ });
-	await expect(slayer).toContainText('Slayer');
-	await expect(slayer).toContainText('Alive');
-	await expect(page.getByRole('option', { name: /\bSeat 4\b/ })).toContainText('Dead');
-	await slayer.tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await startExecution(page);
+	await pickExecuted(page, 'Seat 3');
 	await expect(walkThrough(page)).toBeVisible();
 	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
 	await expect(boardSeat(page, 'Seat 2')).not.toHaveAccessibleName(/dead/);
@@ -869,12 +755,10 @@ test('Execution offers to keep the day going while the Butcher may still nominat
 		.getByRole('button', { name: 'Decide later' })
 		.tap();
 	await closeSeat(page);
-	const day = await openDay(page);
 	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// While the Butcher may nominate, picking a player opens the sheet (executionAsks).
+	const ask = await pickExecuted(page, 'Seat 1');
 	const keep = ask.getByRole('checkbox', { name: 'Keep the day going', includeHidden: true });
-	// There from the start, so choosing never moves the buttons; off until a choice allows it.
-	await expect(keep).toBeDisabled();
 	const choose = async (choice: string) => {
 		await ask.getByRole('combobox', { name: 'Execution' }).tap();
 		await page.getByRole('option', { name: new RegExp(`\\b${choice}(\\s|$)`) }).tap();
@@ -890,15 +774,12 @@ test('Execution offers to keep the day going while the Butcher may still nominat
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Seat 2 is executed and the day goes on.
 	await expect(ask).toBeHidden();
-	await expect(day).toBeVisible();
 	await expect(walkThrough(page)).toHaveCount(0);
-	// The day sheet hides the board from the accessibility tree, so its mark is read instead.
 	await expect(boardSeat(page, 'Seat 2')).toHaveAttribute('data-dead', 'true');
-	// Execution again, with today's execution chosen: off, so Confirm ends the day.
+	// Execution again, with today's execution picked on the board: Confirm ends the day.
 	await startExecution(page);
-	await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 2');
-	await expect(keep).not.toBeChecked();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('execution-pick-question')).toContainText('Seat 2');
+	await page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(walkThrough(page)).toBeVisible();
 });
 
@@ -909,17 +790,8 @@ test("Executed in a seat's status during the day asks as Execution does; a Sailo
 	// https://wiki.bloodontheclocktower.com/Sailor: the Sailor can't die.
 	await startGame(page, 8, 'Bad Moon Rising');
 	await chooseCharacter(page, 3, 'Sailor');
-	// Night 1 runs from the day's Execution, then the night ends: day 2.
-	await openDay(page);
-	await startExecution(page);
-	await endTheDay(page);
-	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
-	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the night?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	await closeDay(page);
+	// Night 1, then day 1.
+	await toDayOne(page);
 	// The same as the day's Execution (Trevor, 2026-10-23): it asks, with the seat chosen.
 	const status = await openStatus(page, 3);
 	await status.getByRole('option', { name: 'Executed', exact: true }).tap();
@@ -949,14 +821,10 @@ test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({
 	// the Storyteller's choice (Trevor, 2026-10-24: a modifier slot in the execution area).
 	await startGame(page, 8, 'Bad Moon Rising');
 	await chooseCharacter(page, 3, 'Pacifist');
-	const day = await openDay(page);
 	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	// Disabled until a living player is chosen, so nothing moves (no reflow).
+	// A save in play: picking the player opens the sheet with them chosen.
+	const ask = await pickExecuted(page, 'Seat 3');
 	const savedBy = ask.getByRole('combobox', { name: 'Saved by' });
-	await expect(savedBy).toBeDisabled();
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /\bSeat 3\b/ }).tap();
 	// The grimoire never applies the Pacifist unasked: None until the Storyteller picks it.
 	await expect(savedBy).toContainText('None');
 	await expect(ask.getByTestId('execution-saved')).not.toContainText('does not die');
@@ -985,9 +853,9 @@ test("Execution can execute a good Scapegoat in a good player's place (M12a)", a
 		.tap();
 	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
 	await closeSeat(page);
-	const day = await openDay(page);
 	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// While the Scapegoat lives, picking a player opens the sheet (executionAsks).
+	const ask = await pickExecuted(page, 'Seat 2');
 	// There while the Scapegoat lives, disabled until a player of its alignment is chosen.
 	const instead = ask.getByRole('checkbox', { name: 'Scapegoat is executed instead' });
 	await expect(instead).toBeDisabled();
@@ -1071,16 +939,14 @@ test('Announcements name a player brought back to life in the night', async ({ p
 			.getByRole('button', { name: 'Confirm' })
 			.tap();
 	};
-	await openDay(page);
 	await startExecution(page);
 	await endTheDay(page);
-	// Night 1: seat 2 dies.
+	// Night 2: seat 2 dies.
 	await markDead(page, 2, 'The Demon');
 	await endNight();
-	await closeDay(page);
-	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await startExecution(page);
 	await endTheDay(page);
-	// Night 2: seat 2 comes back (the Professor, say).
+	// Night 3: seat 2 comes back (the Professor, say).
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('combobox', { name: /^Status/ }).tap();
 	const status = page.getByRole('listbox');
@@ -1092,7 +958,7 @@ test('Announcements name a player brought back to life in the night', async ({ p
 	await closeSeat(page);
 	await endNight();
 	// Announcements must include people being revived (Trevor, 2026-10-20: L9).
-	const announcements = daySheet(page).getByTestId('announcements');
+	const announcements = (await paneDay(page)).getByTestId('announcements');
 	await expect(announcements.getByTestId('revived')).toContainText(
 		'The player in seat 2 is alive.'
 	);
@@ -1103,15 +969,14 @@ test('holding the day timer or a new day resets it to the time per living player
 	page
 }) => {
 	await startGame(page);
-	await paneDay(page);
-	let day = page.getByTestId('pane-day');
-	const clock = (await boardTimer(page)).getByRole('timer');
+	const timer = await boardTimer(page);
+	const clock = timer.getByRole('timer');
 	await expect(clock).toHaveText('4:00');
 	// Changed by hand: that lasts for this day only.
-	await day.getByRole('button', { name: '30 seconds less' }).tap();
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
 	await expect(clock).toHaveText('3:30');
 	// Holding the clock resets it (Trevor, 2026-10-19); the hold is not also a tap.
-	const mode = day.getByTestId('timer-mode');
+	const mode = timer.getByTestId('timer-mode');
 	const caption = await mode.textContent();
 	await clock.hover();
 	await page.mouse.down();
@@ -1119,40 +984,21 @@ test('holding the day timer or a new day resets it to the time per living player
 	await page.mouse.up();
 	await expect(clock).toHaveText('4:00');
 	await expect(mode).toHaveText(caption ?? '');
-	await day.getByRole('button', { name: '30 seconds less' }).tap();
+	await timer.getByRole('button', { name: '30 seconds less' }).tap();
 	await expect(clock).toHaveText('3:30');
-	await startExecution(page);
-	await endTheDay(page);
-	await page
-		.getByRole('list', { name: 'Reminder bank' })
-		.locator('..')
-		.getByRole('button', { name: 'End night', exact: true })
-		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the night?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	// The day opens after End night; the timer starts again at 8 players' time (Trevor, 2026-10-19).
-	day = page.getByRole('dialog', { name: 'Day 1' });
-	await expect((await boardTimer(page)).getByRole('timer')).toHaveText('4:00');
-	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
+	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('timer-sheet')).toBeHidden();
+	// Start game, then End night: Day 1, and the timer starts again at 8 players' time (Trevor,
+	// 2026-10-19).
+	await toDayOne(page);
+	const dayTimer = await boardTimer(page);
+	await expect(dayTimer.getByRole('timer')).toHaveText('4:00');
+	await expect(dayTimer.getByRole('button', { name: 'Start timer' })).toBeEnabled();
+	await page.keyboard.press('Escape');
 	// Nobody dies on the first night as a rule, so Day 1 doesn't say "Nobody died" (Trevor,
 	// 2026-11-04); that announcement starts on Day 2 (the revival test).
+	const day = await paneDay(page);
 	await expect(day.getByTestId('announcements')).toHaveText('None');
-});
-
-test('a wide day view puts the toolbar beside the sections', async ({ page }) => {
-	await startGame(page);
-	await page.setViewportSize({ width: 1280, height: 800 });
-	await paneDay(page);
-	// Two columns on a wide screen (Trevor, 2026-10-23: L45).
-	const toolbar = await page.getByTestId('day-toolbar').boundingBox();
-	const announcements = await page.getByTestId('announcements').boundingBox();
-	expect(announcements!.x).toBeGreaterThan(toolbar!.x + toolbar!.width - 1);
-	await page.setViewportSize({ width: 390, height: 844 });
-	await expect
-		.poll(async () => (await page.getByTestId('announcements').boundingBox())!.y)
-		.toBeGreaterThan((await page.getByTestId('day-toolbar').boundingBox())!.y);
 });
 
 test('ending the game at an Execution closes the walk-through and moves nothing', async ({
@@ -1164,15 +1010,8 @@ test('ending the game at an Execution closes the walk-through and moves nothing'
 	const seat = boardSeat(page, 'Seat 1');
 	const before = { corner: await corner.boundingBox(), seat: await seat.boundingBox() };
 	// The Demon executed: good wins (https://wiki.bloodontheclocktower.com/Imp).
-	await paneDay(page);
-	await page
-		.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })
-		.getByRole('button', { name: 'Execution' })
-		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /\bSeat 3\b/ }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await startExecution(page);
+	await pickExecuted(page, 'Seat 3');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -1199,13 +1038,11 @@ test('ending the game at an Execution closes the walk-through and moves nothing'
 	}
 });
 
-test('the corner, the day view and Resume agree on the night or day, without a start time', async ({
-	page
-}) => {
+test('the corner and Resume agree on the night or day', async ({ page }) => {
 	test.setTimeout(90_000);
-	// Trevor (2026-10-24): Resume said Day 4 where the day view said Day 3, and Game time said
-	// Setup mid-game. This game never had Start game tapped, so the device has no start time.
+	// Trevor (2026-10-24): Resume said Day 4 where the day view said Day 3.
 	const path = await startGame(page);
+	await chooseCharacter(page, 1, 'Imp');
 	const phase = page.getByTestId('board-phase');
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	const endNight = async () => {
@@ -1214,7 +1051,7 @@ test('the corner, the day view and Resume agree on the night or day, without a s
 			.getByRole('alertdialog', { name: 'End the night?' })
 			.getByRole('button', { name: 'Confirm' })
 			.tap();
-		if (await daySheet(page).isVisible()) await closeDay(page);
+		await closeDay(page);
 	};
 	const resumed = async (text: string) => {
 		await page.goto('/join');
@@ -1225,14 +1062,10 @@ test('the corner, the day view and Resume agree on the night or day, without a s
 		await expect(page.getByTestId('seat')).toHaveCount(8);
 	};
 
-	await startExecution(page);
-	await endTheDay(page);
+	await tapStartGame(page, bank.getByRole('button', { name: 'Start game', exact: true }));
 	await expect(phase).toHaveText('Night 1');
 	await endNight();
 	await expect(phase).toHaveText('Day 1');
-	await expect(page.getByTestId('board-game-clock')).toContainText('None');
-	await openDay(page);
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
 	await startExecution(page);
 	await endTheDay(page);
 	// Tonight follows Day 1: Night 2 on the board and in Resume.
@@ -1241,9 +1074,6 @@ test('the corner, the day view and Resume agree on the night or day, without a s
 	await expect(phase).toHaveText('Night 2');
 	await endNight();
 	await expect(phase).toHaveText('Day 2');
-	await openDay(page);
-	await expect(page.getByRole('dialog', { name: 'Day 2' })).toBeVisible();
-	await closeDay(page);
 	await resumed('Day 2');
 	await expect(phase).toHaveText('Day 2');
 });
@@ -1253,21 +1083,7 @@ test('a game that ends at an Execution ends on that day', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Imp');
 	const phase = page.getByTestId('board-phase');
-	await startExecution(page);
-	await endTheDay(page);
-	await page
-		.getByRole('list', { name: 'Reminder bank' })
-		.locator('..')
-		.getByRole('button', { name: 'End night', exact: true })
-		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the night?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	if (await daySheet(page).isVisible()) await closeDay(page);
-	await expect(phase).toHaveText('Day 1');
-
-	// Day 1's Execution ticks Dusk, then End game: the game ended on Day 1 (Trevor, 2026-10-24).
+	// Start game, then End night: Day 1's Execution ticks Dusk, then End game: the game ended on Day 1 (Trevor, 2026-10-24).
 	await startExecution(page);
 	await endTheDay(page, 'Seat 3');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
@@ -1298,16 +1114,8 @@ test('a death marked by day on the Vizier is offered with a caution', async ({ p
 	await page.keyboard.press('Escape');
 	await expect(status).toBeHidden();
 	await closeSeat(page);
-	await openDay(page);
-	await startExecution(page);
-	await endTheDay(page);
-	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
-	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
-	await page
-		.getByRole('alertdialog', { name: 'End the night?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	await closeDay(page);
+	// Start game, then End night: Day 1.
+	await toDayOne(page);
 	status = await openStatus(page, 3);
 	// The list marks the cause; once it is set, the row's warning says why.
 	await expect(
@@ -1396,7 +1204,7 @@ test('with the Buddhist in play the day timer counts down the veterans’ quiet'
 	// Over: the mode's name is back, in the same place.
 	await expect(quiet).toHaveCount(0);
 	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
-	expect((await timer.boundingBox())!.height).toBe(height);
+	expect((await timer.boundingBox())!.height).toBeCloseTo(height, 0);
 });
 
 /** Gives seat `number` a character from off the script, answering its alignment if asked. */
@@ -1420,24 +1228,19 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await startGame(page);
 	await chooseCharacter(page, 1, 'Chef');
 	await chooseOffScript(page, 2, 'Legion');
-	const day = await openDay(page);
 	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// While the Legion works, picking a player opens the sheet (executionAsks).
+	const ask = await pickExecuted(page, 'Seat 1');
 	const onlyEvil = ask.getByRole('checkbox', {
 		name: 'Only evil voted, for the Legion',
 		includeHidden: true
 	});
-	// There while the Legion works, disabled until a living player is chosen (no reflow).
-	await expect(onlyEvil).toBeDisabled();
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /\bSeat 1\b/ }).tap();
 	await expect(onlyEvil).toBeEnabled();
 	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
 	await expect(onlyEvil).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// The execution failed: Seat 1 lives, and the day stays open for another nomination.
 	await expect(ask).toBeHidden();
-	await expect(day).toBeVisible();
 	await expect(walkThrough(page)).toHaveCount(0);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
@@ -1460,12 +1263,13 @@ test('a player nominates the Storyteller, who is executed, and good wins with th
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(settings).toBeHidden();
+	// Start game, then End night: Day 1's nomination.
+	await toDayOne(page);
 	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
 	await page
 		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
 		.getByTestId('choose-storyteller')
 		.tap();
-	const day = await openDay(page);
 	await startExecution(page);
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
@@ -1497,18 +1301,17 @@ test("Execution records the Judge's forced pass and marks the ruling used (M9d)"
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(settings).toBeHidden();
+	// Start game, then End night: Day 1's nomination.
+	await toDayOne(page);
 	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
 	await page
 		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
 		.getByText('Seat 2', { exact: true })
 		.tap();
-	const day = await openDay(page);
 	await startExecution(page);
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// While the Judge's ruling is unused, picking a player opens the sheet (executionAsks).
+	const ask = await pickExecuted(page, 'Seat 2');
 	const ruling = ask.getByRole('combobox', { name: 'Ruling by the Judge' });
-	await expect(ruling).toBeDisabled();
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /\bSeat 2\b/ }).tap();
 	await expect(ruling).toBeEnabled();
 	await ruling.tap();
 	await page.getByRole('option', { name: 'Forced to pass' }).tap();

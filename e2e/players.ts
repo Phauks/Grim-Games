@@ -17,7 +17,10 @@ export type PaneTab = 'Day' | 'Night' | 'Notes' | 'Players';
 /** Opens the pane at a tab: its button on a phone; beside the board it always shows. */
 export async function openPane(page: Page, tab?: PaneTab) {
 	const pane = storytellerPane(page);
-	if (!(await pane.isVisible())) await page.getByTestId('game-pane-button').tap();
+	const button = page.getByTestId('game-pane-button');
+	// Beside the board the pane shows, on a phone its button: whichever, once the board is up.
+	await expect(pane.or(button).first()).toBeVisible();
+	if (!(await pane.isVisible())) await button.tap();
 	await expect(pane).toBeVisible();
 	if (tab) {
 		const trigger = pane.getByRole('tab', { name: new RegExp(`^${tab}`) });
@@ -45,7 +48,10 @@ export async function paneDay(page: Page): Promise<Locator> {
 
 /** Whether the pane is a phone's sheet over the board, rather than beside it. */
 export async function paneIsSheet(page: Page): Promise<boolean> {
-	return !(await page.getByRole('complementary', { name: 'Game', exact: true }).isVisible());
+	const beside = page.getByRole('complementary', { name: 'Game', exact: true });
+	const button = page.getByTestId('game-pane-button');
+	await expect(beside.or(button).first()).toBeVisible();
+	return !(await beside.isVisible());
 }
 
 /**

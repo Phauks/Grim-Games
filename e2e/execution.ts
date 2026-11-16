@@ -69,7 +69,24 @@ export async function startExecution(page: Page): Promise<void> {
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
 		.getByRole('button', { name: 'Start game', exact: true });
-	await expect(bankExecution(page).or(endNight).or(start)).toBeVisible();
+	const setUp = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.locator('..')
+		.getByRole('button', { name: 'Set up', exact: true });
+	await expect(bankExecution(page).or(endNight).or(start).or(setUp)).toBeVisible();
+	if (await setUp.isVisible()) {
+		// No Demon yet: the last seat with no character is the Imp, so the game can start.
+		await page.locator('[data-testid="seat"][aria-label*="no character"]').last().tap();
+		const seatSheet = page.locator('[data-scope="drawer"][data-part="content"]');
+		await seatSheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: /^Character for Seat \d+$/ })
+			.getByRole('button', { name: /^Imp(, Recommended)?$/ })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(seatSheet).toBeHidden();
+		await expect(start).toBeVisible();
+	}
 	if (await start.isVisible()) {
 		await tapStartGame(page, start);
 		await expect(endNight).toBeVisible();
@@ -83,4 +100,35 @@ export async function startExecution(page: Page): Promise<void> {
 		await closeSheet();
 	}
 	await bankExecution(page).tap();
+}
+
+/**
+ * Picks the executed player on the board's bar and confirms it there; when executing them has
+ * more to decide, the Execution sheet opens, and is returned for the test to answer.
+ */
+export async function pickExecuted(page: Page, choice: string) {
+	const bar = page.getByTestId('execution-pick');
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await expect(bar).toBeVisible();
+	if (/^Seat \d+$/.test(choice))
+		await page.locator(`[data-testid="seat"][aria-label^="${choice}:"]`).tap();
+	else await bar.getByRole('button', { name: choice, exact: true }).tap();
+	const confirm = page
+		.locator('[data-tray]')
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.and(page.locator(':enabled'));
+	await expect(ask.or(confirm)).toBeVisible();
+	if (!(await ask.isVisible())) await confirm.tap();
+	return ask;
+}
+
+/** Start game and End night, as startExecution does, then back out of Execution: Day 1. */
+export async function toDayOne(page: Page): Promise<void> {
+	await startExecution(page);
+	const bar = page.getByTestId('execution-pick');
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await expect(bar.or(ask)).toBeVisible();
+	if (await bar.isVisible()) await bar.getByRole('button', { name: 'Cancel' }).tap();
+	else await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(bar.or(ask)).toHaveCount(0);
 }
