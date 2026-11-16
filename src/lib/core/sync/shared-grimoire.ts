@@ -23,6 +23,17 @@ export interface SharedGrimoire {
 	look?: unknown;
 	/** That board's shape, its width ÷ height, so seats keep its places round the ring. */
 	aspect?: unknown;
+	/**
+	 * Each seated player's own picture by seat (`seatPictures`), so a board drawn elsewhere shows
+	 * them as the Storyteller's does (Trevor, 2026-11-15: avatars missing on the view-only grim).
+	 */
+	pictures?: unknown;
+	/**
+	 * The table as phones in the room get it (`PublicGameState`) and how the game ended, so a
+	 * spectator's player view shows the same status row (Trevor, 2026-11-15).
+	 */
+	table?: unknown;
+	ended?: unknown;
 }
 
 /** A whole game's history with a homebrew script: well above `MAX_SCRIPT_BYTES`. */
