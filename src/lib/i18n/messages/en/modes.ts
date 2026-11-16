@@ -28,8 +28,6 @@ export const modes = {
 	'modes.scriptSearch.custom': 'Custom',
 	'modes.scriptKind.label': 'Official or custom',
 	'modes.scriptKind.official': 'Official',
-	'modes.scriptKind.none': 'None',
-	'modes.noScript': 'No script',
 	'modes.scriptSearch.version': 'Script version',
 	'modes.scriptSearch.loadingVersion': 'Loading this version…',
 	'modes.scriptSearch.noVersion': 'N/A',

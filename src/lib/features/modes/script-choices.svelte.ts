@@ -7,7 +7,6 @@ import {
 	editionScript,
 	loadScript,
 	OFFICIAL_EDITIONS,
-	PLAYABLE_TYPES,
 	type GameData,
 	type LoadedScript,
 	type Script
@@ -28,7 +27,6 @@ import {
 	type ScriptSource
 } from '#lib/features/scripts/saved-scripts.ts';
 import { scriptVersion } from '#lib/features/player/player-script.ts';
-import { t } from '#lib/i18n/locale.svelte.ts';
 
 export type ScriptChoice = string;
 
@@ -146,27 +144,7 @@ export function savedChoiceFor(script: Script): ScriptChoiceOption | undefined {
 	);
 }
 
-/**
- * New game's Script: None, offered only for a Local Grim game (Trevor, 2026-11-16): every
- * official character, so any can be guessed.
- */
-export const NO_SCRIPT: ScriptChoice = 'none';
-
-/** Every official character a player can be, so a guess, the Script tab and night order cover them all. */
-function everyCharacterScript(data: GameData): LoadedScript {
-	const name = t('modes.noScript');
-	return {
-		name,
-		meta: { name },
-		characters: data.characters.filter((c) => PLAYABLE_TYPES.includes(c.type)),
-		homebrew: [],
-		homebrewJinxes: [],
-		renamedIds: {}
-	};
-}
-
 export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedScript {
-	if (choice === NO_SCRIPT) return everyCharacterScript(data);
 	const quick = quickPlayScript.saved;
 	const recent = choice.startsWith('recent:')
 		? [...(quick ? [quick] : []), ...recentScripts.list].find(
@@ -187,7 +165,6 @@ export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedSc
 
 /** Where a choice's script came from: a saved script's own source, or an edition. */
 export function scriptChoiceSource(choice: ScriptChoice): ScriptSource {
-	if (choice === NO_SCRIPT) return { kind: 'none' };
 	return (
 		[...scriptChoices(), ...searchableScripts()].find((o) => o.value === choice)?.source ?? {
 			kind: 'edition'
