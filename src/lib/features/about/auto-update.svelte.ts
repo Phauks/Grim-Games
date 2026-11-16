@@ -6,6 +6,9 @@
  * - on the way to another page, which then loads afresh on it, outside a game;
  * - after the app spent `AWAY_MS` in the background, on any screen that comes back as it was
  *   after a reload (a game's board reopens from its save), unless a dialog or sheet is open.
+ * A build that reads another saved-game format can't reopen a game saved by this one (there
+ * are no migrations), so it never takes over a game on screen, or on the way into one, by
+ * itself; Update asks first (UpdateBanner).
  */
 import { claimFreshLoad, staleBuild } from '#lib/features/offline/stale-build.svelte.ts';
 import { guardBlocksReload, isGuarded } from '#lib/features/shell/shell.ts';
@@ -21,16 +24,32 @@ export interface Screen {
 	reloadLoses: boolean;
 	/** A dialog or sheet is open, which a reload would close. */
 	dialogOpen: boolean;
+	/** The waiting build reads another saved-game format, so it can't open this build's games. */
+	newFormat: boolean;
 }
 
-/** Whether a navigation to another page takes the waiting build: anywhere outside a game. */
-export function takesUpdateOnNavigate(ready: boolean, screen: Screen, samePage: boolean): boolean {
-	return ready && !samePage && !screen.inGame;
+/**
+ * Whether a navigation to another page takes the waiting build: anywhere outside a game, unless
+ * the page is a game (`toGame`) that the waiting build can't open.
+ */
+export function takesUpdateOnNavigate(
+	ready: boolean,
+	screen: Screen,
+	samePage: boolean,
+	toGame = false
+): boolean {
+	return ready && !samePage && !screen.inGame && !(toGame && screen.newFormat);
 }
 
 /** Whether coming back after `awayMs` in the background takes the waiting build. */
 export function takesUpdateAfterAway(ready: boolean, awayMs: number, screen: Screen): boolean {
-	return ready && awayMs >= AWAY_MS && !screen.reloadLoses && !screen.dialogOpen;
+	return (
+		ready &&
+		awayMs >= AWAY_MS &&
+		!screen.reloadLoses &&
+		!screen.dialogOpen &&
+		!(screen.inGame && screen.newFormat)
+	);
 }
 
 /** The screen as it is now; `gamePage` says the current route is a game's (shell.ts `Chrome`). */
@@ -38,18 +57,21 @@ function screenNow(gamePage: boolean): Screen {
 	return {
 		inGame: gamePage || isGuarded(),
 		reloadLoses: guardBlocksReload(),
-		dialogOpen: !!document.querySelector('[role="dialog"], [role="alertdialog"]')
+		dialogOpen: !!document.querySelector('[role="dialog"], [role="alertdialog"]'),
+		newFormat: updateCheck.newFormat
 	};
 }
 
 /**
  * For the root layout's `beforeNavigate`: true when the navigation was handed to the waiting
- * build (the caller cancels it; the page at `href` loads afresh).
+ * build (the caller cancels it; the page at `href` loads afresh). `toGame` says the page is a
+ * game's.
  */
-export function updateOnNavigate(href: string, gamePage: boolean): boolean {
+export function updateOnNavigate(href: string, gamePage: boolean, toGame = false): boolean {
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- read once, never kept
 	const samePage = new URL(href, location.href).pathname === location.pathname;
-	if (!takesUpdateOnNavigate(updateCheck.ready, screenNow(gamePage), samePage)) return false;
+	if (!takesUpdateOnNavigate(updateCheck.ready, screenNow(gamePage), samePage, toGame))
+		return false;
 	void updateCheck.refresh(href);
 	return true;
 }
@@ -105,12 +127,13 @@ export function recoverMissingFile(): boolean {
 
 /**
  * Vite's report of a code file that failed to load (vite:preloadError). The page reloads
- * unless that would cut something short (an open dialog, a bag draw); then the next page loads
- * afresh instead (stale-build.svelte.ts). True when the reload is under way.
+ * unless that would cut something short (an open dialog, a bag draw, a game the waiting build
+ * can't open); then the next page loads afresh instead (stale-build.svelte.ts). True when the
+ * reload is under way.
  */
 export function recoverPreloadError(gamePage: boolean): boolean {
 	const screen = screenNow(gamePage);
-	if (screen.dialogOpen || screen.reloadLoses) {
+	if (screen.dialogOpen || screen.reloadLoses || (screen.inGame && screen.newFormat)) {
 		staleBuild.mark();
 		return false;
 	}

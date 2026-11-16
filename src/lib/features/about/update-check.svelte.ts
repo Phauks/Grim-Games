@@ -5,6 +5,8 @@
  */
 import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 import { buildInfo } from '#lib/build-info.ts';
+import { SAVED_GAME_VERSION } from '#lib/core/engine/saved-game-version.ts';
+import { askWaitingBuild, type WaitingBuild } from './waiting-build.ts';
 import { isPrecacheProgress, percentDone } from './update-progress.ts';
 import {
 	BUILD_NOTES_PATH,
@@ -12,6 +14,7 @@ import {
 	compareUrl,
 	parseBuildNotes,
 	parseCompare,
+	type BuildNotes,
 	type Changes
 } from './update-notes.ts';
 
@@ -45,16 +48,38 @@ class UpdateChecker {
 	changes = $state<Changes | null>(null);
 	/** The first fetch of `changes` has finished, found or not, so the update card can show. */
 	changesSettled = $state(false);
+	/** What the waiting build said about itself (waiting-build.ts); undefined until it answers. */
+	waiting = $state<WaitingBuild | undefined>();
 	#loadingChanges: Promise<void> | undefined;
 
-	/** Fetches what the waiting build changed, once per page unless the last try failed. */
+	/**
+	 * The waiting build can't open games saved by this one: it reads another saved-game format,
+	 * and there are no migrations. A game on screen is then never reloaded onto it without
+	 * asking (auto-update.svelte.ts, UpdateBanner).
+	 */
+	get newFormat(): boolean {
+		return this.waiting !== undefined && this.waiting.savedGame !== SAVED_GAME_VERSION;
+	}
+
+	/**
+	 * Asks the waiting build what it is and what it changed, once per waiting build unless the
+	 * last try found no notes.
+	 */
 	loadChanges(): Promise<void> {
-		this.#loadingChanges ??= fetchChanges().then((changes) => {
+		this.#loadingChanges ??= (async () => {
+			const waiting = await waitingWorker().then((worker) => worker && askWaitingBuild(worker));
+			this.waiting = waiting;
+			const changes = waiting?.notes ? await changesFrom(waiting.notes) : await fetchChanges();
 			this.changes = changes;
 			this.changesSettled = true;
 			if (!changes) this.#loadingChanges = undefined;
-		});
+		})();
 		return this.#loadingChanges;
+	}
+
+	/** Another build started downloading: what is known of the one waiting is asked again. */
+	forgetWaiting(): void {
+		this.#loadingChanges = undefined;
 	}
 
 	/**
@@ -100,6 +125,7 @@ class UpdateChecker {
 		container.startMessages?.();
 		const follow = () => {
 			const next = registration.installing;
+			if (next) this.forgetWaiting();
 			if (next && container.controller) void this.#follow(next).then((r) => this.#finish(r));
 		};
 		follow();
@@ -193,20 +219,37 @@ async function findUpdate(): Promise<UpdateCheck | ServiceWorker> {
 	return registration.installing ?? registration.waiting ?? 'current';
 }
 
-/** The commits since the running build, from the newest build's notes, else GitHub. */
+/**
+ * The build waiting to take over, or, once Update in another tab activated it, the one now in
+ * charge of this page.
+ */
+async function waitingWorker(): Promise<ServiceWorker | null> {
+	if (!('serviceWorker' in navigator)) return null;
+	const registration = await navigator.serviceWorker.getRegistration?.().catch(() => undefined);
+	return registration?.waiting ?? navigator.serviceWorker.controller ?? null;
+}
+
+/**
+ * The commits since the running build, from notes the waiting build kept, else the newest
+ * deployed build's notes (a waiting build from before builds kept their own), else GitHub.
+ */
 async function fetchChanges(): Promise<Changes | null> {
 	try {
-		// Past every cache: the network has the newest build's notes, the one waiting.
+		// Past every cache: the network has the newest build's notes.
 		const response = await fetch(BUILD_NOTES_PATH, { cache: 'no-store' });
 		const notes = response.ok ? parseBuildNotes(await response.json()) : null;
-		if (!notes) return null;
-		const fromNotes = changesSince(notes, buildInfo.commit);
-		return fromNotes.complete
-			? fromNotes
-			: ((await compareOnGitHub(buildInfo.commit, notes.commit)) ?? fromNotes);
+		return notes ? await changesFrom(notes) : null;
 	} catch {
 		return null;
 	}
+}
+
+/** The commits in a build's notes since the running build, asking GitHub when they stop short. */
+async function changesFrom(notes: BuildNotes): Promise<Changes> {
+	const fromNotes = changesSince(notes, buildInfo.commit);
+	return fromNotes.complete
+		? fromNotes
+		: ((await compareOnGitHub(buildInfo.commit, notes.commit)) ?? fromNotes);
 }
 
 /** The commits between two builds from GitHub, or null if it can't be reached. */

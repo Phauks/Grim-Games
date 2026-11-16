@@ -106,3 +106,48 @@ export function unchanged(path: string, hashes: FileHashes, previous: FileHashes
 	const hash = hashes[path];
 	return hash !== undefined && hash === previous[path];
 }
+
+/**
+ * The hashes file's entry naming the build it describes (vite.config.ts `buildLine`, the
+ * service worker's `version`). Not a served path.
+ */
+export const HASHES_BUILD_KEY = '/__build';
+
+/**
+ * The build a copy of the app's page was made by: app.html stamps SvelteKit's version name on
+ * boot-failure.js's tag (`data-build`). Undefined when the page has no stamp.
+ */
+export function shellBuild(html: string): string | undefined {
+	const stamp = /data-build="([^"]*)"/.exec(html)?.[1];
+	return stamp
+		?.replaceAll('&quot;', '"')
+		.replaceAll('&#39;', "'")
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&amp;', '&');
+}
+
+/**
+ * Why a file fetched while a build installs is another build's, or undefined when it is this
+ * build's as far as can be told. Cloudflare takes seconds to bring a deploy to every location
+ * (developers.cloudflare.com/workers/versions-and-deployments/deployment-management/), and beta
+ * deploys many times a day, so a file asked for during the install can come from the next
+ * deploy. Storing it would mix two builds in one precache: a page naming chunks this build
+ * never stored. The install fails instead, and the newer build installs on the next check.
+ * - The page names its build (`shellBuild`).
+ * - A data file has the content hash this build published for it (`hash`, the first 16 hex
+ *   digits of SHA-256, as vite.config.ts writes them).
+ */
+export function otherBuild(
+	path: string,
+	content: { html?: string; hash?: string },
+	build: { version: string; hashes: FileHashes }
+): string | undefined {
+	if (content.html !== undefined) {
+		const made = shellBuild(content.html);
+		return made !== undefined && made !== build.version ? `${path}: made by ${made}` : undefined;
+	}
+	const expected = build.hashes[path];
+	if (content.hash === undefined || expected === undefined) return undefined;
+	return content.hash === expected ? undefined : `${path}: content of another build`;
+}
