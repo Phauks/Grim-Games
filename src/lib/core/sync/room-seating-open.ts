@@ -79,6 +79,23 @@ function boardPoint(value: unknown): { x: number; y: number } | undefined {
 export const isOpenSeat = (seat: { playerName?: string } | undefined) =>
 	!seat?.playerName || /^Seat \d+$/.test(seat.playerName);
 
+/**
+ * Whether this phone has no seat yet and could take one: seating is open, or a seat is free
+ * (Trevor, 2026-11-16: players didn't know they should pick a seat after joining). Never while
+ * the Storyteller chooses the next script or once the game is over.
+ */
+export function seatToPick(view: {
+	me: { seatId?: SeatId };
+	seatingOpen?: true;
+	choosing?: true;
+	ended?: unknown;
+	public?: { seats: readonly { playerName?: string }[] };
+}): boolean {
+	const seats = view.public?.seats ?? [];
+	if (view.me.seatId || view.choosing || view.ended || seats.length === 0) return false;
+	return !!view.seatingOpen || seats.some(isOpenSeat);
+}
+
 const key = (name: string) => name.replace(/\s+/g, ' ').trim().toLocaleLowerCase();
 
 type SeatCommand = Extract<Command, { type: 'RenameSeat' | 'MoveSeat' | 'AddSeat' }>;

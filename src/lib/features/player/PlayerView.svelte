@@ -98,11 +98,20 @@
 	/** The room this phone is in, whose name the You sheet sets. */
 	let joinedRoom = $state<string>();
 	let error = $state<string>();
-	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
+	// Joining lands on the script (Trevor, 2026-10-23), or on the grim for a phone with a seat
+	// to pick (seatToPick below); the room is the row above the tabs.
 	// A players-only game opened from New game or Join game starts on its town (plan M55).
 	/** Opened as a players-only game, from New game or Join game. */
 	const startedLocal = openOnGrim.take();
 	let tab = $state(startedLocal ? 'grim' : 'script');
+	// A phone with no seat that could take one turns to the Grim tab, where seats are picked,
+	// once as it joins; away from it the status box says Select seat (Trevor, 2026-11-16).
+	let turnedToSeats = false;
+	function seatToPick(unseated: boolean) {
+		if (!unseated || turnedToSeats) return;
+		turnedToSeats = true;
+		tab = 'grim';
+	}
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
 	$effect(() => {
 		if (!finalGrimoire.open) return;
@@ -373,6 +382,8 @@
 				onCode={join ? openRoom : undefined}
 				onVoting={(v) => (voting = v)}
 				onRoom={(room) => (joinedRoom = room)}
+				onSeatToPick={seatToPick}
+				selectSeat={tab === 'grim' ? undefined : () => (tab = 'grim')}
 			/>
 		{/key}
 		{#if join && !joining}<GroupGames onJoin={openRoom} />{/if}
