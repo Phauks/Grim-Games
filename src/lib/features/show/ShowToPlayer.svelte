@@ -134,6 +134,7 @@
 	class="show"
 	aria-label={label}
 	data-testid={blank ? 'grim-cover' : 'show-to-player'}
+	data-grim-cover={blank ? '' : undefined}
 	oncancel={(event) => {
 		event.preventDefault();
 		close();

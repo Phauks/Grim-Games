@@ -16,8 +16,10 @@
 		choice: MovingChoice;
 		/** Fills its positioned parent (a preview) instead of the whole screen. */
 		contained?: boolean;
+		/** The grim cover's copy, drawn over every dialog, so none of them holds it still. */
+		cover?: boolean;
 	}
-	let { choice, contained = false }: Props = $props();
+	let { choice, contained = false, cover = false }: Props = $props();
 
 	const still = $derived(!animationsOn());
 	/** A still stand-in: the scene's first two colours, top to bottom. */
@@ -34,8 +36,9 @@
 		document.addEventListener('visibilitychange', seen);
 		return () => document.removeEventListener('visibilitychange', seen);
 	});
-	$effect(() => (contained ? undefined : watchOverlays()));
-	const paused = $derived(hidden || (!contained && overlayOpen()));
+	const behind = $derived(!contained && !cover);
+	$effect(() => (behind ? watchOverlays() : undefined));
+	const paused = $derived(hidden || (behind && overlayOpen()));
 
 	let MovingCanvas = $state.raw<Component<ComponentProps<typeof MovingCanvasType>>>();
 	let failed = $state(false);
