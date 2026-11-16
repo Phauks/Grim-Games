@@ -68,7 +68,7 @@ class UpdateChecker {
 	loadChanges(): Promise<void> {
 		this.#loadingChanges ??= (async () => {
 			const waiting = await waitingWorker().then((worker) => worker && askWaitingBuild(worker));
-			this.waiting = waiting;
+			this.waiting = waiting ?? undefined;
 			const changes = waiting?.notes ? await changesFrom(waiting.notes) : await fetchChanges();
 			this.changes = changes;
 			this.changesSettled = true;
