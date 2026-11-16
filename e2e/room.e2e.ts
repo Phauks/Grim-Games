@@ -1659,6 +1659,8 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	// Specters (Trevor, 2026-10-18): spectators see the Storyteller's grimoire live, with the
 	// room code and a password the Storyteller turns on and off, after promising not to spoil
 	// the game.
+	// It walks every Grim view control on top (2026-11-15): 24s on a laptop, more on CI.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
