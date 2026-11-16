@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { diagnosticsView, refreshDiagnostics } from './diagnostics-view.svelte.ts';
 	import { errorLog } from './report.svelte.ts';
@@ -19,13 +20,21 @@
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
 
 	onMount(refreshDiagnostics);
+
+	// Each part opens and closes from its heading, remembered on this device (Trevor, 2026-11-16).
+	const KEY = 'about-diagnostics-';
 </script>
 
 <div class="panel" data-testid="diagnostics" aria-busy={!diagnostics}>
 	<!-- Copy and Download are icons beside the Advanced heading (DiagnosticsActions); Report an
 	     issue is in About's main part (Trevor, 2026-10-19). -->
-	<section>
-		<h2>{t('errors.diag.problems')}</h2>
+	<PageSection
+		title={t('errors.diag.problems')}
+		level={3}
+		collapsible
+		storageKey="{KEY}problems"
+		count={errorLog.entries.length}
+	>
 		<div class="row-line">
 			<span>
 				{errorLog.entries.length === 0
@@ -38,12 +47,11 @@
 				onclick={() => errorLog.showDetails()}>{t('errors.details')}</Button
 			>
 		</div>
-	</section>
+	</PageSection>
 
 	{#each diagnostics?.sections ?? [] as section (section.id)}
-		<section data-section={section.id}>
-			<h2>{label(section.title)}</h2>
-			<dl>
+		<PageSection title={label(section.title)} level={3} collapsible storageKey="{KEY}{section.id}">
+			<dl data-section={section.id}>
 				{#each section.rows.filter((row) => !hideRows.includes(row.label)) as row (row.label)}
 					<dt>{label(row.label)}</dt>
 					<dd>
@@ -56,14 +64,14 @@
 					</dd>
 				{/each}
 			</dl>
-		</section>
+		</PageSection>
 	{/each}
 </div>
 
 <style>
+	/* The parts space themselves, as collapsible sections do on every page. */
 	.panel {
 		display: grid;
-		gap: var(--space-4);
 	}
 	.row-line {
 		display: flex;
@@ -73,14 +81,6 @@
 	}
 	.row-line {
 		justify-content: space-between;
-	}
-	section {
-		display: grid;
-		gap: var(--space-2);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1rem;
 	}
 	dl {
 		display: grid;
