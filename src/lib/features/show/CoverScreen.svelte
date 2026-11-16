@@ -102,6 +102,13 @@
 		height: 100%;
 		object-fit: contain;
 	}
+	/* Readable over the game's background: a halo in the cover's own surface colour. */
+	.cover {
+		text-shadow:
+			0 0 0.25em var(--surface),
+			0 0 0.5em var(--surface),
+			0 0 1em var(--surface);
+	}
 	.name {
 		margin: 0;
 		font-family: var(--font-heading);

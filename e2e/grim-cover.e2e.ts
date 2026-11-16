@@ -2,6 +2,7 @@ import { openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { addNote, leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Trevor's playtest notes (2026-10-26): "Hide grim guesses, eyeball feature like we use in
 // notes", and "Grim cover ... Accessible from day or grim view". Later the same day: "Cover
@@ -291,4 +292,45 @@ test('the cover has its own lock, and Settings sets, changes and removes the PIN
 	await expect(settings.getByText('None for this game.')).toBeVisible();
 	await expect(settings.getByRole('button', { name: 'Set PIN' })).toBeVisible();
 	await expect(settings.getByRole('button', { name: 'Remove PIN' })).toBeDisabled();
+});
+
+test('the cover shows the game background, dimmed, and holds it still with animations off', async ({
+	page
+}) => {
+	test.slow();
+	// Trevor, 2026-11-16: "when using grim cover, it should still show the background of the
+	// game"; his pick, C: the cover as it was over the background, dimmed.
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/');
+	const settings = await openSettingsDialog(page);
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board' })
+		.tap();
+	await settings.getByRole('button', { name: 'Stars' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
+	await startGame(page);
+
+	await page.getByTestId('cover-button').first().tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await expect(cover).toBeVisible();
+	const background = cover.getByTestId('board-background');
+	await expect(background).toHaveAttribute('data-moving', 'stars');
+	await expect(cover.getByTestId('cover-dim')).toBeAttached();
+	// The script's logo and name stay, over the background.
+	await expect(cover.getByRole('heading', { name: 'Trouble Brewing' })).toBeVisible();
+	// The device's Reduce motion turns animations off (Match device): held still.
+	await expect(background).toHaveAttribute('data-still', '');
+	await cover.getByRole('button', { name: 'Close' }).tap();
+	await expect(cover).toBeHidden();
+
+	// With animations on, the cover's copy moves, though the board's own under it holds still.
+	await page.emulateMedia({ reducedMotion: 'no-preference' });
+	await page.getByTestId('cover-button').first().tap();
+	await expect(cover).toBeVisible();
+	await expect(background).not.toHaveAttribute('data-still', '');
+	await expect(
+		page.locator("[data-testid='board-background']:not(dialog [data-testid='board-background'])")
+	).toHaveAttribute('data-still', '');
 });

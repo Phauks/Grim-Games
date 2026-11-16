@@ -23,9 +23,14 @@
 		watched?: { look?: PublicLook; room?: string };
 		/** Told the look this board shows, and its picture, for every shared grim of the game. */
 		onlook?: (look: PublicLook, picture?: Blob) => void;
+		/**
+		 * The grim cover's copy of the board's background (Trevor, 2026-11-16: the cover shows
+		 * the game's background): only drawn, so it never takes Settings' link from the board.
+		 */
+		cover?: boolean;
 	}
 
-	let { game, logo, watched, onlook }: Props = $props();
+	let { game, logo, watched, onlook, cover = false }: Props = $props();
 
 	// ── Background: an image of the Storyteller's own, kept on this device ──
 	let background = $state<BackgroundChoice>({ kind: 'none' });
@@ -52,8 +57,9 @@
 			: undefined
 	);
 	// Chosen in Board and tokens, for this game or all (Trevor, 2026-10-18).
-	$effect(() =>
-		boardBackground.set({
+	$effect(() => {
+		if (cover) return;
+		return boardBackground.set({
 			get gameId() {
 				return game.gameId;
 			},
@@ -70,8 +76,8 @@
 				return background;
 			},
 			onChange: () => (backgroundRead += 1)
-		})
-	);
+		});
+	});
 	let backgroundUrl = $state<string | undefined>();
 	$effect(() => {
 		if (background.kind === 'image') {
@@ -101,6 +107,7 @@
 		preset={shared.preset}
 		moving={shared.moving}
 		vignette={shared.vignette}
+		{cover}
 	/>
 {:else}
 	<BoardBackdrop
@@ -108,5 +115,6 @@
 		preset={background.kind === 'preset' ? background : undefined}
 		moving={background.kind === 'moving' ? background : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+		{cover}
 	/>
 {/if}

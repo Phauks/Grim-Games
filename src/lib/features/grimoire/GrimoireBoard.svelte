@@ -670,6 +670,7 @@
 	provideSeatPictures(() => (watching ? grimoire : undefined));
 	const secret = $derived(watching && !ended); // Nothing is secret once it is over (2026-11-15).
 	const lookNow = new ShownLook(() => ({ grimoire, watching }));
+	const watched = $derived(watching ? { look: grimoire.look, room: grimoire.room } : undefined);
 	let menuOpen = $state(false);
 	/** The board shown to a player who looks at the Grimoire, from their night step. */
 	let showingGrim = $state(false);
@@ -780,12 +781,7 @@
 				style:--strip-h={STRIP_H}
 				bind:clientHeight={sizing.stripReserve}
 			></div>{/if}
-		<GameBackdrop
-			{game}
-			logo={boardLogo || undefined}
-			watched={watching ? { look: grimoire.look, room: grimoire.room } : undefined}
-			onlook={lookNow.share}
-		/>
+		<GameBackdrop {game} logo={boardLogo || undefined} {watched} onlook={lookNow.share} />
 		{#if !mini && toolbar}<BoardToolbar
 				{grimoire}
 				{watching}
@@ -812,6 +808,7 @@
 						details={coverDetails}
 						timer={coverTimer}
 						actions={watching ? undefined : coverActions}
+						backdrop={coverBackdrop}
 						outlined
 					/>
 					{#if !watching}
@@ -1121,6 +1118,7 @@
 		cover={coverDetails}
 		{coverTimer}
 		{coverActions}
+		{coverBackdrop}
 		onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 		{town}
 		onEndDay={(inDay) => flow.startExecution(inDay)}
@@ -1173,6 +1171,9 @@
 {/if}
 
 {#snippet miniGrim()}<GrimoireBoard {grimoire} mini pick={flow} />{/snippet}
+
+<!-- The board's own background on the cover (Trevor, 2026-11-16). -->
+{#snippet coverBackdrop()}<GameBackdrop {game} logo={coverDetails.logo} {watched} cover />{/snippet}
 
 {#snippet coverActions()}<GrimCoverActions view={playerView} />{/snippet}
 

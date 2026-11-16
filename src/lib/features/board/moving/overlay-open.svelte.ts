@@ -1,10 +1,11 @@
 /**
  * Whether a dialog or sheet is open over the page. A moving background behind the board
  * holds still while one is, since it is blurred and dimmed out of sight and would only spend
- * the battery. One watcher serves every background.
+ * the battery; the grim cover counts too, as it draws its own copy. One watcher serves every
+ * background.
  */
 const OPEN =
-	"[data-scope='dialog'][data-part='backdrop'][data-state='open'], [data-scope='drawer'][data-part='backdrop'][data-state='open']";
+	"[data-scope='dialog'][data-part='backdrop'][data-state='open'], [data-scope='drawer'][data-part='backdrop'][data-state='open'], dialog[data-grim-cover][open]";
 
 let open = $state(false);
 let users = 0;
@@ -20,7 +21,7 @@ export function watchOverlays(): () => void {
 			childList: true,
 			subtree: true,
 			attributes: true,
-			attributeFilter: ['data-state']
+			attributeFilter: ['data-state', 'open']
 		});
 		check();
 	}

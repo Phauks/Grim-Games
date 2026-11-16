@@ -18,9 +18,14 @@
 		vignette?: number;
 		/** Fills its positioned parent (the preview) instead of the whole screen. */
 		contained?: boolean;
+		/**
+		 * The grim cover's copy (MovingBackdrop's `cover`), under the dialogs' own dim so the
+		 * cover's logo and text stand out on any background (Trevor, 2026-11-16: option C).
+		 */
+		cover?: boolean;
 	}
 
-	let { url, preset, moving, vignette, contained = false }: Props = $props();
+	let { url, preset, moving, vignette, contained = false, cover = false }: Props = $props();
 </script>
 
 <!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
@@ -41,7 +46,10 @@
 		style:--dim={STILL_BACKGROUNDS[preset.id].dim}
 	></div>
 {:else if moving}
-	<MovingBackdrop choice={moving} {contained} />
+	<MovingBackdrop choice={moving} {contained} {cover} />
+{/if}
+{#if cover && (url || preset || moving)}
+	<div class="dim" data-testid="cover-dim" aria-hidden="true"></div>
 {/if}
 <!-- The vignette darkens the background towards the screen's edges, on every background
      (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
@@ -69,6 +77,13 @@
 	   parchment more, so it never washes out the seat names. */
 	.backdrop.preset {
 		filter: brightness(var(--dim));
+	}
+	.dim {
+		position: fixed;
+		inset: 0;
+		z-index: var(--z-backdrop);
+		background: var(--backdrop);
+		pointer-events: none;
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {

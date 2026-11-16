@@ -51,6 +51,8 @@
 		cover?: CoverDetails;
 		coverTimer?: Snippet;
 		coverActions?: Snippet;
+		/** The game's background under the cover, as on the board. */
+		coverBackdrop?: Snippet;
 		/**
 		 * Opens the board's Soundboard, beside the cover in the header (Trevor, 2026-10-27:
 		 * "Approve day view E"). Without it there is no Soundboard button.
@@ -74,6 +76,7 @@
 		cover,
 		coverTimer,
 		coverActions,
+		coverBackdrop,
 		onSoundboard,
 		town,
 		phase,
@@ -108,6 +111,7 @@
 				details={cover}
 				timer={coverTimer}
 				actions={coverActions}
+				backdrop={coverBackdrop}
 			/><GameNotesButton {game} /></GameLead
 		>{/snippet}
 	{#snippet heading()}<span class="visually-hidden">{title}</span>{/snippet}
