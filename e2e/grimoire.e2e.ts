@@ -5701,7 +5701,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
-	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
+	expect(await names('App')).toEqual(['Settings']);
 	// Beside a phone, the game and its seats on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
@@ -5727,8 +5727,12 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	// Report an issue opens the one Report form over the board (Trevor, 2026-10-20).
-	await menu.getByRole('button', { name: 'Report an issue' }).tap();
+	// Report an issue is an icon beside Close, not a row (Trevor, 2026-11-16), and opens the
+	// one Report form over the board (Trevor, 2026-10-20).
+	await menu
+		.getByTestId('dialog-head-actions')
+		.getByRole('button', { name: 'Report an issue' })
+		.tap();
 	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 	await expect(menu).toBeHidden();
 });
