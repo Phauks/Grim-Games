@@ -44,7 +44,6 @@ export const reports = {
 	'reports.status.declined': "Won't fix",
 	'reports.delete': 'Delete report',
 	'reports.deleteTitle': 'Delete report #{id}?',
-	'reports.deleteDetail': 'It is removed for good.',
 	'reports.details': 'Details',
 	'reports.sentAt': 'Sent',
 	'reports.reporter': 'Reporter',

@@ -426,7 +426,6 @@
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={current ? t('reports.deleteTitle', { id: current.id }) : ''}
-	description={t('reports.deleteDetail')}
 	danger
 	onConfirm={() => current && remove(current)}
 />
