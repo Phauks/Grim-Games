@@ -357,8 +357,7 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	// The vote doesn't put the Storyteller to death: Seat 3 nominates again.
 	await nominate(page, 3, 4);
 	await expect(page.getByText('That player has already nominated today.')).toHaveCount(0);
-	// About to die: executed from the day's Execution, and the game ends.
-	const day = await openDay(page);
+	// About to die: executed from the bank's Execution, and the game ends.
 	await startExecution(page);
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();

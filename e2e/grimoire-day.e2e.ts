@@ -887,7 +887,7 @@ test('executing the Boomdandy asks who lives, then who was pointed at most (M12b
 	await picker.getByRole('button', { name: 'Boomdandy', exact: true }).tap();
 	await closeSeat(page);
 	await chooseCharacter(page, 2, 'Imp');
-	const day = await openDay(page);
+	await openDay(page);
 	await startExecution(page);
 	await endTheDay(page, 'Seat 1');
 	const lives = page.getByRole('alertdialog', { name: 'Boomdandy: who lives?' });
