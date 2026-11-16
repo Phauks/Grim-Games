@@ -74,7 +74,7 @@
 	import type { ProfileWords } from '#lib/core/profile/index.ts';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
-	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
+	import { fitAboveBar } from '#lib/ui/fit-above-bar.ts';
 	import { localGuessKey, localSeats, localTown, saveLocalTown } from './local-town.svelte.ts';
 	import { toggleGhostVote as toggleVote } from './local-town.svelte.ts';
 	import { setTraveller } from '#lib/core/town/local-town.ts';
@@ -448,7 +448,7 @@
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
 			bind:this={townEl}
-			{@attach fitInDialog}
+			{@attach fitAboveBar}
 		>
 			<BoardBackdrop
 				contained
@@ -735,9 +735,10 @@
 		overflow: hidden;
 		border-radius: var(--radius-md);
 		width: 100%;
-		/* In a dialog (the Storyteller's player view), no taller than the room left under the
-		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
-		   that the seats crowd together. */
+		/* No taller than the room left above the bottom tab bar, on /play or in the
+		   Storyteller's player view, so the whole ring and its reminder tray show without
+		   scrolling (fitAboveBar, Trevor 2026-11-16: B); never so short that the seats crowd
+		   together. */
 		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
 		/* + the reminder tray (tray-ring.ts); with Notes under the tabs, the room left above
 		   them (Tabs `aside`, --panel-room), tray included. */
