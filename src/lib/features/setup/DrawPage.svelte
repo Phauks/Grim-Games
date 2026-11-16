@@ -8,6 +8,7 @@
 		bagSlots,
 		dealPairs,
 		nextDrawSeat,
+		openDrawSeats,
 		type BagSlot
 	} from '#lib/core/rules/setup/bag-plan.ts';
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
@@ -228,12 +229,28 @@
 		return result.ok;
 	}
 
-	/** Names on the other seats, so the reveal doesn't offer them. */
+	/**
+	 * Open seats with a player's name: whoever draws may be any of them, so the reveal offers
+	 * their names and the draw moves to the seat whose name is picked (Trevor, 2026-11-16: the
+	 * draw named the first player, when the name should start blank and the list show).
+	 */
+	function openNames(seatId: SeatId | undefined): { seatId: SeatId; name: string }[] {
+		if (!game) return [];
+		const seats = game.seats;
+		const open = [...(seatId ? [seatId] : []), ...openDrawSeats(game)];
+		return game.seating.flatMap((id) => {
+			const name = seats[id].playerName;
+			return open.includes(id) && name ? [{ seatId: id, name }] : [];
+		});
+	}
+
+	/** Names on seats that have a character or hold a tile, so the reveal doesn't offer them. */
 	function takenNames(seatId: SeatId | undefined): string[] {
 		if (!game) return [];
 		const seats = game.seats;
+		const offered = new Set(openNames(seatId).map((o) => o.seatId));
 		return game.seating.flatMap((id) => {
-			const name = id !== seatId ? seats[id].playerName : undefined;
+			const name = !offered.has(id) ? seats[id].playerName : undefined;
 			return name ? [name] : [];
 		});
 	}
@@ -328,13 +345,26 @@
 
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
-		const seatId = tile.drawnBySeat;
+		let seatId = tile.drawnBySeat;
+		const { tileId } = tile;
 		const name = details.playerName.trim();
 		// A player with no phone seeing a tile dealt to them: already theirs in the grimoire.
 		if (tile.confirmed) noPhoneDraw.done(seatId);
-		else if (!send({ type: 'ConfirmDraw', tileId: tile.tileId, alignment: details.alignment }))
-			return;
-		if (name !== (game?.seats[seatId]?.playerName ?? '')) {
+		else {
+			// The name of another open seat: the draw is that player's, so it moves to their seat.
+			const key = name.toLocaleLowerCase();
+			const theirs = openNames(seatId).find(
+				(o) => o.seatId !== seatId && o.name.toLocaleLowerCase() === key
+			);
+			if (theirs) {
+				if (!send({ type: 'CancelDraw', tileId })) return;
+				if (!send({ type: 'DrawTile', seatId: theirs.seatId, tileId })) return;
+				seatId = theirs.seatId;
+			}
+			if (!send({ type: 'ConfirmDraw', tileId, alignment: details.alignment })) return;
+		}
+		// No name given keeps the seat's own: the draw never wipes a player's name.
+		if (name && name !== (game?.seats[seatId]?.playerName ?? '')) {
 			send({ type: 'RenameSeat', seatId, playerName: name });
 		}
 		revealOpen = false;
@@ -422,7 +452,11 @@
 			{shows}
 			needsAlignment={!tile.confirmed && 'traveller' in tile && tile.traveller}
 			seatLabel={label(tile.drawnBySeat)}
-			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
+			playerName={(tile.confirmed &&
+				tile.drawnBySeat &&
+				game?.seats[tile.drawnBySeat]?.playerName) ||
+				''}
+			seatNames={openNames(tile.drawnBySeat).map((o) => o.name)}
 			taken={takenNames(tile.drawnBySeat)}
 			holdToReveal={gameSettings.current.holdToReveal}
 			reel={gameSettings.current.slotMachine ? reel : []}

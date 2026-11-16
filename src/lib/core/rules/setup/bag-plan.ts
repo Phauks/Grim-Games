@@ -480,17 +480,28 @@ export function validRandomSelection(
 }
 
 /**
- * The seat the next draw goes to, for the parity draw (players draw in seating order): the
- * first seat with no character that is not already holding a tile. Undefined when every
- * seat has one.
+ * The seats a draw can go to: those with no character that are not already holding a tile,
+ * in seating order.
  */
-export function nextDrawSeat(game: Game): SeatId | undefined {
+export function openDrawSeats(game: Game): SeatId[] {
 	const holding = new Set(
 		Object.values(game.bag?.tiles ?? {})
 			.filter((t) => t.drawnBySeat !== undefined && !t.confirmed)
 			.map((t) => t.drawnBySeat)
 	);
-	return game.seating.find((id) => game.seats[id].characterId === undefined && !holding.has(id));
+	return game.seating.filter((id) => game.seats[id].characterId === undefined && !holding.has(id));
+}
+
+/**
+ * The seat the next draw goes to, for the parity draw (players draw in seating order): the
+ * first open seat with no player's name, else the first open seat. A named seat is that
+ * player's, and whoever draws next may be someone else (Trevor, 2026-11-16: the draw named
+ * the first player and should start blank), so the drawer picks their name and the draw
+ * moves to that seat. Undefined when every seat has one.
+ */
+export function nextDrawSeat(game: Game): SeatId | undefined {
+	const open = openDrawSeats(game);
+	return open.find((id) => !game.seats[id].playerName) ?? open[0];
 }
 
 /**
