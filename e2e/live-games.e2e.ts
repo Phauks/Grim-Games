@@ -102,6 +102,48 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await adminContext.close();
 });
 
+// Trevor, 2026-11-16: "now i don't see the storytellers grim, it just shows the ppl in the
+// room". A grimoire the admin's app can't show used to hide the board for good, saying nothing.
+test('a grimoire Live games cannot show says so, and the next one shows', async ({
+	page,
+	browser
+}, testInfo) => {
+	const shown = await openRoom(page);
+	const code = shown.replace(/\s/g, '');
+	const adminContext = await browser.newContext({ ...testInfo.project.use });
+	const admin = await adminContext.newPage();
+	await admin.goto('/live-games');
+	await signIn(admin, listedAdmin(testInfo, 3));
+	// The first grimoire the room passes on arrives broken; the rest as sent.
+	let broken = false;
+	await admin.routeWebSocket(/\/api\/admin\//, (ws) => {
+		const server = ws.connectToServer();
+		server.onMessage((raw) => {
+			const message = JSON.parse(String(raw)) as { type: string; grimoire?: object };
+			if (message.type === 'grimoire' && !broken) {
+				broken = true;
+				ws.send(JSON.stringify({ ...message, grimoire: { ...message.grimoire, saved: {} } }));
+			} else ws.send(raw);
+		});
+	});
+	await admin.goto(`/live-games/${code}`);
+	await expect(admin.getByText("The Storyteller's grimoire can't be shown")).toBeVisible();
+	await expect(admin.getByTestId('public-town')).toBeVisible();
+
+	// The Storyteller's next change sends it again, and the board shows.
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	await page
+		.locator('[data-scope="drawer"][data-part="content"]')
+		.getByRole('combobox', { name: 'Status: Alive' })
+		.tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(admin.getByRole('button', { name: /^Seat 1:.*dead/i })).toBeVisible();
+	await expect(admin.getByTestId('public-town')).toHaveCount(0);
+	await adminContext.close();
+});
+
 // Trevor, 2026-11-12: "verify that it accurately can see live games and previously run games,
 // i want better history and usage"; he picked option B, a Game history page beside Live games.
 test('Live games tells a finished game from one going on, and Game history keeps it', async ({

@@ -20,7 +20,7 @@ test('a report sent from the menu reaches the inbox, where it can be triaged and
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
 	await form.getByRole('textbox', { name: 'Description' }).fill('Show the night order on phones.');
 	// What goes with it is listed before sending.
-	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await form.getByRole('button', { name: 'Metadata' }).tap();
 	await expect(form).toContainText('Build');
 	expect((await send.boundingBox())!.height).toBeGreaterThanOrEqual(44);
 	await send.tap();
@@ -68,9 +68,21 @@ test('a report sent from the menu reaches the inbox, where it can be triaged and
 	await status.getByRole('button', { name: 'Close' }).tap();
 	await expect(row).toBeVisible();
 
-	// Still an admin after a reload, with no filter on again; delete confirms first.
+	// Still an admin after a reload, with no filter on again.
 	await page.reload();
 	await expect(table.getByRole('button', { name: 'Filter Status (set)' })).toHaveCount(0);
+
+	// Trevor, 2026-11-16: a second screen for finished reports, "closed, not finished". Done
+	// moves it from the Open tab to Closed; delete confirms first.
+	const tabs = page.getByRole('tablist', { name: 'Open or closed reports' });
+	await expect(tabs.getByRole('tab', { name: /^Open/ })).toHaveAttribute('aria-selected', 'true');
+	await row.getByRole('button', { name: title }).tap();
+	await report.getByRole('combobox', { name: 'Status' }).tap();
+	await page.getByRole('option', { name: 'Done' }).tap();
+	await report.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(row).toBeHidden();
+	await tabs.getByRole('tab', { name: /^Closed/ }).tap();
+	await expect(row).toContainText('Done');
 	await row.getByRole('button', { name: title }).tap();
 	await page.getByRole('button', { name: 'Delete report' }).tap();
 	await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).tap();
@@ -189,7 +201,7 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
 	await form.getByRole('textbox', { name: 'Description' }).fill('The Chef counts wrong.');
 	await expect(form.getByLabel('Include the script')).toBeChecked();
-	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await form.getByRole('button', { name: 'Metadata' }).tap();
 	await expect(form.getByTestId('report-script')).toHaveText('Trouble Brewing');
 	await form.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(form.getByTestId('report-sent')).toBeVisible();
@@ -233,7 +245,7 @@ test('a report sent mid-game can carry the game, which opens as a copy to step t
 	// The whole row is the switch's tap target.
 	await form.getByText('Include this game', { exact: true }).tap();
 	await expect(include).toBeChecked();
-	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await form.getByRole('button', { name: 'Metadata' }).tap();
 	await expect(form.getByTestId('report-game')).toHaveText('Trouble Brewing');
 	await form.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(form.getByTestId('report-sent')).toBeVisible();
@@ -273,7 +285,7 @@ test('the Library script popup has Report an issue, and the player view reports 
 	await expect(form.getByRole('combobox', { name: 'Kind' })).toContainText(
 		'Script or data problem'
 	);
-	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await form.getByRole('button', { name: 'Metadata' }).tap();
 	await expect(form.getByTestId('report-script')).toHaveText('Storm Front');
 	await form.getByRole('button', { name: 'Cancel' }).tap();
 
@@ -283,7 +295,7 @@ test('the Library script popup has Report an issue, and the player view reports 
 		0
 	);
 	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
-	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await form.getByRole('button', { name: 'Metadata' }).tap();
 	await expect(form.getByTestId('report-script')).toHaveText('Storm Front');
 });
 

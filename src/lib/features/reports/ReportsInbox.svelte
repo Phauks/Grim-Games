@@ -9,6 +9,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import { applyFilters, type ColumnFilter } from '#lib/ui/table/column-filter.ts';
@@ -34,7 +35,12 @@
 		listReports,
 		setReportStatus
 	} from './reports-api.ts';
-	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
+	import {
+		isClosedStatus,
+		REPORT_STATUSES,
+		type Report,
+		type ReportStatus
+	} from './reports-protocol.ts';
 
 	// In-app reports, at /reports. Admin accounts triage them (Trevor, 2026-10-18; no admin key
 	// since 2026-10-22). Any other signed-in account reads the reports sent from an account and
@@ -116,11 +122,20 @@
 		}
 	]);
 
+	// Open and Closed tabs (Trevor, 2026-11-16): Done and Won't fix reports leave the Open list
+	// for Closed rather than staying among the ones still to work on.
+	let tab = $state<'open' | 'closed'>('open');
+	const openReports = $derived((reports ?? []).filter((r) => !isClosedStatus(r.status)));
+	const closedReports = $derived((reports ?? []).filter((r) => isClosedStatus(r.status)));
+	const listed = $derived(tab === 'closed' ? closedReports : openReports);
+	const tabs = $derived([
+		{ value: 'open' as const, label: t('reports.tab.open'), count: openReports.length },
+		{ value: 'closed' as const, label: t('reports.tab.closed'), count: closedReports.length }
+	]);
+
 	/** The rows the table shows after its filters: what Copy and Download take. */
 	const shown = $derived(
-		applyFilters(reports ?? [], columnFilters, (r, id) =>
-			columns.find((c) => c.id === id)?.value?.(r)
-		)
+		applyFilters(listed, columnFilters, (r, id) => columns.find((c) => c.id === id)?.value?.(r))
 	);
 
 	const label = (key: MessageKey) => (t as (key: MessageKey) => string)(key);
@@ -283,44 +298,52 @@
 			<Button onclick={openAccount}>{t('account.signIn.title')}</Button>
 		</div>
 	{:else}
-		<DataTable
-			label={t('reports.inbox')}
-			{columns}
-			rows={reports ?? []}
-			key={(r) => String(r.id)}
-			bind:columnFilters
-			narrow="hide"
-			fit="container"
-			hideKey="reports"
-			pageSize={50}
-			empty={t('common.none')}
-			testid="reports"
-		>
-			{#snippet cell(report, column)}
-				<!-- Every cell opens the same report, so a tap anywhere on the row does; only the
-				     title is in the tab order. -->
-				<button
-					type="button"
-					class="open"
-					tabindex={column.id === 'title' ? undefined : -1}
-					onclick={() => ((openId = report.id), (dialogOpen = true))}
-				>
-					{#if column.id === 'id'}
-						#{report.id}
-					{:else if column.id === 'title'}
-						{report.title}
-					{:else if column.id === 'kind'}
-						{t(`reports.kind.${report.kind}`)}
-					{:else if column.id === 'reporter'}
-						{reporter(report)}
-					{:else if column.id === 'status'}
-						{t(`reports.status.${report.status}`)}
-					{:else}
-						{day.format(report.createdAt)}
-					{/if}
-				</button>
+		<Tabs bind:value={tab} {tabs} label={t('reports.tabs')}>
+			{#snippet panel(shownTab)}
+				<!-- One table at a time: a tab seen before keeps its panel, which would list the
+				     other tab's rows. -->
+				{#if shownTab === tab}
+					<DataTable
+						label={t('reports.inbox')}
+						{columns}
+						rows={listed}
+						key={(r) => String(r.id)}
+						bind:columnFilters
+						narrow="hide"
+						fit="container"
+						hideKey="reports"
+						pageSize={50}
+						empty={t('common.none')}
+						testid="reports"
+					>
+						{#snippet cell(report, column)}
+							<!-- Every cell opens the same report, so a tap anywhere on the row does; only the
+						     title is in the tab order. -->
+							<button
+								type="button"
+								class="open"
+								tabindex={column.id === 'title' ? undefined : -1}
+								onclick={() => ((openId = report.id), (dialogOpen = true))}
+							>
+								{#if column.id === 'id'}
+									#{report.id}
+								{:else if column.id === 'title'}
+									{report.title}
+								{:else if column.id === 'kind'}
+									{t(`reports.kind.${report.kind}`)}
+								{:else if column.id === 'reporter'}
+									{reporter(report)}
+								{:else if column.id === 'status'}
+									{t(`reports.status.${report.status}`)}
+								{:else}
+									{day.format(report.createdAt)}
+								{/if}
+							</button>
+						{/snippet}
+					</DataTable>
+				{/if}
 			{/snippet}
-		</DataTable>
+		</Tabs>
 	{/if}
 </Page>
 
@@ -426,7 +449,6 @@
 <ConfirmDialog
 	bind:open={confirmDelete}
 	title={current ? t('reports.deleteTitle', { id: current.id }) : ''}
-	description={t('reports.deleteDetail')}
 	danger
 	onConfirm={() => current && remove(current)}
 />

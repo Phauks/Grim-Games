@@ -48,7 +48,7 @@
 	options={THEMES.map((option) => ({ value: option.id, label: option.name }))}
 	onChange={(themeId) => preferences.update({ themeId })}
 />
-<AnimationsSetting variant="setting" />
+<AnimationsSetting />
 {#each groups as [group, tokens] (group)}
 	<SettingCollapsible
 		title={t(`settings.colorGroup.${group}`)}

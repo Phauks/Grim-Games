@@ -30,6 +30,11 @@ export type ReportKind = (typeof REPORT_KINDS)[number];
 export const REPORT_STATUSES = ['new', 'accepted', 'in-progress', 'done', 'declined'] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
+/** Done and Won't fix: the report is closed and lists under Reports' Closed tab (Trevor, 2026-11-16). */
+export function isClosedStatus(status: ReportStatus): boolean {
+	return status === 'done' || status === 'declined';
+}
+
 export const REPORT_LIMITS = {
 	title: 120,
 	body: 4000,
