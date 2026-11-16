@@ -70,19 +70,19 @@
 </script>
 
 {#if button}<div class="share">
-	<IconButton
-		icon="share"
-		label={t(`scripts.share.button.${what}`)}
-		onpointerenter={() => void warm()}
-		onfocus={() => void warm()}
-		onpointerdown={() => void warm()}
-		onclick={() => {
-			void warm();
-			open = true;
-		}}
-		disabled={!target && !room}
-	/>
-</div>{/if}
+		<IconButton
+			icon="share"
+			label={t(`scripts.share.button.${what}`)}
+			onpointerenter={() => void warm()}
+			onfocus={() => void warm()}
+			onpointerdown={() => void warm()}
+			onclick={() => {
+				void warm();
+				open = true;
+			}}
+			disabled={!target && !room}
+		/>
+	</div>{/if}
 
 <!-- Just "Share", with the script's logo and name under it (Trevor, 2026-10-27). -->
 <Dialog bind:open title={t('share.share')}>

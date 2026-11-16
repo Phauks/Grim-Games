@@ -1,6 +1,6 @@
 import type { LoadedScript } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-import type { WatchedTable } from './grimoire.svelte.ts';
+import type { WatchedTable } from '#lib/core/sync/watched-table.ts';
 import type {
 	PublicCorner,
 	PublicLook,

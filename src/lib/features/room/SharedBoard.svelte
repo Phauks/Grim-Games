@@ -4,7 +4,7 @@
 	import type { SharedGrimoire } from '#lib/core/sync/room.ts';
 	import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 	import { parseSeatPictures } from '#lib/core/sync/room-pictures.ts';
-	import { watchedTable } from '#lib/features/grimoire/watched-table.ts';
+	import { watchedTable } from '#lib/core/sync/watched-table.ts';
 	import * as dayTimers from '#lib/core/rules/day/day-timer.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';

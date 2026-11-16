@@ -87,10 +87,7 @@
 	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
-	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
-	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
-	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
-	import { scriptVersion } from '#lib/features/player/player-script.ts';
+	import ViewerShare from './ViewerShare.svelte';
 	import { provideSeatPictures } from './seats/seat-picture.ts';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
@@ -152,10 +149,7 @@
 		 * nothing to share or change, and leaving needs no asking.
 		 */
 		watching?: boolean;
-		/**
-		 * False leaves out the toolbar and fills the box it is in: the final grimoire in its own
-		 * dialog, whose title and close stand in for it (Trevor, 2026-11-15).
-		 */
+		/** False: no toolbar, filling its box (the final grimoire's dialog, Trevor 2026-11-15). */
 		toolbar?: boolean;
 		/** The Storyteller's day timer, on a spectator's board. */
 		watchedTimer?: WatchedTimer;
@@ -413,8 +407,7 @@
 	}
 	/**
 	 * A token on the board tapped: held, as one from the bank is (Trevor, 2026-10-30), for the
-	 * seat (or bank) tapped next. With no bank (the game over), or watching, its own dialog
-	 * instead, read-only for a watcher (Trevor, 2026-11-15: so its words can be read).
+	 * seat (or bank) tapped next. With no bank (the game over), or watching, its own dialog.
 	 */
 	function holdReminder(reminderId: ReminderId, from?: SeatId) {
 		if (bank && !watching) hand.toggle({ kind: 'placed', reminderId, from });
@@ -681,9 +674,7 @@
 	// A report sent from the board carries the game's script, never the game (Trevor, 2026-10-22).
 	offerScriptToReports(() => loadedScript);
 	const boardLogo = $derived(loadedScript && scriptLogo(loadedScript));
-	// Players' own pictures on the seats: this room's, or those sent with a watched grimoire.
 	provideSeatPictures(() => (watching ? grimoire : undefined));
-	/** A spectator's Share: the share screen players have, room and script (Trevor, 2026-11-15). */
 	let viewerShareOpen = $state(false);
 	/** The look this board shares, or, watching, the look its Storyteller shared (Trevor, 2026-10-26). */
 	let ownLook = $state<PublicLook>();
@@ -833,20 +824,14 @@
 		     the board and the day (2026-10-27: "so it doesn't move"); a spectator's too (Trevor,
 		     2026-11-15), with nothing of the Storyteller's on it. -->
 			{#snippet lead()}
-				{#if watching}<CoverButton
-						gameId={game.gameId}
-						details={coverDetails}
-						timer={coverTimer}
-						outlined
-					/>{/if}
+				<CoverButton
+					gameId={game.gameId}
+					details={coverDetails}
+					timer={coverTimer}
+					actions={watching ? undefined : coverActions}
+					outlined
+				/>
 				{#if !watching}
-					<CoverButton
-						gameId={game.gameId}
-						details={coverDetails}
-						timer={coverTimer}
-						actions={coverActions}
-						outlined
-					/>
 					<GameNotesButton
 						game={grimoire.open}
 						run={(command) => grimoire.run(command)}
@@ -1127,20 +1112,12 @@
 {/if}
 
 <BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
-{#if watching && loadedScript}
-	{@const script = loadedScript}
-	<ShareControl
-		what="script"
-		button={false}
+{#if watching && loadedScript}<ViewerShare
 		bind:open={viewerShareOpen}
-		title={script.name}
-		author={script.meta.author}
-		version={scriptVersion(undefined, script.meta)}
+		script={loadedScript}
 		logo={boardLogo || undefined}
-		target={() => shareTargetFor(gameShareable(script), location.origin)}
 		room={grimoire.room}
-	/>
-{/if}
+	/>{/if}
 
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>

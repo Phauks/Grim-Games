@@ -16,7 +16,7 @@
 	import YourCharacter from '#lib/features/room/YourCharacter.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
-	import type { WatchedTable } from './grimoire.svelte.ts';
+	import type { WatchedTable } from '#lib/core/sync/watched-table.ts';
 
 	/**
 	 * What players see on /play, drawn from the Storyteller's game: where the game is up to and
