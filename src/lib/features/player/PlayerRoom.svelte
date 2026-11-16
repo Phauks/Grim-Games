@@ -20,9 +20,13 @@
 		onVoting?: (voting: boolean) => void;
 		/** The room this phone is in now, for the settings cog (plan E2); undefined when none. */
 		onRoom?: (room: string | undefined) => void;
+		/** Told whether this phone has a seat to pick (JoinPanel). */
+		onSeatToPick?: (unseated: boolean) => void;
+		/** What the status box's Select seat does (JoinPanel). */
+		selectSeat?: () => void;
 	}
 
-	let { initialCode, onCode, onVoting, onRoom }: Props = $props();
+	let { initialCode, onCode, onVoting, onRoom, onSeatToPick, selectSeat }: Props = $props();
 	// svelte-ignore state_referenced_locally
 	let code = $state(initialCode === undefined ? lastRoom() : (initialCode ?? undefined));
 </script>
@@ -33,6 +37,8 @@
 		onCode={(c) => (onCode ? onCode(c) : (code = c))}
 		entry={initialCode !== undefined}
 		{onVoting}
+		{onSeatToPick}
+		{selectSeat}
 		onJoined={(joined) =>
 			onRoom?.(joined ? (normaliseRoomCode(code ?? '') ?? undefined) : undefined)}
 	/>

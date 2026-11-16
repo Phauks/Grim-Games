@@ -11,7 +11,7 @@ import {
 	startingTown,
 	type LocalTown
 } from '#lib/core/town/local-town.ts';
-import type { LoadedScript } from '#lib/core/data/index.ts';
+import type { Character, LoadedScript } from '#lib/core/data/index.ts';
 import type { SavedScript } from '#lib/features/scripts/saved-scripts.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { removePads } from '#lib/ui/scratch/scratch-store.svelte.ts';
@@ -66,6 +66,24 @@ export function toggleGhostVote(notesKey: string, seatId: string): void {
 	const town = localTown(notesKey);
 	const seat = town.seats.find((s) => s.id === seatId);
 	if (seat?.dead) saveLocalTown(notesKey, setVoteUsed(town, seatId, !seat.voteUsed));
+}
+
+/**
+ * A players-only game's seat picker (Trevor, 2026-11-10): the script's characters, then every
+ * other official Traveller, since a Traveller can join any game; with Off-script characters on
+ * (2026-11-16), every other official character too. Never a Fabled or Loric, which no player is.
+ */
+export function localPickable(
+	script: readonly Character[],
+	official: readonly Character[],
+	offScript: boolean
+): Character[] {
+	const others = official.filter(
+		(c) =>
+			!script.some((s) => s.id === c.id) &&
+			(c.type === 'traveller' || (offScript && c.type !== 'fabled' && c.type !== 'loric'))
+	);
+	return [...script, ...others];
 }
 
 export const localSeats = (notesKey: string): PublicSeat[] => localPublicSeats(localTown(notesKey));

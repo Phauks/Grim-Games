@@ -56,6 +56,12 @@
 		 * (Trevor, 2026-11-12). None while it has no end, such as a seat just given.
 		 */
 		characterUntil?: number;
+		/**
+		 * Select seat, in the game status's place as Your character is, so nothing moves: a
+		 * phone with a seat to pick, away from the Grim tab where seats are picked (Trevor,
+		 * 2026-11-16). A phone with no seat has no character, so the two never meet.
+		 */
+		selectSeat?: () => void;
 		after?: Snippet;
 	}
 
@@ -72,10 +78,12 @@
 		seatNumber,
 		character,
 		characterUntil,
+		selectSeat,
 		after
 	}: Props = $props();
 
 	const yours = $derived(ended ? undefined : character);
+	const seatAsk = $derived(ended || yours ? undefined : selectSeat);
 	const characterLeft = timeLeft(() => (yours ? characterUntil : undefined));
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
@@ -94,7 +102,7 @@
 	{#if statusAction}<span class="action">{statusAction}</span>{/if}
 {/snippet}
 
-{#if status !== undefined || after || phase || yours}
+{#if status !== undefined || after || phase || yours || seatAsk}
 	<div class="status-row" data-testid="player-status-row">
 		{#if status !== undefined}
 			<!-- With nothing to say the box takes no room, so the game's status starts the row
@@ -121,8 +129,11 @@
 		<!-- Where the game is up to, with the day's timer; it shares the row's height, so
 		     nothing below moves. -->
 		<!-- While players may see theirs, Your character covers the game's status, the same box,
-		     so nothing moves (Trevor, 2026-11-03). -->
-		{#if phase || yours}<div class="game" data-covered={yours ? '' : undefined}>
+		     so nothing moves (Trevor, 2026-11-03); Select seat does the same (2026-11-16). -->
+		{#if phase || yours || seatAsk}<div
+				class="game"
+				data-covered={yours || seatAsk ? '' : undefined}
+			>
 				{#if phase}<PlayersDayStatus
 						{phase}
 						{timer}
@@ -144,6 +155,12 @@
 						><Icon name="yourCharacter" />{characterLeft.ms === undefined
 							? t('room.role.open')
 							: t('room.role.openTime', { time: clock(characterLeft.ms) })}</button
+					>{:else if seatAsk}<button
+						type="button"
+						class="character"
+						class:over={!!phase}
+						data-testid="select-seat"
+						onclick={seatAsk}><Icon name="arrange" />{t('room.selectSeat')}</button
 					>{/if}
 			</div>{/if}
 		{@render after?.()}
@@ -176,7 +193,8 @@
 	.game[data-covered] > :global([data-testid='players-status']) {
 		visibility: hidden;
 	}
-	/* Your character in the game status's place, drawn as that box is (PlayersDayStatus). */
+	/* Your character (or Select seat) in the game status's place, drawn as that box is
+	   (PlayersDayStatus). */
 	.character {
 		display: inline-flex;
 		flex: 1;

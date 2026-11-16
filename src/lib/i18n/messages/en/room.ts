@@ -135,6 +135,7 @@ export const room = {
 	'room.recentLine': '{code} · Storyteller: {name}',
 	'room.settingsNamed': 'Settings: {name}',
 	'room.joining': 'Joining the room…',
+	'room.selectSeat': 'Select seat',
 	'room.playerOffline': 'Offline: reconnecting…',
 	'room.gameOver': 'Game over',
 	'room.gameOverGood': 'Game over: Good won',

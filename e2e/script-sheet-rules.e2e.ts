@@ -45,6 +45,9 @@ test("a phone in the room sees the game's special rules on its script", async ({
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
+	// A phone with no seat lands on its Grim to pick one (Trevor, 2026-11-16).
+	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+	await phone.getByRole('tab', { name: 'Script' }).tap();
 	const script = phone.getByRole('tabpanel', { name: 'Script' });
 	await expect(script.getByTestId('sheet-rule')).toContainText('Stowed Away');
 	await expect(script.getByTestId('sheet-rule')).toContainText(STOWED_AWAY);

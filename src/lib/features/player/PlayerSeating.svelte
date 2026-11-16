@@ -17,7 +17,8 @@
 	 * 2026-10-31: not a gap between seats). Dropped in a space, their seat moves there, to match
 	 * where they really sit (Trevor, 2026-10-31); back on its own spot, nothing changes. A phone
 	 * with no seat yet starts with its disc in the middle. Once seating is locked, a phone with
-	 * no seat taps an open seat (`claim`) to sit there. The Storyteller's board makes the change.
+	 * no seat taps an open seat (`claim`) to sit there, the open seats ringed. The Storyteller's
+	 * board makes the change.
 	 */
 	interface Props {
 		player: RoomPlayer;
@@ -38,6 +39,16 @@
 
 	const me = $derived(player.view?.me);
 	const open = $derived(!!player.view?.seatingOpen && !!me?.name);
+	/**
+	 * Seating locked and this phone has no seat: the open seats it may tap are ringed, as a held
+	 * disc rings the seat it would take, and the middle says to tap one (Trevor, 2026-11-16:
+	 * players didn't know they should pick a seat).
+	 */
+	const offered = $derived(
+		!player.view?.seatingOpen && !!me?.name && !me.seatId
+			? ring.seats.flatMap((s, i) => (isOpenSeat(s) ? [{ s, p: ring.points[i] }] : []))
+			: []
+	);
 	const index = $derived(ring.seats.findIndex((s) => s.seatId === me?.seatId));
 	const own = $derived(index >= 0 ? ring.seats[index] : undefined);
 	/** Where the disc sits when not held: its seat, or the middle for a phone with no seat. */
@@ -141,6 +152,17 @@
 	const badge = (seat: PublicSeat) => nameOf(seat) as PlayerName;
 </script>
 
+{#each offered as { s, p } (s.seatId)}<span
+		class="target"
+		style:left="{p.x}%"
+		style:top="{p.y}%"
+		style:--disc={`${ring.size}px`}
+		data-testid="seating-offered"
+		data-seat={s.seatNumber}
+	></span>{/each}
+{#if offered.length}<p class="line" role="status" data-testid="seating-line">
+		{t('player.seating.tapOpen')}
+	</p>{/if}
 {#if open && me}
 	{@const at = drag && moved ? drag.at : home}
 	{#if target}<span
@@ -179,6 +201,7 @@
 		{#if target}{t('player.seating.take', { number: target.s.seatNumber })}
 			{#if !isOpenSeat(target.s)}<PlayerBadge name={badge(target.s)} />{/if}
 		{:else if place}{t('player.seating.move')}
+		{:else if !own}{t('player.seating.dragYours')}
 		{:else}{t('player.seating.open')}{/if}
 	</p>
 {/if}
