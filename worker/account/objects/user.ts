@@ -12,8 +12,14 @@ import {
 	type ProfileDoc,
 	type SyncRequest,
 	type SyncResponse,
-	type SyncResult
+	type SyncResult,
+	isDocId
 } from '../../../src/lib/features/account/account-protocol.ts';
+import {
+	mergeFeedback,
+	parseSavedFeedback,
+	savedFeedback
+} from '../../../src/lib/core/feedback/index.ts';
 import { passwordHash, randomToken, sameHash, sha256 } from '../crypto.ts';
 import type { AccountEnv } from '../objects.ts';
 import { HOUR_MS, type PasswordHash } from './shared.ts';
@@ -562,6 +568,28 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	}
 
 	/** Deletes the user and everything stored for them. Returns the email and name to release. */
+	/**
+	 * Players' feedback on a game this account told (Trevor, 2026-11-16: "Server should save
+	 * because it can tie to an account or accounts"). The room adds what arrived to the account's
+	 * copy, one document per game, which every signed-in device then syncs. Nothing is kept for
+	 * an account that doesn't exist.
+	 */
+	async addFeedback(gameId: string, incoming: unknown[], now: number): Promise<void> {
+		if (!isDocId(gameId) || !Array.isArray(incoming) || !this.user()) return;
+		const existing = this.sql
+			.exec<DocRow>(
+				'SELECT kind, id, rev, updated_at, deleted, body FROM doc WHERE kind = ? AND id = ?',
+				'feedback',
+				gameId
+			)
+			.toArray()[0];
+		const before =
+			existing?.body && !existing.deleted ? parseSavedFeedback(JSON.parse(existing.body)) : [];
+		const after = mergeFeedback(before, incoming);
+		if (JSON.stringify(after) === JSON.stringify(before)) return;
+		await this.putDoc('feedback', gameId, existing?.rev ?? 0, savedFeedback(after), false, now);
+	}
+
 	async deleteAccount(): Promise<{ email?: string; username?: string }> {
 		const user = this.user();
 		if (user) await this.directory()?.remove(user.id);

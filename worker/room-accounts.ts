@@ -7,8 +7,9 @@
  * other phones never learn it, and older apps see no change.
  */
 import type { RoomState } from '../src/lib/core/sync/room.ts';
+import { feedbackView } from '../src/lib/core/sync/room-feedback.ts';
 import { gamePlayers, type GamePlayer } from '../src/lib/features/friends/friend-rules.ts';
-import type { AccountEnv } from './account/objects.ts';
+import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
 import { friendBook, type FriendsEnv } from './friends/routes.ts';
 
@@ -87,8 +88,58 @@ export async function linkAccount(
 	const key = 'host' in who ? HOST : who.memberId;
 	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
 	const accountId = tag.slice(TAG_PREFIX.length);
+	if ('host' in who) await noteStoryteller(ctx, accountId);
 	if (accounts[key] === accountId) return;
 	await ctx.storage.put(STORAGE_KEY, { ...accounts, [key]: accountId });
+}
+
+/**
+ * Every account that has told this room's game, co-Storytellers too (Trevor, 2026-11-16:
+ * feedback is kept on "an account or accounts"). `host` above holds only the latest.
+ */
+const STORYTELLERS_KEY = 'storytellers';
+
+async function noteStoryteller(ctx: DurableObjectState, accountId: string): Promise<void> {
+	const known = (await ctx.storage.get<string[]>(STORYTELLERS_KEY)) ?? [];
+	if (!known.includes(accountId)) await ctx.storage.put(STORYTELLERS_KEY, [...known, accountId]);
+}
+
+/**
+ * A new game in the room starts its list again from the Storytellers connected now, so a
+ * Storyteller who handed the room on never gets the next Storyteller's feedback.
+ */
+export async function restartStorytellers(ctx: DurableObjectState): Promise<void> {
+	const ids = ctx.getWebSockets().flatMap((socket) => {
+		const role = (socket.deserializeAttachment() as { role?: string } | null)?.role;
+		const accountId = role === 'host' ? socketAccount(ctx, socket) : undefined;
+		return accountId ? [accountId] : [];
+	});
+	await ctx.storage.put(STORYTELLERS_KEY, [...new Set(ids)]);
+}
+
+/**
+ * Players' feedback on the ended game goes to every Storyteller account in the room, which
+ * keeps it with the game for every device signed in to it; sent again on each feedback message,
+ * the account adds only what is new. Who sent anonymous feedback is never
+ * in it (`feedbackView`).
+ */
+export async function saveFeedbackToAccounts(
+	ctx: DurableObjectState,
+	env: AccountEnv,
+	room: RoomState,
+	now: number
+): Promise<void> {
+	const gameId = room.ended?.gameId;
+	if (!gameId || !room.feedback?.length) return;
+	const accountIds = (await ctx.storage.get<string[]>(STORYTELLERS_KEY)) ?? [];
+	const entries = room.feedback.map((f) => feedbackView(room, f));
+	await Promise.all(
+		accountIds.map((id) =>
+			userStub(env, id)
+				.addFeedback(gameId, entries, now)
+				.catch(() => {})
+		)
+	);
 }
 
 /** The signed-in Storyteller and seated players of the room's game, for Recent players (plan F3). */

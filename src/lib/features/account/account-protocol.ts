@@ -33,8 +33,18 @@ export const PRIVACY_VERSION = '2026-10-19';
 /** Name of the HttpOnly session cookie. */
 export const SESSION_COOKIE = 'gg_session';
 
-/** Kinds of documents kept in a profile. Saved games come later (ROADMAP 0.99). */
-export const DOC_KINDS = ['script', 'library-labels', 'collection', 'settings'] as const;
+/**
+ * Kinds of documents kept in a profile. Saved games come later (ROADMAP 0.99). `feedback` is
+ * players' feedback on a game the account told, one document per game, which only the room
+ * writes (Trevor, 2026-11-16).
+ */
+export const DOC_KINDS = [
+	'script',
+	'library-labels',
+	'collection',
+	'settings',
+	'feedback'
+] as const;
 export type DocKind = (typeof DOC_KINDS)[number];
 /** A profile document's body as JSON text. Scripts are a few KB. */
 export const MAX_DOC_BYTES = 1_000_000;
