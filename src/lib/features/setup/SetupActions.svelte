@@ -21,15 +21,13 @@
 		from: SeatingFrom;
 		/** Arrange seats can't be used yet. */
 		seatingDisabled?: boolean;
-		/** Readies the seats before Seating opens; false stops it. */
-		beforeSeating?: () => boolean;
 	}
 
-	let { port, from, seatingDisabled = false, beforeSeating }: Props = $props();
+	let { port, from, seatingDisabled = false }: Props = $props();
 
 	async function seating() {
 		const game = port.game;
-		if (!game || beforeSeating?.() === false) return;
+		if (!game) return;
 		await port.flush();
 		await seatingFromSetup(game.gameId, from);
 	}

@@ -216,8 +216,14 @@ test('the candles beside Setup open who is connected, on phones and in character
 	await phone.keyboard.press('Escape');
 	await expect(list).toBeHidden();
 
-	// In character selection's setup area, the same candles and the same list.
-	await page.goto(`${board}/setup`);
+	// In character selection's setup area, the same candles and the same list. Opened from the
+	// menu, as the Storyteller does, so the room keeps sending the game to phones.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Character selection' })
+		.tap();
+	await expect(page).toHaveURL(`${board}/setup`);
 	const candles = page.getByTestId('setup-candles');
 	await expect(candles.locator('.candle')).toHaveCount(seatCount);
 	await expect(candles).toContainText('+1');
@@ -227,11 +233,21 @@ test('the candles beside Setup open who is connected, on phones and in character
 	await expect(stList.getByTestId('connected-unseated')).not.toContainText('None');
 	await page.keyboard.press('Escape');
 
-	// The candles follow the player count before it is seated: one more, then back.
+	// The player count seats the room at once (Trevor, 2026-11-16: "we shouldn't have to go to
+	// arrange in order to update the grim to allow there to be more seats"): one more seat here
+	// and on the phone, then back.
+	const phoneSeats = async (count: number) => {
+		await phone.getByRole('button', { name: 'Setup; see who is connected' }).tap();
+		await expect(list.getByTestId('connected-seat')).toHaveCount(count);
+		await phone.keyboard.press('Escape');
+		await expect(list).toBeHidden();
+	};
 	await pickNumber(page, 'Players', seatCount + 1);
 	await expect(candles.locator('.candle')).toHaveCount(seatCount + 1);
+	await phoneSeats(seatCount + 1);
 	await pickNumber(page, 'Players', seatCount);
 	await expect(candles.locator('.candle')).toHaveCount(seatCount);
+	await phoneSeats(seatCount);
 
 	// The phone's screen locks: it stays in the +1, as it stays in Share's list (Trevor,
 	// 2026-10-29), and the candles don't move.
