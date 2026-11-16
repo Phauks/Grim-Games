@@ -21,7 +21,7 @@ export const reports = {
 	'reports.openGame': 'Open game',
 	'reports.downloadGame': 'Download game',
 	'reports.gameUnreadable': 'This game was saved by a newer version. Refresh the app to open it.',
-	'reports.sentWith': 'Sent with it',
+	'reports.metadata': 'Metadata',
 	'reports.build': 'Build',
 	'reports.device': 'Device',
 	'reports.page': 'Page',
