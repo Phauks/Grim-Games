@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { placeFromStep } from './reminder-bank.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Philosopher's choice on its night step (https://wiki.bloodontheclocktower.com/Philosopher;
@@ -53,7 +53,7 @@ async function openStep(page: Page, character: string) {
 	for (let i = 0; i < 30 && (await name.textContent()) !== character; i++) await next.tap();
 	await expect(name).toHaveText(character);
 	// The character's band opens the step (its ring opens the character instead).
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 }
 
 /** Starts the night and opens the Philosopher's step. */
@@ -225,7 +225,7 @@ test('day view lists an ability a player gained under their own character', asyn
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	// Under the Artist's own row in day view, the Mathematician's, as the same character row.
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	const row = day.locator('li[data-character="artist"]');
 	await expect(row.getByTestId('marked-characters')).toContainText('Mathematician');

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * A player marked to act twice wakes again straight after their own step, as a second step
@@ -66,6 +66,6 @@ test('a player who acts twice wakes again for their step', async ({ page }) => {
 	await expect(strip.getByTestId('night-alerts')).toContainText('acts twice tonight');
 
 	// The second wake opens like the first, with its own title.
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	await expect(nightStep(page, 'Poisoner again')).toBeVisible();
 });

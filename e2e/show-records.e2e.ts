@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * Show to player records what was shown and places its reminders (the night info framework's
@@ -61,8 +61,8 @@ async function walkTo(page: Page, title: string) {
 }
 
 async function openStep(page: Page, title: string) {
-	const strip = await walkTo(page, title);
-	await strip.locator('button.step').tap();
+	await walkTo(page, title);
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;

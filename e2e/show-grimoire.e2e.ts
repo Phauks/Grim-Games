@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Spy sees the Grimoire each night (https://wiki.bloodontheclocktower.com/Spy), so its night
@@ -42,7 +42,7 @@ async function openStep(page: Page, title: string) {
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
 	await expect(name).toHaveText(title);
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;

@@ -3,7 +3,7 @@ import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * A drunk or poisoned player may be given any information, true or false
@@ -80,7 +80,7 @@ async function toNightTwo(page: Page, executed: string) {
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await closePane(page);
 	await expect(day).toBeHidden();
 	await page
@@ -92,8 +92,8 @@ async function toNightTwo(page: Page, executed: string) {
 }
 
 async function openStep(page: Page, title: string) {
-	const strip = await walkTo(page, title);
-	await strip.locator('button.step').tap();
+	await walkTo(page, title);
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;

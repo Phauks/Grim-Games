@@ -242,7 +242,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
 		'Day timer: 100% of the day left'

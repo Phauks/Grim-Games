@@ -406,8 +406,11 @@
 	class="night-step"
 	aria-label={night === 'first' ? 'First night' : 'Other nights'}
 	data-walk={onNext ? '' : undefined}
+	data-step={onNext ? index + 1 : undefined}
+	data-steps={onNext ? steps.length : undefined}
 >
-	{#if step}<span hidden data-walk-name>{stepName(step)}</span>{/if}
+	{#if step}<span class="visually-hidden" aria-hidden="true" data-walk-name>{stepName(step)}</span
+		>{/if}
 	<StepHead
 		{night}
 		{index}

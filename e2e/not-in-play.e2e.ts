@@ -4,7 +4,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // Seats not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game sits down at
 // the table before the night they join at. The seat is greyed with a "Not in play" pill and
@@ -120,8 +120,8 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 	// Tonight offers to bring them in; the night alone does not.
 	await execution(page);
 	await expect(arrival).toHaveAccessibleName(/not in play/);
-	const strip = await walkTo(page, 'Travellers not in play');
-	await strip.locator('button.step').tap();
+	await walkTo(page, 'Travellers not in play');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Travellers not in play');
 	await expect(step.getByTestId('traveller-joins')).toContainText('Thief');
 	const alive = step.getByRole('button', { name: 'Alive', exact: true });

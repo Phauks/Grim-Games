@@ -21,3 +21,9 @@ export const walkName = (page: Page) => walkThrough(page).locator('[data-walk-na
 /** The walk-through's Next, which ticks the step. */
 export const walkNext = (page: Page) =>
 	walkThrough(page).getByRole('button', { name: 'Next step', exact: true });
+
+/** Opens tonight's step from the strip on a phone; beside the board the pane already shows it. */
+export async function openWalkStep(page: Page): Promise<void> {
+	const strip = page.getByTestId('night-strip');
+	if (await strip.isVisible()) await strip.locator('button.step').tap();
+}

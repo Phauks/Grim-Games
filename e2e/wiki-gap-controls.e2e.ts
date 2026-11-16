@@ -1,10 +1,10 @@
 import { paneDay } from './players.ts';
-import { chooseExecution } from './execution.ts';
+import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { boardSeat, inHand, putReminder } from './reminder-bank.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // The controls for wiki examples the engine now runs (M17a-g): the Wizard's wish, the
 // Yaggababble's phrase count, the Angel's Something Bad, the Ojo's named character, the
@@ -79,9 +79,9 @@ async function endNight(page: Page) {
 
 const dayView = (page: Page) => page.getByTestId('pane-day');
 
-/** The day ended with no execution, from the day view, into the night. */
+/** The day ended with no execution, from the bank, into the night. */
 async function endDay(page: Page) {
-	await dayView(page).getByRole('button', { name: 'Execution', exact: true }).tap();
+	await startExecution(page);
 	await chooseExecution(page);
 	await expect(walkThrough(page)).toBeVisible();
 }
@@ -104,7 +104,7 @@ async function openStep(page: Page, title: string) {
 	await expect(name).toHaveText(title);
 	// By its name (the character's band): a tap on the step's text could land on a character
 	// named in it.
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;

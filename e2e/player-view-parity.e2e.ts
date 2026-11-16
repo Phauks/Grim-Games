@@ -65,7 +65,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	await closePane(page);
 	await expect(day).toBeHidden();

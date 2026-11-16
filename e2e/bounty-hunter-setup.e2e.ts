@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Bounty Hunter's "[1 Townsfolk is evil]" (M22,
@@ -59,7 +59,7 @@ test('the Bounty Hunter asks for an evil Townsfolk and tells them', async ({ pag
 	for (let i = 0; i < 5 && (await name.textContent()) !== 'Starting alignment'; i++)
 		await next.tap();
 	await expect(name).toHaveText('Starting alignment');
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Starting alignment');
 	const tasks = step.getByTestId('setup-alignment');
 	await expect(tasks).toContainText('None');

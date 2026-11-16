@@ -3,7 +3,7 @@ import { paneDay, closePane } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder, putRunReminder } from './reminder-bank.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // Jinxes on characters already built (L109): the Plague Doctor's ability that goes to a
 // Minion instead of the Storyteller, and the Pit-Hag's jinxes with the Goon, Damsel and Village
@@ -80,7 +80,7 @@ async function toSecondNight(page: Page, executed: number, deathAsk?: string) {
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await closePane(page);
 	await expect(day).toBeHidden();
 	const sheet = await openSeat(page, executed);
@@ -152,7 +152,7 @@ test("the Plague Doctor's Spy goes to a Minion, who is shown it, not to the Stor
 	await expect(given).toContainText('Seat 3');
 	// The Minion learns it: it can be shown to them.
 	await expect(given.getByRole('button', { name: 'Show to player' })).toBeVisible();
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(step).toBeHidden();
 	// Nothing on the board for the Storyteller.
 	await expect(page.getByTestId('storyteller-ability-token')).toHaveCount(0);
@@ -381,7 +381,7 @@ test('the Vizier is announced on Day 1 as a named row without its ability', asyn
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	const vizier = day.getByTestId('announcements').locator('[data-character="vizier"]');
 	await expect(vizier).toHaveCount(1);
 	await expect(vizier.locator('.ring-row')).toBeVisible();
@@ -418,7 +418,7 @@ test("the Vizier isn't declared with the Investigator, and the Magician is out o
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day.getByTestId('announcements')).toBeVisible();
 	await expect(day.getByTestId('announcements').locator('[data-character="vizier"]')).toHaveCount(
 		0
@@ -570,7 +570,7 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	const executeSeat1 = async () => {
 		await startExecution(page);
 		// Tapped on the board (Trevor, 2026-11-06); the Vizier's save opens the sheet.
@@ -705,7 +705,7 @@ test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to be
 	await expect(minions.getByRole('button', { name: 'Imp', exact: true })).toHaveCount(0);
 	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
 	await expect(change).toContainText('Spy');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
 });
 
@@ -982,7 +982,7 @@ test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the p
 	await next.tap();
 	for (let i = 0; i < 30 && (await name.textContent()) !== 'Alchemist'; i++) await next.tap();
 	await expect(name).toHaveText('Alchemist');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Alchemist');
 	await expect(step.getByTestId('picks-character-only')).toContainText(
 		/Alchemist\s+has\s+this\s+ability:\s+they\s+choose\s+only\s+the\s+character,\s+the\s+Storyteller\s+chooses\s+which\s+player\./
@@ -1079,7 +1079,7 @@ test('the Engineer who removes the Summoner gives the Storyteller its ability', 
 	const back = strip.getByRole('button', { name: 'Previous step' });
 	for (let i = 0; i < 10 && (await name.textContent()) !== 'Summoner'; i++) await back.tap();
 	await expect(name).toHaveText('Summoner');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const summoner = nightStep(page, 'Summoner');
 	await expect(summoner.getByTestId('step-who')).toHaveText('Storyteller');
 });

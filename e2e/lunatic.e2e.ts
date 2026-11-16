@@ -1,7 +1,7 @@
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep, walkThrough } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Lunatic's night step sells the Demon they believe they are (Trevor, 2026-10-29): fake
@@ -62,7 +62,7 @@ async function openStep(page: Page, title: string) {
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(name).toHaveText(title);
 	// At its count: the step's name opens the character on a tablet.
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -117,7 +117,7 @@ test('the Lunatic is shown fake Minions and a decoy Lunatic, kept for later nigh
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(walkThrough(page)).toBeHidden();
 	const later = await openStep(page, 'Lunatic');
