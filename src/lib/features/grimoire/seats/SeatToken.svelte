@@ -16,6 +16,7 @@
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import type { TrueCharacterMark } from './true-character-marks.ts';
+	import type { SeatIssue } from '#lib/features/grimoire/board.ts';
 
 	interface Props {
 		seat: Seat;
@@ -24,8 +25,8 @@
 		character?: Character;
 		/** Token size in px. */
 		size: number;
-		/** The character is not on the script. */
-		orphan: boolean;
+		/** What is wrong with the seat (seatIssues), shown by the top-middle mark. */
+		issues: readonly SeatIssue[];
 		/** Highlighted while a reminder is dragged over it. */
 		dropTarget?: boolean;
 		/** The seat a dragged reminder is being moved from (Trevor, 2026-10-20): a dashed ring. */
@@ -44,9 +45,10 @@
 		 * `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat),
 		 * `nominate` on the nomination marks (it asks who this player nominated), `avatar` on the
 		 * player's avatar mark (it opens their profile, Trevor 2026-10-28), `marks` on a small
-		 * token in the bottom-right pill (it says them in words, Trevor 2026-11-03).
+		 * token in the bottom-right pill (it says them in words, Trevor 2026-11-03), `issues` on
+		 * the top-middle warning (it says what is wrong, Trevor 2026-11-15).
 		 */
-		onTap: (part?: 'note' | 'nominate' | 'avatar' | 'marks') => void;
+		onTap: (part?: 'note' | 'nominate' | 'avatar' | 'marks' | 'issues') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 		/**
@@ -95,7 +97,7 @@
 		number,
 		character,
 		size,
-		orphan,
+		issues,
 		dropTarget = false,
 		dragFrom = false,
 		role,
@@ -153,7 +155,7 @@
 					? `${seat.alignment}`
 					: '',
 			seat.notInPlay ? 'not in play' : '',
-			orphan ? 'not on the script' : '',
+			issues.some((issue) => issue.kind === 'off-script') ? 'not on the script' : '',
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
@@ -229,6 +231,7 @@
 			// A small token in the pill says itself in words first; its sheet opens its reminder.
 			else if (target?.closest('[data-testid="held-pill"]') && !target.closest('.note-slot'))
 				onTap('marks');
+			else if (target?.closest('.mark.issues')) onTap('issues');
 			else
 				onTap(
 					target?.closest('.mark.note, .note-slot')
@@ -258,8 +261,9 @@
 
 {#snippet marks()}
 	<!-- Corner marks sit in fixed places, so one appearing never moves anything (Trevor,
-	     2026-10-28: nominations top left, the orphan warning top middle, the avatar top right). -->
-	{#if orphan}<span class="mark orphan" data-testid="orphan-mark" title="Not on the script"
+	     2026-10-28: nominations top left, the issue warning top middle, the avatar top right). -->
+	<!-- A tap says what is wrong (SeatIssuesSheet, Trevor 2026-11-15). -->
+	{#if issues.length}<span class="mark issues" data-testid="issue-mark" title="Seat issues"
 			><Icon name="warning" /></span
 		>{/if}
 	<!-- The player's own avatar (plan R6), upper right, where a player's grim cycles it with
@@ -384,6 +388,7 @@
 	/* The skull badge takes a full-size tap of its own, for the ghost vote; the avatar mark
 	   one for the player's profile. */
 	.avatar::after,
+	.issues::after,
 	.seat :global([data-testid='dead-mark'])::after {
 		content: '';
 		position: absolute;
@@ -394,7 +399,7 @@
 	}
 	/* Top middle, in the gap between the nomination pill (ends 36% across) and the avatar
 	   (starts at 104% less its width), a little above the rim. */
-	.orphan {
+	.issues {
 		left: calc(70% - var(--mark));
 		top: -14%;
 		background: var(--accent);

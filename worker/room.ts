@@ -89,6 +89,8 @@ import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './r
 import {
 	accountTags,
 	linkAccount,
+	restartStorytellers,
+	saveFeedbackToAccounts,
 	notePresence,
 	requestAccount,
 	roomPlayers,
@@ -96,6 +98,7 @@ import {
 	type SeatTarget
 } from './room-accounts.ts';
 import type { FriendBook } from './friends/book.ts';
+import type { AccountEnv } from './account/objects.ts';
 import { recordGame } from './friends/routes.ts';
 import type { DataBinding } from './shared-data.ts';
 import {
@@ -106,7 +109,7 @@ import {
 	type TransferRoom
 } from './room-transfer.ts';
 
-export interface RoomEnv extends PushEnv, RoomLedgerEnv {
+export interface RoomEnv extends PushEnv, RoomLedgerEnv, AccountEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
@@ -426,6 +429,7 @@ export class Room extends DurableObject<RoomEnv> {
 				room = castVote(room, id, message.voteId, message.choice);
 			} else if (message.type === 'feedback') {
 				room = receiveFeedback(room, id, message.gameId, message.feedback, crypto.randomUUID());
+				this.ctx.waitUntil(saveFeedbackToAccounts(this.ctx, this.env, room, Date.now()));
 			} else if (message.type === 'script-ballot') {
 				room = castScriptBallot(room, id, message.voteId, message.choices, Date.now());
 			} else if (message.type === 'role-seen') {
@@ -460,6 +464,7 @@ export class Room extends DurableObject<RoomEnv> {
 		switch (message.type) {
 			case 'publish':
 				if (typeof message.gameId !== 'string' || !Array.isArray(message.state?.seats)) return;
+				if (room.gameId !== message.gameId) await restartStorytellers(this.ctx);
 				room = publish(room, message.gameId, message.state, this.present());
 				await this.dropReveal(room);
 				this.sendToHistory(

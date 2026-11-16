@@ -10,6 +10,7 @@ import {
 	extraNominationOpen,
 	extraNominators,
 	mayNominate,
+	nominationMarks,
 	nominationsPerDay,
 	nominatorsAfterExecution,
 	seatNominations,
@@ -342,5 +343,21 @@ describe('the Witch curse', () => {
 		expect(characterNominationPrompts(s.game, other, s.characters)).toEqual([]);
 		const dead = s.dies('witch');
 		expect(characterNominationPrompts(dead.game, nomination, dead.characters)).toEqual([]);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Glossary ("Nomination"): each player may nominate once and
+// be nominated once a day, and dead players may not nominate.
+describe('nominationMarks', () => {
+	it('marks who nominated and who was nominated today, and no nominating mark on the dead', () => {
+		const { session, ctx, seats } = castGame(
+			['chef', 'empath', 'imp'],
+			nominate(0, 2),
+			(s): Command => ({ type: 'SetDead', seatId: s[1], dead: true })
+		);
+		const marks = nominationMarks(session.game, ctx.characters);
+		expect(marks(seats[0])).toEqual({ made: true, received: false });
+		expect(marks(seats[2])).toEqual({ made: false, received: true });
+		expect(marks(seats[1])).toEqual({ made: undefined, received: false });
 	});
 });

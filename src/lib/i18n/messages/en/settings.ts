@@ -230,6 +230,7 @@ export const settings = {
 	'settings.sync.library-labels': 'Sync Library folders, tags and names with your account',
 	'settings.sync.collection': 'Sync character collections with your account',
 	'settings.sync.settings': 'Sync settings with your account',
+	'settings.sync.feedback': 'Sync player feedback with your account',
 	'settings.syncSignedOut': 'Sign in to sync.',
 	'settings.storageUsedHelp': `What ${APP_NAME} keeps on this device and how much room each part takes. Choose rows to clear them.`,
 	'settings.storageTable': 'Storage on this device',
