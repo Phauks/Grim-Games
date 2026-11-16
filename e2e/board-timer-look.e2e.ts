@@ -54,7 +54,7 @@ test('the board timer has the same solid fill and edge as the toolbar buttons', 
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	const timer = page.locator('.board-timer').getByTestId('day-timer');
 	await expect(timer).toBeVisible();
-	const button = page.getByRole('button', { name: 'Info tokens' });
+	const button = page.getByRole('button', { name: 'Script', exact: true });
 	// Nothing hovered or pressed.
 	await page.mouse.move(0, 0);
 

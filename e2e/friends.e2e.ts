@@ -514,8 +514,20 @@ test("friends see each other's presence, and join a game its Storyteller opened 
 	}).toPass();
 	await expect(annRow.getByRole('link', { name: 'Join' })).toHaveCount(0);
 
-	// Ann opens her room to friends; Bob's row offers Join.
+	// Ann opens her room to friends; Bob's row offers Join. The switch moves at once and stays
+	// enabled while it saves, so its text never dims and flashes (Trevor, 2026-11-15).
+	const openSwitch = ann.page.getByRole('checkbox', { name: 'Friends can join without an invite' });
+	await expect(openSwitch).toBeEnabled();
+	let release = (): void => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	await ann.page.route('**/api/friends/room', async (route) => {
+		await held;
+		await route.continue();
+	});
 	await ann.page.getByText('Friends can join without an invite', { exact: true }).tap();
+	await expect(openSwitch).toBeChecked();
+	await expect(openSwitch).toBeEnabled();
+	release();
 	await expect(async () => {
 		await bob.page.reload();
 		await expect(annRow.getByRole('link', { name: 'Join' })).toBeVisible({ timeout: 2000 });

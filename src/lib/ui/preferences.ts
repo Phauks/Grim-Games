@@ -96,7 +96,12 @@ export interface Preferences {
 	/** How loud every app sound plays on this device, 0 (silent) to 1 (plan U1). */
 	soundVolume: number;
 	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
-	timerSound: TimerSound;
+	timerSound: TimerEndSound;
+	/**
+	 * Whether the day timer makes its sound when time is up (Trevor, 2026-11-15: "don't always
+	 * make noise"). Off keeps the chosen sound for when it is turned back on.
+	 */
+	timerSoundOn: boolean;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
 	/**
@@ -206,6 +211,14 @@ export type CountingReminders = (typeof COUNTING_REMINDERS)[number];
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
 export type TimerSound = (typeof TIMER_SOUNDS)[number];
+/**
+ * The sounds the day timer can end on. Silence is its own on/off switch (`timerSoundOn`,
+ * Trevor 2026-11-15), so None is only Back to town's.
+ */
+export const TIMER_END_SOUNDS = TIMER_SOUNDS.filter(
+	(sound): sound is Exclude<TimerSound, 'none'> => sound !== 'none'
+);
+export type TimerEndSound = (typeof TIMER_END_SOUNDS)[number];
 
 /**
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
@@ -277,6 +290,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	ownWording: false,
 	soundVolume: 1,
 	timerSound: 'bell',
+	timerSoundOn: true,
 	timerMode: 'down',
 	reminderRemoval: 'off',
 	countingReminders: 'off',
@@ -372,9 +386,8 @@ export function parsePreferences(raw: unknown): Preferences {
 		qrModules: oneOf(QR_MODULES, input.qrModules, 'square'),
 		qrFinders: oneOf(QR_FINDERS, input.qrFinders, 'square'),
 		soundVolume: parseScale(input.soundVolume, SOUND_VOLUME, DEFAULT_PREFERENCES.soundVolume),
-		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
-			? (input.timerSound as TimerSound)
-			: DEFAULT_PREFERENCES.timerSound,
+		timerSound: oneOf(TIMER_END_SOUNDS, input.timerSound, DEFAULT_PREFERENCES.timerSound),
+		timerSoundOn: input.timerSoundOn !== false,
 		townCallSound: oneOf(TIMER_SOUNDS, input.townCallSound, DEFAULT_PREFERENCES.townCallSound),
 		ambienceOn: input.ambienceOn === true,
 		ambienceLevel: parseScale(

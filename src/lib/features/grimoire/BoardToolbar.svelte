@@ -16,7 +16,8 @@
 
 	/**
 	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
-	 * Script, Share and More (with Messages inside). Arranging seats or placing one swaps in their own controls, at the same
+	 * Script, Share and More. Players and their messages are in the pane by the grim cover (plan
+	 * M86). Arranging seats or placing one swaps in their own controls, at the same
 	 * height, so the board never moves.
 	 */
 	interface Props {
@@ -61,8 +62,6 @@
 		lead
 	}: Props = $props();
 	const host = roomHost();
-	/** Players' messages and reported pictures still to see (Trevor, 2026-10-27). */
-	const unread = $derived(host.code ? host.inbox.unread : 0);
 	const count = $derived(host.countOff);
 	const seatingAction = $derived(t(host.seatingOpen ? 'room.seating.lock' : 'room.seating.unlock'));
 </script>
@@ -147,10 +146,13 @@
 		<Button variant="quiet" icon="day" aria-label="Day" disabled={watching} onclick={onDay}
 			><span class="tool-label">Day</span></Button
 		>
+		<!-- On the narrowest phones Info tokens is in More, so the pane's button keeps its place
+		     by the grim cover (Trevor, 2026-11-15); Share never moves there. -->
 		<Button
 			variant="quiet"
 			icon="info"
 			aria-label="Info tokens"
+			data-info-tokens={watching ? undefined : ''}
 			disabled={watching}
 			onclick={onInfo}><span class="tool-label">Info tokens</span></Button
 		>
@@ -171,17 +173,8 @@
 			onpointerdown={prepareRoom}
 			onclick={onShare}><span class="tool-label">Share</span></Button
 		>
-		<!-- Players' messages and reported pictures are in More on every screen, which carries
-		     their count (Trevor, 2026-10-28: "we should not have discrepancy, keep in ..."). -->
-		<Button
-			variant="quiet"
-			icon="more"
-			aria-label={unread ? `More, ${t('room.inbox.unread', { count: unread })}` : 'More'}
-			disabled={!menu}
-			onclick={onMore}
-			><span class="tool-label">More</span>{#if unread}<span class="count"
-					><CountBadge count={unread} warn /></span
-				>{/if}</Button
+		<Button variant="quiet" icon="more" aria-label="More" disabled={!menu} onclick={onMore}
+			><span class="tool-label">More</span></Button
 		>
 	{/if}
 </div>
@@ -291,6 +284,12 @@
 	.toolbar :global(.button[data-variant='quiet']:not(:hover):not([aria-pressed='true'])),
 	.toolbar :global(.icon-button[data-outlined]:not([aria-pressed='true'])) {
 		background: var(--surface);
+	}
+	/* Eight 44px buttons and their gaps need 412px; narrower, Info tokens is in More. */
+	@media (max-width: 411.98px) {
+		.toolbar :global([data-info-tokens]) {
+			display: none;
+		}
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {
