@@ -6,7 +6,12 @@
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import SetupTable from '#lib/features/setup/SetupTable.svelte';
 	import PlayerNightOrder from './PlayerNightOrder.svelte';
-	import { playerJinxes, playerNight, sheetCharacters } from './player-script.ts';
+	import {
+		playerJinxes,
+		playerNight,
+		sheetCharacters,
+		sheetRuleCharacters
+	} from './player-script.ts';
 	import NightStrip from './NightStrip.svelte';
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
@@ -61,10 +66,17 @@
 	const ruleCharacter = (c: { type: string }) => c.type === 'fabled' || c.type === 'loric';
 	const front = $derived(settings.front);
 	const back = $derived(settings.back);
+	// The jinxes-only character (the Djinn) only where its side's switch asks (Trevor, 2026-11-16).
 	const frontCharacters = $derived(
-		front.ruleCharacters ? characters : characters.filter((c) => !ruleCharacter(c))
+		front.ruleCharacters
+			? sheetRuleCharacters(characters, front.jinxesOnly)
+			: characters.filter((c) => !ruleCharacter(c))
 	);
-	const backCharacters = $derived(back.ruleCharacters ? characters.filter(ruleCharacter) : []);
+	const backCharacters = $derived(
+		back.ruleCharacters
+			? sheetRuleCharacters(characters.filter(ruleCharacter), back.jinxesOnly)
+			: []
+	);
 	const backJinxes = $derived(back.jinxes && jinxes.length > 0);
 	const backRules = $derived(back.rules ? rules : []);
 	const logo = $derived(front.logo ? scriptLogo(script) : undefined);

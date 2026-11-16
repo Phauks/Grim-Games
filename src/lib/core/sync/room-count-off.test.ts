@@ -79,6 +79,21 @@ describe('count off', () => {
 		]);
 	});
 
+	it('lets a phone tap its own number again to let it go (Trevor, 2026-11-16)', () => {
+		let r = startCountOff(room());
+		r = takeCount(takeCount(r, 'ana', 3), 'bo', 2);
+		const freed = takeCount(r, 'ana', null);
+		expect(countOffView(freed)?.tokens).toEqual([{ number: 2, name: 'Bo' }]);
+		// Nothing to let go: nothing changes.
+		expect(takeCount(freed, 'ana', null)).toBe(freed);
+		expect(takeCount(freed, 'cy', null)).toBe(freed);
+	});
+
+	it('ignores a tap from a phone with no name, which must give one first', () => {
+		const r = startCountOff(join(room(), 'nameless')!);
+		expect(takeCount(r, 'nameless', 2)).toBe(r);
+	});
+
 	it('takes names for players without a phone, and refuses numbers off the clock', () => {
 		let r = startCountOff(room(), { name: 'Dan' });
 		r = nameCount(r, 3, ' Eve ');

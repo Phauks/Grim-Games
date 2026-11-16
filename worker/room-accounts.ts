@@ -8,6 +8,8 @@
  */
 import type { RoomState } from '../src/lib/core/sync/room.ts';
 import { feedbackView } from '../src/lib/core/sync/room-feedback.ts';
+import type { GameLedgerEnv } from './game-ledger.ts';
+import { rateScript } from './script-ratings.ts';
 import { gamePlayers, type GamePlayer } from '../src/lib/features/friends/friend-rules.ts';
 import { userStub, type AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
@@ -119,13 +121,13 @@ export async function restartStorytellers(ctx: DurableObjectState): Promise<void
 
 /**
  * Players' feedback on the ended game goes to every Storyteller account in the room, which
- * keeps it with the game for every device signed in to it; sent again on each feedback message,
- * the account adds only what is new. Who sent anonymous feedback is never
- * in it (`feedbackView`).
+ * keeps it with the game for every device signed in to it, and its ratings and accolade counts
+ * go to the script's public rating (script-ratings.ts). Sent again on each feedback message;
+ * each keeps only what is new. Who sent anonymous feedback is never in it (`feedbackView`).
  */
-export async function saveFeedbackToAccounts(
+export async function keepFeedback(
 	ctx: DurableObjectState,
-	env: AccountEnv,
+	env: AccountEnv & GameLedgerEnv,
 	room: RoomState,
 	now: number
 ): Promise<void> {
@@ -133,13 +135,14 @@ export async function saveFeedbackToAccounts(
 	if (!gameId || !room.feedback?.length) return;
 	const accountIds = (await ctx.storage.get<string[]>(STORYTELLERS_KEY)) ?? [];
 	const entries = room.feedback.map((f) => feedbackView(room, f));
-	await Promise.all(
-		accountIds.map((id) =>
+	await Promise.all([
+		...accountIds.map((id) =>
 			userStub(env, id)
 				.addFeedback(gameId, entries, now)
 				.catch(() => {})
-		)
-	);
+		),
+		rateScript(ctx.storage, env, room, accountIds, now).catch(() => {})
+	]);
 }
 
 /** The signed-in Storyteller and seated players of the room's game, for Recent players (plan F3). */

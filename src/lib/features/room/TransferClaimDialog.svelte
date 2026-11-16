@@ -91,7 +91,8 @@
 				bind:value={code}
 				length={TRANSFER_CODE_LENGTH}
 				group={TRANSFER_CODE_LENGTH / 2}
-				centred
+				prefix={t('room.transfer.prefix')}
+				large
 			/>
 		{/if}
 		<!-- One line, always in its place: who hands over what, or why the code was turned down. -->
