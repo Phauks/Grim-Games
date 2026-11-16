@@ -1,12 +1,14 @@
 <script lang="ts">
-	import { frameMaskSvg, type Frame } from '#lib/core/frames/index.ts';
+	import type { Frame, FrameShape } from '#lib/core/frames/index.ts';
 
 	/**
 	 * A frame's drawing (`core/frames`), filling the box it is placed in, and its motion
 	 * (Trevor, 2026-10-28): a light sweeping across it or round it, inside its own outline; the
 	 * whole drawing turning, pulsing, breathing, flickering or growing in again; or sparkles
 	 * twinkling round it. All are CSS transforms, opacity or a short mask, so a full town of
-	 * them stays smooth.
+	 * them stays smooth. The light is cut to the frame by a mask inside the drawing itself, not
+	 * a CSS mask round a moving layer, which a browser may move without the mask and so sweep
+	 * the light over the player's picture (Trevor, 2026-11-16).
 	 * Purely decorative: the seat's label says everything, so it is hidden from screen readers.
 	 */
 	let { frame }: { frame: Frame } = $props();
@@ -21,10 +23,46 @@
 		};
 	});
 	const shimmer = $derived(frame.motion?.startsWith('shimmer') ? frame.motion : undefined);
-	const mask = $derived(
-		shimmer ? `url("data:image/svg+xml,${encodeURIComponent(frameMaskSvg(frame))}")` : undefined
-	);
+	const id = $props.id();
+	/** The light round the ring: a soft wedge, brightest near its leading edge. */
+	const WEDGE = [0.15, 0.4, 0.75, 1, 0.6, 0.25].map((opacity, i) => {
+		const from = ((300 + i * 10) * Math.PI) / 180;
+		const to = ((310 + i * 10) * Math.PI) / 180;
+		const point = (a: number) => `${50 + 80 * Math.sin(a)} ${50 - 80 * Math.cos(a)}`;
+		return { d: `M50 50L${point(from)}L${point(to)}Z`, opacity };
+	});
 </script>
+
+<!-- The frame's own outline, all in white: where the light may show. -->
+{#snippet outline(part: FrameShape)}
+	{#if part.shape === 'circle'}<circle
+			cx={part.cx}
+			cy={part.cy}
+			r={part.r}
+			fill={part.fill ? 'white' : 'none'}
+			stroke={part.stroke ? 'white' : 'none'}
+			stroke-width={part.width}
+			opacity={part.opacity}
+		/>{:else if part.shape === 'ellipse'}<ellipse
+			cx={part.cx}
+			cy={part.cy}
+			rx={part.rx}
+			ry={part.ry}
+			transform="rotate({part.rotate} {part.cx} {part.cy})"
+			fill={part.fill ? 'white' : 'none'}
+			stroke={part.stroke ? 'white' : 'none'}
+			stroke-width={part.width}
+			opacity={part.opacity}
+		/>{:else}<path
+			d={part.d}
+			fill={part.fill ? 'white' : 'none'}
+			stroke={part.stroke ? 'white' : 'none'}
+			stroke-width={part.width}
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			opacity={part.opacity}
+		/>{/if}
+{/snippet}
 
 <span class="frame-drawing" data-motion={frame.motion} aria-hidden="true">
 	<svg class="frame" viewBox="0 0 100 100" data-frame={frame.id}>
@@ -63,6 +101,34 @@
 				/>
 			{/if}
 		{/each}
+		{#if shimmer}
+			<defs>
+				<mask id="{id}-outline" maskUnits="userSpaceOnUse" x="-50" y="-50" width="200" height="200">
+					{#each frame.drawing as part, index (index)}{@render outline(part)}{/each}
+				</mask>
+				<linearGradient id="{id}-band" gradientTransform="rotate(15 0.5 0.5)">
+					<stop offset="0.4" style:stop-color="var(--frame-shine)" stop-opacity="0" />
+					<stop offset="0.5" style:stop-color="var(--frame-shine)" />
+					<stop offset="0.6" style:stop-color="var(--frame-shine)" stop-opacity="0" />
+				</linearGradient>
+			</defs>
+			<g class="shine" data-shimmer={shimmer} mask="url(#{id}-outline)">
+				{#if shimmer === 'shimmer'}<rect
+						class="band"
+						x="-10"
+						y="-10"
+						width="120"
+						height="120"
+						fill="url(#{id}-band)"
+					/>{:else}<g class="wedge">
+						{#each WEDGE as slice, index (index)}<path
+								d={slice.d}
+								style:fill="var(--frame-shine)"
+								opacity={slice.opacity}
+							/>{/each}
+					</g>{/if}
+			</g>
+		{/if}
 	</svg>
 	{#if frame.motion === 'twinkle'}{#each SPARKLES as sparkle, i (i)}<span
 				class="sparkle"
@@ -70,7 +136,6 @@
 				style:top="{sparkle.top}%"
 				style:animation-delay="{sparkle.delay}s"
 			></span>{/each}{/if}
-	{#if mask}<span class="shine" data-shimmer={shimmer} style:mask-image={mask}><i></i></span>{/if}
 </span>
 
 <style>
@@ -207,47 +272,32 @@
 		}
 	}
 	/* A band of light crossing the frame, cut to its outline. */
-	.shine {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		mask-size: 100% 100%;
-		mask-repeat: no-repeat;
-	}
-	.shine i {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(105deg, transparent 40%, var(--frame-shine) 50%, transparent 60%);
-		translate: -100% 0;
+	.band {
+		transform-box: fill-box;
 		animation: frame-shine 2.8s linear infinite;
 	}
 	@keyframes frame-shine {
+		from {
+			transform: translateX(-100%);
+		}
 		to {
-			translate: 100% 0;
+			transform: translateX(100%);
 		}
 	}
 	/* Round the ring instead: a wedge of light turning about the centre, either way. */
-	.shine:is([data-shimmer='shimmer-cw'], [data-shimmer='shimmer-ccw']) i {
-		inset: -25%;
-		background: conic-gradient(
-			transparent 0deg 300deg,
-			var(--frame-shine) 340deg,
-			transparent 360deg
-		);
-		translate: none;
+	.wedge {
+		transform-box: view-box;
+		transform-origin: 50% 50%;
 		animation: frame-turn 3.2s linear infinite;
 	}
-	.shine[data-shimmer='shimmer-ccw'] i {
-		background: conic-gradient(
-			transparent 0deg 20deg,
-			var(--frame-shine) 20deg,
-			transparent 60deg 360deg
-		);
+	.shine[data-shimmer='shimmer-ccw'] .wedge {
+		scale: -1 1;
 		animation-direction: reverse;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.frame-drawing[data-motion],
-		.shine i {
+		.band,
+		.wedge {
 			animation: none;
 		}
 		.frame-drawing[data-motion='regrow'] {

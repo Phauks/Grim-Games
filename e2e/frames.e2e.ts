@@ -344,3 +344,36 @@ test('the Profile seat keeps clear of the text under it, laurel and name (Trevor
 	expect(box.y + box.height).toBeLessThanOrEqual(textTop);
 	expect(frame.x).toBeGreaterThanOrEqual(box.x);
 });
+
+test('no frame or motion paints over the face', async ({ page }) => {
+	// Trevor, 2026-11-16: "Laurel motion seems to have issues where it overwrites the image";
+	// Scalloped's fill was a plate over the whole face, and the shimmer's light was a layer
+	// cut to the frame by a CSS mask, which a moving layer may slip.
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	const face = dialog.getByTestId('profile-preview').locator('[data-token-face]');
+	const inner = async () => {
+		const box = (await face.boundingBox())!;
+		const clip = {
+			x: box.x + box.width * 0.2,
+			y: box.y + box.height * 0.2,
+			width: box.width * 0.6,
+			height: box.height * 0.6
+		};
+		return page.screenshot({ clip, animations: 'allow' });
+	};
+	// The face with no frame, once the dialog has finished opening.
+	await choose(page, 'Your laurel', 'None');
+	await expect(async () => expect(await inner()).toEqual(await inner())).toPass();
+	const bare = await inner();
+	for (const form of ['Scalloped', 'Laurel']) {
+		await choose(page, 'Your laurel', form);
+		for (const motion of ['None', 'Shimmer', 'Clockwise shimmer', 'Twinkle', 'Pulse']) {
+			await choose(page, 'Motion', motion);
+			for (let i = 0; i < 3; i++) {
+				expect(await inner(), `${form}, ${motion}`).toEqual(bare);
+				await page.waitForTimeout(450);
+			}
+		}
+	}
+});
