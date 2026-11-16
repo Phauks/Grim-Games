@@ -233,17 +233,33 @@ async function grimLayout(screen: Locator) {
 		.evaluateAll((all) =>
 			all.map((b) => `${b.getAttribute('aria-label')}:${(b as HTMLButtonElement).disabled}`)
 		);
-	const box = (await town.boundingBox())!;
-	const seats = await town.getByTestId('grim-seat').evaluateAll((all) =>
-		all.map((s) => {
-			const r = s.getBoundingClientRect();
-			return [r.x + r.width / 2, r.y + r.height / 2];
-		})
-	);
-	const places = seats.map(([x, y]) => [
-		Math.round(((x - box.x) / box.width) * 100),
-		Math.round(((y - box.y) / box.height) * 100)
-	]);
+	// Each seat's place in the town, once the town has settled to the room left above the tab
+	// bar (fitAboveBar measures again a frame after the tab opens).
+	const placesNow = () =>
+		town.evaluate(
+			(root) =>
+				new Promise<number[][]>((resolve) =>
+					requestAnimationFrame(() =>
+						requestAnimationFrame(() => {
+							const box = root.getBoundingClientRect();
+							resolve(
+								[...root.querySelectorAll('[data-testid="grim-seat"]')].map((s) => {
+									const r = s.getBoundingClientRect();
+									return [
+										Math.round(((r.x + r.width / 2 - box.x) / box.width) * 100),
+										Math.round(((r.y + r.height / 2 - box.y) / box.height) * 100)
+									];
+								})
+							);
+						})
+					)
+				)
+		);
+	let places: number[][] = [];
+	await expect(async () => {
+		places = await placesNow();
+		expect(await placesNow()).toEqual(places);
+	}).toPass();
 	// How each part of the tab is painted, so a style one way in alone (a fill, a ring, a
 	// filter) shows as a difference (Trevor, 2026-10-31: boxes over the seats from the cover).
 	const styles = await town.evaluate((root) =>
