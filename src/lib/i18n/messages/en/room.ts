@@ -150,6 +150,8 @@ export const room = {
 	'room.transfer.button': 'Room transfer',
 	'room.transfer.title': 'Room transfer',
 	'room.transfer.code': 'Transfer code',
+	// Marks a transfer code as one; never typed (Trevor, 2026-11-16).
+	'room.transfer.prefix': 'T-',
 	'room.transfer.roomCode': 'Room code',
 	'room.transfer.expires': 'Expires in {time}',
 	'room.transfer.expired': 'Expired',
