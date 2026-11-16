@@ -27,6 +27,11 @@ export class ShownLook {
 		return this.#board().watching ? undefined : this.#picture;
 	}
 
+	/** Both, as the players' screen takes them. */
+	get shown(): { look?: PublicLook; picture?: Blob } {
+		return { look: this.look, picture: this.picture };
+	}
+
 	/** How strongly the script's logo shows, or undefined when it doesn't. */
 	get logoOpacity(): number | undefined {
 		const { grimoire, watching } = this.#board();

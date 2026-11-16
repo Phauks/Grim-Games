@@ -63,6 +63,7 @@ import ph_handshake from '~icons/ph/handshake';
 import ph_hash from '~icons/ph/hash';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_house from '~icons/ph/house';
+import ph_identification_badge from '~icons/ph/identification-badge';
 import ph_identification_card from '~icons/ph/identification-card';
 import ph_image from '~icons/ph/image';
 import ph_image_square from '~icons/ph/image-square';
@@ -198,6 +199,7 @@ const icons: IconMap = {
 	'ph:hash': ph_hash,
 	'ph:heartbeat': ph_heartbeat,
 	'ph:house': ph_house,
+	'ph:identification-badge': ph_identification_badge,
 	'ph:identification-card': ph_identification_card,
 	'ph:image': ph_image,
 	'ph:image-square': ph_image_square,

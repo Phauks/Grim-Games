@@ -47,10 +47,10 @@ test('a name two players share is numbered by join order until one changes it', 
 
 	// The second phone is told, and its name row shows the name the Storyteller sees.
 	await expect(second.getByText('Another player is called John')).toBeVisible();
-	const settings = second.getByRole('dialog', { name: 'Settings' });
+	const settings = second.getByRole('dialog', { name: 'Profile', exact: true });
 	await expect(settings.getByTestId('player-name')).toHaveText('John 2');
 	await expect(
-		first.getByRole('dialog', { name: 'Settings' }).getByTestId('player-name')
+		first.getByRole('dialog', { name: 'Profile', exact: true }).getByTestId('player-name')
 	).toHaveText('John');
 
 	// Changing the name takes the number away.

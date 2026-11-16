@@ -6,7 +6,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { sectionLabel, settingsSections } from './registry.ts';
+	import { sectionLabel, settingsHeaderButtons, settingsSections } from './registry.ts';
 	import './sections/index.ts';
 	import { settingsDialog } from './settings-dialog.svelte.ts';
 	import { installApp } from './install-app.svelte.ts';
@@ -16,8 +16,8 @@
 	import { readSettings, revealSetting } from './settings-search-dom.ts';
 
 	const all = settingsSections();
-	const sections = all.filter((section) => section.listed !== false);
-	const buttons = all.filter((section) => section.headerButton);
+	const sections = all;
+	const buttons = settingsHeaderButtons();
 	// Wide screens always show a section (the first by default); narrow screens show the list
 	// until a section is picked, then drill in with a Back button.
 	const active = $derived(all.find((s) => s.id === settingsDialog.section) ?? sections[0]);
@@ -76,15 +76,7 @@
 
 <Dialog bind:open={settingsDialog.open} title={t('settings.title')} size="full">
 	{#snippet headActions()}
-		{#each buttons as section (section.id)}
-			{@const HeaderButton = section.headerButton!}
-			<HeaderButton
-				onclick={() => {
-					settingsDialog.only = false;
-					settingsDialog.section = section.id;
-				}}
-			/>
-		{/each}
+		{#each buttons as HeaderButton, index (index)}<HeaderButton />{/each}
 	{/snippet}
 	<div
 		class="layout"
@@ -153,14 +145,7 @@
 							hideLabel
 							onclick={() => (settingsDialog.section = null)}
 						/>{/if}
-					<!-- A section opened from the top line (the Profile) has its name there, beside its
-					     button (Trevor, 2026-10-28), so here it is for screen readers only. -->
-					<h2
-						id="settings-section-title"
-						class:visually-hidden={active.listed === false && !!active.headerButton}
-					>
-						{activeLabel}
-					</h2>
+					<h2 id="settings-section-title">{activeLabel}</h2>
 					{#if active.headingAction}<active.headingAction />{/if}
 					<!-- Resets this section only (Trevor, 2026-10-18), in the header like other item
 					     controls; red, and confirmed first. -->
