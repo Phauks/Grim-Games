@@ -63,7 +63,6 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import PlayerScreen from './PlayerScreen.svelte';
 	import { finalGrimoire } from '#lib/features/room/final-grimoire.svelte.ts';
 	import PlayerRoom from './PlayerRoom.svelte';
 	import { gameKey, lastRoom, leaveLastRoom, roomTable } from '#lib/features/room/player.svelte.ts';
@@ -89,6 +88,11 @@
 	}
 
 	let { join }: Props = $props();
+	/**
+	 * The script's tabs load beside the page, not before it: they bring the grim, the night
+	 * order and the notes, so Join game and its room row show while they arrive.
+	 */
+	const playerScreen = import('./PlayerScreen.svelte');
 	/** On Join game, a typed code opens that room's own link. */
 	const openRoom = (code: string) => void goto(resolve('/join/[code]', { code }));
 
@@ -424,19 +428,21 @@
 		<!-- The same screen the Storyteller's player view shows (PlayerScreen). -->
 		<!-- In a room, the table's own column of the Players breakdown is picked for the player
 		     (Trevor, 2026-10-26: "so players don't have to think"). -->
-		{#key localGeneration}<PlayerScreen
-				{script}
-				players={localSeatsShown
-					? dealtSeats(localSeatsShown).dealt || undefined
-					: inRoom === lastRoom()
-						? roomTable.players
-						: undefined}
-				travellers={localSeatsShown ? travellersInPlay(localSeatsShown) : roomTable.travellers}
-				rules={roomTable.rules}
-				ruleCharacters={roomTable.ruleCharacters}
-				notesKey={key}
-				bind:tab
-			/>{/key}
+		{#key localGeneration}{#await playerScreen}<p class="muted">
+					{t('player.loading')}
+				</p>{:then { default: PlayerScreen }}<PlayerScreen
+					{script}
+					players={localSeatsShown
+						? dealtSeats(localSeatsShown).dealt || undefined
+						: inRoom === lastRoom()
+							? roomTable.players
+							: undefined}
+					travellers={localSeatsShown ? travellersInPlay(localSeatsShown) : roomTable.travellers}
+					rules={roomTable.rules}
+					ruleCharacters={roomTable.ruleCharacters}
+					notesKey={key}
+					bind:tab
+				/>{/await}{/key}
 	{/if}
 </Page>
 <StorytellerSoundsAsk />
