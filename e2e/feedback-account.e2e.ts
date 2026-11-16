@@ -1,3 +1,4 @@
+import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { signIn } from './admin.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
@@ -52,7 +53,7 @@ test("a player's feedback reaches the Storyteller's account and their other devi
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
-	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await expectInRoom(phone);
 
 	await page.goto(board);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

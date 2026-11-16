@@ -225,7 +225,7 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 	await bob.page.keyboard.press('Escape');
 	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(ann.page, 3, 'Bob');
-	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(bob.page.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 
 	// The Storyteller opens Bob's profile from Players and asks him.
 	await ann.page.goto(`${board}/players`);
@@ -334,7 +334,7 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await bob.page.keyboard.press('Escape');
 	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(ann.page, 3, 'Bob');
-	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(bob.page.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 
 	// Nobody is there until the game is over.
 	await bob.page.goto('/friends');
@@ -401,7 +401,7 @@ test('Recent players counts every game together, with Add friend', async ({ brow
 	await bob.page.keyboard.press('Escape');
 	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(ann.page, 3, 'Bob');
-	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	await expect(bob.page.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 
 	// One game together.
 	await ann.page.goto(board);
