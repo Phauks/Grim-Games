@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import { reminderCopies, tokenRows } from '#lib/features/board/reminders.ts';
+	import { tokenRows } from '#lib/features/board/reminders.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import StepReminderRow from '#lib/features/grimoire/night/StepReminderRow.svelte';
 	import ReminderMoveConfirm from '#lib/features/grimoire/reminders/ReminderMoveConfirm.svelte';
@@ -14,24 +14,18 @@
 	interface Props {
 		grimoire: Grimoire;
 		characterId: CharacterId;
+		/** How many copies of each reminder the game has (reminderCopies), once for every row. */
+		total: ReadonlyMap<string, number>;
 		/** The token in hand, to tap a seat on the board with (as a night step's Place). */
 		onPlace: (token: PaneToken, at?: PaneTokenAt) => void;
 		onDrag?: PaneTokenDrag;
 	}
 
-	let { grimoire, characterId, onPlace, onDrag }: Props = $props();
+	let { grimoire, characterId, total, onPlace, onDrag }: Props = $props();
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const character = $derived(characters.get(characterId));
-	const rows = $derived(
-		character
-			? tokenRows(
-					game,
-					character,
-					reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies)
-				)
-			: []
-	);
+	const rows = $derived(character ? tokenRows(game, character, total) : []);
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 </script>
 

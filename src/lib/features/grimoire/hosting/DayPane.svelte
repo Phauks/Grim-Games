@@ -7,6 +7,7 @@
 	import { provideDayTokens } from '#lib/features/day/day-tokens.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import DayTokenRows from './DayTokenRows.svelte';
+	import { reminderCopies } from '#lib/features/board/reminders.ts';
 	import type { PaneTokens } from './pane-tokens.ts';
 
 	/**
@@ -25,11 +26,15 @@
 	let { grimoire, tokens, town, onExecute, onSavant }: Props = $props();
 	const day = $derived(new LiveDay(grimoire.open));
 	provideDayTokens(rows);
+	const total = $derived(
+		reminderCopies(grimoire.game, grimoire.open.characters, grimoire.copies, grimoire.bankCopies)
+	);
 </script>
 
 {#snippet rows(characterId: CharacterId)}<DayTokenRows
 		{grimoire}
 		{characterId}
+		{total}
 		onPlace={(token, at) => tokens.place(token, at)}
 		onDrag={tokens.drag}
 	/>{/snippet}
