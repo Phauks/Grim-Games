@@ -357,6 +357,7 @@
 						readonly={viewOnly}
 						onSave={(note) => saveNote(seatId, note)}
 						onDelete={(noteId) => deleteNote(seatId, noteId)}
+						hideable={false}
 					/>
 				</Collapsible>
 			{/if}
@@ -397,7 +398,8 @@
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding-bottom: var(--space-3);
+		/* The pane's side inset inside this scroll box, so its scrollbar is flush (the pane's). */
+		padding: 0 var(--pane-gutter, 0rem) var(--space-3);
 	}
 	.chosen-label {
 		display: inline-flex;

@@ -142,7 +142,9 @@ test("a day row lists its character's reminder tokens to place, move or drag, as
 		await seat(3).tap();
 	} else {
 		// Beside the board, the token itself drags onto a seat.
-		const from = (await row.getByRole('button', { name: 'No Ability token' }).boundingBox())!;
+		const token = row.getByRole('button', { name: 'No Ability token' });
+		await token.scrollIntoViewIfNeeded();
+		const from = (await token.boundingBox())!;
 		const to = (await seat(3).boundingBox())!;
 		await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
 		await page.mouse.down();

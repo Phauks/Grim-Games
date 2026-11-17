@@ -63,6 +63,7 @@
 						readonly={viewOnly}
 						onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
 						onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
+						hideable={false}
 					/>
 				</div>
 			{:else}
@@ -79,6 +80,10 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
+	}
+	/* --pane-gutter: the pane's side inset, given by where it sits, inside each scroll box. */
+	.storyteller-pane :global([data-scope='tabs'][data-part='root'] > :has(> [data-part='list'])) {
+		margin-inline: var(--pane-gutter, 0rem);
 	}
 	.storyteller-pane > :global([data-scope='tabs'][data-part='root']) {
 		display: flex;
@@ -100,11 +105,13 @@
 		min-height: 0;
 	}
 	.notes {
+		padding-inline: var(--pane-gutter, 0rem);
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
+	/* Players scrolls itself, with the gutter inside its own scroll box. */
 	.players {
 		display: flex;
 		flex: 1;

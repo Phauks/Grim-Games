@@ -31,6 +31,36 @@
 	const on = $derived(placement && pane ? placement : undefined);
 
 	let aside = $state<HTMLElement>();
+	/**
+	 * What the pane takes from the screen's right and bottom, so a background fixed to the screen
+	 * behind the content stops at the content's edge and is centred on it rather than on the
+	 * whole screen (Trevor, 2026-11-17: "the background is not centered on the actual part on
+	 * the grim"). `--beside-end` and `--beside-bottom`, for whatever is fixed inside the content.
+	 */
+	let taken = $state({ end: 0, bottom: 0 });
+	$effect(() => {
+		const box = aside;
+		if (!box || !on) {
+			taken = { end: 0, bottom: 0 };
+			return;
+		}
+		const measure = () => {
+			const rect = box.getBoundingClientRect();
+			// Up to the pane's edge, so the gap between the two is the content's too.
+			taken = {
+				end: on === 'side' ? Math.max(0, window.innerWidth - rect.left) : 0,
+				bottom: on === 'under' ? Math.max(0, window.innerHeight - rect.top) : 0
+			};
+		};
+		measure();
+		const resized = new ResizeObserver(measure);
+		resized.observe(box);
+		window.addEventListener('resize', measure, { passive: true });
+		return () => {
+			resized.disconnect();
+			window.removeEventListener('resize', measure);
+		};
+	});
 	/** As the keyboard opens and the pane shrinks above it, the field being typed in stays shown. */
 	$effect(() => {
 		const viewport = window.visualViewport;
@@ -46,7 +76,14 @@
 	});
 </script>
 
-<div class="beside" data-beside={on} data-solid={solid || undefined} style:--beside-room={room}>
+<div
+	class="beside"
+	data-beside={on}
+	data-solid={solid || undefined}
+	style:--beside-room={room}
+	style:--beside-end={taken.end ? `${taken.end}px` : undefined}
+	style:--beside-bottom={taken.bottom ? `${taken.bottom}px` : undefined}
+>
 	<div class="main">{@render children()}</div>
 	{#if on && pane}
 		<aside class="pane" aria-label={label} data-testid="beside-pane" bind:this={aside}>

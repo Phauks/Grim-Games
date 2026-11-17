@@ -113,7 +113,9 @@
 	});
 </script>
 
+<!-- Every section of the day is a filled band, as the night's (Trevor, 2026-11-17). -->
 <Collapsible
+	band="fill"
 	title={t('day.announcements')}
 	storageKey="day.announcements"
 	count={died.length + revived.length + announcers.length}

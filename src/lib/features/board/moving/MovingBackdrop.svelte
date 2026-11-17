@@ -81,15 +81,17 @@
 </div>
 
 <style>
+	/* The content's part of the screen, not a pane's beside it (BesidePane). */
 	.moving {
 		position: fixed;
-		inset: 0;
+		inset: 0 var(--beside-end, 0rem) var(--beside-bottom, 0rem) 0;
 		z-index: var(--z-backdrop);
 		overflow: hidden;
 		pointer-events: none;
 	}
 	.contained {
 		position: absolute;
+		inset: 0;
 	}
 	.moving :global(canvas) {
 		display: block;
