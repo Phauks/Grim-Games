@@ -2668,6 +2668,22 @@ test("a placed reminder's row fits the step, and the text lists no reminder toke
 	expect(await guide.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
 });
 
+// Trevor (2026-11-17): the Fortune Teller step read "Nod if either is the Demon (or the )."
+// A token the sentence names as a word is not a placed reminder: it stays in the text as its name.
+test('a step keeps a reminder token its sentence names', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Fortune Teller', exact: true })
+		.tap();
+	await closeSheet(page);
+	const lines = (await openStep(page, 'Fortune Teller')).getByTestId('night-lines');
+	await expect(lines).toContainText('(or the Red Herring).');
+	await expect(lines.getByTestId('reminder-token')).toHaveCount(0);
+});
+
 // Trevor (2026-11-12): "Need to invoke separate wake ups ... if duplicate characters"; he
 // picked one step per player, each showing that seat in its alignment (2026-11-13).
 test('a character in play twice wakes once for each player, each step showing its seat', async ({
