@@ -7,7 +7,6 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
-	import ShowRolesButton from '#lib/features/room/ShowRolesButton.svelte';
 	import { sidePane, type PaneTab } from '#lib/features/room/side-pane.svelte.ts';
 	import DayCounts from '#lib/features/day/DayCounts.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
@@ -28,9 +27,18 @@
 		night: Snippet;
 		/** Where the game is up to, "Day 2", first above the tabs. */
 		phase: string;
+		/** The game is over: Players' feedback opens. */
+		ended?: boolean;
 	}
 
-	let { game, run = (command) => game.run(command).ok, day, night, phase }: Props = $props();
+	let {
+		game,
+		run = (command) => game.run(command).ok,
+		day,
+		night,
+		phase,
+		ended = false
+	}: Props = $props();
 	const live = $derived(new LiveDay(game));
 
 	const host = roomHost();
@@ -71,10 +79,7 @@
 					/>
 				</div>
 			{:else}
-				<div class="players">
-					<div class="roles"><ShowRolesButton {game} /></div>
-					<PlayersPanel {game} {run} />
-				</div>
+				<div class="players"><PlayersPanel {game} {run} {ended} /></div>
 			{/if}
 		{/snippet}
 	</Tabs>
@@ -144,16 +149,12 @@
 		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
+	/* Players scrolls itself, with the gutter inside its own scroll box. */
 	.players {
-		padding-inline: var(--pane-gutter, 0rem);
 		display: flex;
 		flex: 1;
 		flex-direction: column;
 		gap: var(--space-2);
 		min-height: 0;
-	}
-	.roles {
-		display: flex;
-		justify-content: flex-end;
 	}
 </style>

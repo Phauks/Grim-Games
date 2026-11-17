@@ -4,7 +4,7 @@
 	import { roleGaps, type RoleGap } from '#lib/core/sync/seat-roles.ts';
 	import { showCharacters } from './show-characters.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
@@ -15,9 +15,9 @@
 	 * Show players their own characters on their phones (Trevor, 2026-10-26: "Storyteller sees
 	 * who has seen their role. Then can turn on and off when ppl can see it"), beside Players'
 	 * ✕ (Trevor, 2026-10-31: "put it next to the x button, when clicked the button changes into
-	 * the timer which can also be ended very fast"), as the standard button (Trevor, 2026-11-15). A button, not a switch (Trevor,
-	 * 2026-10-30): showing them starts a minute that runs out on its own, counted down on the
-	 * button itself, and one tap on it hides them again. Who has seen theirs is marked on each
+	 * the timer which can also be ended very fast"), now an eye on the Players heading (Trevor,
+	 * 2026-11-17). A button, not a switch (Trevor, 2026-10-30): showing them starts a minute that
+	 * runs out on its own, counted down beside the eye, and one tap on it hides them again. Who has seen theirs is marked on each
 	 * player's row (Trevor, 2026-10-30).
 	 */
 	let { game }: { game: OpenGame } = $props();
@@ -64,26 +64,21 @@
 	}
 </script>
 
-<!-- The standard button, short so the title beside it never wraps on a phone (Trevor,
-     2026-11-15, "B": "Show", then the time left while players can look). Both labels share one
-     cell, so it keeps its width as it changes and nothing beside it moves; its name keeps the
-     whole words. -->
-<Button
-	variant="quiet"
-	icon={shown ? 'hide' : 'showToPlayer'}
-	aria-label={shown ? t('room.roles.hideLeft', { time }) : t('room.roles.show')}
-	aria-pressed={shown}
-	disabled={!host.code}
-	data-testid="roles-show"
-	data-shown={shown || undefined}
-	onclick={toggle}
-	><span class="labels"
-		><span class:off={shown}>{t('room.roles.showShort')}</span><span
-			class:off={!shown}
-			data-testid="roles-time-left">{time}</span
-		></span
-	></Button
->
+<!-- An eye with no edge or word, on the Players heading (Trevor, 2026-11-17: "Just have eye
+     which will cause the show effect"); the time left beside it while players can look, in a
+     cell kept for it, so nothing moves as it comes and goes. -->
+<span class="show">
+	<span class="time" class:off={!shown} data-testid="roles-time-left">{time}</span>
+	<IconButton
+		icon={shown ? 'hide' : 'show'}
+		label={shown ? t('room.roles.hideLeft', { time }) : t('room.roles.show')}
+		aria-pressed={shown}
+		disabled={!host.code}
+		data-testid="roles-show"
+		data-shown={shown || undefined}
+		onclick={toggle}
+	/>
+</span>
 
 <ConfirmDialog bind:open={warn} title={t('room.roles.gapsTitle')} onConfirm={confirmShow}>
 	<ul class="gaps" data-testid="roles-gaps">
@@ -94,11 +89,12 @@
 </ConfirmDialog>
 
 <style>
-	.labels {
-		display: inline-grid;
+	.show {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
 	}
-	.labels > span {
-		grid-area: 1 / 1;
+	.time {
 		font-variant-numeric: tabular-nums;
 	}
 	.off {

@@ -779,7 +779,8 @@
 		bind:beside={paneAt}
 		day={dayPane}
 		night={nightPane}
-		{phase}>{@render boardBody()}</BoardPane
+		{phase}
+		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
 	<div class="grimoire" class:fill={!toolbar} bind:this={grimoireEl}>

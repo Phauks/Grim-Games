@@ -159,7 +159,27 @@ describe('nightTextSegments', () => {
 			kind: 'reminder',
 			label: 'Red Herring',
 			options: ['Red Herring'],
-			prep: true
+			prep: true,
+			named: true
+		});
+	});
+
+	it('marks a token the sentence names, never a :reminder: placeholder', () => {
+		const ft = committedCharacter('fortuneteller');
+		expect(nightTextSegments(ft.firstNightReminder!, ft)).toContainEqual({
+			kind: 'reminder',
+			label: 'Red Herring',
+			options: ['Red Herring'],
+			named: true
+		});
+		const placed = nightTextSegments('Mark them. :reminder:', ft, {
+			placeholders: [{ tokens: [{ label: 'Red Herring', action: 'place' }] }]
+		});
+		expect(placed.at(-1)).toEqual({
+			kind: 'reminder',
+			label: 'Red Herring',
+			options: ['Red Herring'],
+			action: 'place'
 		});
 	});
 

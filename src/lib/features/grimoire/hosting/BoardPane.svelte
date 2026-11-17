@@ -28,6 +28,8 @@
 		night: Snippet;
 		/** Where the game is up to, "Day 2", above the tabs. */
 		phase: string;
+		/** The game is over: Players' feedback opens. */
+		ended?: boolean;
 		children: Snippet;
 	}
 
@@ -39,6 +41,7 @@
 		day,
 		night,
 		phase,
+		ended = false,
 		children
 	}: Props = $props();
 
@@ -73,6 +76,7 @@
 				{day}
 				{night}
 				{phase}
+				{ended}
 			/>{/if}
 	</div>
 {/snippet}
@@ -91,6 +95,7 @@
 				{day}
 				{night}
 				{phase}
+				{ended}
 			/>
 		</div>
 	</Dialog>
