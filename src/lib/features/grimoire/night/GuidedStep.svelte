@@ -40,6 +40,7 @@
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import StepReminderRow from './StepReminderRow.svelte';
+	import type { PaneTokenDrag } from '#lib/features/grimoire/hosting/pane-tokens.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
 	import {
@@ -68,11 +69,7 @@
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { givesNumber, seatName, stepName } from './night-steps.ts';
 	import { stepHolders } from '#lib/core/rules/night/board-steps.ts';
-	import {
-		reminderCopies,
-		reminderKey,
-		stepTokenCharacter
-	} from '#lib/features/board/reminders.ts';
+	import { reminderCopies, stepTokenCharacter, tokenRows } from '#lib/features/board/reminders.ts';
 	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
 	import ReminderMoveConfirm from '#lib/features/grimoire/reminders/ReminderMoveConfirm.svelte';
 	import { shownCommands } from './record-shown.ts';
@@ -115,6 +112,8 @@
 			reminder: { characterId: CharacterId; label: string },
 			at?: { reminderId: string; seatId: SeatId }
 		) => boolean;
+		/** A reminder's token dragged from the step onto the board, beside it (pane-tokens.ts). */
+		onDrag?: PaneTokenDrag;
 		/** Back to the board, for something shown over it (a phone's pane covers the board). */
 		onClose?: () => void;
 		/** Tonight's Next (NightWalk.next); without it Next only moves. */
@@ -136,6 +135,7 @@
 		onStep,
 		onShowGrimoire,
 		onPlace,
+		onDrag,
 		onClose,
 		onNext,
 		walkNotes,
@@ -171,32 +171,10 @@
 	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
 	/** Whose tokens the step places: a gained ability's, not its holder's (M50). */
 	const tokensOf = $derived(step ? stepTokenCharacter(step, characters) : undefined);
-	const rows = $derived.by(() => {
-		const character = tokensOf;
+	const rows = $derived(
 		// A jinx's night choice places none of its character's reminders (JinxChoiceStep).
-		if (!character || step?.jinxChoice) return [];
-		return [...new Set(character.reminders)].flatMap((label) => {
-			const on = placedAll(label);
-			const n = Math.max(
-				total.get(reminderKey({ characterId: character.id, label })) ?? 1,
-				on.length
-			);
-			return Array.from({ length: n }, (_, i) => ({
-				label,
-				at: on[i],
-				// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
-				key: `${label}:${i}`
-			}));
-		});
-	});
-	/** Where each copy of a label is on the board, in seating order. */
-	function placedAll(label: string) {
-		return game.seating.flatMap((seatId) =>
-			game.seats[seatId].reminders
-				.filter((x) => x.characterId === tokensOf?.id && x.label === label)
-				.map((r) => ({ seatId, reminderId: r.reminderId }))
-		);
-	}
+		tokensOf && !step?.jinxChoice ? tokenRows(game, tokensOf, total) : []
+	);
 
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let choosing = $state<{ label: string; at?: { reminderId: string } } | undefined>();
@@ -404,6 +382,9 @@
 		{at}
 		onchoose={() => choose(label, at)}
 		onreturn={(id) => moveConfirm?.requestReturn(id)}
+		ondrag={onDrag &&
+			tokensOf &&
+			((x, y, end) => onDrag({ characterId: tokensOf.id, label }, at, x, y, end))}
 	/>{/snippet}
 
 <!-- data-walk: tonight's walk-through, as the strip is (the tests step through either). -->

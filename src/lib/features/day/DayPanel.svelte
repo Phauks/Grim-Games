@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dayTokens } from './day-tokens.ts';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
@@ -78,6 +79,7 @@
 	let { game, assistance, onOpenNight, onSavant, onExecute, town, timer = true }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
+	const tokens = dayTokens();
 
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
@@ -509,6 +511,7 @@
 												>{/if}</span
 										>
 										<BorrowedAbilityRows {game} seatId={head?.ref.seatId} />
+										{@render tokens?.(character.id)}
 									</CharacterPiece>
 								{:else}
 									<CharacterPiece template="entry" characterId={head?.ref.characterId}>

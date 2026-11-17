@@ -24,17 +24,24 @@
 		onchoose: () => void;
 		/** Off the board, back to the reminder bank. */
 		onreturn: (reminderId: string) => void;
+		/** The token dragged onto the board (beside it, not a phone's sheet); `end` when let go. */
+		ondrag?: (x: number, y: number, end: boolean | 'cancel') => void;
 	}
 
-	let { game, characters, character, label, at, onchoose, onreturn }: Props = $props();
+	let { game, characters, character, label, at, onchoose, onreturn, ondrag }: Props = $props();
 </script>
 
 <span class="reminder-row">
 	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
+	<!-- Tapped, as Place or Move; dragged, onto the board (Trevor, 2026-11-16). -->
 	<BoardReminder
 		{label}
 		{character}
 		alignment={character ? placingAlignment(game, character.id, characters) : undefined}
+		ariaLabel={`${label} token`}
+		onTap={onchoose}
+		onDrag={ondrag && ((x, y, end) => ondrag(x, y, end))}
+		onCancel={ondrag && (() => ondrag(0, 0, 'cancel'))}
 	/>
 	<!-- The seat and its character (Trevor, 2026-10-18): the badge with its player, shortened
 	     rather than past the step's edge (2026-11-12). -->

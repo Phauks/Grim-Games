@@ -111,6 +111,7 @@
 	import DayPane from './hosting/DayPane.svelte';
 	import NightOrderPane from './hosting/NightOrderPane.svelte';
 	import { followGame } from './hosting/pane-follow.svelte.ts';
+	import { paneTokens } from './hosting/pane-tokens.ts';
 	import RuleCharacters from './RuleCharacters.svelte';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
@@ -311,6 +312,7 @@
 		}))
 	);
 	const hand = gestures.hand;
+	const tokens = paneTokens(gestures, () => bank); // A day row's, from the pane (pane-tokens.ts).
 	const remDrag: ReminderDragging = new ReminderDragging(
 		() => ({ game, characters, points, size, board: boardSize }),
 		() => gestures
@@ -645,11 +647,8 @@
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
-	/**
-	 * Back to town on the day timer, on the board and in the day (Trevor, 2026-11-01). Always
-	 * available, whatever the timer shows (Trevor, 2026-11-02); disabled only on a spectator's
-	 * board and once the game is over.
-	 */
+	// Back to town on the day timer, on the board and in the day (Trevor, 2026-11-01), whatever
+	// it shows (2026-11-02); disabled only on a spectator's board and once the game is over.
 	const town = $derived({
 		can: !watching && !ended,
 		called: roomHost().playersPhase(game.gameId)?.kind === 'town'
@@ -734,20 +733,16 @@
 		storyteller: game.storytellerName?.trim() || undefined,
 		phase
 	});
-	/**
-	 * The corner name is hidden (switched off, or no room beside the seats): Game info is
-	 * then on the ⋯ menu instead, so a mode's actions stay in reach. Otherwise only the corner
-	 * has it (Trevor, 2026-10-19: "remove game info and storyteller" from the menu).
-	 */
+	// The corner name hidden (switched off, or no room beside the seats) puts Game info on the
+	// ⋯ menu, so a mode's actions stay in reach; otherwise only the corner has it (Trevor,
+	// 2026-10-19: "remove game info and storyteller" from the menu).
 	const cornerHidden = $derived(
 		!(showTitle && game.script.meta?.name) || (width > 0 && corner < 2 * rootFont)
 	);
 	let modeMenuOpen = $state(false);
-	/**
-	 * The game's Storyteller is the Profile's name (Trevor, 2026-10-30: "All connected to
-	 * profile name"), kept in step while the game is in play, so a rename in the Profile
-	 * reaches the corner, the room and History. A finished game keeps the name it ended with.
-	 */
+	// The game's Storyteller is the Profile's name (Trevor, 2026-10-30: "All connected to
+	// profile name"), kept in step while the game is in play, so a rename in the Profile reaches
+	// the corner, the room and History. A finished game keeps the name it ended with.
 	$effect(() => {
 		const name = storytellerName.current;
 		if (watching || watchedHistory || ended) return;
@@ -1141,7 +1136,8 @@
 
 {#snippet dayPane()}
 	<DayPane
-		game={grimoire.open}
+		{grimoire}
+		{tokens}
 		{town}
 		onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
 		onSavant={(seatId) => savant?.show(seatId)}
@@ -1168,6 +1164,7 @@
 			onChooseBluffs={() => (bluffsOpen = true)}
 			onShowGrimoire={() => (showingGrim = true)}
 			onPlace={(reminder, at) => nw.placeOnBoard(reminder, at)}
+			onDrag={tokens.drag}
 			onClose={() => sidePane.hide()}
 			{onDraw}
 		/>
