@@ -26,6 +26,8 @@
 		day: Snippet;
 		/** The Night tab's contents. */
 		night: Snippet;
+		/** The game is over: Players' feedback opens. */
+		ended?: boolean;
 		children: Snippet;
 	}
 
@@ -36,6 +38,7 @@
 		beside = $bindable(),
 		day,
 		night,
+		ended = false,
 		children
 	}: Props = $props();
 
@@ -69,6 +72,7 @@
 				run={(command) => grimoire.run(command)}
 				{day}
 				{night}
+				{ended}
 			/>{/if}
 	</div>
 {/snippet}
@@ -80,7 +84,13 @@
 		size="full"
 		scroll={false}
 	>
-		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} {day} {night} />
+		<StorytellerPane
+			game={grimoire.open}
+			run={(command) => grimoire.run(command)}
+			{day}
+			{night}
+			{ended}
+		/>
 	</Dialog>
 {/if}
 

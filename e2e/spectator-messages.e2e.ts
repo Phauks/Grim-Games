@@ -47,7 +47,7 @@ test('spectators message the Storyteller, under Spectators, until it is turned o
 	await page.goto(board);
 	const players = await openPlayers(page);
 	await expect(
-		players.getByRole('list', { name: 'Players in the room' }).getByRole('listitem')
+		players.getByRole('list', { name: 'Players', exact: true }).getByRole('listitem')
 	).not.toContainText(['Alex']);
 	const spectators = players.getByTestId('room-spectators');
 	await expect(spectators.getByTestId('room-player')).toHaveText([/Alex\s*No seat/]);

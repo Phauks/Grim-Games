@@ -7,7 +7,6 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
-	import ShowRolesButton from '#lib/features/room/ShowRolesButton.svelte';
 	import { sidePane, type PaneTab } from '#lib/features/room/side-pane.svelte.ts';
 
 	/**
@@ -24,9 +23,17 @@
 		day: Snippet;
 		/** The Night tab's contents, from the board. */
 		night: Snippet;
+		/** The game is over: Players' feedback opens. */
+		ended?: boolean;
 	}
 
-	let { game, run = (command) => game.run(command).ok, day, night }: Props = $props();
+	let {
+		game,
+		run = (command) => game.run(command).ok,
+		day,
+		night,
+		ended = false
+	}: Props = $props();
 
 	const host = roomHost();
 	const notes = $derived(game.game.notes ?? []);
@@ -59,10 +66,7 @@
 					/>
 				</div>
 			{:else}
-				<div class="players">
-					<div class="roles"><ShowRolesButton {game} /></div>
-					<PlayersPanel {game} {run} />
-				</div>
+				<div class="players"><PlayersPanel {game} {run} {ended} /></div>
 			{/if}
 		{/snippet}
 	</Tabs>
@@ -107,9 +111,5 @@
 		flex-direction: column;
 		gap: var(--space-2);
 		min-height: 0;
-	}
-	.roles {
-		display: flex;
-		justify-content: flex-end;
 	}
 </style>

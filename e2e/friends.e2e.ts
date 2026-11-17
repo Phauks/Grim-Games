@@ -230,7 +230,7 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 	// The Storyteller opens Bob's profile from Players and asks him.
 	await ann.page.goto(`${board}/players`);
 	await ann.page
-		.getByRole('list', { name: 'Players in the room' })
+		.getByRole('list', { name: 'Players', exact: true })
 		.getByRole('listitem')
 		.filter({ hasText: 'Bob' })
 		.tap();

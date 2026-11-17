@@ -4043,8 +4043,8 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	// player tapped in the list (Trevor, 2026-11-01).
 	const players = await openPlayers(page);
 	await expect(players.getByTestId('room-player')).toHaveCount(8);
-	// Closed, Players in the room counts its players (Trevor, 2026-11-01).
-	const list = players.getByRole('button', { name: /^Players in the room/ });
+	// Closed, Players counts its players (Trevor, 2026-11-01).
+	const list = players.getByRole('button', { name: /^Players/ }).first();
 	await list.tap();
 	await expect(list.getByTestId('section-count')).toHaveText('8');
 	await list.tap();
