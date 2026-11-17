@@ -59,6 +59,8 @@
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import type { ComponentProps } from 'svelte';
+	import StepWalkNotes from './StepWalkNotes.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -117,6 +119,8 @@
 		onClose?: () => void;
 		/** Tonight's Next (NightWalk.next); without it Next only moves. */
 		onNext?: () => void;
+		/** What special rules say about tonight's step, beside the board (no strip there). */
+		walkNotes?: ComponentProps<typeof StepWalkNotes>;
 		/** Stops the walk-through, as the strip's ✕. */
 		onStop?: () => void;
 	}
@@ -134,6 +138,7 @@
 		onPlace,
 		onClose,
 		onNext,
+		walkNotes,
 		onStop
 	}: Props = $props();
 
@@ -423,6 +428,7 @@
 			showOpen = true;
 		}}
 	/>
+	{#if walkNotes}<StepWalkNotes {...walkNotes} />{/if}
 	<!-- The step scrolls on its own under its header. -->
 	<div
 		class="scroll"

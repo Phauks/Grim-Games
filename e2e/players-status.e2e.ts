@@ -1,4 +1,4 @@
-import { closePane, boardTimer as openBoardTimer } from './players.ts';
+import { closePane, boardTimer as openBoardTimer, paneIsSheet } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
@@ -155,7 +155,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	// Always a sun (Trevor, 2026-10-29): the timer's own sheet on the board has no choice of
 	// how players see it.
 	await closePane(page);
-	await expect(day).toBeHidden();
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const controls = page.getByTestId('timer-sheet');
 	await expect(

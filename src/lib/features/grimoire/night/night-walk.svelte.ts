@@ -137,7 +137,8 @@ export class NightWalk {
 			if (this.guideOpen) this.#placing = false;
 			else if (!this.#context().hand.held) {
 				this.#placing = false;
-				this.guideOpen = true;
+				// After the key or tap that put it down, so an Escape doesn't close the step too.
+				setTimeout(() => (this.guideOpen = true));
 			}
 		});
 	}

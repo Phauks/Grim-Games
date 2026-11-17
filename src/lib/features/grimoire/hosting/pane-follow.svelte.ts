@@ -17,14 +17,16 @@ export function followGame(walk: NightWalk, isNight: () => boolean): void {
 	$effect(() => {
 		if (walk.guideOpen && !sidePane.shows('night')) walk.guideOpen = false;
 	});
-	let shown = '';
+	// The tab is set before the pane draws, so a reload at night opens on the Night tab: the
+	// tabs drew the Day's panel under a Night tab set once they were up.
+	let shown: 'night' | 'day' = untrack(isNight) ? 'night' : 'day';
+	if (sidePane.tab === 'day' || sidePane.tab === 'night') sidePane.tab = shown;
 	$effect(() => {
 		const now = isNight() ? 'night' : 'day';
 		if (now === shown) return;
-		const first = shown === '';
 		shown = now;
 		untrack(() => {
-			if (first || sidePane.tab === 'day' || sidePane.tab === 'night') sidePane.tab = now;
+			if (sidePane.tab === 'day' || sidePane.tab === 'night') sidePane.tab = now;
 		});
 	});
 }

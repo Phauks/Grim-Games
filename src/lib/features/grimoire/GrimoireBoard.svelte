@@ -847,8 +847,7 @@
 			style:--name-offset={boardLooks.current.nameOffset}
 			bind:this={board}
 		>
-			<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18: his
-				switch and opacity; 2026-10-27: the name when there is no logo). -->
+			<!-- The script's logo, or its name, faint behind the seats (Trevor, 2026-10-18, 10-27). -->
 			{#if lookNow.logoOpacity !== undefined}
 				<BoardLogo
 					src={boardLogo || undefined}
@@ -1158,6 +1157,7 @@
 			steps={nw.guidedSteps}
 			onStep={(step) => nw.open(step)}
 			onNext={() => nw.next() || flow.endHint++}
+			walkNotes={{ asleepBy: nw.asleepRule, emptySeatBy: nw.emptySeatRule, attack: nw.attack }}
 			onStop={() => (nw.walk = undefined)}
 			onInfoTokens={(token, filled) => {
 				// A card the step's text names opens over the step, which stays as it is.

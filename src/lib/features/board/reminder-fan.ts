@@ -108,6 +108,10 @@ export function fitReminders(
 		const dx = s.middle.x - s.seat.x;
 		const dy = s.middle.y - s.seat.y;
 		const facing = Math.hypot(dx, dy) < 1 ? Math.PI / 2 : Math.atan2(dy, dx);
+		const nearerOther = (p: Point, own: number) => {
+			const mine = Math.hypot(p.x - seats[own].seat.x, p.y - seats[own].seat.y);
+			return seats.some((o, j) => j !== own && Math.hypot(p.x - o.seat.x, p.y - o.seat.y) < mine);
+		};
 
 		/**
 		 * The best place for `shape`: for each turn away from the middle, the nearest distance
@@ -141,6 +145,8 @@ export function fitReminders(
 						y: s.seat.y + ay * (d + o.y) + ax * o.x
 					}));
 					if (!points.every(clear)) continue;
+					// Strict: every reminder, not just the group's middle, nearer its own seat.
+					if (loose < 1 && points.some((p) => nearerOther(p, i))) continue;
 					const c = mean(points);
 					const own = Math.hypot(c.x - s.seat.x, c.y - s.seat.y);
 					let crowding = 0;
