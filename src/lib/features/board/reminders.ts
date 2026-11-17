@@ -477,3 +477,39 @@ export function placedLook(
 		character: characters.get(reminder.characterId)
 	};
 }
+
+/** One copy of a character's reminder token: its label, and where it is if placed. */
+export interface TokenRow {
+	label: ReminderLabel;
+	at?: { seatId: SeatId; reminderId: string };
+	key: string;
+}
+
+/**
+ * A character's own reminder tokens, one row per copy the game has (the Mathematician's five
+ * "Abnormal", Trevor 2026-10-17), each with the seat it is on, in seating order: what a night
+ * step and a day row list to place, move or take off (Trevor, 2026-11-16: day like night).
+ */
+export function tokenRows(
+	game: Game,
+	character: Character,
+	total: ReadonlyMap<string, number>
+): TokenRow[] {
+	return [...new Set(character.reminders)].flatMap((label) => {
+		const on = game.seating.flatMap((seatId) =>
+			game.seats[seatId].reminders
+				.filter((x) => x.characterId === character.id && x.label === label)
+				.map((r) => ({ seatId, reminderId: r.reminderId }))
+		);
+		const n = Math.max(
+			total.get(reminderKey({ characterId: character.id, label })) ?? 1,
+			on.length
+		);
+		return Array.from({ length: n }, (_, i) => ({
+			label,
+			at: on[i],
+			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
+			key: `${label}:${i}`
+		}));
+	});
+}

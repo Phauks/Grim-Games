@@ -113,3 +113,41 @@ test('starting the timer at night asks to start the day', async ({ page }) => {
 	// The night is over: the bank's button is Execution again.
 	await expect(endNight(page)).toHaveCount(0);
 });
+
+// Trevor (2026-11-16): "for characters like virgin ... should we just show the reminder tokens
+// now instead, and revise this so it is more unified with how we treat things at night?"; and
+// "allow dragging a reminder token from the right side ... just move the one they drag".
+test("a day row lists its character's reminder tokens to place, move or drag, as at night", async ({
+	page
+}) => {
+	await newGame(page);
+	const seatSheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await page.locator('[data-testid="seat"][aria-label^="Seat 2:"]').tap();
+	await seatSheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: /^Virgin(, Recommended)?$/ })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seatSheet).toBeHidden();
+
+	const pane = await openPane(page, 'Day');
+	const row = pane.locator('li[data-character="virgin"]').getByTestId('day-tokens');
+	await expect(row).toContainText('Not placed');
+	const seat = (n: number) => page.locator(`[data-testid="seat"][aria-label^="Seat ${n}:"]`);
+	if (await paneIsSheet(page)) {
+		// Place puts the token in hand: the phone's sheet closes so a seat can be tapped.
+		await row.getByRole('button', { name: 'Place', exact: true }).tap();
+		await expect(pane).toBeHidden();
+		await seat(3).tap();
+	} else {
+		// Beside the board, the token itself drags onto a seat.
+		const from = (await row.getByRole('button', { name: 'No Ability token' }).boundingBox())!;
+		const to = (await seat(3).boundingBox())!;
+		await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+		await page.mouse.up();
+	}
+	await expect(seat(3)).toHaveAttribute('aria-label', /1 reminder/);
+});

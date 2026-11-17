@@ -4775,6 +4775,13 @@ test("a script's own character can have another copy of a reminder (Cleopatra)",
 		.tap();
 	await page.getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('menuitem', { name: 'Duplicate reminder' }).tap();
+	// The copy is in the bank before the next one is taken from it.
+	await expect(page.getByRole('menuitem', { name: 'Duplicate reminder' })).toBeHidden();
+	await expect(
+		page
+			.getByRole('list', { name: 'Reminder bank' })
+			.getByRole('button', { name: 'Chosen reminder' })
+	).toHaveCount(1);
 	await page.keyboard.press('Escape');
 	await putReminder(page, 'Chosen', 1);
 	await expect(seatLabelled(page, 'Seat 1: no name, Cleo, 2 reminders')).toBeAttached();

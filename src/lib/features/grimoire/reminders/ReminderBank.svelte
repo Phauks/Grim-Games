@@ -137,15 +137,20 @@
 
 	/** The bank token in hand, if the hand holds one (ReminderHandPill shows it). */
 	const held = $derived(hand.held?.kind === 'bank' ? hand.held.item : undefined);
+	/** The bank's own token for a character's reminder, if it has one. */
+	export function itemFor(reminder: Pick<Reminder, 'characterId' | 'label'>): BankItem | undefined {
+		const mine = all.filter((i) => !i.token && !i.number && i.characterId === reminder.characterId);
+		return (
+			mine.find((i) => i.label === reminder.label) ??
+			mine.find((i) => i.run?.includes(reminder.label))
+		);
+	}
 	/**
 	 * A night step's reminder taken from the step (Trevor, 2026-11-06: back to the board, not a
 	 * list of players): its bank token in hand, as if tapped here. False when the bank has none.
 	 */
 	export function hold(reminder: Pick<Reminder, 'characterId' | 'label'>): boolean {
-		const mine = all.filter((i) => !i.token && !i.number && i.characterId === reminder.characterId);
-		const item =
-			mine.find((i) => i.label === reminder.label) ??
-			mine.find((i) => i.run?.includes(reminder.label));
+		const item = itemFor(reminder);
 		if (!item) return false;
 		gestures.open = false;
 		hand.hold({ kind: 'bank', item });
