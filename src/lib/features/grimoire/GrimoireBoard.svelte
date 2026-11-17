@@ -778,7 +778,8 @@
 		hidden={showingGrim}
 		bind:beside={paneAt}
 		day={dayPane}
-		night={nightPane}>{@render boardBody()}</BoardPane
+		night={nightPane}
+		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
 	<div class="grimoire" class:fill={!toolbar} bind:this={grimoireEl}>

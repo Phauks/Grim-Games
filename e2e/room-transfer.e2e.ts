@@ -162,7 +162,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await expect(other.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	await other.goto(`/grimoire/${gameId}/players`);
 	await expect(
-		other.getByRole('list', { name: 'Players in the room' }).getByRole('listitem')
+		other.getByRole('list', { name: 'Players', exact: true }).getByRole('listitem')
 	).toContainText(['Alex']);
 	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '1');
 	await phoneContext.close();
