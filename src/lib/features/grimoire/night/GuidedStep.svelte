@@ -726,6 +726,8 @@
 	.scroll {
 		flex: 1;
 		min-height: 0;
+		/* The pane's inset inside the scroll box (StorytellerPane). */
+		padding-inline: var(--pane-gutter, 0rem);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}

@@ -80,20 +80,42 @@
 		size="full"
 		scroll={false}
 	>
-		<StorytellerPane game={grimoire.open} run={(command) => grimoire.run(command)} {day} {night} />
+		<div class="sheet-pane">
+			<StorytellerPane
+				game={grimoire.open}
+				run={(command) => grimoire.run(command)}
+				{day}
+				{night}
+			/>
+		</div>
 	</Dialog>
 {/if}
 
 <style>
+	/* On a phone each tab's scroll box reaches into the sheet's side padding, so a band reaching
+	   out (Collapsible) is not cut off at the scroll box's edge. */
+	.sheet-pane {
+		--pane-gutter: var(--space-2);
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+		height: 100%;
+		margin-inline: calc(-1 * var(--pane-gutter));
+	}
 	.board-pane {
 		--board-room: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 	}
 	/* The pane's own inset from the screen's edge, as the toolbar's; Players has no sheet edge
-	   to reach out to. */
+	   to reach out to. The inset is inside each tab's scroll box (--pane-gutter), so its
+	   scrollbar sits on the screen's edge and a band reaching into the gutter is not cut off
+	   (Trevor, 2026-11-17). */
 	.side-pane {
 		box-sizing: border-box;
 		height: 100%;
-		padding: var(--menu-inset) var(--menu-inset) 0;
+		padding: var(--menu-inset) 0 0;
+		/* Room for a band to reach out (Collapsible) and still keep the inset. */
+		--pane-gutter: calc(var(--menu-inset) + var(--space-2));
 		--players-bleed: 0rem;
 	}
 </style>

@@ -4033,9 +4033,9 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(cards).toHaveCount(1);
-	// Each note hides its own text in the list, keeping its title.
-	await cards.first().getByRole('button', { name: 'Hide contents' }).tap();
-	await expectNotes(gameNotes, ['Fang Gu: Hidden']);
+	// No eye on the Storyteller's own notes (Trevor, 2026-11-17: "i dont see a world where a
+	// storyteller would hide notes"); a player's notes keep theirs (play.e2e.ts).
+	await expect(cards.first().getByRole('button', { name: 'Hide contents' })).toHaveCount(0);
 	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
 	await closePane(page);
 

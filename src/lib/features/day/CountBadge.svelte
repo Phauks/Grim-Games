@@ -36,7 +36,9 @@
 <style>
 	.badge {
 		display: inline-flex;
-		flex: 1 1 0;
+		/* Each as wide as its number, the rest shared, so 12/12 is never squeezed (Trevor,
+		   2026-11-17: "numbers are squeezed"). */
+		flex: 1 1 auto;
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-1);
@@ -53,11 +55,9 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* A button's standard edge, so the team colours read on any surface (the pane beside the
-	   board, Trevor 2026-11-16). */
+	/* No edge round the pills (Trevor, 2026-11-17: "remove border around these pillboxes"). */
 	button.badge {
 		cursor: pointer;
-		box-shadow: var(--button-ring);
 	}
 	/* The team counts in their team's colour. --on-good reads on both teams (badge-colours.test.ts). */
 	.badge.good {

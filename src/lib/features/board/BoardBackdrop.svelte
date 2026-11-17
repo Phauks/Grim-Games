@@ -57,9 +57,10 @@
 {/if}
 
 <style>
+	/* The content's part of the screen, not a pane's beside it (BesidePane). */
 	.backdrop {
 		position: fixed;
-		inset: 0;
+		inset: 0 var(--beside-end, 0rem) var(--beside-bottom, 0rem) 0;
 		z-index: var(--z-backdrop);
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
@@ -73,7 +74,7 @@
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {
 		position: fixed;
-		inset: 0;
+		inset: 0 var(--beside-end, 0rem) var(--beside-bottom, 0rem) 0;
 		z-index: var(--z-backdrop);
 		/* Clear in the middle, darkening to the strength at the corners. */
 		/* The two shades are darkness, not theme colours. */
@@ -90,5 +91,6 @@
 	/* Under the preview's seats: the preview isolates its own stacking. */
 	.contained {
 		position: absolute;
+		inset: 0;
 	}
 </style>
