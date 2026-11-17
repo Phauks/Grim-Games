@@ -9,6 +9,8 @@
 	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
 	import ShowRolesButton from '#lib/features/room/ShowRolesButton.svelte';
 	import { sidePane, type PaneTab } from '#lib/features/room/side-pane.svelte.ts';
+	import DayCounts from '#lib/features/day/DayCounts.svelte';
+	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
 
 	/**
 	 * The Storyteller's Day, Night, Game notes and Players as tabs (plan M86, Trevor 2026-11-15:
@@ -24,9 +26,12 @@
 		day: Snippet;
 		/** The Night tab's contents, from the board. */
 		night: Snippet;
+		/** Where the game is up to, "Day 2", first above the tabs. */
+		phase: string;
 	}
 
-	let { game, run = (command) => game.run(command).ok, day, night }: Props = $props();
+	let { game, run = (command) => game.run(command).ok, day, night, phase }: Props = $props();
+	const live = $derived(new LiveDay(game));
 
 	const host = roomHost();
 	const notes = $derived(game.game.notes ?? []);
@@ -42,7 +47,13 @@
 </script>
 
 <div class="storyteller-pane" data-testid="storyteller-pane">
-	<Tabs bind:value={sidePane.tab} {tabs} label={t('room.players.pane')}>
+	<!-- Where the game is and its counts, above the tabs so every tab shows them (Trevor,
+	     2026-11-17, picked "B Day pill and counts"). -->
+	<div class="game-line">
+		<span class="phase-pill" data-testid="pane-phase">{phase}</span>
+		<DayCounts game={live} />
+	</div>
+	<Tabs bind:value={sidePane.tab} {tabs} label={t('room.players.pane')} segmented>
 		{#snippet panel(tab)}
 			{#if tab === 'day'}
 				<div class="phase" data-testid="pane-day">{@render day()}</div>
@@ -77,6 +88,30 @@
 		height: 100%;
 		min-height: 0;
 	}
+	.game-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin: 0 var(--pane-gutter, 0rem) var(--space-2);
+	}
+	.game-line > :global(.counts) {
+		flex: 1;
+		min-width: 0;
+	}
+	/* The phase as a quiet pill, the counts' height, in the headings' gold. */
+	.phase-pill {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		min-height: var(--tap-target);
+		padding: 0 var(--space-3);
+		border-radius: var(--radius-full);
+		background: var(--surface-selected);
+		color: var(--heading);
+		font-family: var(--font-control);
+		font-weight: var(--font-control-weight);
+		white-space: nowrap;
+	}
 	/* --pane-gutter: the pane's side inset, given by where it sits, inside each scroll box. */
 	.storyteller-pane :global([data-scope='tabs'][data-part='root'] > :has(> [data-part='list'])) {
 		margin-inline: var(--pane-gutter, 0rem);
@@ -105,6 +140,8 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
+		/* Room kept for the scrollbar, so nothing moves as it comes and goes (Trevor, 2026-11-17). */
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
 	.players {

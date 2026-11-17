@@ -2793,7 +2793,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(page.locator('.chip-slot.now')).toHaveCount(0);
 
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
-	// In its own Afflictions section, not at the top (Trevor, 2026-10-17).
+	// In its own Status section, above the Steps (Trevor, 2026-11-17).
 	const empath = await openStep(page, 'Empath');
 	await expect(empath.getByTestId('step-afflictions')).toContainText(
 		/Poisoned\s*Empath\s*Seat 2\s*by\s*Poisoner\s*Seat 1/
@@ -4207,8 +4207,8 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	await expect(guide.getByTestId('step-ability')).toBeInViewport();
 	// The standard character row (Trevor, 2026-11-02): its ring opens the character page.
 	await expect(guide.getByRole('button', { name: 'About the Mathematician' })).toBeVisible();
-	// Nobody is drunk or poisoned, so no Afflictions section (Trevor, 2026-11-02).
-	await expect(guide.getByRole('heading', { name: 'Afflictions' })).toHaveCount(0);
+	// Nobody is drunk or poisoned, so no Status section (Trevor, 2026-11-02).
+	await expect(guide.getByRole('heading', { name: 'Status', exact: true })).toHaveCount(0);
 	await page.screenshot({ path: `test-results/step-ability-${test.info().project.name}.png` });
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });
@@ -6801,7 +6801,7 @@ test('the corner’s Game info closes when a seat opens', async ({ page }) => {
 	await expect(info).toBeHidden();
 });
 
-test('Dawn is the last night step, and Next on it lights up End night', async ({ page }) => {
+test('Dawn is the last night step, and ends the night only by asking', async ({ page }) => {
 	// Trevor (2026-10-19): Next past the end points at End night; it never ends the night.
 	// Dawn is always the last step (Trevor, 2026-10-20).
 	await startGame(page);
@@ -6819,6 +6819,17 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 	await expect(strip.locator('[data-walk-name]')).toHaveText('Dawn');
 	const end = bankNight(page, 'End night');
 	await expect(end).not.toHaveAttribute('data-hint');
+	// Beside the board, Dawn's Next is End night itself, which asks first (Trevor, 2026-11-17:
+	// "on the last screen, dawn, change arrow into an end night button").
+	if (test.info().project.name !== 'phone') {
+		await expect(next).toHaveCount(0);
+		await strip.getByTestId('step-end-night').tap();
+		const ask = page.getByRole('alertdialog', { name: 'End the night?' });
+		await ask.getByRole('button', { name: 'Cancel', exact: true }).tap();
+		await expect(ask).toBeHidden();
+		await expect(page.getByTestId('pane-day')).toBeHidden();
+		return;
+	}
 	await next.tap();
 	await expect(next).toBeEnabled();
 	// Ticking Dawn here doesn't start the day: End night does, after asking.

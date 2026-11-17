@@ -26,6 +26,8 @@
 		day: Snippet;
 		/** The Night tab's contents. */
 		night: Snippet;
+		/** Where the game is up to, "Day 2", above the tabs. */
+		phase: string;
 		children: Snippet;
 	}
 
@@ -36,6 +38,7 @@
 		beside = $bindable(),
 		day,
 		night,
+		phase,
 		children
 	}: Props = $props();
 
@@ -69,6 +72,7 @@
 				run={(command) => grimoire.run(command)}
 				{day}
 				{night}
+				{phase}
 			/>{/if}
 	</div>
 {/snippet}
@@ -86,6 +90,7 @@
 				run={(command) => grimoire.run(command)}
 				{day}
 				{night}
+				{phase}
 			/>
 		</div>
 	</Dialog>
@@ -114,6 +119,8 @@
 		box-sizing: border-box;
 		height: 100%;
 		padding: var(--menu-inset) 0 0;
+		/* Its own inset is the gutter's, the same on both sides, not the beside pane's too. */
+		margin-inline-start: calc(-1 * var(--space-3));
 		/* Room for a band to reach out (Collapsible) and still keep the inset. */
 		--pane-gutter: calc(var(--menu-inset) + var(--space-2));
 		--players-bleed: 0rem;

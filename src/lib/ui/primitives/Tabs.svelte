@@ -49,6 +49,12 @@
 		 */
 		dense?: boolean;
 		/**
+		 * Top tabs only: the tabs sit in one rounded track and the chosen one is a gold pill
+		 * that slides between them, as the gold section pills below them (Trevor, 2026-11-17,
+		 * picked "B Segmented track" for the Game pane).
+		 */
+		segmented?: boolean;
+		/**
 		 * Bottom bar only: a button at the end of the bar, drawn as a tab is and filled while
 		 * on, that shows `aside` beside whichever tab is chosen (the player screen's Notes
 		 * beside its Script or Grim, plan E3).
@@ -71,6 +77,7 @@
 		steady = false,
 		placement = 'top',
 		dense = false,
+		segmented = false,
 		toggle,
 		aside
 	}: Props = $props();
@@ -154,7 +161,7 @@
 {/snippet}
 
 <Tabs.Root
-	class={[bottom && 'bottom', dense && 'dense']}
+	class={[bottom && 'bottom', dense && 'dense', segmented && !bottom && 'segmented']}
 	value={selected}
 	onValueChange={(details) => (value = details.value as T)}
 	lazyMount={!steady}
@@ -328,6 +335,27 @@
 	}
 	:global([data-scope='tabs'][data-part='content']) {
 		padding-top: var(--space-4);
+	}
+	/* Segmented: a rounded track, the chosen tab a gold pill sliding under its name. */
+	:global(.segmented) > .bar {
+		padding: var(--space-1);
+		border-bottom: 0;
+		border-radius: var(--radius-full);
+		background: var(--surface-selected);
+	}
+	:global(.segmented) :global([data-scope='tabs'][data-part='trigger']) {
+		position: relative;
+		z-index: var(--z-above);
+		border-radius: var(--radius-full);
+	}
+	:global(.segmented) :global([data-scope='tabs'][data-part='trigger'][data-selected]) {
+		color: var(--surface);
+	}
+	:global(.segmented) :global([data-scope='tabs'][data-part='indicator']) {
+		top: var(--top);
+		height: var(--height);
+		border-radius: var(--radius-full);
+		background: var(--heading);
 	}
 	/* All panels in one cell: the hidden ones keep their room but can't be seen or reached. */
 	.steady {

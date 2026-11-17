@@ -7,6 +7,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { DayGame } from './day-game.svelte.ts';
 	import DayPanel from '#lib/features/day/DayPanel.svelte';
+	import DayCounts from '#lib/features/day/DayCounts.svelte';
 	import NightPanel from './NightPanel.svelte';
 	import type { Variant } from './sample-games.ts';
 
@@ -58,6 +59,7 @@
 		<div class="loading" aria-busy="true">Loading the sample game…</div>
 	{:else if view === 'day'}
 		{#key variant}
+			<DayCounts {game} />
 			<DayPanel {game} {assistance} onOpenNight={() => (view = 'night')} />
 		{/key}
 	{:else}

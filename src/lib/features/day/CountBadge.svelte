@@ -55,28 +55,30 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* A button's standard edge, so the team colours read on any surface (the pane beside the
-	   board, Trevor 2026-11-16; e2e/button-edges.e2e.ts). */
 	button.badge {
 		cursor: pointer;
-		box-shadow: var(--button-ring);
 	}
 	/* The team counts in their team's colour. --on-good reads on both teams (badge-colours.test.ts). */
+	/* Each team's edge in a lighter tint of its own colour, so it reads on a dark surface with
+	   no gold ring (Trevor, 2026-11-17, "Thin same-colour edge"; e2e/button-edges.e2e.ts). */
 	.badge.good {
-		border-color: var(--good);
+		border-color: var(--good-text);
 		background: var(--good);
 		color: var(--on-good);
 	}
 	.badge.evil {
-		border-color: var(--evil);
+		border-color: var(--evil-text);
 		background: var(--evil);
 		color: var(--on-good);
 	}
 	/* Each count in its own colour (Trevor, 2026-10-20: L21). The living are both teams, so
 	   half blue, half red; --on-good reads on both halves. */
 	.badge.alive {
-		border-color: transparent;
-		background: var(--evil) linear-gradient(to right, var(--good) 50%, var(--evil) 50%) border-box;
+		border-color: transparent var(--evil-text) transparent var(--good-text);
+		background:
+			linear-gradient(to right, var(--good) 50%, var(--evil) 50%) padding-box,
+			linear-gradient(to right, var(--good-text) 50%, var(--evil-text) 50%) border-box,
+			var(--evil);
 		color: var(--on-good);
 	}
 	/* Ghost votes left in an unused ghost vote's colours (DeadBadge.svelte), inverted: a dark

@@ -333,6 +333,11 @@
 	.head[data-type-band] .toggle {
 		color: var(--on-type-band);
 	}
+	/* A quiet button on a band (Announcements' prevented count) has no box of its own, which
+	   stopped short of the band's edge (Trevor, 2026-11-17: "doesn't touch the edge"). */
+	.head[data-type-band] .aside :global(.button[data-variant='quiet']) {
+		box-shadow: none;
+	}
 	.toggle[aria-disabled='true'] {
 		cursor: default;
 	}

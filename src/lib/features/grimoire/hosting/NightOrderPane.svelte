@@ -45,6 +45,8 @@
 		/* The pane's inset inside the scroll box (StorytellerPane). */
 		padding-inline: var(--pane-gutter, 0rem);
 		overflow-y: auto;
+		/* Room kept for the scrollbar, so nothing moves as it comes and goes (Trevor, 2026-11-17). */
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
 </style>

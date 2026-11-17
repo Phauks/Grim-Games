@@ -1,4 +1,9 @@
-import { closePane, boardTimer as openBoardTimer, paneIsSheet } from './players.ts';
+import {
+	closePane,
+	boardTimer as openBoardTimer,
+	paneIsSheet,
+	storytellerPane
+} from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
@@ -109,6 +114,8 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		.tap();
 	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
+	// The day's counts sit above the pane's tabs (Trevor, 2026-11-17).
+	const stCounts = storytellerPane(page).getByTestId('day-counts');
 	await expect(status).toContainText('Day 1');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
@@ -129,14 +136,14 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	// A tap opens the day's counts, the Storyteller's own numbers (Trevor, 2026-10-27).
 	await status.tap();
 	const counts = phone.getByRole('dialog', { name: 'Day 1' });
-	await expect(counts.getByTestId('players-alive')).toHaveText(
-		(await day.getByTestId('alive-count').textContent())!
+	await expect(counts.getByTestId('players-alive')).toHaveAccessibleName(
+		(await stCounts.getByTestId('alive-count').getAttribute('aria-label'))!
 	);
 	await expect(counts.getByTestId('players-votes-needed')).toHaveText(
-		(await day.getByTestId('votes-needed').textContent())!
+		(await stCounts.getByTestId('votes-needed').textContent())!
 	);
 	await expect(counts.getByTestId('players-ghost-votes')).toHaveText(
-		(await day.getByTestId('ghost-votes').textContent())!
+		(await stCounts.getByTestId('ghost-votes').textContent())!
 	);
 	await expect(counts).toContainText('8 of 8 players alive');
 	await counts.getByRole('button', { name: 'Close' }).tap();

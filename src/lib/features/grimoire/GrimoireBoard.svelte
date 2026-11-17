@@ -778,7 +778,8 @@
 		hidden={showingGrim}
 		bind:beside={paneAt}
 		day={dayPane}
-		night={nightPane}>{@render boardBody()}</BoardPane
+		night={nightPane}
+		{phase}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
 	<div class="grimoire" class:fill={!toolbar} bind:this={grimoireEl}>
@@ -1153,6 +1154,7 @@
 			steps={nw.guidedSteps}
 			onStep={(step) => nw.open(step)}
 			onNext={() => nw.next() || flow.endHint++}
+			onEndNight={() => (flow.endNightOpen = true)}
 			walkNotes={{ asleepBy: nw.asleepRule, emptySeatBy: nw.emptySeatRule, attack: nw.attack }}
 			onStop={() => (nw.walk = undefined)}
 			onInfoTokens={(token, filled) => {
