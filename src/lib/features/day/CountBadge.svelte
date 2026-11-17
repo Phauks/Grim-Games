@@ -55,9 +55,11 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
-	/* No edge round the pills (Trevor, 2026-11-17: "remove border around these pillboxes"). */
+	/* A button's standard edge, so the team colours read on any surface (the pane beside the
+	   board, Trevor 2026-11-16; e2e/button-edges.e2e.ts). */
 	button.badge {
 		cursor: pointer;
+		box-shadow: var(--button-ring);
 	}
 	/* The team counts in their team's colour. --on-good reads on both teams (badge-colours.test.ts). */
 	.badge.good {
