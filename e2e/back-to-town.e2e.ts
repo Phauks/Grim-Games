@@ -1,3 +1,4 @@
+import { paneDay, boardTimer } from './players.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -118,18 +119,15 @@ test('Back to town can be called before the time is up, and stops the timer', as
 	await expect(page.getByRole('alertdialog', { name: 'Back to town?' })).toHaveCount(0);
 	await expect(page.getByText('Couldn’t reach the players’ phones.')).toHaveCount(0);
 
-	// The same in the day view and on the grim cover.
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(
-		page.getByTestId('day-toolbar').getByRole('button', { name: 'Back to town' })
-	).toBeEnabled();
+	// The same in the timer's sheet and on the grim cover.
+	const dayTimer = await boardTimer(page);
+	await expect(dayTimer.getByRole('button', { name: 'Back to town' })).toBeEnabled();
 	// At the timer's front, as on the board's (Trevor, 2026-11-02).
-	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	expect(await dayTimer.evaluate((el) => el.firstElementChild?.getAttribute('aria-label'))).toBe(
 		'Back to town'
 	);
 	await page.keyboard.press('Escape');
-	await expect(page.getByRole('dialog', { name: /^(Day|Setup)( \d+)?$/ })).toBeHidden();
+	await expect(page.getByTestId('timer-sheet')).toBeHidden();
 	await page.getByTestId('cover-button').tap();
 	await expect(
 		page
@@ -182,13 +180,9 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(1);
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
-
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
-	expect(await buttons(dayTimer)).toEqual(fromGrim);
-	// And the day's own Timer sheet holds the same timer again.
-	await dayTimer.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
-	expect(await buttons(page.getByTestId('timer-sheet').getByTestId('day-timer'))).toEqual(fromGrim);
+	// The Day has no timer of its own: the board's is the one (Trevor, 2026-11-16).
+	const day = await paneDay(page);
+	await expect(day.getByTestId('day-timer')).toHaveCount(0);
 });
 
 // Trevor, 2026-11-06: "Back to town button should have more controls on deciding which sound to

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * A player marked to act twice wakes again straight after their own step, as a second step
@@ -29,7 +29,7 @@ async function choose(page: Page, number: number, name: string, traveller = fals
 }
 
 async function startNight(page: Page) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -54,7 +54,7 @@ test('a player who acts twice wakes again for their step', async ({ page }) => {
 	await putReminder(page, 'Acts Twice', 1);
 
 	const strip = await startNight(page);
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== 'Poisoner'; i++) await next.tap();
 	await expect(name).toHaveText('Poisoner');
@@ -62,10 +62,10 @@ test('a player who acts twice wakes again for their step', async ({ page }) => {
 
 	await next.tap();
 	await expect(name).toHaveText('Poisoner again');
-	await expect(strip.locator('.row')).toContainText('Seat 1');
+	await expect(strip).toContainText('Seat 1');
 	await expect(strip.getByTestId('night-alerts')).toContainText('acts twice tonight');
 
 	// The second wake opens like the first, with its own title.
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	await expect(nightStep(page, 'Poisoner again')).toBeVisible();
 });

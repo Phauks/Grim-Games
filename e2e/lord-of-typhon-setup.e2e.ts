@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Lord of Typhon's setup (M22, https://wiki.bloodontheclocktower.com/Lord_of_Typhon, How
@@ -41,16 +41,16 @@ test('the Lord of Typhon makes its neighbours Minions, one more than usual', asy
 		.getByRole('button', { name: 'Start game' })
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 10 && (await name.textContent()) !== 'Lord of Typhon'; i++) await next.tap();
 	await expect(name).toHaveText('Lord of Typhon');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Lord of Typhon');
 	const change = step.getByTestId('change-character');
 

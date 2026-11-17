@@ -1,3 +1,5 @@
+import { startExecution } from './execution.ts';
+import { walkThrough } from './night-step.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -44,18 +46,15 @@ async function startedGame(page: Page, script = 'Trouble Brewing', demon = 'Imp'
 		.getByRole('button', { name: 'Start game', exact: true })
 		.tap();
 	const startAsk = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(startAsk)).toBeVisible();
 	if (await startAsk.isVisible())
 		await startAsk.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
 
 /** Execution from the day view: the day view closes and the board asks for a seat. */
-async function startExecution(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day', exact: true });
-	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
-	await expect(day).toBeHidden();
+async function askExecution(page: Page) {
+	await startExecution(page);
 	const bar = page.getByTestId('execution-pick');
 	await expect(bar.getByTestId('execution-pick-question')).toHaveText('Tap the executed player');
 	return bar;
@@ -63,7 +62,7 @@ async function startExecution(page: Page) {
 
 test('the executed player is tapped on the board and confirmed there', async ({ page }) => {
 	await startedGame(page);
-	const bar = await startExecution(page);
+	const bar = await askExecution(page);
 	// The bank's own button is Confirm while the bar shows.
 	const confirm = page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true });
 	await expect(confirm).toBeDisabled();
@@ -103,7 +102,7 @@ test('the executed player is tapped on the board and confirmed there', async ({ 
 
 test('No execution and Cancel are on the bar', async ({ page }) => {
 	await startedGame(page);
-	let bar = await startExecution(page);
+	let bar = await askExecution(page);
 	await bar.getByRole('button', { name: 'No execution', exact: true }).tap();
 	await expect(bar.getByTestId('execution-pick-question')).toHaveText('No execution today?');
 	await bar.getByRole('button', { name: 'Cancel', exact: true }).tap();
@@ -114,7 +113,7 @@ test('No execution and Cancel are on the bar', async ({ page }) => {
 	await page.keyboard.press('Escape');
 	await expect(seatSheet(page)).toBeHidden();
 
-	bar = await startExecution(page);
+	bar = await askExecution(page);
 	await bar.getByRole('button', { name: 'No execution', exact: true }).tap();
 	await page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(bar).toBeHidden();
@@ -125,7 +124,7 @@ test('with a save in play, the picked player opens the Execution sheet', async (
 	// Bad Moon Rising's Sailor in play: Saved by asks, offering only abilities in play
 	// (Trevor, 2026-11-06: "We shouldn't offer if ability is not in some way in play").
 	await startedGame(page, 'Bad Moon Rising', 'Po', 'Sailor');
-	const bar = await startExecution(page);
+	const bar = await askExecution(page);
 	await boardSeat(page, 'Seat 5:').tap();
 	await expect(bar).toBeHidden();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
@@ -139,7 +138,7 @@ test('with a save in play, the picked player opens the Execution sheet', async (
 
 test('with a save only on the script, Confirm stays on the board', async ({ page }) => {
 	await startedGame(page, 'Bad Moon Rising', 'Po');
-	const bar = await startExecution(page);
+	const bar = await askExecution(page);
 	await boardSeat(page, 'Seat 5:').tap();
 	await expect(bar.getByTestId('execution-pick-question')).toContainText('Seat 5');
 	await expect(page.getByRole('alertdialog', { name: 'End the day?' })).toHaveCount(0);

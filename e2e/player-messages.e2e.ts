@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { closePane, openPlayers, openPlayerSheet } from './players.ts';
+import { closePane, openPlayers, openPlayerSheet, paneIsSheet } from './players.ts';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 
@@ -71,11 +71,13 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
-	// The pane's button counts it, in the accent colour for a consult (plan M86), and More has
-	// no count any more.
-	const paneButton = page.getByTestId('game-notes-button');
-	await expect(paneButton).toHaveAccessibleName('Game notes and Players, 1 new message');
-	await expect(page.locator('.notes-slot [data-warn]')).toHaveText('1');
+	// On a phone the pane's button counts it, in the accent colour for a consult (plan M86);
+	// beside the board the Players tab does. More has no count any more.
+	if (await paneIsSheet(page)) {
+		const paneButton = page.getByTestId('game-pane-button');
+		await expect(paneButton).toHaveAccessibleName('Game, 1 new message');
+		await expect(page.locator('.pane-slot [data-warn]')).toHaveText('1');
+	}
 	await expect(page.getByRole('button', { name: 'More', exact: true })).toBeVisible();
 	// Players shows who has sent something (Trevor, 2026-10-29: Messages folded into Players);
 	// a consult makes the count stand out, on the tab and on the player's line.
@@ -118,7 +120,8 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(row.getByTestId('room-player-waiting')).toHaveCount(0);
 	await closePane(page);
 	await expect(page.getByRole('button', { name: /new message/ })).toHaveCount(0);
-	await expect(paneButton).toHaveAccessibleName('Game notes and Players');
+	if (await paneIsSheet(page))
+		await expect(page.getByTestId('game-pane-button')).toHaveAccessibleName('Game');
 	await page.getByTestId('cover-button').tap();
 	await expect(cover.getByTestId('cover-inbox')).toBeHidden();
 	await phoneContext.close();

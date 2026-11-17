@@ -1,3 +1,4 @@
+import { paneDay } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { tapStartGame } from './start-game.ts';
@@ -116,7 +117,7 @@ test('the day view recommends Savant information until it is set for today', asy
 		await expect(picker).toBeHidden();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	// Not set yet: the button stands out (Trevor, 2026-10-20: L5).
 	const info = page.getByTestId('savant-info');
 	await expect(info).toHaveCount(1);
@@ -197,7 +198,7 @@ test('Use these saves the statements: reopening shows them, true or false as giv
 		await expect(picker).toBeHidden();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	const info = page.getByTestId('savant-info');
 	await info.tap();
 	const savant = page.getByRole('dialog', { name: /^Savant information/ });

@@ -11,9 +11,11 @@
 		nights: readonly PlayerNight[];
 		/** Plain headings, for print; on screen each night closes from its header. */
 		flat?: boolean;
+		/** Where each night's open or closed state is kept on the device. */
+		storageKey?: string;
 	}
 
-	let { nights, flat = false }: Props = $props();
+	let { nights, flat = false, storageKey = 'play:night' }: Props = $props();
 </script>
 
 <!-- Who wakes, in order, with TPI's night text (Trevor, 2026-10-15). On screen the nights stack
@@ -60,7 +62,7 @@
 			{:else}
 				<Collapsible
 					{title}
-					storageKey="play:night-{n.night}"
+					storageKey="{storageKey}-{n.night}"
 					band="fill"
 					count={n.entries.filter((e) => e.kind === 'character').length}
 					>{@render list()}</Collapsible

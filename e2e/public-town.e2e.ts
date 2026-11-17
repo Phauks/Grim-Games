@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { openSoundboard } from './board-menu.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
@@ -222,7 +223,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
@@ -241,7 +242,7 @@ test("Public Town shows the Storyteller's day timer during the day, as phones do
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
 		'Day timer: 100% of the day left'

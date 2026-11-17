@@ -53,8 +53,11 @@
 		font-variant-numeric: tabular-nums;
 		white-space: nowrap;
 	}
+	/* A button's standard edge, so the team colours read on any surface (the pane beside the
+	   board, Trevor 2026-11-16). */
 	button.badge {
 		cursor: pointer;
+		box-shadow: var(--button-ring);
 	}
 	/* The team counts in their team's colour. --on-good reads on both teams (badge-colours.test.ts). */
 	.badge.good {

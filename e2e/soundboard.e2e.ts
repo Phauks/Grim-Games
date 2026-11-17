@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { openSoundboard } from './board-menu.ts';
 import { pickScript, toBoard } from './new-game.ts';
@@ -128,7 +129,7 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 		.getByRole('button', { name: 'Start game', exact: true })
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	await expect(page.getByTestId('night-strip').or(ask)).toBeVisible();
+	await expect(walkThrough(page).or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 
 	// The first night begins: Dusk's sound plays.

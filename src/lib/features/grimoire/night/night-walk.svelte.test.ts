@@ -92,7 +92,7 @@ describe('NightWalk', () => {
 
 	// Trevor, 2026-11-06: "When placing a token in night order, we should revert back to grim
 	// view, not a tabled list".
-	it("closes the step while its reminder is in hand, and opens it again once it's put down", () => {
+	it("closes the step while its reminder is in hand, and opens it again once it's put down", async () => {
 		const hand = new ReminderHand();
 		const held: string[] = [];
 		const bank = {
@@ -110,6 +110,8 @@ describe('NightWalk', () => {
 		expect(walk.guideOpen).toBe(false);
 		hand.putDown();
 		flushSync();
+		// After the key or tap that put it down, so an Escape doesn't close the step too.
+		await new Promise((done) => setTimeout(done));
 		expect(walk.guideOpen).toBe(true);
 		stop();
 	});

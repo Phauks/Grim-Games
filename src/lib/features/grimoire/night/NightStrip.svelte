@@ -98,6 +98,7 @@
 	class="strip"
 	aria-label="Night walk-through"
 	data-testid="night-strip"
+	data-walk
 	data-step={index + 1}
 	data-steps={steps.length}
 	in:rise|global
@@ -134,7 +135,7 @@
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="body">
 				<!-- The step's name for the button's own label; the row above shows it. -->
-				<span class="name visually-hidden"><strong>{stepName(step)}</strong></span>
+				<span class="name visually-hidden"><strong data-walk-name>{stepName(step)}</strong></span>
 				{#if holders.length > 1}<span class="who"
 						>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
 								name={seatName(game, seatId)}

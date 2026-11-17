@@ -1,6 +1,7 @@
+import { paneIsSheet } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * The Spy sees the Grimoire each night (https://wiki.bloodontheclocktower.com/Spy), so its night
@@ -28,7 +29,7 @@ async function choose(page: Page, number: number, name: string) {
 }
 
 async function openStep(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -37,12 +38,12 @@ async function openStep(page: Page, title: string) {
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
 	await expect(name).toHaveText(title);
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -56,12 +57,13 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	const seat = page.getByTestId('seat').nth(4);
 	const usual = await seat.boundingBox();
 	const step = await openStep(page, 'Spy');
+	const sheet = await paneIsSheet(page);
 
 	await step.getByRole('button', { name: 'Show the Grimoire' }).tap();
-	await expect(step).toBeHidden();
+	if (sheet) await expect(step).toBeHidden();
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button')).toHaveCount(1);
-	await expect(page.getByTestId('night-strip')).toBeHidden();
+	await expect(walkThrough(page)).toBeHidden();
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeHidden();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await expect(page.getByTestId('seat').first()).toBeVisible();

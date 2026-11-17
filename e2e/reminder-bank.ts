@@ -1,3 +1,4 @@
+import { paneIsSheet } from './players.ts';
 import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
@@ -156,7 +157,8 @@ export async function placeFromStep(
 	{ nth = 0, button = 'Place' }: { nth?: number; button?: 'Place' | 'Move' } = {}
 ) {
 	await step.getByRole('button', { name: button, exact: true }).nth(nth).tap();
-	await expect(step).toBeHidden();
+	// A phone's sheet makes way for the board; beside the board the step stays.
+	if (await paneIsSheet(page)) await expect(step).toBeHidden();
 	await expect(inHand(page)).toBeVisible();
 	await boardSeat(page, seat).tap();
 	await expect(inHand(page)).toBeHidden();

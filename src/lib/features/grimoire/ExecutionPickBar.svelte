@@ -20,14 +20,9 @@
 		flow: PhaseFlow;
 		game: Game;
 		characters: CharacterLookup;
-		/**
-		 * Under the day view's mini grimoire (Trevor, 2026-11-15): the question and No execution
-		 * in a row of their own; Cancel and Confirm are the day view's own buttons.
-		 */
-		inline?: boolean;
 	}
 
-	let { flow, game, characters, inline = false }: Props = $props();
+	let { flow, game, characters }: Props = $props();
 
 	const seatId = $derived(flow.pickedSeat);
 	const question = $derived(
@@ -49,11 +44,10 @@
 
 <div
 	class="pick"
-	class:inline
-	data-execution-pick={inline ? undefined : true}
+	data-execution-pick
 	role="group"
 	aria-label={t('day.execution')}
-	data-testid={inline ? 'day-execution-pick' : 'execution-pick'}
+	data-testid="execution-pick"
 >
 	<p class="question" role="status" data-testid="execution-pick-question">
 		<Sentence text={question}
@@ -69,9 +63,9 @@
 		>{t('day.noExecution')}</Chip
 	>
 	<!-- Cancel at the end, beside the bank's button, which is Confirm while this shows. -->
-	{#if !inline}<span class="cancel"
-			><Button variant="quiet" onclick={() => flow.cancelPick()}>{t('common.cancel')}</Button></span
-		>{/if}
+	<span class="cancel"
+		><Button variant="quiet" onclick={() => flow.cancelPick()}>{t('common.cancel')}</Button></span
+	>
 </div>
 
 <style>
@@ -88,23 +82,6 @@
 		border-end-start-radius: inherit;
 		/* Opaque, so the tokens under it don't show through. */
 		background: var(--surface);
-	}
-	/* Under the mini grimoire: a row in the day's left column, the question first. */
-	.pick.inline {
-		position: static;
-		flex-wrap: wrap;
-		padding: 0;
-		background: none;
-	}
-	.pick.inline .question {
-		position: static;
-		transform: none;
-		max-width: 100%;
-		font-size: 1rem;
-		border: 0;
-		background: none;
-		padding: 0;
-		white-space: normal;
 	}
 	/* The strip's captions and handle bar go while it asks: its question is on that edge. */
 	:global([data-tray]:has([data-execution-pick]) :is(.caption, .grab)) {

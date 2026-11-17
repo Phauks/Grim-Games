@@ -1,3 +1,5 @@
+import { closePane, boardTimer as openBoardTimer, paneIsSheet } from './players.ts';
+import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -86,7 +88,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
 	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(strip).toBeVisible();
@@ -105,7 +107,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	await expect(status).toContainText('Day 1');
 	await expect(shown.getByRole('img')).toHaveAttribute(
@@ -141,7 +143,9 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(counts).toBeHidden();
 
 	// The Storyteller starts it, and the sun sets off across the sky. 4:00 for 8 players, so 1% is 2.4s.
-	await day.getByRole('button', { name: 'Start timer' }).tap();
+	await closePane(page);
+	await (await openBoardTimer(page)).getByRole('button', { name: 'Start timer' }).tap();
+	await page.keyboard.press('Escape');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
 		/^Day timer: (9\d)% of the day left$/,
@@ -150,8 +154,8 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 
 	// Always a sun (Trevor, 2026-10-29): the timer's own sheet on the board has no choice of
 	// how players see it.
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const controls = page.getByTestId('timer-sheet');
 	await expect(

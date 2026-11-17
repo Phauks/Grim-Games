@@ -34,7 +34,8 @@
 		/** The Grimoire is shown to a player: nothing over it but the X that ends it. */
 		showing?: boolean;
 		onStopShowing?: () => void;
-		onDay: () => void;
+		/** A spectator's Day, to look at; the Storyteller's is in the pane beside the board. */
+		onDay?: () => void;
 		onInfo: () => void;
 		onScript: () => void;
 		onShare: () => void;
@@ -139,10 +140,11 @@
 		     "View-Only" label on a spectator's board (Trevor, 2026-11-15). -->
 		<span class="spacer"></span>
 		<!-- A spectator opens the Day to look at, Script and Share as players do; Info tokens,
-		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). -->
-		<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
-			><span class="tool-label">Day</span></Button
-		>
+		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). The Storyteller's
+		     Day is a tab of the pane (Trevor, 2026-11-16). -->
+		{#if watching && onDay}<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
+				><span class="tool-label">Day</span></Button
+			>{/if}
 		<!-- On the narrowest phones Info tokens is in More, so the pane's button keeps its place
 		     by the grim cover (Trevor, 2026-11-15); Share never moves there. Not a spectator's. -->
 		{#if !watching}<Button
@@ -219,7 +221,7 @@
 		min-width: 0;
 		text-align: center;
 	}
-	@media (max-width: 999.98px) {
+	@container beside (max-width: 999.98px) {
 		/* Below the width where Seating's words show, its tools need the whole bar; the
 		   title keeps its space, so Done stays at the right. */
 		.arranging-title {
@@ -275,7 +277,7 @@
 		background: var(--surface);
 	}
 	/* Eight 44px buttons and their gaps need 412px; narrower, Info tokens is in More. */
-	@media (max-width: 411.98px) {
+	@container beside (max-width: 411.98px) {
 		.toolbar :global([data-info-tokens]) {
 			display: none;
 		}
@@ -284,33 +286,33 @@
 	.toolbar :global(.tool-label) {
 		display: none;
 	}
-	@media (max-width: 719.98px) {
+	@container beside (max-width: 719.98px) {
 		.toolbar:not(.seating) :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
 		}
 	}
-	@media (min-width: 720px) {
+	@container beside (min-width: 720px) {
 		.toolbar :global(.tool-label) {
 			display: inline;
 		}
 	}
 	/* Seating's tools have their words from a tablet up, icons only on a phone (Trevor,
 	   2026-11-01), tighter so all seven fit across a tablet. */
-	@media (max-width: 699.98px) {
+	@container beside (max-width: 699.98px) {
 		.seating :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
 		}
 	}
-	@media (min-width: 700px) {
+	@container beside (min-width: 700px) {
 		.seating :global(.tool-label) {
 			display: inline;
 		}
 	}
-	@media (min-width: 700px) and (max-width: 999.98px) {
+	@container beside (min-width: 700px) and (max-width: 999.98px) {
 		.seating {
 			gap: var(--space-1);
 		}

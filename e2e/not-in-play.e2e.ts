@@ -1,9 +1,10 @@
-import { chooseExecution } from './execution.ts';
+import { paneDay, closePane, closeStep, paneIsSheet } from './players.ts';
+import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // Seats not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game sits down at
 // the table before the night they join at. The seat is greyed with a "Not in play" pill and
@@ -23,7 +24,7 @@ async function startGame(page: Page) {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
-const daySheet = (page: Page) => page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+const daySheet = (page: Page) => page.getByTestId('pane-day');
 const seatSheet = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
 const endNight = (page: Page) =>
 	page
@@ -33,8 +34,8 @@ const endNight = (page: Page) =>
 
 /** Ends the day with no execution, which starts tonight's night at Dusk. */
 async function execution(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await daySheet(page).getByRole('button', { name: 'Execution' }).tap();
+	await paneDay(page);
+	await startExecution(page);
 	await chooseExecution(page);
 	await expect(daySheet(page)).toBeHidden();
 	await expect(endNight(page)).toBeEnabled();
@@ -46,24 +47,24 @@ async function endTheNight(page: Page) {
 	const ask = page.getByRole('alertdialog', { name: 'End the night?' });
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
-	await daySheet(page).getByRole('button', { name: 'Close' }).tap();
-	await expect(daySheet(page)).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(daySheet(page)).toBeHidden();
 }
 
 async function aliveCount(page: Page) {
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await expect(page.getByTestId('alive-count')).toBeVisible();
 	const text = await page.getByTestId('alive-count').textContent();
-	await daySheet(page).getByRole('button', { name: 'Close' }).tap();
-	await expect(daySheet(page)).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(daySheet(page)).toBeHidden();
 	return text;
 }
 
 /** The walk-through under the board, stepped forward to `title`. */
 async function walkTo(page: Page, title: string): Promise<Locator> {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip).toBeVisible();
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
 	await expect(name).toHaveText(title);
@@ -119,16 +120,15 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 	// Tonight offers to bring them in; the night alone does not.
 	await execution(page);
 	await expect(arrival).toHaveAccessibleName(/not in play/);
-	const strip = await walkTo(page, 'Travellers not in play');
-	await strip.locator('button.step').tap();
+	await walkTo(page, 'Travellers not in play');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Travellers not in play');
 	await expect(step.getByTestId('traveller-joins')).toContainText('Thief');
 	const alive = step.getByRole('button', { name: 'Alive', exact: true });
 	await expect(alive).toHaveAttribute('aria-pressed', 'false');
 	await alive.tap();
 	await expect(alive).toHaveAttribute('aria-pressed', 'true');
-	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	await closeStep(page, step);
 	await expect(arrival).not.toHaveAccessibleName(/not in play/);
 	await expect(arrival.getByTestId('not-in-play')).toHaveCount(0);
 	await endTheNight(page);

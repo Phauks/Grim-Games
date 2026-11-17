@@ -99,7 +99,7 @@ test('beside the board, the pane ends above the on-screen keyboard', async ({ pa
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	const pane = await openPane(page, 'Game notes');
+	const pane = await openPane(page, 'Notes');
 	// A phone shows the pane as a full-screen sheet, which already lifts above the keyboard.
 	const beside = page.getByTestId('beside-pane');
 	test.skip(!(await beside.isVisible()), 'the pane is a sheet on this screen');

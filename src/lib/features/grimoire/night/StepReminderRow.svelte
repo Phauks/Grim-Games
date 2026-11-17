@@ -36,12 +36,12 @@
 		{character}
 		alignment={character ? placingAlignment(game, character.id, characters) : undefined}
 	/>
-	<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with its player. -->
+	<!-- The seat and its character (Trevor, 2026-10-18): the badge with its player, shortened
+	     rather than past the step's edge (2026-11-12). -->
 	<span class="where"
-		>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
+		>{#if at}<SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
 	>
-	<!-- On a phone the buttons go under the seat rather than past the step's edge (Trevor,
-	     2026-11-12, a screenshot with the delete button cut off). -->
+	<!-- On the token's line, so a reminder takes one row (Trevor, 2026-11-16). -->
 	<span class="actions">
 		<Button variant="quiet" onclick={onchoose}>{at ? 'Move' : 'Place'}</Button>
 		<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17);
@@ -57,13 +57,12 @@
 <style>
 	.reminder-row {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2) var(--space-3);
 		font-family: var(--font-body);
 	}
 	.where {
-		flex: 1 1 12em;
+		flex: 1 1 auto;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;

@@ -160,6 +160,7 @@ import ph_monitor_light from '~icons/ph/monitor-light';
 import ph_moon_light from '~icons/ph/moon-light';
 import ph_moon_stars_light from '~icons/ph/moon-stars-light';
 import ph_note_pencil_light from '~icons/ph/note-pencil-light';
+import ph_notebook_light from '~icons/ph/notebook-light';
 import ph_notepad_light from '~icons/ph/notepad-light';
 import ph_paint_brush_light from '~icons/ph/paint-brush-light';
 import ph_paint_bucket_light from '~icons/ph/paint-bucket-light';
@@ -412,6 +413,7 @@ const icons: IconMap = {
 	'ph:moon-light': ph_moon_light,
 	'ph:moon-stars-light': ph_moon_stars_light,
 	'ph:note-pencil-light': ph_note_pencil_light,
+	'ph:notebook-light': ph_notebook_light,
 	'ph:notepad-light': ph_notepad_light,
 	'ph:paint-brush-light': ph_paint_brush_light,
 	'ph:paint-bucket-light': ph_paint_bucket_light,

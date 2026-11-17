@@ -1,7 +1,8 @@
+import { closePane } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * Reminders and deaths that change a player's character or alignment offer the change (the
@@ -135,7 +136,7 @@ test("the Goon's Drunk on an evil player offers to make the Goon evil", async ({
 });
 
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
 		await page
@@ -148,7 +149,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
@@ -166,8 +167,8 @@ test("the Snake Charmer's step swaps with the Demon it chooses and poisons the o
 	await choose(page, 1, 'Snake Charmer');
 	await choose(page, 2, 'Vigormortis');
 	await choose(page, 3, 'Clockmaker');
-	const strip = await walkTo(page, 'Snake Charmer');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Snake Charmer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Snake Charmer');
 	await expect(step).toBeVisible();
 	const swap = step.getByTestId('charm-swap');
@@ -196,7 +197,7 @@ test("the Snake Charmer's step swaps with the Demon it chooses and poisons the o
 	await expect(page.getByText('Vigormortis').last()).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(step).toBeVisible();
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Vigormortis')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 2: no name, Snake Charmer, 1 reminder')).toBeAttached();
 	const sheet = await openSeat(page, 2);

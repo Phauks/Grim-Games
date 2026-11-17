@@ -12,7 +12,16 @@ import {
 	noteText,
 	noteTitle
 } from './notes.ts';
-import { closePane, openPane, openPlayers, openPlayerSheet, storytellerPane } from './players.ts';
+import {
+	closePane,
+	closeStep,
+	paneIsSheet,
+	openPane,
+	openPlayers,
+	openPlayerSheet,
+	storytellerPane,
+	paneDay
+} from './players.ts';
 import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
@@ -36,7 +45,7 @@ import {
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 import { openInfoTokens } from './toolbar.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
@@ -163,8 +172,19 @@ async function lastStep(strip: Locator) {
 	return (await strip.getAttribute('data-step')) === (await strip.getAttribute('data-steps'));
 }
 
+/**
+ * For a test of the phone's night strip, which runs on the phone project only (Trevor,
+ * 2026-11-17): an upright tablet or wider has no strip, as the pane shows the step itself.
+ */
+function phoneStrip() {
+	test.skip(
+		test.info().project.name !== 'phone',
+		"the night strip is a phone's; the pane has the step"
+	);
+}
+
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
@@ -181,7 +201,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
@@ -198,9 +218,9 @@ async function walkTo(page: Page, title: string) {
 
 /** Opens a night step to be filled in, from the walk-through. */
 async function openStep(page: Page, title: string) {
-	const strip = await walkTo(page, title);
+	await walkTo(page, title);
 	// The character's band opens the step (its ring opens the character instead).
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -229,8 +249,12 @@ async function watchStep(page: Page, title: string) {
 					Number(getComputedStyle(e).opacity) >= 0.95 &&
 					e.querySelector('[data-step-name]')?.getAttribute('data-step-name') === title
 			);
+			// Beside the board the step is in the pane, which never closes.
+			const besideStep = [...document.querySelectorAll('aside [data-step-name]')].some(
+				(e) => e.getAttribute('data-step-name') === title && e.checkVisibility()
+			);
 			const shown = document.querySelector<HTMLDialogElement>('[data-testid="show-to-player"]');
-			if (!step && !shown?.open) {
+			if (!step && !besideStep && !shown?.open) {
 				const states = dialogs.map((e) => {
 					const style = getComputedStyle(e);
 					const name = e.querySelector('[data-part="title"]')?.textContent?.trim();
@@ -758,8 +782,8 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	// The last setup step opens the board, whose bank starts with the setup reminders.
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
+	await paneDay(page);
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -1141,7 +1165,7 @@ test('the night order is walked through from the bank, and End night starts the 
 	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
 	await expect(boardTimer).toBeVisible();
 	await endNight(page);
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
 	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
@@ -1164,17 +1188,14 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	await closeSheet(page);
 	await walkTo(page, 'Dusk');
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 
 	// Tapped at its count: the middle of the Imp's text is a glossary word with its own popover.
-	await (
-		await walkTo(page, 'Imp')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Imp');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Imp');
 	// The card is on the line that names it (Trevor, 2026-11-06), with no list of cards below.
 	const lines = step.getByTestId('night-lines');
@@ -1233,10 +1254,9 @@ for (const mode of ['Off', 'Automatically remove', 'Ask at dawn to remove', 'Ask
 			await reset.getByRole('button', { name: 'Confirm' }).tap();
 			await expect(reset).toBeHidden();
 		}
-		const day = page.getByRole('dialog', { name: 'Day 1' });
+		const day = page.getByTestId('pane-day');
 		await expect(day).toBeVisible();
-		await page.keyboard.press('Escape');
-		await expect(day).toBeHidden();
+		await closePane(page);
 		// Seat 2 holds the Safe until dawn takes it off, back to the bank.
 		const removed = mode === 'Automatically remove' || mode === 'Ask at dawn to remove';
 		await expect(seat2).toHaveAttribute('aria-label', removed ? /character$/ : /1 reminder/);
@@ -1284,10 +1304,10 @@ test('a # token set to count up goes up at the new day, after asking (plan M53)'
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
 	// Then the day opens, as after Reset Reminders.
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	await expect(onBoard('Number 2')).toHaveCount(1);
 });
 
@@ -1309,27 +1329,21 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	}
 	await walkTo(page, 'Dusk');
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 
 	// Steps open at their count: their text has glossary words with their own popovers.
-	await (
-		await walkTo(page, 'Exorcist')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Exorcist');
+	await openWalkStep(page);
 	const exorcist = nightStep(page, 'Exorcist');
 	await placeFromStep(page, exorcist, 1);
-	await expect(exorcist).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
-	await exorcist.getByRole('button', { name: 'Close' }).tap();
+	await expect(exorcist).toContainText(/\bSeat 1\b/);
+	await closeStep(page, exorcist);
 
-	await (
-		await walkTo(page, 'Pukka')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Pukka');
+	await openWalkStep(page);
 	const pukka = nightStep(page, 'Pukka');
 	await expect(pukka.getByTestId('night-alerts')).toContainText(
 		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake\s+tonight/
@@ -1355,11 +1369,8 @@ test("the Lord of Typhon's step warns when the evil players don't sit in one lin
 		await picker.getByRole('button', { name, exact: true }).tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Lord of Typhon')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Lord of Typhon');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Lord of Typhon');
 	await expect(step.getByTestId('night-alerts')).toContainText(
 		/Seat 1: the evil players don't sit in one line with\s*Lord of Typhon\s*inside it/
@@ -1384,18 +1395,15 @@ test("the Demon's step says when the Princess stops its kill tonight", async ({ 
 	}
 	await walkTo(page, 'Dusk');
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 
 	await putReminder(page, "Doesn't Kill", 1);
 
-	await (
-		await walkTo(page, 'Imp')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Imp');
+	await openWalkStep(page);
 	const alerts = nightStep(page, 'Imp').getByTestId('night-alerts');
 	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
 	await expect(alerts).not.toContainText(/Soldier/);
@@ -1415,11 +1423,8 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 		.tap();
 	await closeSheet(page);
 
-	await (
-		await walkTo(page, 'Cerenovus')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Cerenovus');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Cerenovus');
 	// "This character selected you" is on the line naming it, and "You are mad as" beside it
 	// (Trevor, 2026-11-09: "The mad as is not showing up as an eyeball under cerenovus").
@@ -1463,11 +1468,8 @@ test('the Snake Charmer step fills "You are" with the Demon, then with the Snake
 			.tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Snake Charmer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Snake Charmer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Snake Charmer');
 	// Each "You are" line has its own card, in the text's order (Trevor, 2026-11-06).
 	const eyes = step.getByTestId('night-lines').getByRole('button', { name: /^Show to player/ });
@@ -1535,11 +1537,8 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 		await closeSheet(page);
 	}
 
-	await (
-		await walkTo(page, 'Dreamer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Dreamer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Dreamer');
 	// On the step's first line, as every card the step offers (Trevor, 2026-11-09).
 	await step
@@ -1582,11 +1581,8 @@ test("the Dreamer's Valid Information shows a good and an evil token, never one 
 			.tap();
 		await closeSheet(page);
 	}
-	await (
-		await walkTo(page, 'Dreamer')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Dreamer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Dreamer');
 	// The Clockmaker's row: the picker opens with the Clockmaker in place and the evil token to
 	// pick, instead of showing the Clockmaker alone.
@@ -1724,7 +1720,7 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	await expect(logo).toBeVisible();
 	const logoBefore = (await logo.boundingBox())!;
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
 		.toBeLessThan(1);
@@ -1810,11 +1806,11 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 
 	// The night starts by asking for it, after Dusk (core withTravellerAlignmentStep).
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
-	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	const strip = walkThrough(page);
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dusk');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Traveller alignment');
-	await strip.locator('button.step').tap();
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Traveller alignment');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Traveller alignment');
 	await step.getByRole('button', { name: 'Evil' }).tap();
 	await page.keyboard.press('Escape');
@@ -2454,7 +2450,7 @@ test('the board background can be an image from the device, kept after a reload'
 	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
 	const box = await backdrop.boundingBox();
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 	await expect(backdrop).toHaveAttribute('style', image!);
 	expect(await backdrop.boundingBox()).toEqual(box);
 	expect(await node!.evaluate((el) => el.isConnected)).toBe(true);
@@ -2569,7 +2565,7 @@ test("a night step's token goes on a seat tapped on the board, unusual seats fad
 
 	const guide = await openStep(page, 'Butler');
 	await guide.getByRole('button', { name: 'Place' }).tap();
-	await expect(guide).toBeHidden();
+	if (await paneIsSheet(page)) await expect(guide).toBeHidden();
 	await expect(page.getByRole('dialog', { name: 'Put Master on' })).toHaveCount(0);
 	await expect(inHand(page)).toBeVisible();
 	await expect(boardSeat(page, 1)).toHaveAttribute('data-misfit');
@@ -2578,16 +2574,16 @@ test("a night step's token goes on a seat tapped on the board, unusual seats fad
 	// Still choosable: the Storyteller overrides. The step opens again with it placed.
 	await boardSeat(page, 1).tap();
 	await expect(guide).toBeVisible();
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
+	await expect(guide).toContainText(/\bSeat 1\b/);
 	// Moved the same way, from its seat to the one tapped.
 	await placeFromStep(page, guide, 2, { button: 'Move' });
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(guide).toContainText(/\bSeat 2\b/);
 	// Put down without a seat (Escape), the step comes back as it was.
 	await guide.getByRole('button', { name: 'Move' }).tap();
 	await expect(inHand(page)).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(guide).toBeVisible();
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(guide).toContainText(/\bSeat 2\b/);
 });
 
 test("a step's reminder token sits beneath the line that names it", async ({ page }) => {
@@ -2612,7 +2608,7 @@ test("a step's reminder token sits beneath the line that names it", async ({ pag
 	await expect(line.getByRole('button', { name: 'Place' })).toBeVisible();
 	await expect(guide.getByRole('heading', { name: 'Reminders', exact: true })).toHaveCount(0);
 	await placeFromStep(page, guide, 2);
-	await expect(line.getByTestId('line-reminders')).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(line.getByTestId('line-reminders')).toContainText(/\bSeat 2\b/);
 });
 
 test("a step's Valid Information sits on its first line", async ({ page }) => {
@@ -2694,12 +2690,14 @@ test('a character in play twice wakes once for each player, each step showing it
 		await closeSheet(page);
 	}
 	const strip = await walkTo(page, 'Empath');
-	await expect(strip).toContainText('Seat 1');
-	await expect(strip).not.toContainText('Seat 2');
+	// The step's band names who wakes (the pane's step text names neighbours too).
+	const band = strip.locator('.band').first();
+	await expect(band).toContainText('Seat 1');
+	await expect(band).not.toContainText('Seat 2');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Empath');
-	await expect(strip).toContainText('Seat 2');
-	await expect(strip).not.toContainText('Seat 1,');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Empath');
+	await expect(band).toContainText('Seat 2');
+	await expect(band).not.toContainText('Seat 1');
 	// Each step's band is its player's alignment: the evil Empath's is red.
 	const guide = await openStep(page, 'Empath');
 	await expect(guide.locator('.ring-row[data-team="evil"]').first()).toBeVisible();
@@ -2727,7 +2725,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
 	await placeFromStep(page, guide, 2);
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(guide).toContainText(/\bSeat 2\b/);
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
 	await expect(guide).toContainText('Not placed');
@@ -2735,35 +2733,40 @@ test('a night step is filled in with help, and the night can be walked through',
 		guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' })
 	).toBeDisabled();
 	await placeFromStep(page, guide, 2);
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(guide).toContainText(/\bSeat 2\b/);
 
-	// Info tokens and Show to player (an eye) sit beside the X, with no Done (Trevor,
-	// 2026-10-20), and open over the step, which stays open under them.
+	// Show to player (an eye) sits in the step's header, with no Done (Trevor, 2026-10-20), and
+	// opens over the step, which stays open under it; Info tokens is the toolbar's (2026-11-16).
 	await expect(guide.getByRole('button', { name: 'Done' })).toHaveCount(0);
-	const head = guide.locator('.head-actions');
-	await expect(head.getByRole('button', { name: 'Info tokens' })).toBeVisible();
+	const head = guide.locator('header.head');
+	await expect(head.getByRole('button', { name: 'Info tokens' })).toHaveCount(0);
 	await expect(head.getByRole('button', { name: 'Show to player' })).toBeVisible();
 	await head.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await shown.locator('.close button').tap();
 	await expect(guide).toBeVisible();
-	await head.getByRole('button', { name: 'Info tokens' }).tap();
+	// On a phone the Game sheet covers the toolbar, so it closes first.
+	const paneSheet = await paneIsSheet(page);
+	if (paneSheet) await closePane(page);
+	await openInfoTokens(page);
 	const info = page.getByRole('dialog', { name: 'Info tokens' });
 	await expect(info).toBeVisible();
-	// The step is still open under the sheet.
-	await expect(page.locator('[role="group"][aria-label="Night step"]')).toBeAttached();
+	// Beside the board the step is still open under the sheet.
+	if (!paneSheet)
+		await expect(page.locator('[role="group"][aria-label="Night step"]')).toBeAttached();
 	await page.getByRole('button', { name: 'This is the Demon', exact: true }).tap();
 	await shown.locator('.close button').tap();
 	await expect(info).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
-	await expect(guide).toBeVisible();
-
-	await guide.getByRole('button', { name: 'Close' }).tap();
+	if (!paneSheet) {
+		await expect(guide).toBeVisible();
+		await closeStep(page, guide);
+	}
 	await expect(seatLabelled(page, 'Seat 2: no name, Empath, 1 reminder')).toBeAttached();
 
 	// Walk through: one step at a time under the board, with Previous and Next.
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await walkTo(page, 'Poisoner');
 	const at = (await strip.getAttribute('data-step'))!;
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2791,7 +2794,7 @@ test('a night step is filled in with help, and the night can be walked through',
 		/Poisoned\s*Empath\s*Seat 2\s*by\s*Poisoner\s*Seat 1/
 	);
 	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
-	await empath.getByRole('button', { name: 'Close' }).tap();
+	await closeStep(page, empath);
 
 	// Next stops at the last step; End night goes on into the day, where its announcements are
 	// (Trevor, 2026-10-18).
@@ -2799,7 +2802,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await nextStep.tap();
 	expect(await lastStep(strip)).toBe(true);
 	await endNight(page);
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await expect(strip).toHaveCount(0);
 });
 
@@ -2913,8 +2916,8 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 		'Holds the Empath ability'
 	);
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -3111,9 +3114,7 @@ test("the Courtier's step moves its Drunk token on each night", async ({ page })
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await putReminder(page, 'Drunk 1', 2);
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	const step = await openStep(page, 'Courtier');
 	const rows = step.getByTestId('countdown');
 	await expect(rows).toContainText(/Seat 2.*becomes/);
@@ -3148,18 +3149,16 @@ test("with the Toymaker in play the Demon's step offers No attack", async ({ pag
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await putReminder(page, 'Final Night: No Attack', 2);
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	// Opened by its name: the reminder line makes the strip's step taller, and a tap at its middle
 	// lands on the opened step's own icon, which opens the Imp's entry over it.
-	const strip = await walkTo(page, 'Imp');
+	await walkTo(page, 'Imp');
 	// On the Demon's seat, so not in the bank.
 	const banked = page
 		.getByRole('list', { name: 'Reminder bank' })
 		.getByRole('button', { name: 'Final Night: No Attack reminder' });
 	await expect(banked).toHaveCount(0);
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Imp');
 	await expect(step).toBeVisible();
 	await expect(step.getByTestId('night-alerts')).toContainText(
@@ -3199,9 +3198,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	const doctor = await openSeat(page, 1);
 	await doctor.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
@@ -3211,11 +3208,8 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 		.tap();
 
 	// Its name: on a phone, a tap on the middle also reached the opened step's icon below it.
-	await (
-		await walkTo(page, 'Plague Doctor')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await walkTo(page, 'Plague Doctor');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Plague Doctor');
 	const row = step.getByTestId('storyteller-ability');
 	await expect(row).toContainText('None');
@@ -3349,9 +3343,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
 	// The day opens after End night; the execution is marked on the board (Trevor, 2026-10-20).
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	const executed = await openSeat(page, 2);
 	await executed.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
@@ -3890,11 +3882,11 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 			.tap();
 		await closeSheet(page);
 	}
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 
 	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
 	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
@@ -3906,7 +3898,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		.tap();
 	await closeBin(page);
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await paneDay(page);
 	await day.getByTestId('prevented-button').tap();
 	const prevented = page.getByRole('dialog', { name: 'What didn’t happen' });
 	await expect(prevented.getByTestId('prevented')).toContainText('chose');
@@ -3928,21 +3920,25 @@ test('game notes and Players have a button beside the grim cover, styled like it
 	test.setTimeout(60_000);
 	await startGame(page);
 	const cover = page.getByTestId('cover-button');
-	const button = page.getByTestId('game-notes-button');
+	// One Game button on a phone (2026-11-16); beside the board the pane always shows instead.
+	const button = page.getByTestId('game-pane-button');
+	const sheet = await paneIsSheet(page);
 	const narrow = page.viewportSize()!.width < 412;
 	// Nothing on the toolbar runs off the screen.
 	const more = (await page.getByRole('button', { name: 'More', exact: true }).boundingBox())!;
 	expect(more.x + more.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-	await expect(button).toBeVisible();
-	await expect(button).toHaveAccessibleName('Game notes and Players');
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
-	const c = (await cover.boundingBox())!;
-	const b = (await button.boundingBox())!;
-	expect(Math.abs(c.width - b.width)).toBeLessThanOrEqual(1);
-	expect(Math.abs(c.y - b.y)).toBeLessThanOrEqual(1);
-	expect(b.x).toBeGreaterThan(c.x + c.width - 1);
-	const coverEdge = await cover.evaluate((el) => getComputedStyle(el).borderTopStyle);
-	await expect(button).toHaveCSS('border-top-style', coverEdge);
+	if (sheet) {
+		await expect(button).toBeVisible();
+		await expect(button).toHaveAccessibleName('Game');
+		await expect(button).toHaveAttribute('aria-pressed', 'false');
+		const c = (await cover.boundingBox())!;
+		const b = (await button.boundingBox())!;
+		expect(Math.abs(c.width - b.width)).toBeLessThanOrEqual(1);
+		expect(Math.abs(c.y - b.y)).toBeLessThanOrEqual(1);
+		expect(b.x).toBeGreaterThan(c.x + c.width - 1);
+		const coverEdge = await cover.evaluate((el) => getComputedStyle(el).borderTopStyle);
+		await expect(button).toHaveCSS('border-top-style', coverEdge);
+	} else await expect(button).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Share', exact: true })).toBeVisible();
 	const info = page.getByRole('button', { name: 'Info tokens', exact: true });
 	if (narrow) await expect(info).toBeHidden();
@@ -3959,26 +3955,25 @@ test('game notes and Players have a button beside the grim cover, styled like it
 	// No token in the corner any more.
 	await expect(page.getByTestId('game-notes-token')).toHaveCount(0);
 
-	const pane = await openPane(page, 'Game notes');
+	const pane = await openPane(page, 'Notes');
 	await expect(page.getByTestId('storyteller-pane')).toBeVisible();
 	const gameNotes = pane.getByTestId('game-notes');
 	await addNote(page, gameNotes, { title: 'Bluffs' });
 	await expectNotes(gameNotes, ['Bluffs']);
 	await page.screenshot({ path: `test-results/game-notes-button-${test.info().project.name}.png` });
-	// Beside the board, the button is pressed while the pane shows; a phone has it over the
-	// screen instead (the upright tablet has it under the board).
-	if (await page.getByRole('complementary', { name: 'Game notes and Players' }).isVisible()) {
-		await expect(button).toHaveAttribute('aria-pressed', 'true');
+	// Beside the board (under it on an upright tablet) the pane leaves the board whole; a phone
+	// has it over the screen, its button pressed.
+	if (!sheet) {
 		const board = (await page.locator('.grimoire').boundingBox())!;
 		const side = (await pane.boundingBox())!;
 		expect(board.y + board.height <= side.y + 1 || board.x + board.width <= side.x + 1).toBe(true);
-	} else expect(narrow).toBe(true);
+	} else await expect(button).toHaveAttribute('aria-pressed', 'true');
 	// Players is the pane's other tab, apart from the game's notes.
 	const players = await openPlayers(page);
 	await expect(players.getByTestId('room-player').first()).toBeVisible();
 	await expect(gameNotes).toBeHidden();
 	await closePane(page);
-	await expect(button).toHaveAttribute('aria-pressed', 'false');
+	if (sheet) await expect(button).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('the Storyteller keeps game notes on their button and player notes on Players', async ({
@@ -4005,7 +4000,7 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	// title, starting as a "+ New note" with a dashed edge; behind their own button beside
 	// the grim cover (Trevor, 2026-11-01);
 	// each written where it sits (Trevor, 2026-11-02).
-	const gameNotesPane = await openPane(page, 'Game notes');
+	const gameNotesPane = await openPane(page, 'Notes');
 	const gameNotes = gameNotesPane.getByTestId('game-notes');
 	const add = gameNotes.getByTestId('new-note');
 	const cards = noteRows(gameNotes);
@@ -4215,11 +4210,10 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	await expect(place).toHaveCount(5);
 	for (const seat of [2, 3]) await placeFromStep(page, guide, seat);
 	await expect(place).toHaveCount(3);
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
-	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 3\b/);
+	await expect(guide).toContainText(/\bSeat 2\b/);
+	await expect(guide).toContainText(/\bSeat 3\b/);
 	// The X stays in reach however long the step is.
-	await guide.getByRole('button', { name: 'Close' }).tap();
-	await expect(guide).toBeHidden();
+	await closeStep(page, guide);
 });
 
 for (const desktop of [false, true]) {
@@ -4533,7 +4527,7 @@ test("Back puts the board's entry back only once the open dialog has gone", asyn
 	await expect.poll(async () => (await pushedOver()).length).toBeGreaterThan(0);
 	await page.evaluate(() => ((window as unknown as { pushedOver: boolean[] }).pushedOver = []));
 
-	await page.getByTestId('night-strip').getByRole('button', { name: 'About Dusk' }).tap();
+	await walkThrough(page).getByRole('button', { name: 'About Dusk' }).tap();
 	const glossary = page.getByRole('dialog', { name: 'Glossary' });
 	await expect(glossary).toBeVisible();
 	await page.goBack();
@@ -4671,7 +4665,7 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 
 /** Picks how the walked-through step's reminders are shown. */
 async function focusMode(page: Page, mode: string) {
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Character reminders' }).tap();
+	await walkThrough(page).getByRole('button', { name: 'Character reminders' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Character reminders' })
 		.getByRole('combobox', { name: "Show this character's reminders" })
@@ -4706,7 +4700,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 		await closeSheet(page);
 	}
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip).toContainText('Poisoner');
@@ -4827,7 +4821,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 		await closeSheet(page);
 	}
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip).toContainText('Merch');
@@ -4895,7 +4889,7 @@ test('the Fabled stack and the Loric stack sit side by side in the corner', asyn
 	await expect(corner.getByRole('button', { name: 'Fabled: 2' })).toBeVisible();
 });
 
-test('an open night step moves to the step before or after without ticking it', async ({
+test("an open night step's Next ticks it and moves on, and Previous goes back", async ({
 	page
 }) => {
 	await startGame(page);
@@ -4912,17 +4906,16 @@ test('an open night step moves to the step before or after without ticking it', 
 		await closeSheet(page);
 	}
 	const poisoner = await openStep(page, 'Poisoner');
-	// Trevor, 2026-10-17: Previous and Next inside the step.
+	// Trevor, 2026-10-17: Previous and Next inside the step; Next ticks it, as the strip's
+	// (2026-11-16).
 	await poisoner.getByRole('button', { name: 'Next step' }).tap();
-	const next = page
-		.getByRole('dialog')
-		.filter({ has: page.getByRole('button', { name: 'Previous step' }) });
+	const next = page.getByRole('region', { name: /^(First night|Other nights)$/ }).last();
 	await expect(next.locator('[data-step-name]')).not.toHaveAttribute('data-step-name', 'Poisoner');
 	await next.getByRole('button', { name: 'Previous step' }).tap();
 	await expect(nightStep(page, 'Poisoner')).toBeVisible();
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	const strip = await walkTo(page, 'Poisoner');
-	await expect(strip.locator('button.step')).not.toHaveClass(/ticked/);
+	if (await paneIsSheet(page)) await expect(strip.locator('button.step')).toHaveClass(/ticked/);
 });
 
 // https://wiki.bloodontheclocktower.com/Widow and /Damsel (M10c, M10d): the Widow's step says
@@ -4960,7 +4953,7 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 	// On through the night, step by step, to the Widow's.
 	const widow = nightStep(page, 'Widow');
 	for (let i = 0; i < 20 && !(await widow.isVisible()); i++) {
-		await page.getByRole('dialog').getByRole('button', { name: 'Next step' }).last().tap();
+		await walkThrough(page).getByRole('button', { name: 'Next step' }).tap();
 		await page.waitForTimeout(300);
 	}
 	const shownTo = widow.getByTestId('night-shown-to');
@@ -5038,8 +5031,8 @@ test('the Storm Catcher named character is picked before the day and kept at its
 }) => {
 	test.slow();
 	await stormCatcherGame(page);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
@@ -5049,8 +5042,8 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	await pick.getByRole('button', { name: 'Save' }).tap();
 	await expect(pick).toBeHidden();
 	await expect(value).toContainText('Washerwoman');
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	// Kept through a reload, and already chosen at the first night step.
 	await page.reload();
 	const step = await openStep(page, 'Storm Catcher');
@@ -5099,7 +5092,7 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 		await closeSheet(page);
 	}
 	await openStep(page, 'Dusk');
-	const step = page.getByRole('dialog', { name: 'First night' });
+	const step = page.getByRole('region', { name: 'First night' }).last();
 	// Trevor, 2026-11-08: "Dawn and dusk icon should fully fill character image space, not be
 	// within a token": the art fills the ring, as a character's icon does, with no face of its own.
 	const art = step.locator('.row-head .ring [data-marker]');
@@ -5355,19 +5348,22 @@ test('an information step suggests every valid number, and the roles it could sh
 	// A "learn a role" step names the Townsfolk it could show (Trevor, 2026-10-25), read from
 	// the walk-through's one line (https://wiki.bloodontheclocktower.com/Washerwoman).
 	const washerwoman = await walkTo(page, 'Washerwoman');
-	await expect(washerwoman.getByTestId('night-suggested')).toHaveText(
-		/^Valid Information:\s*Chef\s*,\s*Empath\s*$/
-	);
+	// The strip's one line, on a phone; beside the board the pane has the step whole.
+	if (await paneIsSheet(page))
+		await expect(washerwoman.getByTestId('night-suggested')).toHaveText(
+			/^Valid Information:\s*Chef\s*,\s*Empath\s*$/
+		);
 	// No evil pair sits together: the Chef's 0 (https://wiki.bloodontheclocktower.com/Chef).
 	const chef = await openStep(page, 'Chef');
 	const rows = chef.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
 	await expect(rows).toHaveCount(1);
 	await expect(rows.first().locator('.main')).toHaveText('0');
-	await chef.getByRole('button', { name: 'Close' }).tap();
+	await closeStep(page, chef);
 	// The walk-through's one line names them in brackets, not a count that reads as the number
 	// to give (Trevor, 2026-10-22).
 	const strip = await walkTo(page, 'Chef');
-	await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
+	if (await paneIsSheet(page))
+		await expect(strip.getByTestId('night-suggested')).toHaveText('Valid Information: (0)');
 });
 
 // Trevor (2026-10-25): the Investigator's step shows which Minion it could see, and a Recluse
@@ -5466,8 +5462,8 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	}
 	// The step's text names the Fortune Teller as a badge that opens its sheet, under the
 	// middle of the step on a phone: tap the step's name instead.
-	const strip = await walkTo(page, 'Fortune Teller');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Fortune Teller');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Fortune Teller');
 	const section = step.getByTestId('night-yes-no');
 	const answers = section.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
@@ -5531,11 +5527,13 @@ test("the Godfather's first night step shows every Outsider in play", async ({ p
 		await closeSheet(page);
 	}
 	const strip = await walkTo(page, 'Godfather');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(
-		/^Valid Information:\s*Tinker\s*,\s*Moonchild\s*$/
-	);
+	// The phone's strip has the short line; beside the board the pane shows the whole step.
+	if (await paneIsSheet(page))
+		await expect(strip.getByTestId('night-suggested')).toHaveText(
+			/^Valid Information:\s*Tinker\s*,\s*Moonchild\s*$/
+		);
 	// Tapping the strip's text could open a glossary word's popover on phones.
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Godfather');
 	const suggested = step.getByTestId('night-suggested');
 	await expect(suggested.locator('.main > [data-character-id="tinker"]')).toBeVisible();
@@ -5564,8 +5562,9 @@ test('the Godfather with no Outsiders in play is shown No Outsiders', async ({ p
 		await closeSheet(page);
 	}
 	const strip = await walkTo(page, 'Godfather');
-	await expect(strip.getByTestId('night-suggested')).toHaveText(/^Valid Information:\s*None\s*$/);
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	if (await paneIsSheet(page))
+		await expect(strip.getByTestId('night-suggested')).toHaveText(/^Valid Information:\s*None\s*$/);
+	await openWalkStep(page);
 	const suggested = nightStep(page, 'Godfather').getByTestId('night-suggested');
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No Outsiders');
@@ -5595,9 +5594,11 @@ test('the Librarian step puts the Outsider its reminder marks first, emphasised'
 	await putReminder(page, 'Outsider', 3);
 
 	const strip = await walkTo(page, 'Librarian');
-	const line = strip.getByTestId('night-suggested');
-	await expect(line).toHaveText(/^Valid Information:\s*Recluse\s*,\s*Butler\s*$/);
-	await expect(line.locator('.item.marked')).toHaveText('Recluse');
+	if (await paneIsSheet(page)) {
+		const line = strip.getByTestId('night-suggested');
+		await expect(line).toHaveText(/^Valid Information:\s*Recluse\s*,\s*Butler\s*$/);
+		await expect(line.locator('.item.marked')).toHaveText('Recluse');
+	}
 
 	const step = await openStep(page, 'Librarian');
 	const rows = step.getByTestId('learned-roles').getByRole('listitem');
@@ -5669,7 +5670,7 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await expect(details).toBeVisible();
 	await details.getByRole('button', { name: 'Close' }).tap();
 	await expect(details).toHaveCount(0);
-	await chef.getByRole('button', { name: 'Close' }).tap();
+	await closeStep(page, chef);
 	// And from the walk-through.
 	const strip = await walkTo(page, 'Chef');
 	await strip.getByRole('button', { name: 'About the Chef' }).tap();
@@ -5812,10 +5813,10 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	// Trevor (2026-10-18): "If character is dead do not show them in assisted night order."
 	// The Ravenkeeper still wakes on the night they die
 	// (https://wiki.bloodontheclocktower.com/Ravenkeeper).
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const names: string[] = [];
 	for (let i = 0; i < 12; i++) {
-		names.push((await strip.locator('.name strong').textContent()) ?? '');
+		names.push((await strip.locator('[data-walk-name]').textContent()) ?? '');
 		const next = strip.getByRole('button', { name: 'Next step' });
 		// The last step; End night ends the night (Trevor, 2026-10-18).
 		if (await lastStep(strip)) break;
@@ -5992,7 +5993,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	};
 	// Trevor (2026-10-19): Start game before the first night.
 	await begin();
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip).toBeVisible();
 	// While a night runs it is End night, in the same place (Trevor, 2026-10-18).
 	await expect(start).toHaveCount(0);
@@ -6010,7 +6011,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 	// The day: Execution, which asks who was executed, then starts the next night (Trevor,
 	// 2026-10-19; 2026-10-22).
@@ -6019,7 +6020,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await chooseExecution(page);
 	await expect(strip).toBeVisible();
 	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
-	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dusk');
 	await expect(strip).toHaveAttribute('data-step', '1');
 	// Dusk has no number: the count is the one on the tokens' leaves (Trevor, 2026-11-04).
 	await expect(strip.locator('.count')).toHaveCount(0);
@@ -6037,7 +6038,8 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await closeSettings(settings);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toHaveCount(0);
-	await expect(page.getByRole('dialog', { name: 'Day 2' })).toHaveCount(0);
+	// Beside the board the pane is always there, and turns to its Day tab.
+	if (await paneIsSheet(page)) await expect(page.getByTestId('pane-day')).toHaveCount(0);
 	await expect(endDay).toBeEnabled();
 });
 
@@ -6063,7 +6065,7 @@ test("the Devil's Advocate's token is not suggested on last night's player", asy
 	await row(2).tap();
 	await closeBin(page);
 	await endNight(page);
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeVisible();
+	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 
 	// Night 2: the token comes off Seat 2, which is then marked as not a usual place for it.
@@ -6241,8 +6243,11 @@ test("a reminder's ⋯ duplicates it into the bank, from the board or the bank",
 	// game's own token has no such row.
 	await inBank.first().tap();
 	await inHand(page).getByRole('button', { name: 'More reminder actions' }).tap();
+	// The menu is open first, or the Escape puts the token down instead of closing it.
+	await expect(page.getByRole('menuitem', { name: 'Duplicate reminder' })).toBeVisible();
 	await expect(page.getByRole('menuitem', { name: 'Remove copy' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
+	await expect(page.getByRole('menuitem', { name: 'Duplicate reminder' })).toBeHidden();
 	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
 	await expect(inHand(page)).toBeHidden();
 	await bankExtras.getByRole('button', { name: 'Poisoned reminder' }).first().tap();
@@ -6479,6 +6484,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 // the step closed that popover from inside zag, which crashed Svelte (null batch). The strip's
 // words are plain now: one tap opens the step only (Trevor, 2026-10-27).
 test('a step opened from the walk-through closes cleanly', async ({ page }) => {
+	phoneStrip();
 	const errors: string[] = [];
 	page.on('pageerror', (error) => errors.push(error.message));
 	await startGame(page);
@@ -6503,7 +6509,7 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 	// Its words are explained in the step itself.
 	await expect(step.locator('.glossary-term').first()).toBeVisible();
 	await expect(page.locator('[data-scope="popover"][data-part="content"]')).toHaveCount(0);
-	await step.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(step).toBeHidden();
 	await expect(page.getByText("Couldn't show this part")).toHaveCount(0);
 	await expect(strip).toContainText('Washerwoman');
@@ -6543,6 +6549,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 test('the night walk-through rises into place, and appears at once with animations off', async ({
 	page
 }) => {
+	phoneStrip();
 	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.
 	await startGame(page);
 	// A character in play, so there is a night to run.
@@ -6566,7 +6573,7 @@ test('the night walk-through rises into place, and appears at once with animatio
 	});
 	const animations = () =>
 		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	await expect.poll(animations).toBeGreaterThan(0);
@@ -6794,16 +6801,16 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 		.tap();
 	await closeSheet(page);
 	await tapStartGame(page, bankNight(page, 'Start game'));
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dawn');
 	const end = bankNight(page, 'End night');
 	await expect(end).not.toHaveAttribute('data-hint');
 	await next.tap();
 	await expect(next).toBeEnabled();
 	// Ticking Dawn here doesn't start the day: End night does, after asking.
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toHaveCount(0);
+	await expect(page.getByTestId('pane-day')).toBeHidden();
 	await expect(end).toHaveAttribute('data-hint', '');
 	// A ring on the cell's own edge, following its rounded corners (Trevor, 2026-10-20).
 	const ring = await end.evaluate((el) => {
@@ -6843,7 +6850,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 	}
 	const guide = await openStep(page, 'Poisoner');
 	await placeFromStep(page, guide, 2);
-	await guide.getByRole('button', { name: 'Close' }).tap();
+	await closeStep(page, guide);
 
 	const strip = await walkTo(page, 'Poisoner');
 	await expect(strip.getByTestId('step-asleep')).toHaveCount(0);
@@ -6984,9 +6991,9 @@ test('Seat 7’s optional rules: speaking twice, voting once a day, never shown 
 	await closeSheet(page);
 	// The protector wakes on the first night, in a step of the rule's own after Dusk.
 	await walkTo(page, 'Dusk');
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('The Ballad of Seat 7');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('The Ballad of Seat 7');
 	await expect(strip).toContainText('chosen to protect the seat no one plays');
 });
 
@@ -7180,7 +7187,7 @@ test('a player whose character changed since dawn is woken that night to learn i
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
-	await page.getByRole('dialog', { name: 'Day 1' }).getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 
 	// The Poisoner becomes the Imp (https://wiki.bloodontheclocktower.com/Imp: the new Imp is
 	// woken and shown the Imp token).
@@ -7200,9 +7207,9 @@ test('a player whose character changed since dawn is woken that night to learn i
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	// Just before Dawn, the last step.
-	await expect(strip.locator('.step .name strong')).toHaveText('Dawn');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Dawn');
 	await strip.getByRole('button', { name: 'Previous step' }).tap();
-	await expect(strip.locator('.step .name strong')).toHaveText('Imp');
+	await expect(strip.locator('[data-walk-name]')).toHaveText('Imp');
 	await expect(strip).toContainText('Sam');
 	await expect(strip).toContainText('Wake this player.');
 	await expect(strip).toContainText('You are');
@@ -7416,6 +7423,7 @@ test("a dragged seat's reminders go along with it, and fit around it again once 
 test('the walk-through shows the character as its row, its player on the band, with the count at the top right', async ({
 	page
 }) => {
+	phoneStrip();
 	// Trevor (2026-11-02): the strip's character is the shared character row with its ability
 	// turned off, the player on its band; the count is the night's, so it sits beside the band,
 	// right-aligned before ⋯ and X (Trevor, 2026-10-20), never on it.
@@ -7527,10 +7535,10 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 	await expect(ask.getByTestId('setup-left')).toContainText('Red Herring');
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await expect(walkThrough(page)).toHaveCount(0);
 	await bankNight(page, 'Start game').tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 });
 
 test('Start game with players without a character asks first, listing them', async ({ page }) => {
@@ -7550,7 +7558,7 @@ test('Start game with players without a character asks first, listing them', asy
 	await expect(empty).toContainText('Seat 2');
 	await expect(empty).not.toContainText('Seat 1');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(walkThrough(page)).toBeVisible();
 });
 
 test('a Fool marked dead is offered to survive their first death', async ({ page }) => {
@@ -7809,21 +7817,21 @@ async function startWithRule(
 /** From a night's walk-through, through the day, to the next night's Dusk. */
 async function nextNight(page: Page) {
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: /^Day \d+$/ });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	// The night's strip slides away before the next night can start.
-	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await expect(walkThrough(page)).toHaveCount(0);
 	await walkTo(page, 'Dusk');
 }
 
 /** Every step name in tonight's walk-through, from the current step on. */
 async function stepNames(page: Page): Promise<string[]> {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	const names: string[] = [];
 	for (let i = 0; i < 30; i++) {
-		names.push((await strip.locator('.step .name strong').textContent()) ?? '');
+		names.push((await strip.locator('[data-walk-name]').textContent()) ?? '');
 		if (await lastStep(strip)) break;
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	}
@@ -7854,7 +7862,7 @@ test('with One Day More, the Chef’s first-night number is kept and given the n
 	await expect(shown.locator('.detail')).toHaveText('0');
 	await shown.locator('.close button').tap();
 	await expect(shown).toHaveCount(0);
-	await chef.getByRole('button', { name: 'Close' }).tap();
+	await closeStep(page, chef);
 	await nextNight(page);
 	// The Chef doesn't wake on other nights, but does tonight, to receive last night's number.
 	const again = await openStep(page, 'Chef');
@@ -7909,10 +7917,8 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	await walkTo(page, 'Dusk');
 	expect(await stepNames(page)).not.toContain('Council of the Dead');
 	for (let night = 2; night <= 4; night++) await nextNight(page);
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
-	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
-		'Council of the Dead'
-	);
+	await walkThrough(page).getByRole('button', { name: 'Next step' }).tap();
+	await expect(walkThrough(page).locator('[data-walk-name]')).toHaveText('Council of the Dead');
 });
 
 // One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
@@ -7949,10 +7955,8 @@ test('a game mode that sets a night step adds it to the night, headed by the mod
 		.tap();
 	await closeSheet(page);
 	await walkTo(page, 'Dusk');
-	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
-	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
-		'Dead Wake'
-	);
+	await walkThrough(page).getByRole('button', { name: 'Next step' }).tap();
+	await expect(walkThrough(page).locator('[data-walk-name]')).toHaveText('Dead Wake');
 });
 
 test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
@@ -8088,9 +8092,7 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	// Dawn puts his "not nominated" token on (wiki How to Run).
 	const token = (label: string) =>
 		// Placed on the board, not waiting in the reminder bank.
@@ -8137,9 +8139,7 @@ test('the Flowergirl and Town Crier steps show their answer as the Yes/No card',
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	await closePane(page);
 	// Each step asks its day's fact (Trevor, 2026-11-03: not at Execution); No answers it.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	for (const title of ['Flowergirl', 'Town Crier']) {
@@ -8150,8 +8150,9 @@ test('the Flowergirl and Town Crier steps show their answer as the Yes/No card',
 		await suggested.getByRole('button', { name: 'Show to player' }).tap();
 		await expect(shown).toContainText('No');
 		await shown.getByRole('button', { name: 'Close' }).tap();
-		await step.getByRole('button', { name: 'Close' }).tap();
-		await expect(step).toBeHidden();
+		await closePane(page);
+		// Beside the board the step stays in the pane until the walk moves on.
+		if (await paneIsSheet(page)) await expect(step).toBeHidden();
 	}
 });
 
@@ -8184,14 +8185,9 @@ test('the Harlot step asks the chosen player, then shows the Harlot their charac
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
-	await (
-		await walkTo(page, 'Harlot')
-	)
-		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
-		.tap();
+	await closePane(page);
+	await walkTo(page, 'Harlot');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Harlot');
 	// Every card the step offers has its eye on the step's lines (Trevor, 2026-11-09).
 	const lines = step.getByTestId('night-lines');
@@ -8454,13 +8450,13 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	const strip = await walkTo(page, 'Huntsman');
 	// https://wiki.bloodontheclocktower.com/Damsel: the Minions learn of the Damsel at Minion
 	// info, so the Damsel's own step doesn't follow (it wakes only for a Damsel made mid-game).
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(name).not.toHaveText('Huntsman');
 	await expect(name).not.toHaveText('Damsel');
 	await strip.getByRole('button', { name: 'Previous step' }).tap();
 	await expect(name).toHaveText('Huntsman');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Huntsman');
 	await expect(step).toBeVisible();
 	await expect(step.getByTestId('change-character')).toContainText('None');
@@ -8472,7 +8468,7 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	await expect(townsfolk.getByRole('button', { name: 'Chef', exact: true })).toHaveCount(0);
 	await townsfolk.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await expect(step.getByTestId('change-character')).toContainText('Empath');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	const seat = await openSeat(page, 2);
 	await expect(seat).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Empath/);
 });
@@ -8510,8 +8506,8 @@ test("the Cacklejack's step changes any player's character but the one marked No
 	await nextNight(page);
 	await putReminder(page, 'Not Me', 2);
 
-	const strip = await walkTo(page, 'Cacklejack');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Cacklejack');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Cacklejack');
 	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
 	const seats = page.getByRole('dialog', { name: 'Changes character' });
@@ -8522,7 +8518,7 @@ test("the Cacklejack's step changes any player's character but the one marked No
 		.getByRole('button', { name: 'Washerwoman', exact: true })
 		.tap();
 	await expect(step.getByTestId('change-character')).toContainText('Washerwoman');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	const seat = await openSeat(page, 3);
 	await expect(seat).toContainText(/Townsfolk · Good · Seat 3[\s\S]*Washerwoman/);
 });
@@ -8558,8 +8554,8 @@ test("the Farmer's step makes an alive good player the new Farmer", async ({ pag
 		await closeSheet(page);
 	}
 
-	const strip = await walkTo(page, 'Farmer');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Farmer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Farmer');
 	const row = step.getByTestId('pass-on');
 	await expect(row).toContainText('None');
@@ -8569,7 +8565,7 @@ test("the Farmer's step makes an alive good player the new Farmer", async ({ pag
 	await seats.getByRole('button', { name: /Seat 2/ }).tap();
 	await expect(row).toContainText('Farmer');
 	await expect(row.getByRole('button', { name: 'Choose' })).toHaveCount(0);
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	const seat = await openSeat(page, 2);
 	await expect(seat).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Farmer/);
 });
@@ -8609,8 +8605,8 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 		.tap();
 	await closeSheet(page);
 
-	const strip = await walkTo(page, 'Barber');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Barber');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Barber');
 	await expect(step).toBeVisible();
 	const swap = step.getByTestId('swap-characters');
@@ -8624,7 +8620,7 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	await second.getByRole('button', { name: /Seat 3/ }).tap();
 	await expect(swap).toContainText('Poisoner');
 	await expect(swap).toContainText('Chef');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 2)).toContainText(/Minion · Good · Seat 2[\s\S]*Poisoner/);
 	await closeSheet(page);
 	await expect(await openSeat(page, 3)).toContainText(/Townsfolk · Evil · Seat 3[\s\S]*Chef/);
@@ -8666,8 +8662,8 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 		.tap();
 	await closeSheet(page);
 
-	const strip = await walkTo(page, 'Hatter');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Hatter');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Hatter');
 	await expect(step).toBeVisible();
 	const change = step.getByTestId('change-character');
@@ -8684,7 +8680,7 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	await expect(change).toContainText('Spy');
 	// The Demon may still change.
 	await expect(change.getByRole('button', { name: 'Choose' })).toBeVisible();
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 3)).toContainText(/Minion · Evil · Seat 3[\s\S]*Spy/);
 });
 
@@ -8708,8 +8704,8 @@ test("the Engineer's step changes a Minion into another Minion", async ({ page }
 		await button.tap();
 		await closeSheet(page);
 	}
-	const strip = await walkTo(page, 'Engineer');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Engineer');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Engineer');
 	const change = step.getByTestId('change-character');
 	await change.getByRole('button', { name: 'Choose' }).tap();
@@ -8721,7 +8717,7 @@ test("the Engineer's step changes a Minion into another Minion", async ({ page }
 		.getByRole('button', { name: 'Scarlet Woman', exact: true })
 		.tap();
 	await expect(change).toContainText('Scarlet Woman');
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 3)).toContainText(/Minion · Evil · Seat 3[\s\S]*Scarlet Woman/);
 });
 
@@ -8744,14 +8740,14 @@ test("the Cult Leader's step offers a living neighbour's alignment", async ({ pa
 		await button.tap();
 		await closeSheet(page);
 	}
-	const strip = await walkTo(page, 'Cult Leader');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Cult Leader');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Cult Leader');
 	const row = step.getByTestId('neighbour-alignment');
 	await expect(row).toContainText('Good');
 	await row.getByRole('button', { name: 'Make evil' }).tap();
 	await expect(row.getByRole('button', { name: 'Make good' })).toBeVisible();
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 2)).toContainText(
 		/Townsfolk · Evil · Seat 2[\s\S]*Cult Leader/
 	);
@@ -8788,7 +8784,7 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	await expect(
 		step.getByTestId('change-character').getByRole('button', { name: 'Show to player' })
 	).toBeVisible();
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	const seat = await openSeat(page, 2);
 	await expect(seat).toContainText(/Demon · Evil · Seat 2[\s\S]*Imp/);
 });
@@ -8812,8 +8808,8 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 		await button.tap();
 		await closeSheet(page);
 	}
-	const strip = await walkTo(page, 'Kazali');
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await walkTo(page, 'Kazali');
+	await openWalkStep(page);
 	const step = nightStep(page, 'Kazali');
 	const change = step.getByTestId('change-character');
 	await expect(change).toContainText('None');
@@ -8828,11 +8824,12 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 	await expect(change).toContainText('Poisoner');
 	// One Minion is the usual number for 8 players, so no more are made.
 	await expect(change.getByRole('button', { name: 'Choose' })).toHaveCount(0);
-	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await closePane(page);
 	await expect(await openSeat(page, 2)).toContainText(/Minion · Evil · Seat 2[\s\S]*Poisoner/);
 });
 
 test("the night strip's text scrolls below the step's row, never behind it", async ({ page }) => {
+	phoneStrip();
 	// Trevor, 2026-11-08: "Can read text behind this when we shouldnt" (the Imp's long text
 	// scrolled up under its band).
 	await startGame(page);

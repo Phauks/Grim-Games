@@ -128,12 +128,11 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 		const bar = (await toolbar.boundingBox())!;
 		expect(box.x + box.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
 	}
-	// A tablet is used in landscape (Trevor, 2026-11-01): the words at full size, with the
-	// mode's title, still all on the bar.
+	// A tablet is used in landscape (Trevor, 2026-11-01): the words at full size, still all on
+	// the bar. The Game pane beside the board (2026-11-16) leaves no room for the mode's title.
 	const portrait = page.viewportSize()!;
 	if (testInfo.project.name === 'tablet') {
 		await page.setViewportSize({ width: portrait.height, height: portrait.width });
-		await expect(toolbar.getByText('Seating', { exact: true })).toBeVisible();
 		await expect(words).toBeVisible();
 		expect(await toolbar.evaluate((bar) => bar.scrollWidth <= bar.clientWidth)).toBe(true);
 		await page.screenshot({ path: 'test-results/seating-top-bar-landscape.png' });

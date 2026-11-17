@@ -94,9 +94,7 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 	await phoneContext.close();
 });
 
-test('the Storyteller covers the screen from the board, beside ☰, and from the day', async ({
-	page
-}) => {
+test('the Storyteller covers the screen from the board, beside ☰', async ({ page }) => {
 	await startGame(page);
 	// Who runs the game shows too (Trevor, 2026-10-27: "Include storyteller name on grim cover").
 	await nameStoryteller(page, 'Trev');
@@ -109,10 +107,7 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
 
-	// Beside ☰ on the toolbar, in the same place as on the day (Trevor, 2026-10-27: "so it
-	// doesn't move").
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
-	const onBoard = (await toolbar.getByTestId('cover-button').boundingBox())!;
+	// Beside ☰ on the toolbar.
 	await page.getByTestId('cover-button').tap();
 	await coverAndUncover(page);
 	await expect(page.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
@@ -151,37 +146,6 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	await expect(cover).toBeVisible();
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
-
-	// From the day, which stays open under it: ☰ then the cover, where they are on the board,
-	// and the day's name at the bottom across from Execution (Trevor, 2026-10-27, G3).
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
-	await expect(day).toBeVisible();
-	const inDay = (await day.getByTestId('cover-button').boundingBox())!;
-	// On a phone the day fills the screen, so the cover stays where it was; a tablet's day is a
-	// panel over the board.
-	if (page.viewportSize()!.width < 640) {
-		expect(Math.abs(inDay.y - onBoard.y)).toBeLessThan(12);
-		expect(Math.abs(inDay.x - onBoard.x)).toBeLessThan(12);
-	}
-	const dayNav = (await day.getByRole('button', { name: 'Menu', exact: true }).boundingBox())!;
-	expect(dayNav.x + dayNav.width).toBeLessThanOrEqual(inDay.x + 1);
-	const dayName = (await day.getByTestId('day-name').boundingBox())!;
-	const execution = (await day.getByRole('button', { name: 'Execution' }).boundingBox())!;
-	expect(dayName.x + dayName.width).toBeLessThan(execution.x);
-	expect(
-		Math.abs(dayName.y + dayName.height / 2 - (execution.y + execution.height / 2))
-	).toBeLessThan(8);
-	// The Soundboard in the header, over the day (Trevor, 2026-10-27: "Approve day view E").
-	await day.getByRole('button', { name: 'Soundboard' }).tap();
-	const soundboard = page.getByRole('dialog', { name: 'Soundboard' });
-	await expect(soundboard.getByRole('group', { name: 'Soundboard' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(soundboard).toBeHidden();
-	await expect(day).toBeVisible();
-	await day.getByTestId('cover-button').tap();
-	await coverAndUncover(page);
-	await expect(day).toBeVisible();
 });
 
 test('with the PIN setting on, the cover sets the PIN first and asks for it to come off', async ({

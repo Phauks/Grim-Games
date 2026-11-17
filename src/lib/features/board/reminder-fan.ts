@@ -108,14 +108,28 @@ export function fitReminders(
 		const dx = s.middle.x - s.seat.x;
 		const dy = s.middle.y - s.seat.y;
 		const facing = Math.hypot(dx, dy) < 1 ? Math.PI / 2 : Math.atan2(dy, dx);
+		const nearerOther = (p: Point, own: number) => {
+			const mine = Math.hypot(p.x - seats[own].seat.x, p.y - seats[own].seat.y);
+			// Only seats with reminders of their own, whose groups it could be taken for.
+			return seats.some(
+				(o, j) => j !== own && o.count > 0 && Math.hypot(p.x - o.seat.x, p.y - o.seat.y) < mine
+			);
+		};
 
 		/**
 		 * The best place for `shape`: for each turn away from the middle, the nearest distance
 		 * where the whole group is clear, scored by how far out it is, how far it turns, how far
 		 * it reaches into the middle and how close it comes to other players. `loose`: may sit
-		 * nearer another seat (1), or over other groups too (2).
+		 * nearer another seat (1), or over other groups too (2). `strict`: every reminder, not
+		 * just the group's middle, nearer its own seat than any other seat with reminders.
 		 */
-		const place = (shape: Point[], loose: number, turn: number, farthest: number) => {
+		const place = (
+			shape: Point[],
+			loose: number,
+			turn: number,
+			farthest: number,
+			strict = false
+		) => {
 			// Only what the group could reach is checked, so a crowded board stays quick.
 			const extent = Math.max(...shape.map((o) => Math.hypot(o.x, o.y + farthest))) + k;
 			const within = (b: Point, r: number) =>
@@ -141,6 +155,8 @@ export function fitReminders(
 						y: s.seat.y + ay * (d + o.y) + ax * o.x
 					}));
 					if (!points.every(clear)) continue;
+					// Strict: every reminder, not just the group's middle, nearer its own seat.
+					if (strict && points.some((p) => nearerOther(p, i))) continue;
 					const c = mean(points);
 					const own = Math.hypot(c.x - s.seat.x, c.y - s.seat.y);
 					let crowding = 0;
@@ -165,9 +181,16 @@ export function fitReminders(
 
 		let points: Point[] | undefined;
 		let shape = groupShape(s.count, k + GAP);
-		for (const squeeze of SQUEEZES) {
+		// Each reminder nearer its own seat than any other seat with reminders, at a spacing that
+		// still leaves each one's middle free to take; then only the group's middle, at each.
+		const tries: [number, boolean][] = [
+			[1, true],
+			[SQUEEZES[1], true],
+			...SQUEEZES.map((squeeze): [number, boolean] => [squeeze, false])
+		];
+		for (const [squeeze, strict] of tries) {
 			shape = groupShape(s.count, squeeze === 1 ? k + GAP : k * squeeze);
-			points = place(shape, 0, INWARD, s.size * CLOSE);
+			points = place(shape, 0, INWARD, s.size * CLOSE, strict);
 			if (points) {
 				if (squeeze !== 1) fits = false;
 				break;

@@ -1,8 +1,9 @@
+import { closePane } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // A killing step's "If chosen" rows (Trevor, 2026-11-03, option B): each player the kill could
 // hit, their badge once and the outcome in words, no icons.
@@ -42,7 +43,7 @@ async function lastStep(strip: Locator) {
 }
 
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
@@ -59,7 +60,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
@@ -108,16 +109,15 @@ test("the Demon's step lists who can't die or sets something off, once each, in 
 	}
 	await walkTo(page, 'Dusk');
 	await endNight(page);
-	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(day).toBeHidden();
+	await closePane(page);
 	// The Sweetheart's Drunk on the Klutz.
 	await putReminder(page, 'Drunk', 2);
 
 	const strip = await walkTo(page, 'Vigormortis');
 	await expect(strip.getByTestId('step-if-chosen')).toContainText(/Soldier\s*Seat 4\s*Can't die/);
-	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	await openWalkStep(page);
 	const step = nightStep(page, 'Vigormortis');
 	const rows = step.getByTestId('step-if-chosen').getByRole('listitem');
 	await expect(step.getByRole('heading', { name: 'If chosen', level: 3 })).toBeVisible();

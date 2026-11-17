@@ -1,4 +1,6 @@
 <script lang="ts">
+	import StepFoot from './StepFoot.svelte';
+	import StepHead from './StepHead.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import { sideSwipe } from './side-swipe.ts';
@@ -57,11 +59,11 @@
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import type { ComponentProps } from 'svelte';
+	import StepWalkNotes from './StepWalkNotes.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { seatMisfits } from '#lib/features/grimoire/board.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { givesNumber, seatName, stepName } from './night-steps.ts';
@@ -82,11 +84,11 @@
 
 	/**
 	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
-	 * character, its reminders to place or move onto a chosen seat, and Show to player.
-	 * Nothing happens unless the Storyteller taps it; Done ticks the step.
+	 * character, its reminders to place or move onto a chosen seat, and Show to player. It is
+	 * the Night tab of the board's pane (Trevor, 2026-11-16), beside the board, so a token
+	 * placed from it goes straight onto a seat; Previous and Next at the pane's foot.
 	 */
 	interface Props {
-		open: boolean;
 		grimoire: Grimoire;
 		step: NightStep | undefined;
 		night: Night;
@@ -113,10 +115,17 @@
 			reminder: { characterId: CharacterId; label: string },
 			at?: { reminderId: string; seatId: SeatId }
 		) => boolean;
+		/** Back to the board, for something shown over it (a phone's pane covers the board). */
+		onClose?: () => void;
+		/** Tonight's Next (NightWalk.next); without it Next only moves. */
+		onNext?: () => void;
+		/** What special rules say about tonight's step, beside the board (no strip there). */
+		walkNotes?: ComponentProps<typeof StepWalkNotes>;
+		/** Stops the walk-through, as the strip's ✕. */
+		onStop?: () => void;
 	}
 
 	let {
-		open = $bindable(),
 		grimoire,
 		step,
 		night,
@@ -126,7 +135,11 @@
 		steps = [],
 		onStep,
 		onShowGrimoire,
-		onPlace
+		onPlace,
+		onClose,
+		onNext,
+		walkNotes,
+		onStop
 	}: Props = $props();
 
 	// Previous and Next inside the step, by icon or a sideways swipe (Trevor, 2026-10-17).
@@ -376,7 +389,7 @@
 			showOpen = true;
 		}}
 		onChooseBluffs={() => {
-			open = false;
+			onClose?.();
 			onChooseBluffs?.();
 		}}
 	/>
@@ -393,31 +406,29 @@
 		onreturn={(id) => moveConfirm?.requestReturn(id)}
 	/>{/snippet}
 
-<Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
-	{#snippet headActions()}
-		{#if steps.length > 0}
-			<IconButton icon="back" label="Previous step" disabled={index <= 0} onclick={() => go(-1)} />
-			<IconButton
-				icon="forward"
-				label="Next step"
-				disabled={index < 0 || index >= steps.length - 1}
-				onclick={() => go(1)}
-			/>
-		{/if}
-		<!-- Beside the X, which closes the step: no Done (Trevor, 2026-10-20). Both open over
-		     the step, which stays open under them. -->
-		<IconButton icon="info" label="Info tokens" onclick={() => onInfoTokens()} />
-		<IconButton
-			icon="showToPlayer"
-			label="Show to player"
-			disabled={!step?.character}
-			onclick={() => {
-				shownCard = undefined;
-				shownId = undefined;
-				showOpen = true;
-			}}
-		/>
-	{/snippet}
+<!-- data-walk: tonight's walk-through, as the strip is (the tests step through either). -->
+<section
+	class="night-step"
+	aria-label={night === 'first' ? 'First night' : 'Other nights'}
+	data-walk={onNext ? '' : undefined}
+	data-step={onNext ? index + 1 : undefined}
+	data-steps={onNext ? steps.length : undefined}
+>
+	{#if step}<span class="visually-hidden" aria-hidden="true" data-walk-name>{stepName(step)}</span
+		>{/if}
+	<StepHead
+		{night}
+		{index}
+		count={steps.length}
+		noShow={!step?.character}
+		{onStop}
+		onShow={() => {
+			shownCard = undefined;
+			shownId = undefined;
+			showOpen = true;
+		}}
+	/>
+	{#if walkNotes}<StepWalkNotes {...walkNotes} />{/if}
 	<!-- The step scrolls on its own under its header. -->
 	<div
 		class="scroll"
@@ -555,7 +566,7 @@
 					variant="quiet"
 					icon="showToPlayer"
 					onclick={() => {
-						open = false;
+						onClose?.();
 						onShowGrimoire();
 					}}>Show the Grimoire</Button
 				>
@@ -579,7 +590,7 @@
 					{grimoire}
 					travellers={step.travellers ?? []}
 					onDraw={(seatId) => {
-						open = false;
+						onClose?.();
 						onDraw(seatId);
 					}}
 				/>
@@ -672,7 +683,7 @@
 						showOpen = true;
 					}}
 					onChooseBluffs={() => {
-						open = false;
+						onClose?.();
 						onChooseBluffs?.();
 					}}
 					onFakeChange={(info) => grimoire.run({ type: 'SetFakeEvilInfo', seatId, info })}
@@ -693,17 +704,14 @@
 			{/if}
 		{/if}
 	</div>
-	<!--
-		Inside the step, which stays open under it, so closing it goes straight back to the step
-		with nothing in between (Trevor, 2026-10-26), and the step's modal never hides it from
-		screen readers.
-	-->
-	<ShowToPlayer
-		bind:open={showOpen}
-		characters={shownCharacter ? [{ character: shownCharacter }] : []}
-		cards={shownCard && [shownCard]}
-	/>
-</Dialog>
+	{#if steps.length > 0}<StepFoot {index} count={steps.length} {go} {onNext} />{/if}
+</section>
+
+<ShowToPlayer
+	bind:open={showOpen}
+	characters={shownCharacter ? [{ character: shownCharacter }] : []}
+	cards={shownCard && [shownCard]}
+/>
 
 <SeatChooser
 	bind:open={chooserOpen}
@@ -728,6 +736,12 @@
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <style>
+	.night-step {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+	}
 	.scroll {
 		flex: 1;
 		min-height: 0;

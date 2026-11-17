@@ -1,10 +1,12 @@
 /**
- * Walking through the night on the board (GrimoireBoard): the strip under the board steps
- * through tonight's night order, and a step can open in its own dialog (Trevor, 2026-10-16).
+ * Walking through the night on the board (GrimoireBoard): the pane's Night tab shows tonight's
+ * steps one at a time (Trevor, 2026-10-16; beside the board since 2026-11-16), and on a phone
+ * the strip under the board steps through them too.
  * Both come back after a reload or an update, from what this device saved. Run Night Order
  * leaves out dead players (Trevor, 2026-10-18) unless their ability is set off by dying
  * tonight; the Script screen still lists every step.
  */
+import { untrack } from 'svelte';
 import type { CharacterId, GameData } from '#lib/core/data/index.ts';
 import {
 	type CharacterLookup,
@@ -60,8 +62,12 @@ export interface PlacedAt {
 export class NightWalk {
 	/** Walking through the night under the board: which night and which step. */
 	walk = $state<{ night: Night; index: number } | undefined>();
-	/** The step open in its own dialog. */
+	/**
+	 * The step shown in the pane's Night tab: the walk-through's, kept as it was when shown so
+	 * a step whose players change inside it stays put (guidedStep).
+	 */
 	guided = $state<{ step: NightStep; night: Night } | undefined>();
+	/** The Night tab shows the step (on a phone, its sheet is open over the board). */
 	guideOpen = $state(false);
 	/** The step closed while one of its reminders is in hand, to open again once it is put down. */
 	#placing = $state(false);
@@ -97,6 +103,29 @@ export class NightWalk {
 						: this.#pending
 			});
 		});
+		// The pane shows the walk-through's step: moving along the night shows the next one.
+		// A change to the night's steps (a character changed) keeps the open step, moving the
+		// walk-through to where it now is.
+		let followed: typeof this.walk;
+		$effect(() => {
+			const walk = this.walk;
+			const steps = this.steps;
+			if (!walk || !this.#context().data) return;
+			untrack(() => {
+				const g = this.guided;
+				const moved = walk !== followed;
+				followed = walk;
+				if (!moved && g && g.night === walk.night) {
+					const i = steps.findIndex((s) => s.id === g.step.id);
+					if (i >= 0 && i !== walk.index) this.walk = { ...walk, index: i };
+					return;
+				}
+				const step = steps[walk.index];
+				// By night too: Dusk and Dawn have the same id every night.
+				if (step && (g?.step.id !== step.id || g.night !== walk.night))
+					this.guided = { step, night: walk.night };
+			});
+		});
 		// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
 		// History's strip has the bottom of the board then (Trevor, 2026-10-24).
 		$effect(() => {
@@ -108,7 +137,8 @@ export class NightWalk {
 			if (this.guideOpen) this.#placing = false;
 			else if (!this.#context().hand.held) {
 				this.#placing = false;
-				this.guideOpen = true;
+				// After the key or tap that put it down, so an Escape doesn't close the step too.
+				setTimeout(() => (this.guideOpen = true));
 			}
 		});
 	}
@@ -128,10 +158,44 @@ export class NightWalk {
 		return true;
 	}
 
+	/** Opens a step of the open step's night; the walk-through follows on tonight's. */
+	open(step: NightStep): void {
+		if (!this.guided) return;
+		this.guided = { step, night: this.guided.night };
+		if (this.walk && this.walk.night === this.guided.night) {
+			const i = this.steps.findIndex((s) => s.id === step.id);
+			if (i >= 0) this.walk = { ...this.walk, index: i };
+		}
+	}
+
+	/**
+	 * Next, as the strip's: ticks tonight's open step and opens the one after it. False past
+	 * the last step, where the board shows where the night ends (Trevor, 2026-10-19).
+	 */
+	next(): boolean {
+		const { walk, guided } = this;
+		if (!walk || !guided || guided.night !== walk.night) return true;
+		const { grimoire } = this.#context();
+		const step = guided.step;
+		if (!grimoire.isNightStepDone(walk.night, step))
+			grimoire.toggleNightStep(walk.night, step, { startDay: false });
+		const i = this.steps.findIndex((s) => s.id === step.id);
+		const after = this.steps[i + 1];
+		if (i < 0 || !after) return false;
+		this.open(after);
+		return true;
+	}
+
 	/** Every step of a night on this board, dead players' included. */
 	#steps(night: Night): NightStep[] {
 		const { game, characters, data, today, rules } = this.#context();
 		return data ? boardNightSteps(game, characters, night, data, today, rules) : [];
+	}
+
+	/** A night's waking steps, for the Night tab between nights. */
+	upcoming(night: Night): NightStep[] {
+		const { wakes } = this.#context();
+		return this.#steps(night).filter(wakes);
 	}
 
 	/** The walk-through's steps: those that wake someone tonight. */

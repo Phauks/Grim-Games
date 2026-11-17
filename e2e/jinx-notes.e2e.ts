@@ -1,7 +1,8 @@
+import { paneDay, closeStep } from './players.ts';
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 // Every jinx shown where it matters (L107): when both characters of a jinx are in play, its own
 // text shows on each one's night step and as a mark on each one's row in the day view.
@@ -55,7 +56,7 @@ const SPY_POPPY = ['chef', 'empath', 'poppygrower', 'spy', 'imp'];
 
 /** Opens a night step from the walk-through under the board. */
 async function openStep(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
 		await page
@@ -67,7 +68,7 @@ async function openStep(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
@@ -77,7 +78,7 @@ async function openStep(page: Page, title: string) {
 		}
 	}
 	await expect(name).toHaveText(title);
-	await strip.locator('button.step').tap();
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -109,8 +110,7 @@ test("a jinx's text shows on both characters' night steps once both are in play"
 		await page.screenshot({
 			path: `test-results/jinx-step-${title.replace(' ', '-')}-${test.info().project.name}.png`
 		});
-		await step.getByRole('button', { name: 'Close' }).first().tap();
-		await expect(step).toBeHidden();
+		await closeStep(page, step);
 	}
 });
 
@@ -134,8 +134,8 @@ test("the day view marks a jinxed character's row, and the mark opens the jinx",
 		['chef', 'empath', 'slayer', 'spy', 'lleech'],
 		['Slayer', 'Lleech']
 	);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 
 	const row = day.locator('li[data-character="slayer"]').first();

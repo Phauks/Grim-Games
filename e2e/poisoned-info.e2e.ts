@@ -1,8 +1,9 @@
+import { closePane, paneIsSheet } from './players.ts';
 import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * A drunk or poisoned player may be given any information, true or false
@@ -45,7 +46,7 @@ async function poison(page: Page, number: number) {
 }
 
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
 		const start = page
@@ -58,7 +59,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
@@ -79,9 +80,9 @@ async function toNightTwo(page: Page, executed: string) {
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	const day = page.getByRole('dialog', { name: 'Day 1' });
-	await day.getByRole('button', { name: 'Close' }).tap();
-	await expect(day).toBeHidden();
+	const day = page.getByTestId('pane-day');
+	await closePane(page);
+	if (await paneIsSheet(page)) await expect(day).toBeHidden();
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -91,8 +92,8 @@ async function toNightTwo(page: Page, executed: string) {
 }
 
 async function openStep(page: Page, title: string) {
-	const strip = await walkTo(page, title);
-	await strip.locator('button.step').tap();
+	await walkTo(page, title);
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;

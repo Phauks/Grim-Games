@@ -1,6 +1,7 @@
+import { paneIsSheet } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { nightStep } from './night-step.ts';
+import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 
 /**
  * Show to player records what was shown and places its reminders (the night info framework's
@@ -39,7 +40,7 @@ async function choose(page: Page, number: number, name: string, offScript = fals
 }
 
 async function walkTo(page: Page, title: string) {
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	if (!(await strip.isVisible())) {
 		const start = page
@@ -52,7 +53,7 @@ async function walkTo(page: Page, title: string) {
 		if (await ask.isVisible())
 			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	}
-	const name = strip.locator('.step .name strong');
+	const name = strip.locator('[data-walk-name]');
 	await expect(name).toBeVisible();
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
@@ -61,8 +62,8 @@ async function walkTo(page: Page, title: string) {
 }
 
 async function openStep(page: Page, title: string) {
-	const strip = await walkTo(page, title);
-	await strip.locator('button.step').tap();
+	await walkTo(page, title);
+	await openWalkStep(page);
 	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
@@ -75,7 +76,7 @@ test('showing the Washerwoman a Townsfolk places its reminder', async ({ page })
 	await choose(page, 3, 'Imp');
 	await choose(page, 4, 'Poisoner');
 	const placed = page.locator(
-		'[data-testid="board-reminder"][aria-label="Townsfolk reminder"]:not([data-tray] *)'
+		'[data-testid="board-reminder"][aria-label="Townsfolk reminder"]:not([data-tray] *):not([data-testid="beside-pane"] *)'
 	);
 	await expect(placed).toHaveCount(0);
 
@@ -92,6 +93,6 @@ test('showing the Washerwoman a Townsfolk places its reminder', async ({ page })
 	await page.keyboard.press('Escape');
 	await expect(shown).toBeHidden();
 	await page.keyboard.press('Escape');
-	await expect(step).toBeHidden();
+	if (await paneIsSheet(page)) await expect(step).toBeHidden();
 	await expect(placed).toHaveCount(1);
 });

@@ -31,21 +31,19 @@ test('the day timer keeps the screen on while it runs, by a switch', async ({ pa
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	// The board's timer, the only one since the Day moved beside the board (Trevor, 2026-11-16).
+	const board = page.locator('.board-timer').getByTestId('day-timer');
+	await board.getByRole('button', { name: /open its controls$/ }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Day timer' });
 	expect(await held()).toBe(0);
-	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await sheet.getByRole('button', { name: 'Start timer' }).tap();
 	await expect.poll(held).toBe(1);
-	await timer.getByRole('button', { name: 'Pause timer' }).tap();
+	await sheet.getByRole('button', { name: 'Pause timer' }).tap();
 	await expect.poll(held).toBe(0);
 
 	// The switch sits beside the timer's other choices, and takes effect while it runs.
-	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await sheet.getByRole('button', { name: 'Start timer' }).tap();
 	await expect.poll(held).toBe(1);
-	await page.keyboard.press('Escape');
-	const board = page.locator('.board-timer').getByTestId('day-timer');
-	await board.getByRole('button', { name: /^Day timer, \d+:\d\d; open its controls$/ }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Day timer' });
 	const keepOn = sheet.getByRole('checkbox', { name: 'Keep screen on' });
 	await expect(keepOn).toBeChecked();
 	await sheet.getByText('Keep screen on', { exact: true }).tap();

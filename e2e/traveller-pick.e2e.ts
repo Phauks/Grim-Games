@@ -1,4 +1,5 @@
-import { chooseExecution } from './execution.ts';
+import { paneDay } from './players.ts';
+import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
@@ -47,9 +48,9 @@ async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: 
 
 /** Ends the day with no execution, so the night is underway and a seat added now sits out. */
 async function startNight(page: Page) {
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await day.getByRole('button', { name: 'Execution' }).tap();
+	const day = page.getByTestId('pane-day');
+	await paneDay(page);
+	await startExecution(page);
 	await chooseExecution(page);
 	await expect(day).toBeHidden();
 }

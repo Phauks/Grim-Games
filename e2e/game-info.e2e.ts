@@ -1,3 +1,4 @@
+import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { openGameInfo, pickScript, toBoard } from './new-game.ts';
 
@@ -48,7 +49,7 @@ test('Game info shows the join code, the day or night, Game time and watchers; t
 		.getByRole('button', { name: 'Start game', exact: true })
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
-	const strip = page.getByTestId('night-strip');
+	const strip = walkThrough(page);
 	await expect(strip.or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await page.clock.runFor(65_000);

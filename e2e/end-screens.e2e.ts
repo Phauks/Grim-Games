@@ -1,3 +1,4 @@
+import { paneDay } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -68,8 +69,8 @@ test('the fiddle contest runs in its own dialog and opens End game with its resu
 	await adding.getByRole('button', { name: 'Fiddler', exact: true }).tap();
 	await expect(adding).toBeHidden();
 
-	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await paneDay(page);
+	const day = page.getByTestId('pane-day');
 	await day.locator('li[data-character="fiddler"]').getByTestId('day-contest').tap();
 	const contest = page.getByRole('alertdialog', { name: /Fiddler\s+contest/ });
 	await expect(contest).toBeVisible();
@@ -93,7 +94,6 @@ test('the fiddle contest runs in its own dialog and opens End game with its resu
 	// End game opens over the board with the contest's winner and the Fiddler as how it ended.
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(end).toBeVisible();
-	await expect(day).toBeHidden();
 	await expect(end.getByRole('combobox', { name: 'Winner' })).toContainText('Good');
 	await expect(end.getByRole('combobox', { name: 'How it ended' })).toContainText('Fiddler');
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
