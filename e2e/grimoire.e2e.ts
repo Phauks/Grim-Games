@@ -172,6 +172,17 @@ async function lastStep(strip: Locator) {
 	return (await strip.getAttribute('data-step')) === (await strip.getAttribute('data-steps'));
 }
 
+/**
+ * For a test of the phone's night strip, which runs on the phone project only (Trevor,
+ * 2026-11-17): an upright tablet or wider has no strip, as the pane shows the step itself.
+ */
+function phoneStrip() {
+	test.skip(
+		test.info().project.name !== 'phone',
+		"the night strip is a phone's; the pane has the step"
+	);
+}
+
 async function walkTo(page: Page, title: string) {
 	const strip = walkThrough(page);
 	// A step closing hides the board from the a11y tree for a moment; wait it out.
@@ -6473,6 +6484,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 // the step closed that popover from inside zag, which crashed Svelte (null batch). The strip's
 // words are plain now: one tap opens the step only (Trevor, 2026-10-27).
 test('a step opened from the walk-through closes cleanly', async ({ page }) => {
+	phoneStrip();
 	const errors: string[] = [];
 	page.on('pageerror', (error) => errors.push(error.message));
 	await startGame(page);
@@ -6537,6 +6549,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 test('the night walk-through rises into place, and appears at once with animations off', async ({
 	page
 }) => {
+	phoneStrip();
 	// Trevor (2026-10-19): a transition instead of appearing instantly; the shared `rise`.
 	await startGame(page);
 	// A character in play, so there is a night to run.
@@ -7410,6 +7423,7 @@ test("a dragged seat's reminders go along with it, and fit around it again once 
 test('the walk-through shows the character as its row, its player on the band, with the count at the top right', async ({
 	page
 }) => {
+	phoneStrip();
 	// Trevor (2026-11-02): the strip's character is the shared character row with its ability
 	// turned off, the player on its band; the count is the night's, so it sits beside the band,
 	// right-aligned before ⋯ and X (Trevor, 2026-10-20), never on it.
@@ -8815,6 +8829,7 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 });
 
 test("the night strip's text scrolls below the step's row, never behind it", async ({ page }) => {
+	phoneStrip();
 	// Trevor, 2026-11-08: "Can read text behind this when we shouldnt" (the Imp's long text
 	// scrolled up under its band).
 	await startGame(page);
