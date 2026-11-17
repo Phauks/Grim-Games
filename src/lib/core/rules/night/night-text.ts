@@ -51,6 +51,7 @@ export type NightTextSegment =
 	 * One of the character's reminder tokens; `label` absent when it is not known which.
 	 * `action` is set when a mapped `:reminder:` says whether it goes on or comes off.
 	 * `prep` marks a token placed during pre-game prep (`prepTokens`).
+	 * `named` marks a token the sentence names as a word (`*RED HERRING*`), not a `:reminder:`.
 	 */
 	| {
 			kind: 'reminder';
@@ -58,11 +59,12 @@ export type NightTextSegment =
 			options: readonly string[];
 			action?: PlaceholderAction;
 			prep?: boolean;
+			named?: true;
 	  }
 	/** An info token shown to a player ("You are"). */
 	| { kind: 'info'; label: string }
-	/** The death marker (`*DEAD*`, or a mapped Dead token). */
-	| { kind: 'dead'; action?: PlaceholderAction };
+	/** The death marker (`*DEAD*`, or a mapped Dead token); `named` as for a reminder. */
+	| { kind: 'dead'; action?: PlaceholderAction; named?: true };
 
 export interface NightTextOptions {
 	/** What each `:reminder:` means, in text order (`placeholdersFor`). */
@@ -176,14 +178,15 @@ export function nightTextSegments(
 	const distinct = [...new Set(tokens)];
 	const names = options.names ?? NO_CHARACTER_NAMES;
 	const prep = new Set((options.prepTokens ?? []).map((t) => t.toLowerCase()));
-	const reminder = (label: string, action?: PlaceholderAction): NightTextSegment => {
+	const reminder = (label: string, action?: PlaceholderAction, named?: true): NightTextSegment => {
 		if (isDead(label)) return { kind: 'dead', ...(action ? { action } : {}) };
 		return {
 			kind: 'reminder',
 			label,
 			options: distinct,
 			...(action ? { action } : {}),
-			...(prep.has(label.toLowerCase()) ? { prep: true } : {})
+			...(prep.has(label.toLowerCase()) ? { prep: true } : {}),
+			...(named ? { named } : {})
 		};
 	};
 
@@ -219,8 +222,8 @@ export function nightTextSegments(
 		const word = match[1];
 		const own = tokens.find((t) => same(t, word));
 		const named = names.byName(word);
-		if (own !== undefined) out.push(reminder(own));
-		else if (isDead(word)) out.push({ kind: 'dead' });
+		if (own !== undefined) out.push(reminder(own, undefined, true));
+		else if (isDead(word)) out.push({ kind: 'dead', named: true });
 		else if (named !== undefined) out.push({ kind: 'character', id: named });
 		else out.push({ kind: 'info', label: sentenceCase(word) });
 	}

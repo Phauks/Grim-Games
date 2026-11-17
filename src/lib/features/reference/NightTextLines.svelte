@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import type { NightTextLine, NightTextSteps } from '#lib/core/rules/night/night-text.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
@@ -62,7 +63,9 @@
 {#snippet text(line: NightTextLine)}{@const marks =
 		explained[at(line)] ?? []}{#each line as s, i (i)}{#if s.kind === 'text'}<GlossaryText
 				segments={marks[i] ?? []}
-			/>{:else if s.kind !== 'reminder' && s.kind !== 'dead'}<NightTextPiece
+			/>{:else if (s.kind === 'reminder' || s.kind === 'dead') && s.named}<span class="token-name"
+				>{s.kind === 'dead' ? t('reference.dead') : s.label}</span
+			>{:else if s.kind !== 'reminder' && s.kind !== 'dead'}<NightTextPiece
 				segment={s}
 				{character}
 				{alignment}
@@ -84,7 +87,9 @@
 	sentence, an "If ...:" sentence heading lettered lines. TPI's words are never changed.
 	Reminder tokens and the death marker are not drawn in the lines (Trevor, 2026-11-12: "No
 	longer list reminder tokens in line in night order"): the step's own rows under each line
-	show the real tokens. They stay in the data, which puts each row on its line.
+	show the real tokens. They stay in the data, which puts each row on its line. A token the
+	sentence names as a word ("Nod if either is the Demon (or the Red Herring)") reads as its
+	name, so the sentence stays whole.
 -->
 <div class="night-lines" data-testid="night-lines">
 	{#if steps.lines.length > 0}{@render list(steps.lines, 0, false)}{/if}
