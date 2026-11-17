@@ -22,9 +22,14 @@
 		onDelete: (note: TitledNote) => void;
 		/** Focus has left a new note with nothing written in it. */
 		onLeaveBlank?: () => void;
+		/**
+		 * Has the eye that hides its text; off for the Storyteller's own notes (Trevor,
+		 * 2026-11-17: no world where a Storyteller hides notes), which then always show it.
+		 */
+		hideable?: boolean;
 	}
 
-	let { note, readonly = false, onSave, onDelete, onLeaveBlank }: Props = $props();
+	let { note, readonly = false, onSave, onDelete, onLeaveBlank, hideable = true }: Props = $props();
 
 	let row = $state<HTMLElement>();
 	let titleInput = $state<HTMLInputElement>();
@@ -40,7 +45,7 @@
 	});
 	/** A view-only note's text, shown for a moment without changing the note. */
 	let peek = $state(false);
-	const hidden = $derived(readonly ? draft.hidden && !peek : draft.hidden);
+	const hidden = $derived(hideable && (readonly ? draft.hidden && !peek : draft.hidden));
 
 	const blank = (n: TitledNote) => !n.title.trim() && !n.text.trim();
 	// A list closed mid-note (its sheet swiped away) keeps the note, as leaving it does.
@@ -105,18 +110,18 @@
 		</ClearableField>
 		<span class="actions">
 			<!-- Each note hides its own text (Trevor, 2026-10-17). -->
-			<HideContentsButton
-				{hidden}
-				onchange={(value) => {
-					if (readonly) peek = !value;
-					else {
-						// Kept at once: tapping the eye is the whole change.
-						draft.hidden = value;
-						save();
-					}
-				}}
-				testid="note-hide"
-			/>
+			{#if hideable}<HideContentsButton
+					{hidden}
+					onchange={(value) => {
+						if (readonly) peek = !value;
+						else {
+							// Kept at once: tapping the eye is the whole change.
+							draft.hidden = value;
+							save();
+						}
+					}}
+					testid="note-hide"
+				/>{/if}
 			{#if !readonly}
 				<DeleteButton label={t('player.deleteNote')} onclick={() => onDelete(note)} />
 			{/if}

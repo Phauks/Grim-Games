@@ -321,6 +321,7 @@
 						readonly={viewOnly}
 						onSave={(note) => saveNote(seatId, note)}
 						onDelete={(noteId) => deleteNote(seatId, noteId)}
+						hideable={false}
 					/>
 				</Collapsible>
 			{/if}

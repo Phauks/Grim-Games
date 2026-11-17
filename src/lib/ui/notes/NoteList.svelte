@@ -19,9 +19,11 @@
 		/** A changed note; no `noteId` adds it at the end of `notes`. */
 		onSave: (note: Omit<TitledNote, 'noteId'> & { noteId?: string }) => void;
 		onDelete: (noteId: string) => void;
+		/** Each note has the eye that hides its text (NoteRow); off for the Storyteller's. */
+		hideable?: boolean;
 	}
 
-	let { notes, readonly = false, onSave, onDelete }: Props = $props();
+	let { notes, readonly = false, onSave, onDelete, hideable = true }: Props = $props();
 
 	const NEW: TitledNote = { noteId: '', title: '', text: '', hidden: false };
 	/**
@@ -39,6 +41,7 @@
 	<ul class="notes">
 		{#each notes as note (note.noteId)}
 			<NoteRow
+				{hideable}
 				{note}
 				{readonly}
 				onSave={(n) => onSave(n)}
@@ -50,6 +53,7 @@
 		{/each}
 		{#if adding && !readonly}
 			<NoteRow
+				{hideable}
 				note={NEW}
 				onSave={({ title, text, hidden }) => {
 					adding = false;

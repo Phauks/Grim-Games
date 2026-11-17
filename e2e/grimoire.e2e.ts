@@ -2477,13 +2477,18 @@ test('the board background can be an image from the device, kept after a reload'
 		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
-	// The whole screen, under the toolbar too (Trevor, 2026-10-18).
+	// The whole screen, under the toolbar too (Trevor, 2026-10-18), but for the Game pane beside
+	// or under the board, so it is centred on the board (Trevor, 2026-11-17).
 	const viewport = page.viewportSize()!;
+	const pane = (await page.getByTestId('beside-pane').count())
+		? await page.getByTestId('beside-pane').boundingBox()
+		: null;
+	const under = !!pane && pane.y > 1;
 	expect(await page.getByTestId('board-background').boundingBox()).toEqual({
 		x: 0,
 		y: 0,
-		width: viewport.width,
-		height: viewport.height
+		width: pane && !under ? pane.x : viewport.width,
+		height: under ? pane.y : viewport.height
 	});
 	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
 	await expect(page.getByTestId('vignette')).toBeAttached();
@@ -4033,9 +4038,9 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(cards).toHaveCount(1);
-	// Each note hides its own text in the list, keeping its title.
-	await cards.first().getByRole('button', { name: 'Hide contents' }).tap();
-	await expectNotes(gameNotes, ['Fang Gu: Hidden']);
+	// No eye on the Storyteller's own notes (Trevor, 2026-11-17: "i dont see a world where a
+	// storyteller would hide notes"); a player's notes keep theirs (play.e2e.ts).
+	await expect(cards.first().getByRole('button', { name: 'Hide contents' })).toHaveCount(0);
 	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
 	await closePane(page);
 

@@ -355,8 +355,7 @@
 	);
 </script>
 
-<!-- A player's day button at their ability row's end, centred like character selection's lock
-     (Trevor, 2026-10-19, option B; 2026-10-20): Used for a once-per-game day ability, and
+<!-- A player's day button at their ability row's end (Trevor, 2026-10-19, option B): Used, or
      Guesses for the Juggler, whose guesses feed his night answer. -->
 {#snippet dayEnd(characterId: CharacterId | undefined, seatId: SeatId)}
 	{#if hasDayButton(characterId)}
@@ -434,8 +433,7 @@
 {/snippet}
 
 <div class="panel">
-	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), section headers under it (pinnedRow);
-	     a wide day's left column. -->
+	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), headers under it; a wide day's left column. -->
 	<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
 		{#if timer}<DayTimer alive={block.alive} {quiet} {town} />{/if}
 		{#if onOpenNight}
@@ -446,7 +444,6 @@
 	<!-- Beside the toolbar on a wide screen (Trevor, 2026-10-23: L45), under it on a phone. -->
 	<div class="sections">
 		<DayAnnouncements {game} />
-
 		<!-- Each day mark's switch, when its button isn't on the character's row. -->
 		{#if !assistance.demonVotedButton}
 			{#each marks as mark (mark)}
@@ -459,11 +456,11 @@
 				</div>
 			{/each}
 		{/if}
-
 		{#if assistance.preDayReminders}
-			<!-- Each group is its own section; no "Today" wrapper (Trevor, 2026-10-17). -->
+			<!-- Each group its own filled band, as the night's (Trevor, 2026-10-17; 2026-11-17). -->
 			{#each reminders.groups as group (group.group)}
 				<Collapsible
+					band="fill"
 					title={group.title}
 					storageKey={`day.group.${group.group}`}
 					count={group.reminders.length}
@@ -481,8 +478,7 @@
 							{@const mad = buttonRows[reminder.key] ? undefined : madnessOf(reminder)}
 							<li data-character={reminder.characterId}>
 								{#if character}
-									<!-- As the script draws it (Trevor, 2026-10-28): the ring and band, the
-									     ability, then what is known and the button under it. -->
+									<!-- As the script draws it (Trevor, 2026-10-28), what is known under it. -->
 									<CharacterPiece
 										template="row"
 										{character}
@@ -565,7 +561,12 @@
 		{/if}
 		{#if !assistance.preDayReminders || unlisted.length > 0}
 			{@const listed = assistance.preDayReminders ? unlisted : seats.filter((s) => s.characterId)}
-			<Collapsible title={t('day.abilities')} storageKey="day.abilities" count={listed.length}>
+			<Collapsible
+				band="fill"
+				title={t('day.abilities')}
+				storageKey="day.abilities"
+				count={listed.length}
+			>
 				<ul class="reminders rows">
 					{#each listed as seat (seat.seatId)}
 						{@const character = seat.characterId
