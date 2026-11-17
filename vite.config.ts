@@ -13,6 +13,7 @@ import {
 	PRECACHE_CHUNKS_PATH,
 	REBUILDABLE
 } from './src/lib/features/offline/chunk-renames.ts';
+import { HASHES_BUILD_KEY } from './src/lib/features/offline/cache-rules.ts';
 import { chromiumPath } from './scripts/lib/chromium-path.ts';
 import { svelteNestedFlush } from './svelte-nested-flush.ts';
 
@@ -114,6 +115,8 @@ function precacheSizes(): Plugin {
 						.digest('hex')
 						.slice(0, 16);
 				}
+			// The build the table describes, so an install can tell it from a newer deploy's.
+			hashes[HASHES_BUILD_KEY] = buildLine;
 			fs.writeFileSync(path.join(options.dir, 'precache-hashes.json'), JSON.stringify(hashes));
 			// What the next build's service worker needs to rebuild a file that was only renamed
 			// from the copy this build stored (src/lib/features/offline/chunk-renames.ts).

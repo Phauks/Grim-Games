@@ -7,13 +7,17 @@
 // user chooses to refresh (UpdateBanner), or until the app takes it where that interrupts
 // nothing (auto-update.svelte.ts), so an open game is never reloaded in front of anyone. A
 // new build still starts by itself when the app is next launched with no tab open (web.dev/
-// articles/service-worker-lifecycle); the game then reopens from its save (persistence.ts).
+// articles/service-worker-lifecycle). The game then reopens from its save (persistence.ts)
+// only when the new build reads the same saved-game format: there are no migrations, so a
+// format change loses a game the app was killed in (platform-gaps.md).
 import { version } from '$app/env';
 import { assets, immutable } from '$app/manifest';
 import { self as sw } from '$app/service-worker';
 import {
 	BUILD_CACHE_PREFIX,
 	cachedOnUse,
+	HASHES_BUILD_KEY,
+	otherBuild,
 	parseHashes,
 	precached,
 	PRECACHE_HASHES_PATH,
@@ -41,6 +45,14 @@ import {
 	totalBytes,
 	type PrecacheProgress
 } from '#lib/features/about/update-progress.ts';
+import {
+	BUILD_INFO,
+	notesMatchBuild,
+	STORED_NOTES_KEY,
+	type WaitingBuild
+} from '#lib/features/about/waiting-build.ts';
+import { BUILD_NOTES_PATH, parseBuildNotes } from '#lib/features/about/update-notes.ts';
+import { SAVED_GAME_VERSION } from '#lib/core/engine/saved-game-version.ts';
 import type { PushMessage } from '#lib/core/sync/room-push.ts';
 import { INVITE_PUSH_PATH, inviteNotification } from '#lib/core/sync/invite-push.ts';
 import { friends } from '#lib/i18n/messages/en/friends.ts';
@@ -110,8 +122,13 @@ async function keptCopy(
 }
 
 /** First 16 hex digits of SHA-256 over the text's UTF-8 bytes, as the build hashes files. */
-async function hashText(text: string): Promise<string> {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+function hashText(text: string): Promise<string> {
+	return hashBytes(new TextEncoder().encode(text));
+}
+
+/** First 16 hex digits of SHA-256 over the bytes, as the build hashes files. */
+async function hashBytes(bytes: BufferSource): Promise<string> {
+	const digest = await crypto.subtle.digest('SHA-256', bytes);
 	return [...new Uint8Array(digest).slice(0, 8)]
 		.map((b) => b.toString(16).padStart(2, '0'))
 		.join('');
@@ -152,6 +169,12 @@ async function precache(cache: Cache): Promise<void> {
 		fetchJson(PRECACHE_HASHES_PATH).then(parseHashes),
 		fetchJson(PRECACHE_CHUNKS_PATH).then(parseChunks)
 	]);
+	// A table from a deploy that went live after this worker was fetched (otherBuild).
+	const tableBuild = hashes[HASHES_BUILD_KEY];
+	if (tableBuild !== undefined && tableBuild !== version) {
+		throw new Error(`${PRECACHE_HASHES_PATH}: made by ${tableBuild}`);
+	}
+	const build = { version, hashes };
 	const previousCache = await previousBuild().catch(() => undefined);
 	const previous = {
 		cache: previousCache,
@@ -206,12 +229,22 @@ async function precache(cache: Cache): Promise<void> {
 		for (const client of await sw.clients.matchAll({ includeUncontrolled: true, type: 'window' }))
 			client.postMessage(message);
 	};
+	// Set when a file fails, so the other downloads stop instead of filling a cache that is
+	// about to be emptied.
+	let failed = false;
 	const next = async (): Promise<void> => {
 		const path = queue.shift();
-		if (!path) return;
-		const response = await fetch(path);
-		if (!response.ok) throw new Error(`${path}: ${response.status}`);
-		await cache.put(path, response);
+		if (!path || failed) return;
+		try {
+			const response = await fetch(path);
+			if (!response.ok) throw new Error(`${path}: ${response.status}`);
+			const mixed = await fromOtherBuild(path, response.clone(), build);
+			if (mixed) throw new Error(mixed);
+			await cache.put(path, response);
+		} catch (error) {
+			failed = true;
+			throw error;
+		}
 		done++;
 		bytes += sizes[path] ?? 0;
 		await tell();
@@ -221,11 +254,52 @@ async function precache(cache: Cache): Promise<void> {
 	await Promise.all([next(), next(), next(), next()]);
 }
 
+/** Why a downloaded file is another build's, if it is (cache-rules.ts `otherBuild`). */
+async function fromOtherBuild(
+	path: string,
+	response: Response,
+	build: { version: string; hashes: FileHashes }
+): Promise<string | undefined> {
+	if (path === SHELL) return otherBuild(path, { html: await response.text() }, build);
+	// Only data files are checked by content: their hashes are of the bytes as served.
+	if (!path.endsWith('.json') || build.hashes[path] === undefined) return undefined;
+	return otherBuild(path, { hash: await hashBytes(await response.arrayBuffer()) }, build);
+}
+
+/**
+ * Keeps this build's notes with it, so an open page's "What changed" lists what this build
+ * brings (waiting-build.ts). Notes the server already replaced with a newer deploy's are not
+ * kept; the page then asks the network.
+ */
+async function keepNotes(cache: Cache): Promise<void> {
+	const notes = parseBuildNotes(await fetchJson(BUILD_NOTES_PATH));
+	if (notes && notesMatchBuild(notes, version)) {
+		await cache.put(STORED_NOTES_KEY, Response.json(notes));
+	}
+}
+
+/** What this build tells a page that asks before it takes over (waiting-build.ts). */
+async function describeBuild(): Promise<WaitingBuild> {
+	const stored = await caches
+		.open(CACHE)
+		.then((cache) => cache.match(STORED_NOTES_KEY))
+		.then((response) => response?.json())
+		.catch(() => undefined);
+	return { savedGame: SAVED_GAME_VERSION, notes: parseBuildNotes(stored) };
+}
+
 sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		(async () => {
 			const cache = await caches.open(CACHE);
-			await precache(cache);
+			try {
+				await precache(cache);
+			} catch (error) {
+				// A failed install leaves nothing behind; the next check starts again.
+				await caches.delete(CACHE);
+				throw error;
+			}
+			await keepNotes(cache).catch(() => {});
 			await refreshIcons(cache).catch(() => {});
 		})()
 	);
@@ -307,6 +381,10 @@ async function keepOffline(urls: string[]): Promise<void> {
 
 sw.addEventListener('message', (event) => {
 	if (event.data?.type === 'SKIP_WAITING') sw.skipWaiting();
+	if (event.data?.type === BUILD_INFO && event.ports[0]) {
+		const port = event.ports[0];
+		event.waitUntil(describeBuild().then((build) => port.postMessage(build)));
+	}
 	if (event.data?.type === 'KEEP_OFFLINE') {
 		event.waitUntil(keepOffline((event.data as KeepOfflineMessage).urls));
 	}

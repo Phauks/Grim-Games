@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+	otherBuild,
+	shellBuild,
 	cachedOnUse,
 	parseHashes,
 	precached,
@@ -84,5 +86,39 @@ describe('parseHashes', () => {
 	it('keeps only string hashes', () => {
 		expect(parseHashes({ '/a.json': 'x1', '/b.json': 3 })).toEqual({ '/a.json': 'x1' });
 		expect(parseHashes(null)).toEqual({});
+	});
+});
+
+const BUILD = 'v0.1.0 · abc1234 · beta · beta · built 2026-11-16T22:00:00Z';
+
+describe('shellBuild', () => {
+	it('reads the build app.html stamps on the page, HTML entities and all', () => {
+		expect(shellBuild(`<script src="/boot-failure.js" data-build="${BUILD}"></script>`)).toBe(
+			BUILD
+		);
+		expect(shellBuild('<x data-build="a &amp; b &quot;c&quot;">')).toBe('a & b "c"');
+		expect(shellBuild('<html></html>')).toBeUndefined();
+	});
+});
+
+// Cloudflare takes seconds to bring a deploy everywhere, so an install can fetch the next
+// deploy's files; they are not stored with this build.
+describe('otherBuild', () => {
+	const build = { version: BUILD, hashes: { '/data/a.json': '0123456789abcdef' } };
+
+	it('names a page made by another build', () => {
+		expect(otherBuild('/', { html: `<x data-build="${BUILD}">` }, build)).toBeUndefined();
+		expect(otherBuild('/', { html: '<x data-build="v0.1.0 · def5678">' }, build)).toBe(
+			'/: made by v0.1.0 · def5678'
+		);
+		expect(otherBuild('/', { html: '<html></html>' }, build)).toBeUndefined();
+	});
+
+	it('names a data file whose content is not the one this build published', () => {
+		expect(otherBuild('/data/a.json', { hash: '0123456789abcdef' }, build)).toBeUndefined();
+		expect(otherBuild('/data/a.json', { hash: 'ffffffffffffffff' }, build)).toBe(
+			'/data/a.json: content of another build'
+		);
+		expect(otherBuild('/data/b.json', { hash: 'ffffffffffffffff' }, build)).toBeUndefined();
 	});
 });

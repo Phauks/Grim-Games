@@ -7,7 +7,7 @@
  * so the app can offer its newer build.
  *
  * To change the saved shape (including any event shape in `events.ts`): bump
- * `SAVED_GAME_VERSION`. Games saved in the old shape then stop opening.
+ * `SAVED_GAME_VERSION` (saved-game-version.ts). Games saved in the old shape then stop opening.
  */
 import { APP_NAME } from '#lib/core/app-name.ts';
 import { scriptLogo } from '#lib/core/data/script-logo.ts';
@@ -15,8 +15,9 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import type { GameLog, GameSession } from './log.ts';
+import { SAVED_GAME_VERSION } from './saved-game-version.ts';
 
-export const SAVED_GAME_VERSION = 32;
+export { SAVED_GAME_VERSION };
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -153,6 +154,15 @@ export function readSavedGame(raw: unknown): SavedGame {
 		);
 	}
 	return checkCurrent(raw);
+}
+
+/** True when a stored document is a saved game in an older format than this build reads. */
+export function savedOlder(raw: unknown): boolean {
+	return (
+		isRecord(raw) &&
+		Number.isInteger(raw.schemaVersion) &&
+		(raw.schemaVersion as number) < SAVED_GAME_VERSION
+	);
 }
 
 /** A game's script's logo (`scriptLogo`), as the saved games list shows it. */

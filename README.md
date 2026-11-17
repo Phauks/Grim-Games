@@ -78,6 +78,13 @@ Nothing deletes a Preview when its branch merges, so a branch Preview that slips
 
 GitHub Actions (`.github/workflows/ci.yml`) only runs checks and tests.
 
+### Rolling back
+
+Undo a broken deploy with a new commit that reverts the change, merged like any other. Don't use Cloudflare's rollback in the dashboard or `wrangler rollback`:
+
+- Phones keep the build they have for hours, and saved games are never converted. An older build refuses a game a newer one saved, and its Refresh finds nothing newer, so `SAVED_GAME_VERSION` (`src/lib/core/engine/saved-game-version.ts`), `ROOM_PROTOCOL` and `MIN_ROOM_PROTOCOL` (`src/lib/core/sync/room-version.ts`) never go down. A revert keeps them as they are; CI fails a pull request that lowers one (`scripts/check-versions.ts`).
+- Cloudflare refuses a rollback to a version before a Durable Object migration ([Rollbacks](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/rollbacks/)), and `wrangler.jsonc` has several.
+
 ## Build info and issue reports
 
 Every page footer shows the version, commit, branch, channel (`production`, `preview` or `local`) and build time, read at build time by `build-info.ts` from Workers Builds' `WORKERS_CI_*` variables (or git locally). **Report an issue** opens the GitHub bug-report form with the build, page and device prefilled. Issue forms live in `.github/ISSUE_TEMPLATE/`.

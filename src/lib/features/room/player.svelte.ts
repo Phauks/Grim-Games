@@ -207,7 +207,13 @@ export class RoomPlayer {
 		rememberRoom(code);
 		this.#socket = new RoomSocket(
 			code,
-			{ type: 'hello', role: 'player', key: this.#key, protocol: ROOM_PROTOCOL },
+			{
+				type: 'hello',
+				role: 'player',
+				key: this.#key,
+				protocol: ROOM_PROTOCOL,
+				builtAt: buildInfo.builtAt
+			},
 			(m) => {
 				if (m.type === 'player-view') {
 					// Another player has this name: say so once, so the player can change it.

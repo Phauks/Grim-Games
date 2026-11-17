@@ -4,8 +4,16 @@
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import UpdateChanges from './UpdateChanges.svelte';
 	import { updateCheck } from './update-check.svelte.ts';
+
+	interface Props {
+		/** A game's page is on screen (shell.ts `showsAppShell`). */
+		gamePage?: boolean;
+	}
+
+	let { gamePage = false }: Props = $props();
 
 	// How often an open app checks for a new build (a game can run for hours).
 	const CHECK_EVERY_MS = 30 * 60 * 1000;
@@ -15,6 +23,9 @@
 	// Another tab tapped Refresh: the new build is active here too, but this page still runs
 	// the old one until it reloads.
 	let activated = $state(false);
+	// Update on a game the new build can't open asks first (auto-update.svelte.ts).
+	let asking = $state(false);
+	const losesGame = $derived(gamePage && updateCheck.newFormat);
 	// What the waiting build changed (update-check.svelte.ts), shared with About.
 	const changes = $derived(updateCheck.changes);
 
@@ -84,6 +95,11 @@
 	});
 
 	function refresh() {
+		if (losesGame) asking = true;
+		else update();
+	}
+
+	function update() {
 		if (activated) return location.reload();
 		void updateCheck.refresh();
 	}
@@ -96,7 +112,7 @@
 			<div class="main">
 				<p class="text">
 					<strong>{t('shell.updateReady')}</strong>
-					<span>{t('shell.updateSaved')}</span>
+					<span>{losesGame ? t('shell.updateNewFormat') : t('shell.updateSaved')}</span>
 				</p>
 				<div class="actions">
 					<Button variant="quiet" onclick={() => (dismissed = true)}
@@ -120,6 +136,14 @@
 		</SectionStack>
 	</div>
 {/if}
+
+<ConfirmDialog
+	bind:open={asking}
+	title={t('shell.updateLosesGameTitle')}
+	description={t('shell.updateLosesGame')}
+	danger
+	onConfirm={update}
+/>
 
 <style>
 	/* A small card in the corner, over the page (never pushes content: no reflow). */
