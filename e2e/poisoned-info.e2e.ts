@@ -118,7 +118,10 @@ test('a poisoned Oracle is offered every count, not only the true one', async ({
 	await expect(rows.nth(0).locator('.option strong')).toHaveText('0');
 	await expect(rows.nth(1)).toHaveAttribute('data-reason', 'unreliable');
 	await expect(rows.nth(1).locator('.option strong')).toHaveText('1');
-	// Who poisoned the Oracle is under Status, not here as well.
+	// Why, as the Poisoner's token from the board, its words for a screen reader only.
+	await expect(rows.nth(1).getByText('Not reliable')).toHaveClass(/visually-hidden/);
+	await expect(rows.nth(1)).toContainText('Poisoned');
+	// No "(not reliable)" or "poisoned" words: the player and cause are under Status.
 	await expect(suggested).not.toContainText('poisoned');
 	await expect(step.getByRole('heading', { name: 'Status', exact: true })).toBeVisible();
 	await page.screenshot({ path: `test-results/poisoned-oracle-${test.info().project.name}.png` });

@@ -722,7 +722,8 @@
 		gap: var(--space-1);
 	}
 	.whose,
-	.because {
+	.because,
+	.with {
 		color: var(--on-surface-muted);
 	}
 	.flag {
@@ -746,12 +747,21 @@
 		width: 100%;
 		gap: var(--space-1);
 	}
+	/* Every row's eye at its end, in one column (Trevor, 2026-11-17, "R Right, outlined"). */
+	.valid > li {
+		flex-wrap: nowrap;
+	}
+	.valid > li > .main {
+		flex: 0 1 auto;
+		min-width: 0;
+	}
+	.valid > li > :global(.icon-button[data-outlined]) {
+		flex: none;
+		margin-inline-start: auto;
+	}
 	.valid > li + li {
 		padding-top: var(--space-1);
 		border-top: 1px solid var(--border);
-	}
-	.with {
-		color: var(--on-surface-muted);
 	}
 	/*
 	 * A row the character's reminders on the board mark: the one the Storyteller already

@@ -1,38 +1,29 @@
 <script lang="ts">
 	import type { Night } from '#lib/core/model/overrides.ts';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import StepFocusSetting from './StepFocusSetting.svelte';
 
 	/**
-	 * The top of the pane's night step: the night's name, which step it is beside it, and Show
-	 * to player at the far end (Trevor, 2026-11-16). No Info tokens: the toolbar has it. On
+	 * The top of the pane's night step: the night's name, and Show to player at the far end
+	 * (Trevor, 2026-11-16); which step it is shows at the foot (StepFoot). No Info tokens: the toolbar has it. On
 	 * tonight's walk-through, the strip's Character reminders (⋯) and ✕ that stops it.
 	 */
 	interface Props {
 		night: Night;
-		/** The open step's place in the night, from 0; -1 for a step not in it. */
-		index: number;
-		count: number;
 		/** No character to show for this step. */
 		noShow: boolean;
 		onShow: () => void;
 		onStop?: () => void;
 	}
 
-	let { night, index, count, noShow, onShow, onStop }: Props = $props();
+	let { night, noShow, onShow, onStop }: Props = $props();
 	let focusOpen = $state(false);
 	let focusButton = $state<HTMLElement>();
 </script>
 
 <header class="head">
 	<h2>{night === 'first' ? 'First night' : 'Other nights'}</h2>
-	{#if count > 0 && index >= 0}<CountBadge
-			count={index + 1}
-			total={count}
-			testid="step-count"
-		/>{/if}
 	<span class="end">
 		<IconButton icon="showToPlayer" label="Show to player" disabled={noShow} onclick={onShow} />
 		{#if onStop}<span bind:this={focusButton}

@@ -53,3 +53,19 @@ export function handRole(
 	const target = marks.targets.includes(seatId);
 	return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
 }
+
+/**
+ * The marks for a player to pick for a night step (board-pick.svelte.ts), the same as for a
+ * reminder in hand: the seats that may be picked glow, the rest fade, the picker's are ringed.
+ */
+export function pickMarks(
+	game: Game,
+	pick: { seats: readonly SeatId[]; sources: readonly SeatId[] }
+): HandMarks {
+	const fits = new Set(pick.seats);
+	return {
+		misfits: new Set(game.seating.filter((s) => !fits.has(s))),
+		sources: pick.sources,
+		targets: pick.seats
+	};
+}

@@ -402,8 +402,6 @@
 		>{/if}
 	<StepHead
 		{night}
-		{index}
-		count={steps.length}
 		noShow={!step?.character}
 		{onStop}
 		onShow={() => {
@@ -508,7 +506,13 @@
 						showOpen = true;
 					}}
 				/>
-				<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
+				<NightYesNo
+					{grimoire}
+					{step}
+					onShowAnswer={showAnswer}
+					onRecord={record}
+					pickOnBoard={!!onDrag}
+				/>
 			{/snippet}
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17), above the Steps:
 			     it is weighed before the step is run (Trevor, 2026-11-17). -->

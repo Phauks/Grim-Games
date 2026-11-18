@@ -31,6 +31,8 @@
 		/** A tap on the token: its own dialog (Trevor, 2026-10-30: not a ⋯ row). */
 		onAbout?: () => void;
 		onPutDown: () => void;
+		/** Its × label; a player to pick (BoardPickPill) cancels rather than puts down. */
+		putDownLabel?: string;
 	}
 
 	let {
@@ -39,7 +41,8 @@
 		actions = [],
 		menuOpen = $bindable(false),
 		onAbout,
-		onPutDown
+		onPutDown,
+		putDownLabel = t('common.putDown')
 	}: Props = $props();
 
 	const edit = $derived(actions.find((a) => a.value === 'edit'));
@@ -73,7 +76,7 @@
 			bind:open={menuOpen}
 		/>
 	{/if}
-	<IconButton icon="close" label={t('common.putDown')} onclick={onPutDown} />
+	<IconButton icon="close" label={putDownLabel} onclick={onPutDown} />
 </div>
 
 <style>

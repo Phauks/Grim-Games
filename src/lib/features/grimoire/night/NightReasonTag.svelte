@@ -10,6 +10,7 @@
 	import { type LearnedRole } from '#lib/core/rules/night/info/learned-roles.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import ImpairmentToken from './ImpairmentToken.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 
 	/**
@@ -24,9 +25,10 @@
 		registered?: readonly SeatId[];
 		/**
 		 * The waking player's reliability, when known: names the character behind false info
-		 * (the Duchess's False Info) and any that only may make it false (the Fibbin).
+		 * (the Duchess's False Info) and any that only may make it false (the Fibbin), and the
+		 * tokens that make it unreliable.
 		 */
-		source?: Pick<Reliability, 'unreliable' | 'mayBeFalse' | 'falseBy'>;
+		source?: Pick<Reliability, 'unreliable' | 'mayBeFalse' | 'falseBy' | 'impairments'>;
 	}
 
 	let { grimoire, reason, registered = [], source }: Props = $props();
@@ -52,8 +54,14 @@
 	>{:else if reason === 'unreliable' && mayBy}<span class="tag warn"
 		><CharacterPiece template="badge" characterId={mayBy} character={characters.get(mayBy)} />Might
 		be false</span
-	>{:else if reason === 'unreliable'}<span class="tag warn"
-		><Icon name="warning" />Not reliable</span
+	>{:else if reason === 'unreliable'}<!-- The tokens that make it so, as on the board (Trevor,
+		2026-11-17, "B Token only"), the words only for a screen reader. --><span
+		class="tag"
+		>{#each source?.impairments ?? [] as impairment, i (i)}<ImpairmentToken
+				{game}
+				{characters}
+				{impairment}
+			/>{/each}<span class:visually-hidden={!!source?.impairments.length}>Not reliable</span></span
 	>{:else if reason === 'false-info'}<span class="tag warn"
 		>{#if falseBy}<CharacterPiece
 				template="badge"
