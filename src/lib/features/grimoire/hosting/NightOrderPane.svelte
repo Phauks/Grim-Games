@@ -49,4 +49,9 @@
 		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
+	/* The nights as far apart as the Day tab's sections (DayPanel), each band its own edge
+	   (Trevor, 2026-11-18: "spacing between first night and other night row is different"). */
+	.night-pane :global(.section-stack) {
+		gap: var(--space-5);
+	}
 </style>

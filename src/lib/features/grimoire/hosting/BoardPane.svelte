@@ -26,8 +26,6 @@
 		day: Snippet;
 		/** The Night tab's contents. */
 		night: Snippet;
-		/** Where the game is up to, "Day 2", above the tabs. */
-		phase: string;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
 		children: Snippet;
@@ -40,7 +38,6 @@
 		beside = $bindable(),
 		day,
 		night,
-		phase,
 		ended = false,
 		children
 	}: Props = $props();
@@ -75,7 +72,6 @@
 				run={(command) => grimoire.run(command)}
 				{day}
 				{night}
-				{phase}
 				{ended}
 			/>{/if}
 	</div>
@@ -94,7 +90,6 @@
 				run={(command) => grimoire.run(command)}
 				{day}
 				{night}
-				{phase}
 				{ended}
 			/>
 		</div>

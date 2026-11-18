@@ -65,7 +65,7 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 		await expect(page.getByTestId('game-pane-button')).toHaveCount(0);
 	}
 	const pane = await openPane(page);
-	for (const tab of ['Day', 'Night', 'Notes', 'Players'])
+	for (const tab of ['Day', 'Night', 'Players', 'Notes'])
 		await expect(pane.getByRole('tab', { name: new RegExp(`^${tab}`) })).toBeVisible();
 	// Before the first night, the Day tab is open, with no second timer (the board's is the one).
 	await expect(pane.getByTestId('pane-day')).toBeVisible();

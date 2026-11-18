@@ -25,8 +25,6 @@
 		day: Snippet;
 		/** The Night tab's contents, from the board. */
 		night: Snippet;
-		/** Where the game is up to, "Day 2", first above the tabs. */
-		phase: string;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
 	}
@@ -36,7 +34,6 @@
 		run = (command) => game.run(command).ok,
 		day,
 		night,
-		phase,
 		ended = false
 	}: Props = $props();
 	const live = $derived(new LiveDay(game));
@@ -49,22 +46,22 @@
 	const tabs = $derived<{ value: PaneTab; label: string; count?: number; warn?: boolean }[]>([
 		{ value: 'day', label: t('room.pane.day') },
 		{ value: 'night', label: t('room.pane.night') },
-		{ value: 'notes', label: t('room.pane.notes') },
-		{ value: 'players', label: t('room.players.title'), count: unread, warn: host.inbox.urgent }
+		{ value: 'players', label: t('room.players.title'), count: unread, warn: host.inbox.urgent },
+		// Notes last (Trevor, 2026-11-18: "swap players and notes in the top, notes should be last").
+		{ value: 'notes', label: t('room.pane.notes') }
 	]);
 </script>
 
 <div class="storyteller-pane" data-testid="storyteller-pane">
-	<!-- Where the game is and its counts, above the tabs so every tab shows them (Trevor,
-	     2026-11-17, picked "B Day pill and counts"). -->
-	<div class="game-line">
-		<span class="phase-pill" data-testid="pane-phase">{phase}</span>
-		<DayCounts game={live} />
-	</div>
 	<Tabs bind:value={sidePane.tab} {tabs} label={t('room.players.pane')} segmented>
 		{#snippet panel(tab)}
 			{#if tab === 'day'}
-				<div class="phase" data-testid="pane-day">{@render day()}</div>
+				<!-- The day's counts head the Day tab only (Trevor, 2026-11-18: "the pills should just
+				     be in day view"); which day it is, game info already says. -->
+				<div class="phase" data-testid="pane-day">
+					<div class="game-line"><DayCounts game={live} onBoard={sidePane.beside} /></div>
+					{@render day()}
+				</div>
 			{:else if tab === 'night'}
 				<div class="phase" data-testid="pane-night">{@render night()}</div>
 			{:else if tab === 'notes'}
@@ -102,20 +99,6 @@
 	.game-line > :global(.counts) {
 		flex: 1;
 		min-width: 0;
-	}
-	/* The phase as a quiet pill, the counts' height, in the headings' gold. */
-	.phase-pill {
-		display: inline-flex;
-		flex: none;
-		align-items: center;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border-radius: var(--radius-full);
-		background: var(--surface-selected);
-		color: var(--heading);
-		font-family: var(--font-control);
-		font-weight: var(--font-control-weight);
-		white-space: nowrap;
 	}
 	/* --pane-gutter: the pane's side inset, given by where it sits, inside each scroll box. */
 	.storyteller-pane :global([data-scope='tabs'][data-part='root'] > :has(> [data-part='list'])) {

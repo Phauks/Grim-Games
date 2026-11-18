@@ -7,7 +7,7 @@
 	 * Previous and Next at the foot of the pane's night step, where a sheet's Cancel and Confirm
 	 * sit: two matching arrows, no words (Trevor, 2026-11-16). Between them, how far through the
 	 * night it is: a thin line, the count small under it (Trevor, 2026-11-17, "D Progress line"),
-	 * in its badge as every worked-out number is.
+	 * as plain muted text (Trevor, 2026-11-18, "A Line, plain text").
 	 */
 	interface Props {
 		/** The open step's place in the night, from 0; -1 for a step not in it. */
@@ -41,7 +41,12 @@
 			><span class="done" style:inline-size="{shown ? ((index + 1) / count) * 100 : 0}%"
 			></span></span
 		><span class="step-of"
-			>{#if shown}<CountBadge count={index + 1} total={count} testid="step-count" />{/if}</span
+			>{#if shown}<CountBadge
+					count={index + 1}
+					total={count}
+					plain
+					testid="step-count"
+				/>{/if}</span
 		></span
 	>
 	{#if onEndNight && last}<Button icon="day" data-testid="step-end-night" onclick={onEndNight}

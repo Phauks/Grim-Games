@@ -5,7 +5,8 @@
 	 * count (component review §4.4, 2026-10-17: the Script builder and Setup check each had a
 	 * copy). With `total`, a position such as the night order's "7 of 10" (Trevor, 2026-10-20:
 	 * a badge, not loose text). Every worked-out number sits in one (Trevor, 2026-10-27: "in a
-	 * colored circle, not loose in the air"; `grim/count-badge`), so it is always filled.
+	 * colored circle, not loose in the air"; `grim/count-badge`), filled unless `plain`: a night step's place in the night is
+	 * plain text (Trevor, 2026-11-18, "A Line, plain text").
 	 * `times` shows copies, "×3". Its size follows the font size around it.
 	 */
 	interface Props {
@@ -15,10 +16,15 @@
 		warn?: boolean;
 		/** Copies of one thing, shown "×3". */
 		times?: boolean;
+		/**
+		 * Plain muted text, no fill: a night step's place under its progress line (Trevor,
+		 * 2026-11-18, "A Line, plain text": "i don't think it should still be a pill").
+		 */
+		plain?: boolean;
 		testid?: string;
 	}
 
-	let { count, total, warn = false, times = false, testid }: Props = $props();
+	let { count, total, warn = false, times = false, plain = false, testid }: Props = $props();
 	const text = $derived(
 		total !== undefined ? `${count} of ${total}` : times ? `×${count}` : String(count)
 	);
@@ -28,6 +34,7 @@
 	class="count-badge"
 	data-warn={warn ? '' : undefined}
 	data-total={total === undefined ? undefined : ''}
+	data-plain={plain ? '' : undefined}
 	data-testid={testid}>{text}</span
 >
 
@@ -50,6 +57,11 @@
 	}
 	.count-badge[data-total] {
 		padding: 0 0.6em;
+	}
+	.count-badge[data-plain] {
+		background: none;
+		color: var(--on-surface-muted);
+		font-weight: 400;
 	}
 	.count-badge[data-warn] {
 		background: var(--accent);

@@ -3,7 +3,15 @@
  * are faded, and its character's seats and the seats it fits are marked. The reminder is
  * the one being dragged, or the one the bank's setup suggestions point at.
  */
-import type { CharacterLookup, Game, Reminder, SeatId } from '#lib/core/model/index.ts';
+import {
+	inPlay,
+	type CharacterLookup,
+	type Game,
+	type Reminder,
+	type SeatId
+} from '#lib/core/model/index.ts';
+import { counts, seatsBehind } from '#lib/core/rules/day/voting.ts';
+import { countHighlight } from '#lib/features/day/count-highlight.svelte.ts';
 import {
 	handMarks,
 	handRole,
@@ -50,7 +58,15 @@ export class SeatHints {
 		const { grimoire, game, characters } = this.#context();
 		if (this.#hand) return handMarks(game, this.#hand, characters, grimoire.atDawn);
 		// A player to pick for a night step looks the same (board-pick.svelte.ts).
-		return boardPick.current && pickMarks(game, boardPick.current);
+		if (boardPick.current) return pickMarks(game, boardPick.current);
+		// So does a day count tapped beside the board: the seats adding to it (count-highlight).
+		const count = countHighlight.current;
+		if (!count) return undefined;
+		const g = inPlay(game);
+		return pickMarks(game, {
+			seats: seatsBehind(g, count, characters).filter((s) => counts(g, count, s, characters) > 0),
+			sources: []
+		});
 	});
 
 	/**
