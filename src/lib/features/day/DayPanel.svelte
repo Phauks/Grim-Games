@@ -655,8 +655,8 @@
 </ConfirmDialog>
 
 <style>
-	.panel,
-	.sections {
+	/* Not .sections: its bands space themselves as every pane's do (Trevor, 2026-11-18). */
+	.panel {
 		display: grid;
 		gap: var(--space-5);
 		align-items: start;

@@ -285,9 +285,10 @@
 {/snippet}
 
 <div class="sections">
-	<SectionStack edge>
+	<SectionStack>
 		{#if !only}
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.standard')}
 				storageKey="info-tokens-standard"
 				{level}
@@ -308,6 +309,7 @@
 			</Collapsible>
 			<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.extras')}
 				storageKey="info-tokens-enhanced"
 				{level}
@@ -328,7 +330,12 @@
 
 		<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
 		{#if !only && !quickInHeader}
-			<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
+			<Collapsible
+				band="fill"
+				title={t('info-tokens.quick')}
+				storageKey="info-tokens-quick"
+				{level}
+			>
 				<ul class="cards">
 					<InfoTokenTile
 						text={t('info-tokens.quick')}
@@ -342,6 +349,7 @@
 		{/if}
 
 		<Collapsible
+			band="fill"
 			title={t('info-tokens.custom')}
 			storageKey="info-tokens-custom"
 			{level}
@@ -368,6 +376,7 @@
 
 		{#if characterCards && !only}
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.characterCards')}
 				storageKey="info-tokens-characters"
 				{level}

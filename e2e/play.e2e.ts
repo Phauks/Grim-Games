@@ -286,6 +286,13 @@ test('Notes show beside the chosen tab where there is room, and as a tab on a ph
 	const box = (await notes.boundingBox())!;
 	expect(box.y).toBeGreaterThanOrEqual(-1);
 	expect(box.y + box.height).toBeLessThanOrEqual((await bar.boundingBox())!.y + 1);
+	// Down to the bar, with the tab scrolling in its own column and the screen not at all, so
+	// there is one scroll bar for each (Trevor, 2026-11-18: "notes don't go all the way down
+	// and it appears we have two scrollbars").
+	expect(box.y + box.height).toBeGreaterThanOrEqual((await bar.boundingBox())!.y - 1);
+	expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+		true
+	);
 	await expectNotes(notes, ['Day 1: Seat 3 claims Chef']);
 
 	// Off again, and remembered: a reload keeps the choice.
@@ -501,9 +508,11 @@ test('each heading stays pinned at the top while its section scrolls, then hands
 	const other = page.getByRole('button', { name: 'Other nights' });
 	const top = (l: typeof first) => l.evaluate((el) => el.getBoundingClientRect().top);
 	const otherAt = await other.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
-	// Halfway down the first night: its header is at the top, over the rows.
+	const headOf = (l: typeof first) => l.locator('xpath=ancestor::div[contains(@class,"head")][1]');
+	// Halfway down the first night: its header (the band and the room round it) is at the top,
+	// over the rows.
 	await page.evaluate((y) => window.scrollTo(0, y / 2), otherAt);
-	await expect.poll(() => top(first)).toBeLessThan(2);
+	await expect.poll(() => top(headOf(first))).toBeLessThan(2);
 	const head = await first.boundingBox();
 	const hidden = await page.evaluate(
 		({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.textContent?.trim(),
@@ -511,7 +520,6 @@ test('each heading stays pinned at the top while its section scrolls, then hands
 	);
 	expect(hidden).toContain('First night');
 	// Filled only while stuck over rows; at rest the header shows the box it sits in.
-	const headOf = (l: typeof first) => l.locator('xpath=ancestor::div[contains(@class,"head")][1]');
 	await expect(headOf(first)).toHaveAttribute('data-stuck');
 	await expect(headOf(other)).not.toHaveAttribute('data-stuck');
 	// At the end, First night has been pushed up by Other nights, never over it.
