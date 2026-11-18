@@ -46,6 +46,7 @@ export const infoTokens = {
 	'info-tokens.bold': 'Bold',
 	'info-tokens.italic': 'Italic',
 	'info-tokens.underline': 'Underline',
+	'info-tokens.wrapLines': 'Wrap lines',
 	'info-tokens.style': 'Style',
 	'info-tokens.colour': 'Colour',
 	'info-tokens.colourNone': 'Text colour',

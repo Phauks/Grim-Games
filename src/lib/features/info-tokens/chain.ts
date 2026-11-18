@@ -7,6 +7,8 @@ export interface ChainCard {
 	characterIds: CharacterId[];
 	/** What the Storyteller filled in, e.g. the Mezepheles's secret word. */
 	detail?: string;
+	/** Each typed line kept whole when shown (`InfoToken.nowrap`). */
+	nowrap?: true;
 }
 
 /** A filled-in card's words and answer; a card with no words (Yes/No) is only its answer. */
