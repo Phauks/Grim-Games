@@ -22,9 +22,14 @@
 		 * better").
 		 */
 		tokens?: boolean;
+		/**
+		 * Each typed line kept whole, the words shrinking to fit the longest, instead of wrapping
+		 * to fill the card (a quick card's wrap tool, Trevor, 2026-11-18).
+		 */
+		nowrap?: boolean;
 	}
 
-	let { title, characters = [], detail, compact = false, tokens }: Props = $props();
+	let { title, characters = [], detail, compact = false, tokens, nowrap = false }: Props = $props();
 
 	const asTokens = $derived(tokens ?? preferences.current.assistance.characterTokens);
 
@@ -95,11 +100,11 @@
 				apply(next);
 				return fitsNow(box);
 			},
-			{ min: compact ? MIN_FIT_SHARED : 1, max: MAX_FIT }
+			{ min: compact || nowrap ? MIN_FIT_SHARED : 1, max: MAX_FIT }
 		);
 		delete box.dataset.measuring;
 		// A step back from the edge, so rounding never tips a word onto a line of its own.
-		apply(Math.max(compact ? MIN_FIT_SHARED : 1, scale * 0.98));
+		apply(Math.max(compact || nowrap ? MIN_FIT_SHARED : 1, scale * 0.98));
 	}
 
 	$effect(() => {
@@ -112,7 +117,7 @@
 	});
 
 	$effect(() => {
-		void [title, detail, characters, asTokens, areaWidth, areaHeight, resized];
+		void [nowrap, title, detail, characters, asTokens, areaWidth, areaHeight, resized];
 		if (content) fit(content);
 	});
 </script>
@@ -134,6 +139,7 @@
 	bind:this={content}
 	data-has-title={title ? '' : undefined}
 	data-compact={compact ? '' : undefined}
+	data-nowrap={nowrap ? '' : undefined}
 >
 	{#if title}
 		<h2 class="title"><InfoTokenText text={title} /></h2>
@@ -226,6 +232,11 @@
 		line-height: 1.15;
 		color: var(--heading);
 		overflow-wrap: anywhere;
+	}
+	/* Lines as typed; fit() shrinks the words until the longest fits. */
+	.content[data-nowrap] .title {
+		white-space: pre;
+		overflow-wrap: normal;
 	}
 	/* Set by fit() while it measures, so it is not in the markup. */
 	.content:global([data-measuring]) .title,

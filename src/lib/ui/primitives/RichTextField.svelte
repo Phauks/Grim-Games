@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { afterLineBreak } from '#lib/core/text/lists.ts';
 	import {
 		INK_COLORS,
@@ -44,6 +45,11 @@
 		active?: boolean;
 		/** Enter in a one-line box: Enter commits (Trevor's rule). */
 		onsubmit?: () => void;
+		/**
+		 * Given, a wrap tool ends the row: on, a card's words wrap to fill it; off, each typed
+		 * line stays whole (Trevor, 2026-11-18, picked A: with the other tools, nothing moves).
+		 */
+		wrapLines?: boolean;
 		oninput?: (value: string) => void;
 	}
 
@@ -59,7 +65,8 @@
 		inline = false,
 		active = $bindable(false),
 		onsubmit,
-		oninput
+		oninput,
+		wrapLines = $bindable()
 	}: Props = $props();
 
 	const labelId = $props.id();
@@ -439,6 +446,17 @@
 					style:background={ink ? INK_TOKENS[ink] : 'currentColor'}
 				></span></button
 			>
+			{#if wrapLines !== undefined}
+				<button
+					type="button"
+					class="tool"
+					aria-label={t('info-tokens.wrapLines')}
+					aria-pressed={wrapLines}
+					{disabled}
+					onpointerdown={(e) => e.preventDefault()}
+					onclick={() => (wrapLines = !wrapLines)}><Icon name="wrapLines" /></button
+				>
+			{/if}
 		</div>
 	</div>
 	<div

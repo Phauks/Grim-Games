@@ -44,6 +44,7 @@
 		shown.map((card) => ({
 			title: card.text,
 			detail: card.detail,
+			nowrap: card.nowrap,
 			characters: card.characterIds.flatMap((id) => {
 				const character = byId.get(id);
 				return character ? [{ character }] : [];
@@ -63,8 +64,8 @@
 	);
 
 	/** Shows the card now, or adds it to the cards to show together. */
-	function use(text: string, characterIds: CharacterId[] = [], detail?: string) {
-		const card = { text, characterIds, detail };
+	function use(text: string, characterIds: CharacterId[] = [], detail?: string, nowrap?: true) {
+		const card: ChainCard = { text, characterIds, detail, ...(nowrap && { nowrap }) };
 		if (adding) chainCards = [...chainCards, card];
 		else show([card]);
 		adding = false;
@@ -83,7 +84,7 @@
 		adding = add;
 		quickShown = token.id === QUICK_CARD_ID && !add;
 		// Player cards ("This is the Demon") are shown at once: the Storyteller points.
-		if (!token.asks?.characters) return use(token.text, [], detail);
+		if (!token.asks?.characters) return use(token.text, [], detail, token.nowrap);
 		picking = token;
 		pickingDetail = detail;
 		picked = [];

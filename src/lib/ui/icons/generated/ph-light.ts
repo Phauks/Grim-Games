@@ -12,6 +12,7 @@ import ph_arrow_down_light from '~icons/ph/arrow-down-light';
 import ph_arrow_left_light from '~icons/ph/arrow-left-light';
 import ph_arrow_right_light from '~icons/ph/arrow-right-light';
 import ph_arrow_square_out_light from '~icons/ph/arrow-square-out-light';
+import ph_arrow_u_down_left_light from '~icons/ph/arrow-u-down-left-light';
 import ph_arrow_u_up_left_light from '~icons/ph/arrow-u-up-left-light';
 import ph_arrow_u_up_right_light from '~icons/ph/arrow-u-up-right-light';
 import ph_arrow_up_light from '~icons/ph/arrow-up-light';
@@ -223,6 +224,7 @@ import ph_swap_light from '~icons/ph/swap-light';
 import ph_tag_light from '~icons/ph/tag-light';
 import ph_tag_simple_light from '~icons/ph/tag-simple-light';
 import ph_text_aa_light from '~icons/ph/text-aa-light';
+import ph_text_align_left_light from '~icons/ph/text-align-left-light';
 import ph_text_t_light from '~icons/ph/text-t-light';
 import ph_textbox_light from '~icons/ph/textbox-light';
 import ph_timer_light from '~icons/ph/timer-light';
@@ -265,6 +267,7 @@ const icons: IconMap = {
 	'ph:arrow-left-light': ph_arrow_left_light,
 	'ph:arrow-right-light': ph_arrow_right_light,
 	'ph:arrow-square-out-light': ph_arrow_square_out_light,
+	'ph:arrow-u-down-left-light': ph_arrow_u_down_left_light,
 	'ph:arrow-u-up-left-light': ph_arrow_u_up_left_light,
 	'ph:arrow-u-up-right-light': ph_arrow_u_up_right_light,
 	'ph:arrow-up-light': ph_arrow_up_light,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:tag-light': ph_tag_light,
 	'ph:tag-simple-light': ph_tag_simple_light,
 	'ph:text-aa-light': ph_text_aa_light,
+	'ph:text-align-left-light': ph_text_align_left_light,
 	'ph:text-t-light': ph_text_t_light,
 	'ph:textbox-light': ph_textbox_light,
 	'ph:timer-light': ph_timer_light,

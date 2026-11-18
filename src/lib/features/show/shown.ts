@@ -17,4 +17,6 @@ export interface ShownInfoCard {
 	characters?: readonly ShownCharacter[];
 	/** What the Storyteller filled in, shown as typed, e.g. the Mezepheles's secret word. */
 	detail?: string;
+	/** Each typed line kept whole, not wrapped to fill the card (`InfoToken.nowrap`). */
+	nowrap?: boolean;
 }

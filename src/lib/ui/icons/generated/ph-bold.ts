@@ -12,6 +12,7 @@ import ph_arrow_down_bold from '~icons/ph/arrow-down-bold';
 import ph_arrow_left_bold from '~icons/ph/arrow-left-bold';
 import ph_arrow_right_bold from '~icons/ph/arrow-right-bold';
 import ph_arrow_square_out_bold from '~icons/ph/arrow-square-out-bold';
+import ph_arrow_u_down_left_bold from '~icons/ph/arrow-u-down-left-bold';
 import ph_arrow_u_up_left_bold from '~icons/ph/arrow-u-up-left-bold';
 import ph_arrow_u_up_right_bold from '~icons/ph/arrow-u-up-right-bold';
 import ph_arrow_up_bold from '~icons/ph/arrow-up-bold';
@@ -223,6 +224,7 @@ import ph_swap_bold from '~icons/ph/swap-bold';
 import ph_tag_bold from '~icons/ph/tag-bold';
 import ph_tag_simple_bold from '~icons/ph/tag-simple-bold';
 import ph_text_aa_bold from '~icons/ph/text-aa-bold';
+import ph_text_align_left_bold from '~icons/ph/text-align-left-bold';
 import ph_text_t_bold from '~icons/ph/text-t-bold';
 import ph_textbox_bold from '~icons/ph/textbox-bold';
 import ph_timer_bold from '~icons/ph/timer-bold';
@@ -265,6 +267,7 @@ const icons: IconMap = {
 	'ph:arrow-left-bold': ph_arrow_left_bold,
 	'ph:arrow-right-bold': ph_arrow_right_bold,
 	'ph:arrow-square-out-bold': ph_arrow_square_out_bold,
+	'ph:arrow-u-down-left-bold': ph_arrow_u_down_left_bold,
 	'ph:arrow-u-up-left-bold': ph_arrow_u_up_left_bold,
 	'ph:arrow-u-up-right-bold': ph_arrow_u_up_right_bold,
 	'ph:arrow-up-bold': ph_arrow_up_bold,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:tag-bold': ph_tag_bold,
 	'ph:tag-simple-bold': ph_tag_simple_bold,
 	'ph:text-aa-bold': ph_text_aa_bold,
+	'ph:text-align-left-bold': ph_text_align_left_bold,
 	'ph:text-t-bold': ph_text_t_bold,
 	'ph:textbox-bold': ph_textbox_bold,
 	'ph:timer-bold': ph_timer_bold,

@@ -12,6 +12,7 @@ import ph_arrow_down_fill from '~icons/ph/arrow-down-fill';
 import ph_arrow_left_fill from '~icons/ph/arrow-left-fill';
 import ph_arrow_right_fill from '~icons/ph/arrow-right-fill';
 import ph_arrow_square_out_fill from '~icons/ph/arrow-square-out-fill';
+import ph_arrow_u_down_left_fill from '~icons/ph/arrow-u-down-left-fill';
 import ph_arrow_u_up_left_fill from '~icons/ph/arrow-u-up-left-fill';
 import ph_arrow_u_up_right_fill from '~icons/ph/arrow-u-up-right-fill';
 import ph_arrow_up_fill from '~icons/ph/arrow-up-fill';
@@ -223,6 +224,7 @@ import ph_swap_fill from '~icons/ph/swap-fill';
 import ph_tag_fill from '~icons/ph/tag-fill';
 import ph_tag_simple_fill from '~icons/ph/tag-simple-fill';
 import ph_text_aa_fill from '~icons/ph/text-aa-fill';
+import ph_text_align_left_fill from '~icons/ph/text-align-left-fill';
 import ph_text_t_fill from '~icons/ph/text-t-fill';
 import ph_textbox_fill from '~icons/ph/textbox-fill';
 import ph_timer_fill from '~icons/ph/timer-fill';
@@ -265,6 +267,7 @@ const icons: IconMap = {
 	'ph:arrow-left-fill': ph_arrow_left_fill,
 	'ph:arrow-right-fill': ph_arrow_right_fill,
 	'ph:arrow-square-out-fill': ph_arrow_square_out_fill,
+	'ph:arrow-u-down-left-fill': ph_arrow_u_down_left_fill,
 	'ph:arrow-u-up-left-fill': ph_arrow_u_up_left_fill,
 	'ph:arrow-u-up-right-fill': ph_arrow_u_up_right_fill,
 	'ph:arrow-up-fill': ph_arrow_up_fill,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:tag-fill': ph_tag_fill,
 	'ph:tag-simple-fill': ph_tag_simple_fill,
 	'ph:text-aa-fill': ph_text_aa_fill,
+	'ph:text-align-left-fill': ph_text_align_left_fill,
 	'ph:text-t-fill': ph_text_t_fill,
 	'ph:textbox-fill': ph_textbox_fill,
 	'ph:timer-fill': ph_timer_fill,
