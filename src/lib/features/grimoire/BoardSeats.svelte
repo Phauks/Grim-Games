@@ -176,6 +176,11 @@
 				: []
 		)
 	);
+	/** Where the dragged reminder sits in a seat's row, when it is that seat's. */
+	function liftedIndex(row: readonly { reminderId: string }[]): number | undefined {
+		const k = row.findIndex((r) => r.reminderId === remDrag.drag?.reminderId);
+		return k < 0 ? undefined : k;
+	}
 	/** The big token: who the player really is, with 'truth', else the token they were given. */
 	function bigTokenOf(seat: Seat, i: number): Character | undefined {
 		const truly = bigToken === 'truth' ? truths[i][0] : undefined;
@@ -191,18 +196,20 @@
 </script>
 
 <!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
-     2026-10-29); none for loose reminders, or while one is dragged. -->
-{#if remDrag.drag === undefined}<ReminderTethers
-		seats={seats.map((seat, i) => ({
-			at: shown[i],
-			spots: fan[i] ?? [],
-			held: heldSeat === seat.seatId
-		}))}
-		board={boardSize}
-		{size}
-		{chip}
-		mode={boardLooks.current.reminderLines}
-	/>{/if}
+     2026-10-29); none for loose reminders. While one is dragged, every other line stays
+     (Trevor, 2026-11-18). -->
+<ReminderTethers
+	seats={seats.map((seat, i) => ({
+		at: shown[i],
+		spots: fan[i] ?? [],
+		held: heldSeat === seat.seatId,
+		lifted: liftedIndex(beside[i])
+	}))}
+	board={boardSize}
+	{size}
+	{chip}
+	mode={boardLooks.current.reminderLines}
+/>
 
 {#each seats as seat, i (seat.seatId)}
 	{@const at = shown[i]}

@@ -324,7 +324,9 @@
 	.players-room {
 		display: grid;
 		flex: 1;
-		gap: var(--space-3);
+		/* The bands space themselves (Collapsible), as every pane's sections do (Trevor,
+		   2026-11-18). */
+		gap: 0;
 		align-content: start;
 		min-height: 0;
 		overflow-y: auto;

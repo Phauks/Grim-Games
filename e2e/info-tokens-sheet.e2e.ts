@@ -318,12 +318,48 @@ test('a quick card can hold a typed list, shown on its lines', async ({ page }) 
 		.toBe('You learn:\n1. Ana is good\n2. Ben is evil');
 });
 
+test("a quick card's wrap tool keeps each typed line whole", async ({ page }) => {
+	// Trevor (2026-11-18, picked A): a wrap tool in the text tools row, on at first.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	const wrap = page.getByRole('button', { name: 'Wrap lines' });
+	await expect(wrap).toHaveAttribute('aria-pressed', 'true');
+	const text = page.getByRole('textbox', { name: 'Text' });
+	await text.tap();
+	await page.keyboard.type('You learn:');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Ana is the Washerwoman');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Ben is the Imp');
+	await wrap.tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'false');
+	// Rendered lines, from the heading's height and its line height.
+	const lines = (heading: import('@playwright/test').Locator) =>
+		heading.evaluate((el) => {
+			const style = getComputedStyle(el);
+			return Math.round(el.getBoundingClientRect().height / parseFloat(style.lineHeight));
+		});
+	// The preview and the shown card both keep the three typed lines, every word in sight.
+	const preview = page.getByRole('figure', { name: 'Preview' }).getByRole('heading');
+	await expect.poll(() => lines(preview)).toBe(3);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const heading = shown(page).getByRole('heading');
+	await expect.poll(() => lines(heading)).toBe(3);
+	expect(await heading.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+	// Closing goes back to the card, still unwrapped; the next quick card wraps again.
+	await shown(page).getByRole('button', { name: 'Close' }).tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'false');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('a quick card can be added to the cards to show with others', async ({ page }) => {
 	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
 	await openSheet(page);
 	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
 	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
-	const add = page.getByRole('button', { name: 'Add to cards' });
+	const add = page.getByRole('button', { name: 'Custom Info Token' });
 	// Held in place, usable once there are words.
 	await expect(add).toBeDisabled();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
@@ -419,4 +455,29 @@ test('type headers scroll under the search and the chosen place, never over them
 		}, box);
 		expect(hits).toEqual([false, false]);
 	}
+});
+
+test('no card shows through above a pinned section header', async ({ page }) => {
+	// Trevor (2026-11-18): "i can see behind the collapsible menus". A header pinned at the top
+	// of the sheet's scroll box covers the box's top padding too, so nothing passes above it.
+	await openSheet(page);
+	const box = page.getByRole('button', { name: 'This is the Demon', exact: true });
+	const scroller = await box.evaluateHandle((el) => {
+		for (let node = el.parentElement; node; node = node.parentElement)
+			if (getComputedStyle(node).overflowY === 'auto') return node;
+		throw new Error('no scroll box');
+	});
+	await scroller.evaluate((el: Element) => (el.scrollTop = 120));
+	await expect
+		.poll(() =>
+			scroller.evaluate((el: Element) => {
+				const head = el.querySelector<HTMLElement>('.head[data-stuck]');
+				if (!head) return 'none stuck';
+				// What the header fills: itself and the strip it reaches up over (::after).
+				const reach = getComputedStyle(head, '::after').height;
+				const filledTop = head.getBoundingClientRect().top - (parseFloat(reach) || 0);
+				return filledTop <= el.getBoundingClientRect().top + el.clientTop + 0.5;
+			})
+		)
+		.toBe(true);
 });

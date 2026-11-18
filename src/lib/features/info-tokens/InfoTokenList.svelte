@@ -140,8 +140,11 @@
 	/** A card for once: shown, then gone, never saved (Trevor, 2026-10-18). */
 	let quickOpen = $state(false);
 	let quickText = $state('');
+	/** Its words wrap to fill the card, or keep each typed line whole (Trevor, 2026-11-18). */
+	let quickWrap = $state(true);
 	export function openQuick() {
 		quickText = '';
+		quickWrap = true;
 		quickOpen = true;
 	}
 	/**
@@ -155,7 +158,12 @@
 	function useQuick(add: boolean) {
 		if (!plainText(quickText).trim()) return;
 		quickOpen = false;
-		const card: InfoToken = { id: QUICK_CARD_ID, text: quickText, source: 'custom' };
+		const card: InfoToken = {
+			id: QUICK_CARD_ID,
+			text: quickText,
+			source: 'custom',
+			...(quickWrap ? {} : { nowrap: true as const })
+		};
 		if (add) onadd?.(card);
 		else onchoose(card);
 	}
@@ -285,9 +293,10 @@
 {/snippet}
 
 <div class="sections">
-	<SectionStack edge>
+	<SectionStack>
 		{#if !only}
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.standard')}
 				storageKey="info-tokens-standard"
 				{level}
@@ -308,6 +317,7 @@
 			</Collapsible>
 			<!-- Trevor's own additions, apart from the base game's (2026-10-18). -->
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.extras')}
 				storageKey="info-tokens-enhanced"
 				{level}
@@ -328,7 +338,12 @@
 
 		<!-- Not one of the saved cards, so in a space of its own (Trevor, 2026-10-18). -->
 		{#if !only && !quickInHeader}
-			<Collapsible title={t('info-tokens.quick')} storageKey="info-tokens-quick" {level}>
+			<Collapsible
+				band="fill"
+				title={t('info-tokens.quick')}
+				storageKey="info-tokens-quick"
+				{level}
+			>
 				<ul class="cards">
 					<InfoTokenTile
 						text={t('info-tokens.quick')}
@@ -342,6 +357,7 @@
 		{/if}
 
 		<Collapsible
+			band="fill"
 			title={t('info-tokens.custom')}
 			storageKey="info-tokens-custom"
 			{level}
@@ -368,6 +384,7 @@
 
 		{#if characterCards && !only}
 			<Collapsible
+				band="fill"
 				title={t('info-tokens.characterCards')}
 				storageKey="info-tokens-characters"
 				{level}
@@ -491,9 +508,13 @@
 </Dialog>
 
 <Dialog bind:open={quickOpen} size="full" title={t('info-tokens.quick')}>
-	<CardEditorLayout title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}>
+	<CardEditorLayout
+		title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}
+		nowrap={!quickWrap}
+	>
 		<RichTextField
 			bind:value={quickText}
+			bind:wrapLines={quickWrap}
 			label={t('info-tokens.text')}
 			maxlength={MAX_CUSTOM_TEXT}
 			multiline

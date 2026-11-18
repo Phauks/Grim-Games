@@ -96,6 +96,7 @@
 		shown.map((card) => ({
 			title: card.text,
 			detail: card.detail,
+			nowrap: card.nowrap,
 			characters: card.characterIds.flatMap((id) => {
 				const character = byId.get(id);
 				return character ? [{ character }] : [];
@@ -168,7 +169,7 @@
 			return;
 		}
 		// "This is the Demon", "These are your Minions" and the rest: the Storyteller points.
-		use(token.text, [], detail);
+		use(token.text, [], detail, token.nowrap);
 	}
 
 	/** The characters in the order shown: good above evil on the Dreamer's card. */
@@ -190,10 +191,11 @@
 	function use(
 		text: string,
 		characterIds: readonly CharacterId[] = [],
-		detail: string | undefined = pendingDetail
+		detail: string | undefined = pendingDetail,
+		nowrap?: true
 	) {
 		pendingDetail = undefined;
-		const card = { text, characterIds: [...characterIds], detail };
+		const card: Card = { text, characterIds: [...characterIds], detail, ...(nowrap && { nowrap }) };
 		const before = lead;
 		lead = [];
 		view = { kind: 'list' };

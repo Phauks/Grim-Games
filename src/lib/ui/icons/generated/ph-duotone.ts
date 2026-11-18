@@ -12,6 +12,7 @@ import ph_arrow_down_duotone from '~icons/ph/arrow-down-duotone';
 import ph_arrow_left_duotone from '~icons/ph/arrow-left-duotone';
 import ph_arrow_right_duotone from '~icons/ph/arrow-right-duotone';
 import ph_arrow_square_out_duotone from '~icons/ph/arrow-square-out-duotone';
+import ph_arrow_u_down_left_duotone from '~icons/ph/arrow-u-down-left-duotone';
 import ph_arrow_u_up_left_duotone from '~icons/ph/arrow-u-up-left-duotone';
 import ph_arrow_u_up_right_duotone from '~icons/ph/arrow-u-up-right-duotone';
 import ph_arrow_up_duotone from '~icons/ph/arrow-up-duotone';
@@ -223,6 +224,7 @@ import ph_swap_duotone from '~icons/ph/swap-duotone';
 import ph_tag_duotone from '~icons/ph/tag-duotone';
 import ph_tag_simple_duotone from '~icons/ph/tag-simple-duotone';
 import ph_text_aa_duotone from '~icons/ph/text-aa-duotone';
+import ph_text_align_left_duotone from '~icons/ph/text-align-left-duotone';
 import ph_text_t_duotone from '~icons/ph/text-t-duotone';
 import ph_textbox_duotone from '~icons/ph/textbox-duotone';
 import ph_timer_duotone from '~icons/ph/timer-duotone';
@@ -265,6 +267,7 @@ const icons: IconMap = {
 	'ph:arrow-left-duotone': ph_arrow_left_duotone,
 	'ph:arrow-right-duotone': ph_arrow_right_duotone,
 	'ph:arrow-square-out-duotone': ph_arrow_square_out_duotone,
+	'ph:arrow-u-down-left-duotone': ph_arrow_u_down_left_duotone,
 	'ph:arrow-u-up-left-duotone': ph_arrow_u_up_left_duotone,
 	'ph:arrow-u-up-right-duotone': ph_arrow_u_up_right_duotone,
 	'ph:arrow-up-duotone': ph_arrow_up_duotone,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:tag-duotone': ph_tag_duotone,
 	'ph:tag-simple-duotone': ph_tag_simple_duotone,
 	'ph:text-aa-duotone': ph_text_aa_duotone,
+	'ph:text-align-left-duotone': ph_text_align_left_duotone,
 	'ph:text-t-duotone': ph_text_t_duotone,
 	'ph:textbox-duotone': ph_textbox_duotone,
 	'ph:timer-duotone': ph_timer_duotone,

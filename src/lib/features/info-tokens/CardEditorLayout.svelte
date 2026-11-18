@@ -14,16 +14,18 @@
 		detail?: string;
 		/** The fields that edit the card. */
 		children: Snippet;
+		/** Each typed line kept whole (ShownCard). */
+		nowrap?: boolean;
 	}
 
-	let { title, detail, children }: Props = $props();
+	let { title, detail, children, nowrap = false }: Props = $props();
 	// The card fits its words to the preview box itself (ShownCard), as it does full screen.
 </script>
 
 <div class="editor">
 	<figure class="preview" aria-label={t('info-tokens.preview')}>
 		<div class="preview-card">
-			<ShownCard {title} {detail} compact />
+			<ShownCard {title} {detail} {nowrap} compact />
 		</div>
 	</figure>
 	<div class="fields">
