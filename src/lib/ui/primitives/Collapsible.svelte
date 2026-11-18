@@ -39,8 +39,27 @@
 			section.clientTop +
 			(parseFloat(box.paddingTop) || 0) +
 			(parseFloat(getComputedStyle(head).marginTop) || 0);
-		const moved = head.getBoundingClientRect().top - section.getBoundingClientRect().top - rest;
-		head.toggleAttribute('data-stuck', moved > 0.5);
+		const top = head.getBoundingClientRect().top;
+		const stuck = top - section.getBoundingClientRect().top - rest > 0.5;
+		head.toggleAttribute('data-stuck', stuck);
+		// Stuck a scroll box's top padding below its edge, rows passed by in that strip above it
+		// (Trevor, 2026-11-18: "i can see behind the collapsible menus"). The fill reaches up over
+		// the strip; no further, so it never covers a bar or a parent's header pinned above it.
+		const scroller = stuck ? scrollBoxOf(head) : undefined;
+		const gap = scroller ? top - scroller.getBoundingClientRect().top - scroller.clientTop : 0;
+		const padding = scroller ? parseFloat(getComputedStyle(scroller).paddingTop) || 0 : 0;
+		if (gap > 0.5 && gap <= padding + 0.5) head.style.setProperty('--pin-reach', `${gap}px`);
+		else head.style.removeProperty('--pin-reach');
+	}
+
+	/** The nearest box above `element` that scrolls up and down itself; none for the page. */
+	function scrollBoxOf(element: HTMLElement): HTMLElement | undefined {
+		for (let node = element.parentElement; node; node = node.parentElement) {
+			if (node === document.body || node === document.documentElement) return undefined;
+			const { overflowY } = getComputedStyle(node);
+			if (overflowY === 'auto' || overflowY === 'scroll') return node;
+		}
+		return undefined;
 	}
 
 	function markAll(): void {
@@ -67,6 +86,7 @@
 			resized.disconnect();
 			pinnedHeads.delete(head);
 			head.removeAttribute('data-stuck');
+			head.style.removeProperty('--pin-reach');
 			if (pinnedHeads.size === 0) {
 				document.removeEventListener('scroll', schedule, { capture: true });
 				window.removeEventListener('resize', schedule);
@@ -279,6 +299,17 @@
 		background: var(--pin-background, var(--surface));
 		background-attachment: fixed;
 	}
+	/* Up over a scroll box's top padding, where the header stops below the box's edge. */
+	.collapsible[data-pinned] > .head:global([data-stuck])::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		bottom: 100%;
+		height: var(--pin-reach, 0rem);
+		background: var(--pin-background, var(--surface));
+		background-attachment: fixed;
+		pointer-events: none;
+	}
 	/* A section inside a pinned one stops under its parent's header. */
 	.collapsible[data-pinned] :global(.collapsible[data-pinned] > .head) {
 		top: calc(var(--pin-top, 0rem) + var(--tap-target));
@@ -317,14 +348,16 @@
 	.head[data-type-band] {
 		position: relative;
 		isolation: isolate;
-		margin-block: var(--space-1);
+		/* Padding, not margin, so a pinned band's fill covers the room round it too and no row
+		   shows above or under it as it passes (Trevor, 2026-11-18). */
+		padding-block: var(--space-1);
 		margin-inline: calc(-1 * var(--space-2));
 		padding-inline: var(--space-2);
 	}
 	.head[data-type-band]::before {
 		content: '';
 		position: absolute;
-		inset: 0;
+		inset: var(--space-1) 0;
 		z-index: var(--z-under);
 		border-radius: var(--radius-full);
 		background: var(--type-band);
@@ -335,6 +368,11 @@
 	}
 	/* A quiet button on a band (Announcements' prevented count) has no box of its own, which
 	   stopped short of the band's edge (Trevor, 2026-11-17: "doesn't touch the edge"). */
+	/* A bare icon on a band in the band's own text colour, not the page's (which faded into a
+	   gold band, Trevor 2026-11-18: Info tokens' Character-specific (i)). */
+	.head[data-type-band] .aside :global(.icon-button:not([data-outlined])) {
+		color: var(--on-type-band);
+	}
 	.head[data-type-band] .aside :global(.button[data-variant='quiet']) {
 		box-shadow: none;
 	}

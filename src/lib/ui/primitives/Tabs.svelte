@@ -153,6 +153,7 @@
 			placement={toggle?.pressed ? aside.placement : undefined}
 			label={toggle?.label ?? ''}
 			room="calc(var(--fill-room, 100dvh) - {barHeight}px)"
+			ownScroll
 			pane={aside.content}>{@render panels()}</BesidePane
 		>
 	{:else}

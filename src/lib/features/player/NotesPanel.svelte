@@ -52,17 +52,28 @@
 </script>
 
 <!-- Each section closes from its header and stays as left on this device, as the Script tab's
-     do (Trevor, 2026-10-26). -->
+     do (Trevor, 2026-10-26), on the same filled band as the Night tab's and the Storyteller
+     pane's, so every pane's sections look and space alike (Trevor, 2026-11-18). -->
 <SectionStack>
 	<!-- New ones start from a dashed "+ New note" in the list itself, not a button in the
 	     header (Trevor, 2026-10-24); each note is written where it sits (Trevor, 2026-11-02). -->
-	<Collapsible title={t('player.myNotes')} storageKey="play:notes:mine" count={notes.length}>
+	<Collapsible
+		title={t('player.myNotes')}
+		storageKey="play:notes:mine"
+		band="fill"
+		count={notes.length}
+	>
 		<NoteList {notes} onSave={onSaveNote} onDelete={onDeleteNote} />
 	</Collapsible>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
 	     notes; one opens full screen only when tapped, never by itself (Trevor, 2026-10-17). -->
-	<Collapsible title={t('scratch.pads')} storageKey="play:notes:pads" count={pads?.length}>
+	<Collapsible
+		title={t('scratch.pads')}
+		storageKey="play:notes:pads"
+		band="fill"
+		count={pads?.length}
+	>
 		<ul class="pads" style:--pad-shape={padShape.ratio}>
 			{#each pads ?? [] as pad (pad.key)}
 				<li>
@@ -99,6 +110,7 @@
 		<Collapsible
 			title={t('player.seatNotes')}
 			storageKey="play:notes:players"
+			band="fill"
 			count={seatNoteCount}
 		>
 			<ul class="seat-notes">

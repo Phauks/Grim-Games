@@ -323,7 +323,7 @@ test('a quick card can be added to the cards to show with others', async ({ page
 	await openSheet(page);
 	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
 	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
-	const add = page.getByRole('button', { name: 'Add to cards' });
+	const add = page.getByRole('button', { name: 'Custom Info Token' });
 	// Held in place, usable once there are words.
 	await expect(add).toBeDisabled();
 	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
@@ -419,4 +419,29 @@ test('type headers scroll under the search and the chosen place, never over them
 		}, box);
 		expect(hits).toEqual([false, false]);
 	}
+});
+
+test('no card shows through above a pinned section header', async ({ page }) => {
+	// Trevor (2026-11-18): "i can see behind the collapsible menus". A header pinned at the top
+	// of the sheet's scroll box covers the box's top padding too, so nothing passes above it.
+	await openSheet(page);
+	const box = page.getByRole('button', { name: 'This is the Demon', exact: true });
+	const scroller = await box.evaluateHandle((el) => {
+		for (let node = el.parentElement; node; node = node.parentElement)
+			if (getComputedStyle(node).overflowY === 'auto') return node;
+		throw new Error('no scroll box');
+	});
+	await scroller.evaluate((el: Element) => (el.scrollTop = 120));
+	await expect
+		.poll(() =>
+			scroller.evaluate((el: Element) => {
+				const head = el.querySelector<HTMLElement>('.head[data-stuck]');
+				if (!head) return 'none stuck';
+				// What the header fills: itself and the strip it reaches up over (::after).
+				const reach = getComputedStyle(head, '::after').height;
+				const filledTop = head.getBoundingClientRect().top - (parseFloat(reach) || 0);
+				return filledTop <= el.getBoundingClientRect().top + el.clientTop + 0.5;
+			})
+		)
+		.toBe(true);
 });
