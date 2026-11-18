@@ -24,10 +24,24 @@
 		 * screen's background (the board's pane, Trevor 2026-11-16).
 		 */
 		solid?: boolean;
+		/**
+		 * Beside, the content scrolls in its own column too, in the room given, so the screen or
+		 * dialog round it doesn't scroll as well (Trevor, 2026-11-18: notes stopped short and
+		 * "we have two scrollbars"): one scroll bar for each column, each reaching the bottom.
+		 */
+		ownScroll?: boolean;
 		children: Snippet;
 	}
 
-	let { placement, label, room, pane, solid = false, children }: Props = $props();
+	let {
+		placement,
+		label,
+		room,
+		pane,
+		solid = false,
+		ownScroll = false,
+		children
+	}: Props = $props();
 	const on = $derived(placement && pane ? placement : undefined);
 
 	let aside = $state<HTMLElement>();
@@ -80,6 +94,7 @@
 	class="beside"
 	data-beside={on}
 	data-solid={solid || undefined}
+	data-own-scroll={(on && ownScroll) || undefined}
 	style:--beside-room={room}
 	style:--beside-end={taken.end ? `${taken.end}px` : undefined}
 	style:--beside-bottom={taken.bottom ? `${taken.bottom}px` : undefined}
@@ -145,6 +160,30 @@
 	}
 	.beside[data-beside='under']:has(> .main:focus-within) > .main {
 		--panel-room: max(0rem, calc(0.6 * var(--room) - var(--space-2)));
+	}
+	/* Each column scrolls itself in the room given, the pane beside the content to its foot.
+	   The content's scroll box reaches out by the sheets' bleed (PlayerScriptTabs), with that
+	   room given back inside, so nothing is clipped or scrolls sideways. */
+	.beside[data-beside='side'][data-own-scroll] {
+		--kept: calc(var(--keyboard-inset, 0rem) + var(--keyboard-top, 0rem));
+		height: calc(var(--room) - var(--kept));
+		grid-template-rows: minmax(0, 1fr);
+		align-items: stretch;
+	}
+	.beside[data-beside='side'][data-own-scroll] > .main {
+		--panel-room: calc(var(--room) - var(--kept));
+	}
+	.beside[data-own-scroll] > .main {
+		--pin-top: 0rem;
+		min-height: 0;
+		margin-inline: calc(-1 * var(--space-3));
+		padding-inline: var(--space-3);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.beside[data-beside='side'][data-own-scroll] > .pane {
+		position: static;
+		height: auto;
 	}
 	.beside[data-solid] > .pane {
 		background: var(--dialog-background, var(--surface));
