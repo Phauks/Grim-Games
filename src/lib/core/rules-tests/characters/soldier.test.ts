@@ -18,7 +18,7 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Soldier', () => {
@@ -58,14 +58,8 @@ describe('Soldier', () => {
 				'imp',
 				'Dead'
 			);
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					killer: 'imp',
-					seatId: s.seat('soldier'),
-					because: [
-						{ kind: 'protected', source: { characterId: 'soldier', seatId: s.seat('soldier') } }
-					]
-				}
+			expect(savedBy(s, 'imp', s.seat('soldier'))).toMatchObject([
+				{ kind: 'protected', source: { characterId: 'soldier', seatId: s.seat('soldier') } }
 			]);
 		});
 		it("Example 2: Poisoned Soldier dies to Imp's attack", () => {

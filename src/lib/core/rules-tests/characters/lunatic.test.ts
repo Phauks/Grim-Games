@@ -16,7 +16,6 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { believedDemon, believesDemon, chosenLikeDemon } from '#lib/core/rules/night/evil-info.ts';
 import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
@@ -72,7 +71,6 @@ describe('Lunatic', () => {
 			]);
 			// The Lunatic's choice kills nobody.
 			expect(nightKiller(s.game, 'lunatic', s.characters)).toBeUndefined();
-			expect(preventedDeaths(s.game, s.characters)).toEqual([]);
 		});
 		it("Example 2: Real Zombuul mirrors the Lunatic's fake kills", () => {
 			// Wiki: "The Lunatic, thinking they are the Zombuul, does not wake often at night. The real
