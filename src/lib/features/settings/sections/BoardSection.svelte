@@ -1,67 +1,23 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import StepFocusSetting, {
-		STEP_FOCUS_LABEL
-	} from '#lib/features/grimoire/night/StepFocusSetting.svelte';
-	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
-	import BoardLooksRows from './BoardLooksRows.svelte';
 	import BoardPreview from './BoardPreview.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
-	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
-	import BoardBackgroundRow from '#lib/features/board/BoardBackgroundRow.svelte';
-	import { boardBackground } from '#lib/features/board/board-background.svelte.ts';
-	import { defaultBackground } from '#lib/features/board/default-background.svelte.ts';
-	import { animationsOn } from '#lib/ui/animations.svelte.ts';
-	import MovingMotionRows from '#lib/features/board/moving/MovingMotionRows.svelte';
-	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
-	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
-	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';
+	import BoardBackgroundRows from './BoardBackgroundRows.svelte';
+	import BoardRows from './BoardRows.svelte';
+	import PinchZoomRow from './PinchZoomRow.svelte';
 
 	/**
 	 * How the grimoire board looks and behaves (Trevor, 2026-10-18: tokens have their own
-	 * section); the board's ⋯ > Settings opens all of Settings at its root.
+	 * section); the game pane's Theme shows the same rows beside the real board.
 	 */
-	const assistance = $derived(preferences.current.assistance);
-	/** The background the preview shows, as BoardPreview picks it. */
-	const shown = $derived(boardBackground.context?.current ?? defaultBackground.current);
 </script>
 
 <!-- A live preview beside the looks it shows (Trevor, 2026-10-20), as in Tokens. -->
 <SettingGroup title={t('settings.boardPreview')} testid="board-preview">
 	{#snippet preview()}<BoardPreview />{/snippet}
-	<!-- With a board open, its own background too (the board thread, Trevor 2026-10-18). -->
-	{#if boardBackground.context}<BoardBackgroundRow
-			board={boardBackground.context}
-		/>{:else}<DefaultBackgroundRow />{/if}
-	<MovingMotionRows enabled={shown?.kind === 'moving' && animationsOn()} />
-	<BoardLooksRows />
-	{#each STORYTELLER_GROUPS.board as key (key)}
-		<SettingToggle
-			label={ASSIST_LABELS[key].label}
-			description={ASSIST_LABELS[key].description}
-			checked={assistance[key]}
-			onChange={(checked) => preferences.update({ assistance: { ...assistance, [key]: checked } })}
-		/>
-	{/each}
-	<SettingRow label={STEP_FOCUS_LABEL}>
-		{#snippet control(labelId)}<StepFocusSetting labelledBy={labelId} />{/snippet}
-	</SettingRow>
-
-	<!-- The corner's lines, the same choices as the eyes in Game info (Trevor, 2026-10-24). -->
-	<SettingHeading title={t('settings.groupCorner')} />
-	{#each CORNER_LINES as line (line)}<CornerLineToggle {line} />{/each}
+	<BoardBackgroundRows />
+	<BoardRows />
 </SettingGroup>
 
-<!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms
-     every screen, but the board is where two hands rest on the screen. Outside the preview,
-     which it doesn't change; per device, never synced. -->
-<SettingToggle
-	label={t('settings.allowZoom')}
-	description={t('settings.allowZoomHelp')}
-	checked={preferences.current.allowZoom}
-	onChange={(allowZoom) => preferences.update({ allowZoom })}
-/>
+<!-- Outside the preview, which it doesn't change. -->
+<PinchZoomRow />
