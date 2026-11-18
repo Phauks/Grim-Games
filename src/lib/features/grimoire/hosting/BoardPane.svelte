@@ -69,7 +69,7 @@
 </div>
 
 {#snippet pane()}
-	<div class="side-pane" inert={hidden}>
+	<div class="side-pane" data-at={beside} inert={hidden}>
 		{#if !hidden}<StorytellerPane
 				game={grimoire.open}
 				run={(command) => grimoire.run(command)}
@@ -124,10 +124,13 @@
 		box-sizing: border-box;
 		height: 100%;
 		padding: var(--menu-inset) 0 0;
-		/* Its own inset is the gutter's, the same on both sides, not the beside pane's too. */
-		margin-inline-start: calc(-1 * var(--space-3));
 		/* Room for a band to reach out (Collapsible) and still keep the inset. */
 		--pane-gutter: calc(var(--menu-inset) + var(--space-2));
 		--players-bleed: 0rem;
+	}
+	/* Beside the board its own inset is the gutter's, the same on both sides, not the beside
+	   pane's too; under the board it keeps the screen's width. */
+	.side-pane[data-at='side'] {
+		margin-inline-start: calc(-1 * var(--space-3));
 	}
 </style>

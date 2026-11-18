@@ -206,9 +206,9 @@ async function walkTo(page: Page, title: string) {
 	for (const way of ['Next step', 'Previous step']) {
 		const button = strip.getByRole('button', { name: way });
 		for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) {
-			if (await button.isDisabled()) break;
-			// Next stays enabled on the last step, where it points at End night.
+			// The last step's Next is End night in the pane (Trevor, 2026-11-17), so stop there first.
 			if (way === 'Next step' && (await lastStep(strip))) break;
+			if (await button.isDisabled()) break;
 			await button.tap();
 		}
 	}
