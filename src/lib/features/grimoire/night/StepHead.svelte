@@ -54,6 +54,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		/* The pane's side inset (StorytellerPane). */
+		margin-inline: var(--pane-gutter, 0rem);
 	}
 	h2 {
 		margin: 0;

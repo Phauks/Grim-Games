@@ -34,7 +34,7 @@
 		grimoire: Grimoire;
 		step: NightStep | undefined;
 		compact?: boolean;
-		/** Leaves out who is drunk or poisoned, shown in the step's own Afflictions section. */
+		/** Leaves out who is drunk or poisoned, shown in the step's own Status section. */
 		withoutImpaired?: boolean;
 	}
 

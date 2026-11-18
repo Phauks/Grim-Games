@@ -779,6 +779,7 @@
 		bind:beside={paneAt}
 		day={dayPane}
 		night={nightPane}
+		{phase}
 		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
@@ -1154,6 +1155,7 @@
 			steps={nw.guidedSteps}
 			onStep={(step) => nw.open(step)}
 			onNext={() => nw.next() || flow.endHint++}
+			onEndNight={() => (flow.endNightOpen = true)}
 			walkNotes={{ asleepBy: nw.asleepRule, emptySeatBy: nw.emptySeatRule, attack: nw.attack }}
 			onStop={() => (nw.walk = undefined)}
 			onInfoTokens={(token, filled) => {

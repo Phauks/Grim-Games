@@ -9,7 +9,7 @@ import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
  * A drunk or poisoned player may be given any information, true or false
  * (https://wiki.bloodontheclocktower.com/Poisoner), so their night step offers the false
  * answers too, beside the true one (Trevor, 2026-10-27). Who poisoned them is the step's
- * Afflictions only, not repeated under Valid Information.
+ * Status only, not repeated under Valid Information.
  */
 
 async function startGame(page: Page) {
@@ -118,9 +118,9 @@ test('a poisoned Oracle is offered every count, not only the true one', async ({
 	await expect(rows.nth(0).locator('.option strong')).toHaveText('0');
 	await expect(rows.nth(1)).toHaveAttribute('data-reason', 'unreliable');
 	await expect(rows.nth(1).locator('.option strong')).toHaveText('1');
-	// Who poisoned the Oracle is under Afflictions, not here as well.
+	// Who poisoned the Oracle is under Status, not here as well.
 	await expect(suggested).not.toContainText('poisoned');
-	await expect(step.getByText('Afflictions')).toBeVisible();
+	await expect(step.getByRole('heading', { name: 'Status', exact: true })).toBeVisible();
 	await page.screenshot({ path: `test-results/poisoned-oracle-${test.info().project.name}.png` });
 	await rows.nth(1).getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('1');

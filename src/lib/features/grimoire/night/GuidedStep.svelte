@@ -118,6 +118,8 @@
 		onClose?: () => void;
 		/** Tonight's Next (NightWalk.next); without it Next only moves. */
 		onNext?: () => void;
+		/** Tonight's End night, in Next's place on the last step (StepFoot). */
+		onEndNight?: () => void;
 		/** What special rules say about tonight's step, beside the board (no strip there). */
 		walkNotes?: ComponentProps<typeof StepWalkNotes>;
 		/** Stops the walk-through, as the strip's ✕. */
@@ -138,6 +140,7 @@
 		onDrag,
 		onClose,
 		onNext,
+		onEndNight,
 		walkNotes,
 		onStop
 	}: Props = $props();
@@ -507,6 +510,9 @@
 				/>
 				<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
 			{/snippet}
+			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17), above the Steps:
+			     it is weighed before the step is run (Trevor, 2026-11-17). -->
+			<StepAfflictions {grimoire} {step} />
 			{#if textLines}
 				<h3>Steps</h3>
 				<!-- Minion info's and Demon info's cards sit on the lines that say to show them, as a
@@ -673,8 +679,6 @@
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). Over the open
 			     step, which stays open under the sheet, as with onShow above. -->
 			<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
-			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
-			<StepAfflictions {grimoire} {step} />
 			{#if rowsPlaced.rest.length > 0}
 				<h3>Reminders</h3>
 				<ul class="reminders">
@@ -685,7 +689,7 @@
 			{/if}
 		{/if}
 	</div>
-	{#if steps.length > 0}<StepFoot {index} count={steps.length} {go} {onNext} />{/if}
+	{#if steps.length > 0}<StepFoot {index} count={steps.length} {go} {onNext} {onEndNight} />{/if}
 </section>
 
 <ShowToPlayer
@@ -729,6 +733,8 @@
 		/* The pane's inset inside the scroll box (StorytellerPane). */
 		padding-inline: var(--pane-gutter, 0rem);
 		overflow-y: auto;
+		/* Room kept for the scrollbar, so nothing moves as it comes and goes (Trevor, 2026-11-17). */
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 	}
 	.who {

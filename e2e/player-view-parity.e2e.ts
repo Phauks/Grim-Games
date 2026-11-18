@@ -1,4 +1,4 @@
-import { paneDay, closePane, paneIsSheet } from './players.ts';
+import { paneDay, closePane, paneIsSheet, storytellerPane } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -109,7 +109,8 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	// (Trevor, 2026-10-28, option A).
 	await paneDay(page);
 	await expect(day).toBeVisible();
-	const votes = day.getByTestId('votes-needed');
+	// Above the pane's tabs (Trevor, 2026-11-17), so every tab shows it.
+	const votes = storytellerPane(page).getByTestId('votes-needed');
 	await expect(votes.getByTestId('exile-needed')).toHaveText('44');
 	await expect(votes).toHaveAccessibleName(/4 players must support an exile/);
 	const row = (await votes.locator('..').boundingBox())!;

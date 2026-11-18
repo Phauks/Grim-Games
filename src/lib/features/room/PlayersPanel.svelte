@@ -397,6 +397,8 @@
 		align-content: start;
 		min-height: 0;
 		overflow-y: auto;
+		/* Room kept for the scrollbar, so nothing moves as it comes and goes (Trevor, 2026-11-17). */
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain;
 		/* The pane's side inset inside this scroll box, so its scrollbar is flush (the pane's). */
 		padding: 0 var(--pane-gutter, 0rem) var(--space-3);

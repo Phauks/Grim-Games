@@ -49,7 +49,8 @@
 {/snippet}
 
 {#if rows.length > 0}
-	<h3>Afflictions</h3>
+	<!-- "Status" (Trevor, 2026-11-17: rename afflictions to status). -->
+	<h3>Status</h3>
 	<ul class="afflictions" data-testid="step-afflictions">
 		{#each rows as { seatId, impairment }, i (i)}
 			<li>

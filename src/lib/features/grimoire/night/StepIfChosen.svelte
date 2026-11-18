@@ -58,7 +58,7 @@
 				alert.source.characterId === game.seats[alert.seatId]?.characterId));
 </script>
 
-<!-- A source with its player where the board knows who holds it, as the step's Afflictions do. -->
+<!-- A source with its player where the board knows who holds it, as the step's Status does. -->
 {#snippet source(from: AbilitySource)}
 	{#if from.seatId}<SeatBadge
 			{game}

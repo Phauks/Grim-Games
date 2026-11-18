@@ -131,9 +131,9 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('announcements')).toHaveText('None');
 	// Only official characters, so no note about custom ones (L28).
 	await expect(page.getByTestId('custom-announcements')).toHaveCount(0);
-	// Living players and each team's, beside the votes (Trevor, 2026-10-17).
-	// Living of all players, as 8/8 (Trevor, 2026-10-17).
-	await expect(page.getByTestId('alive-count')).toHaveText('8/8');
+	// One pill for the living: good on its blue half, the heart, evil on its red half (Trevor,
+	// 2026-11-17, "B Folded into living"); the heart's name says how many of all are alive.
+	await expect(page.getByTestId('alive-count')).toHaveAccessibleName('8 of 8 players alive');
 	// No characters yet, so no team has anyone.
 	await expect(page.getByTestId('alive-good')).toHaveAccessibleName('0 good alive');
 	await expect(page.getByTestId('alive-evil')).toHaveText('0');
@@ -141,17 +141,18 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(page.getByTestId('ghost-votes')).toHaveText('0');
 	// The ghost is filled, like an unused ghost vote on the board (Trevor, 2026-10-19).
 	await expect(page.getByTestId('ghost-votes').locator('[data-icon$="-fill"]')).toHaveCount(1);
-	// Each count is filled in a colour of its own (Trevor, 2026-10-20: L21).
+	// Each count is filled in a colour of its own (Trevor, 2026-10-20: L21): the living's one
+	// pill (half blue, half red), the ghost votes and the votes.
 	const fills = await page
-		.getByTestId('day-toolbar')
-		.locator('.counts > .badge')
+		.getByTestId('day-counts')
+		.locator('.teams, .badge.ghost, .badge.votes')
 		.evaluateAll((els) =>
 			els.map((el) => {
 				const style = getComputedStyle(el);
 				return `${style.backgroundColor} ${style.backgroundImage}`;
 			})
 		);
-	expect(new Set(fills).size).toBe(5);
+	expect(new Set(fills).size).toBe(3);
 	// Nothing at the sides is cut off by a box that clips its overflow (Trevor, 2026-10-18).
 	for (const id of ['alive-count', 'votes-needed']) {
 		const clipped = await page.getByTestId(id).evaluate((el) => {
@@ -165,12 +166,12 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 		});
 		expect(clipped, id).toBe(false);
 	}
-	// All five counts on one line (Trevor, 2026-10-17).
+	// All the counts on one line (Trevor, 2026-10-17).
 	const tops = await page
-		.getByTestId('day-toolbar')
-		.locator('.counts > .badge')
+		.getByTestId('day-counts')
+		.locator('.teams, .badge.ghost, .badge.votes')
 		.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-	expect(tops).toHaveLength(5);
+	expect(tops).toHaveLength(3);
 	expect(new Set(tops).size).toBe(1);
 	// No Players section (Trevor, 2026-10-20): the board marks deaths, causes and ghost votes.
 	await expect(day.getByRole('heading', { name: 'Players' })).toHaveCount(0);
@@ -196,7 +197,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await openDay(page);
 	// A day death is not an announcement: those are the night's, for dawn (Trevor, 2026-10-18).
 	await expect(page.getByTestId('announcements')).toHaveText('None');
-	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
+	await expect(page.getByTestId('alive-count')).toHaveAccessibleName('7 of 8 players alive');
 	await expect(page.getByTestId('ghost-votes')).toHaveText('1');
 	// The ghost vote used on the board, then given back, is counted here.
 	await closeDay(page);
@@ -242,14 +243,17 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(table.locator('tbody')).toHaveText('None');
 	await closeCount();
 	// Every count is filled, the number on top: the teams in their colour (Trevor, 2026-10-19).
-	for (const id of ['alive-count', 'alive-good', 'alive-evil', 'ghost-votes', 'votes-needed']) {
+	// The living's three sit on their one pill, half blue and half red.
+	const pill = page.getByTestId('day-counts').locator('.teams');
+	expect(await pill.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain('gradient');
+	for (const id of ['ghost-votes', 'votes-needed']) {
 		const fill = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundColor);
 		expect(fill, id).not.toBe('rgba(0, 0, 0, 0)');
 	}
 
 	await page.reload();
 	await openDay(page);
-	await expect(page.getByTestId('alive-count')).toHaveText('7/8');
+	await expect(page.getByTestId('alive-count')).toHaveAccessibleName('7 of 8 players alive');
 	// 7 of 8 alive: 4 votes put a player on the block.
 	const votes = page.getByTestId('votes-needed');
 	await expect(votes).toHaveText('4');
@@ -265,7 +269,7 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	).toBeAttached();
 });
 
-test("the day's sections fold with their caret and their headers stick under the toolbar", async ({
+test("the day's sections fold with their caret and their headers stick at the top", async ({
 	page
 }) => {
 	// Twelve seats and their characters to set: about 25s locally, so room on a loaded runner.
@@ -288,7 +292,6 @@ test("the day's sections fold with their caret and their headers stick under the
 	for (const number of [9, 10, 11, 12]) await markDead(page, number, 'The Demon');
 	const day = await openDay(page);
 	await expect(page.getByTestId('announcements').getByTestId('spoken')).toHaveCount(4);
-	const toolbar = page.getByTestId('day-toolbar');
 	const sections = day.locator('.sections > .collapsible');
 	expect(await sections.count()).toBeGreaterThan(2);
 	// No Players section (Trevor, 2026-10-20); the Slayer's Used sits on the Slayer's own row.
@@ -314,31 +317,24 @@ test("the day's sections fold with their caret and their headers stick under the
 	await expect(announcementsHead.getByTestId('section-count')).toHaveText('4');
 	await announcementsHead.tap();
 
-	// A section's header stays just under the toolbar while its content scrolls (Trevor).
-	const scroller = toolbar.locator('xpath=../..');
-	// Announcements, scrolled until its top has passed under the toolbar.
+	// A section's header stays at the top while its content scrolls (Trevor); the counts sit
+	// above the pane's tabs (Trevor, 2026-11-17), so nothing is pinned above it.
 	const section = day.locator('.sections > .collapsible', {
 		has: page.getByTestId('announcements')
 	});
 	const head = section.locator('> .head');
-	const toolbarBottom = async () => {
-		const box = (await toolbar.boundingBox())!;
-		return box.y + box.height;
-	};
+	const scroller = section.locator('xpath=ancestor::div[contains(@class, "day-pane")]');
+	const top = async () => (await scroller.boundingBox())!.y;
 	await scroller.evaluate((el) => el.scrollTo(0, 0));
-	const sectionTop = (await section.boundingBox())!.y;
-	const by = sectionTop - (await toolbarBottom()) + 40;
+	const by = (await section.boundingBox())!.y - (await top()) + 40;
 	await scroller.evaluate((el, by) => el.scrollBy(0, by), by);
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
-	// The section's own top is now behind the toolbar.
-	expect((await section.boundingBox())!.y).toBeLessThan(await toolbarBottom());
-	await expect(toolbar).toBeInViewport();
+	// The section's own top is now scrolled past, its header held at the top.
+	expect((await section.boundingBox())!.y).toBeLessThan(await top());
 	await expect(head).toBeInViewport();
-	const toolbarBox = (await toolbar.boundingBox())!;
 	const headBox = (await head.boundingBox())!;
-	// Tucked just under the toolbar, its content scrolled up behind it.
-	expect(headBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height - 1);
-	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
+	expect(headBox.y).toBeGreaterThanOrEqual((await top()) - 2);
+	expect(headBox.y).toBeLessThan((await top()) + 12);
 });
 
 // https://wiki.bloodontheclocktower.com/Deviant: whether they were funny is the Storyteller's call.
@@ -397,7 +393,7 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await expect(page).toHaveURL(board);
 	await expect(page.getByTestId('pane-day')).toBeVisible();
 
-	await expect(page.getByTestId('alive-count')).toHaveText('9/9');
+	await expect(page.getByTestId('alive-count')).toHaveAccessibleName('9 of 9 players alive');
 	// Deaths are marked on the board's Status dialog (Trevor, 2026-10-20).
 	await closeDay(page);
 	const thief = await openStatus(page, 9);
@@ -422,7 +418,7 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 
 	const day = await openDay(page);
 	// 7 of 9 alive (the Thief exiled, Seat 3 dead): 4 votes.
-	await expect(page.getByTestId('alive-count')).toHaveText('7/9');
+	await expect(page.getByTestId('alive-count')).toHaveAccessibleName('7 of 9 players alive');
 	await expect(page.getByTestId('votes-needed')).toHaveAttribute('aria-label', /\(7 alive\)$/);
 	// The Demon's kill is announced; the exile, a day death, is not.
 	const announcements = page.getByTestId('announcements');

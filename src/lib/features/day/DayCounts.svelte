@@ -59,30 +59,30 @@
 	living, ghost votes left and votes to put a nominee on the block. Numbers with icons
 	or team colours; the words are in each one's accessible name.
 -->
-<div class="counts">
-	<!-- Each one opens how it was worked out (Trevor, 2026-10-19). -->
-	<CountBadge
-		kind="alive"
-		label={aliveLabel}
-		testid="alive-count"
-		onclick={() => openCount('alive', aliveLabel)}
-		><Icon name="alive" />{t('day.aliveBadge', {
-			count: teams.alive,
-			total: g.seating.length
-		})}</CountBadge
-	>
-	<CountBadge
-		kind="good"
-		label={goodLabel}
-		testid="alive-good"
-		onclick={() => openCount('good', goodLabel)}>{teams.good}</CountBadge
-	>
-	<CountBadge
-		kind="evil"
-		label={evilLabel}
-		testid="alive-evil"
-		onclick={() => openCount('evil', evilLabel)}>{teams.evil}</CountBadge
-	>
+<div class="counts" data-testid="day-counts">
+	<!-- Each one opens how it was worked out (Trevor, 2026-10-19). The living as one pill: good
+	     on its blue half, the heart in the middle, evil on its red half (Trevor, 2026-11-17, "B
+	     Folded into living"); each part still its own tap. -->
+	<span class="teams">
+		<CountBadge
+			kind="good"
+			label={goodLabel}
+			testid="alive-good"
+			onclick={() => openCount('good', goodLabel)}>{teams.good}</CountBadge
+		>
+		<CountBadge
+			kind="alive"
+			label={aliveLabel}
+			testid="alive-count"
+			onclick={() => openCount('alive', aliveLabel)}><Icon name="alive" /></CountBadge
+		>
+		<CountBadge
+			kind="evil"
+			label={evilLabel}
+			testid="alive-evil"
+			onclick={() => openCount('evil', evilLabel)}>{teams.evil}</CountBadge
+		>
+	</span>
 	<CountBadge
 		kind="ghost"
 		label={ghostLabel}
@@ -135,6 +135,34 @@
 	 * One line however narrow (Trevor, 2026-10-17): five equal cells sharing the width, the
 	 * numbers shrinking only on the narrowest phones with the largest text.
 	 */
+	/*
+	 * The living as one pill (Trevor, 2026-11-17, "B Folded into living"): the pill is drawn
+	 * here, half blue, half red, each half's edge a lighter tint of its own colour (the "thin
+	 * same-colour edge"); the three counts are taps on it with no fill of their own.
+	 */
+	.teams {
+		display: flex;
+		flex: 1 1 auto;
+		box-sizing: border-box;
+		min-width: 0;
+		min-height: var(--tap-target);
+		border: 1px solid transparent;
+		border-radius: var(--radius-full);
+		background:
+			linear-gradient(to right, var(--good) 50%, var(--evil) 50%) padding-box,
+			linear-gradient(to right, var(--good-text) 50%, var(--evil-text) 50%) border-box;
+	}
+	.teams > :global(.badge) {
+		flex: 1 1 0;
+		min-height: 0;
+		border-width: 0;
+		background: none;
+	}
+	/* The heart on the split, as wide as its icon. */
+	.teams > :global(.badge.alive) {
+		flex: none;
+		padding: 0;
+	}
 	.counts {
 		container-type: inline-size;
 		display: flex;

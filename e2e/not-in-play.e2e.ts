@@ -54,7 +54,7 @@ async function endTheNight(page: Page) {
 async function aliveCount(page: Page) {
 	await paneDay(page);
 	await expect(page.getByTestId('alive-count')).toBeVisible();
-	const text = await page.getByTestId('alive-count').textContent();
+	const text = await page.getByTestId('alive-count').getAttribute('aria-label');
 	await closePane(page);
 	if (await paneIsSheet(page)) await expect(daySheet(page)).toBeHidden();
 	return text;
@@ -115,7 +115,7 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 	await expect(arrival).toHaveAccessibleName(/Thief.*not in play/);
 	await expect(arrival.getByTestId('not-in-play')).toHaveText('Not in play');
 	// Not counted: 8 alive of 8, not 9.
-	expect(await aliveCount(page)).toBe('8/8');
+	expect(await aliveCount(page)).toBe('8 of 8 players alive');
 
 	// Tonight offers to bring them in; the night alone does not.
 	await execution(page);
@@ -132,7 +132,7 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 	await expect(arrival).not.toHaveAccessibleName(/not in play/);
 	await expect(arrival.getByTestId('not-in-play')).toHaveCount(0);
 	await endTheNight(page);
-	expect(await aliveCount(page)).toBe('9/9');
+	expect(await aliveCount(page)).toBe('9 of 9 players alive');
 });
 
 test('only a Traveller is offered Not in play', async ({ page }) => {

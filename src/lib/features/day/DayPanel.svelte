@@ -46,7 +46,6 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import DayTimer from './DayTimer.svelte';
 	import DayAnnouncements from './DayAnnouncements.svelte';
-	import DayCounts from './DayCounts.svelte';
 	import { CLAIM_KEYS, type DayPort, type NoteClaim } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
@@ -433,14 +432,14 @@
 {/snippet}
 
 <div class="panel">
-	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), headers under it; a wide day's left column. -->
-	<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
-		{#if timer}<DayTimer alive={block.alive} {quiet} {town} />{/if}
-		{#if onOpenNight}
-			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
-		{/if}
-		<DayCounts {game} />
-	</div>
+	<!-- Pinned as the day scrolls (Trevor, 2026-10-17), headers under it; a wide day's left column.
+	     The counts sit above the Game pane's tabs (DayCounts, Trevor 2026-11-17). -->
+	{#if timer || onOpenNight}<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
+			{#if timer}<DayTimer alive={block.alive} {quiet} {town} />{/if}
+			{#if onOpenNight}
+				<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
+			{/if}
+		</div>{/if}
 	<!-- Beside the toolbar on a wide screen (Trevor, 2026-10-23: L45), under it on a phone. -->
 	<div class="sections">
 		<DayAnnouncements {game} />

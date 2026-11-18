@@ -82,7 +82,7 @@
 	/**
 	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn after
 	 * the text, so their characters show as badges. Who made the player drunk or poisoned is the
-	 * step's Afflictions, not repeated here (Trevor, 2026-10-27).
+	 * step's Status, not repeated here (Trevor, 2026-10-27).
 	 */
 	interface Flag {
 		text: string;
