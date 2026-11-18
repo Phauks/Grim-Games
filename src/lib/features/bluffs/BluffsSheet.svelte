@@ -63,6 +63,11 @@
 		 * the sets to read, with nothing to choose, clear or show.
 		 */
 		readOnly?: boolean;
+		/**
+		 * In the Storyteller's pane, under Game beside the Night (Trevor, 2026-11-18: "bluffs
+		 * under game"), rather than a sheet over the board.
+		 */
+		inline?: boolean;
 	}
 
 	let {
@@ -72,7 +77,8 @@
 		dispatch,
 		inPlay: given,
 		start,
-		readOnly = false
+		readOnly = false,
+		inline = false
 	}: Props = $props();
 
 	let editing = $state<number>();
@@ -206,12 +212,7 @@
 	}
 </script>
 
-<BottomSheet
-	bind:open
-	title={editing === undefined ? t('bluffs.title') : pickTitle(editing)}
-	height="85dvh"
-	wide
->
+{#snippet body()}
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
 	<ErrorBoundary area="bluffs">
 		{#if editing === undefined}
@@ -332,7 +333,24 @@
 		title={notInPlay}
 		characters={lookup(showing).map((character) => ({ character, alignment: 'good' as const }))}
 	/>
-</BottomSheet>
+{/snippet}
+
+{#if inline}
+	<div class="inline" data-testid="pane-bluffs">
+		<!-- The picker names its set and count, as the sheet's title does. -->
+		{#if editing !== undefined}<h3 class="pick-title">{pickTitle(editing)}</h3>{/if}
+		{@render body()}
+	</div>
+{:else}
+	<BottomSheet
+		bind:open
+		title={editing === undefined ? t('bluffs.title') : pickTitle(editing)}
+		height="85dvh"
+		wide
+	>
+		{@render body()}
+	</BottomSheet>
+{/if}
 
 <ConfirmDialog
 	bind:open={inPlayOpen}
@@ -393,6 +411,20 @@
 </ConfirmDialog>
 
 <style>
+	.inline {
+		flex: 1;
+		min-height: 0;
+		padding-inline: var(--pane-gutter, 0rem);
+		overflow-y: auto;
+		scrollbar-gutter: stable;
+		overscroll-behavior: contain;
+	}
+	.pick-title {
+		margin: 0 0 var(--space-2);
+		font-family: var(--font-control);
+		font-size: 1rem;
+		color: var(--heading);
+	}
 	.add {
 		display: flex;
 		justify-content: flex-start;

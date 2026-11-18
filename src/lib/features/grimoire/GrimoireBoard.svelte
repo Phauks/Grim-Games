@@ -53,7 +53,9 @@
 	} from '#lib/core/rules/rule-sources.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
-	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
+	import SoundboardLink from '#lib/features/sound/SoundboardLink.svelte';
+	import PaneSeats from './hosting/PaneSeats.svelte';
+	import PaneSession from './hosting/PaneSession.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -76,7 +78,6 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import HistoryDialog from './HistoryDialog.svelte';
 	import { sidePane } from '#lib/features/room/side-pane.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { endGameRequest } from './end-game-request.svelte.ts';
@@ -374,7 +375,6 @@
 	}
 
 	// ── Notes: the game's and every player's, on Players (Trevor, 2026-10-29) ──
-	let soundboardOpen = $state(false);
 	/**
 	 * A seat's note mark opens that player's sheet on Players, with their notes and messages.
 	 * After the tap's click, so it doesn't land in the field.
@@ -496,7 +496,6 @@
 				!game.seating.some((id) => game.seats[id].characterId !== undefined))
 	);
 	let bluffsOpen = $state(false);
-	let historyOpen = $state(false);
 	// End game asked for from the day (the Fiddle contest) opens over the board: a phone's pane
 	// steps aside.
 	$effect.pre(() => void (endGameRequest.pending && sidePane.hide()));
@@ -779,6 +778,9 @@
 		bind:beside={paneAt}
 		day={dayPane}
 		night={nightPane}
+		bluffs={gameHasDemonBluffs(game.gameId)}
+		seats={seatsView}
+		session={sessionView}
 		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
@@ -812,7 +814,7 @@
 				onInfo={() => (infoOpen = true)}
 				onScript={() => (scriptOpen = true)}
 				onShare={() => (phonesOpen = true)}
-				onMore={() => (menuOpen = true)}
+				onMore={watching ? () => (menuOpen = true) : undefined}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26); a spectator's too. -->
 				{#snippet lead()}
@@ -983,37 +985,37 @@
 			ended: !!ended
 		}}
 	/>
-	<SoundboardDialog bind:open={soundboardOpen} />
+	<SoundboardLink />
 {/if}
 
-<!-- Less frequent actions, in an overlay so the toolbar fits a phone. -->
-<BoardMenu
-	bind:open={menuOpen}
-	{watching}
-	gameInfo={cornerHidden}
-	ended={!!ended}
-	onHistory={() => (historyOpen = true)}
-	onInfo={() => (infoOpen = true)}
-	onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
-	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
-	onGameInfo={() => (modeMenuOpen = true)}
-	onCharacterSelection={startedAt === undefined && !setUp && !watching && !ended
-		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
-		: undefined}
-	onLatePlayer={startedAt === undefined &&
-	setUp &&
-	game.pastDays.length === 0 &&
-	!watching &&
-	!ended
-		? () => latePlayer?.start()
-		: undefined}
-	onAddRule={() => rules?.add()}
-	onArrange={() => enterSeating(seatArr)}
-	onReopen={() => (reopenOpen = true)}
-	newGame={watching ? undefined : newGameSheet}
-	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
-	onEnd={() => (endOpen = true)}
-/>
+<!-- The ⋯ menu is a spectator's only: the Storyteller's is the pane's More (Trevor, 2026-11-18). -->
+{#if watching}<BoardMenu
+		bind:open={menuOpen}
+		{grimoire}
+		gameInfo={cornerHidden}
+		onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
+		onGameInfo={() => (modeMenuOpen = true)}
+	/>{/if}
+{#snippet seatsView()}
+	<PaneSeats onAddRule={() => rules?.add()} onArrange={() => enterSeating(seatArr)} />
+{/snippet}
+{#snippet sessionView()}
+	<PaneSession
+		gameInfo={cornerHidden}
+		ended={!!ended}
+		onGameInfo={() => (modeMenuOpen = true)}
+		onCharacterSelection={startedAt === undefined && !setUp && !ended
+			? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
+			: undefined}
+		onLatePlayer={startedAt === undefined && setUp && game.pastDays.length === 0 && !ended
+			? () => latePlayer?.start()
+			: undefined}
+		onReopen={() => (reopenOpen = true)}
+		newGame={newGameSheet}
+		onCloseRoom={roomHost().code ? () => roomHost().close() : undefined}
+		onEnd={() => (endOpen = true)}
+	/>
+{/snippet}
 {#if !watching}<NewGameSheet
 		bind:this={newGameSheet}
 		{game}
@@ -1097,7 +1099,6 @@
 <!-- The board's nomination marks: who did this player nominate? (Trevor, 2026-10-23) -->
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
-<HistoryDialog bind:open={historyOpen} {grimoire} />
 {#if !watching}<LateSeatOnBoard bind:this={latePlayer} {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />

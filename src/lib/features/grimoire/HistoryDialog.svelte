@@ -12,11 +12,18 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 
 	interface Props {
-		open: boolean;
+		open?: boolean;
 		grimoire: Grimoire;
+		/**
+		 * In the Storyteller's pane, beside the board, rather than over it (Trevor, 2026-11-18:
+		 * "make it populate in the right sidebar, so that you can see both at the same time").
+		 */
+		inline?: boolean;
 	}
 
-	let { open = $bindable(), grimoire }: Props = $props();
+	let { open = $bindable(false), grimoire, inline = false }: Props = $props();
+	/** Shown: in the pane, whenever the view is; otherwise while the dialog is open. */
+	const visible = $derived(inline || open);
 
 	const characters = $derived(grimoire.open.characters);
 	const cursor = $derived(grimoire.open.session.log.cursor);
@@ -24,14 +31,14 @@
 	const savedCursor = $derived(grimoire.open.savedCursor);
 	// Only built while open: it replays the whole log.
 	const items = $derived(
-		open ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
+		visible ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
 	);
 	// ── Filter by player (Trevor, 2026-10-19; by character before, 2026-10-16): any of those
 	// chosen, in a fixed row. A seat stays one player when its character changes, and two
 	// seats with the same character stay two. ──
 	let chosenSeats = $state<SeatId[]>([]);
 	$effect(() => {
-		if (!open) chosenSeats = [];
+		if (!visible) chosenSeats = [];
 	});
 	/** Every seat History names: in seating order, then seats since removed. */
 	const named = $derived.by(() => {
@@ -81,7 +88,7 @@
 	}
 </script>
 
-<Dialog bind:open title="History" size="full">
+{#snippet body()}
 	<div class="filter" role="group" aria-label="Show changes for">
 		<button
 			type="button"
@@ -128,7 +135,13 @@
 			<li class="none">None</li>
 		{/each}
 	</ol>
-</Dialog>
+{/snippet}
+
+{#if inline}<div class="inline" data-testid="history">{@render body()}</div>{:else}<Dialog
+		bind:open
+		title="History"
+		size="full">{@render body()}</Dialog
+	>{/if}
 
 <ConfirmDialog bind:open={confirmOpen} title="Restore?" onConfirm={confirm}>
 	{#if chosen}
@@ -149,6 +162,14 @@
 </ConfirmDialog>
 
 <style>
+	/* In the pane: the filter row stays, the list scrolls in its own part, inside the gutter. */
+	.inline {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+		padding-inline: var(--pane-gutter, 0rem);
+	}
 	/* One fixed row, scrolled sideways, so filtering never moves the list (Trevor). */
 	.filter {
 		display: flex;

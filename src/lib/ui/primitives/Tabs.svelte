@@ -53,7 +53,7 @@
 		 * that slides between them, as the gold section pills below them (Trevor, 2026-11-17,
 		 * picked "B Segmented track" for the Game pane).
 		 */
-		segmented?: boolean;
+		segmented?: boolean | 'minor';
 		/**
 		 * Bottom bar only: a button at the end of the bar, drawn as a tab is and filled while
 		 * on, that shows `aside` beside whichever tab is chosen (the player screen's Notes
@@ -162,7 +162,12 @@
 {/snippet}
 
 <Tabs.Root
-	class={[bottom && 'bottom', dense && 'dense', segmented && !bottom && 'segmented']}
+	class={[
+		bottom && 'bottom',
+		dense && 'dense',
+		segmented && !bottom && 'segmented',
+		segmented === 'minor' && !bottom && 'minor'
+	]}
 	value={selected}
 	onValueChange={(details) => (value = details.value as T)}
 	lazyMount={!steady}
@@ -344,19 +349,37 @@
 		border-radius: var(--radius-full);
 		background: var(--surface-selected);
 	}
-	:global(.segmented) :global([data-scope='tabs'][data-part='trigger']) {
+	/* Only this rail's own tabs, so a rail inside one of its panels keeps its own look. */
+	:global(.segmented) > .bar > :global([data-part='list']) > :global([data-part='trigger']) {
 		position: relative;
 		z-index: var(--z-above);
 		border-radius: var(--radius-full);
 	}
-	:global(.segmented) :global([data-scope='tabs'][data-part='trigger'][data-selected]) {
+	:global(.segmented)
+		> .bar
+		> :global([data-part='list'])
+		> :global([data-part='trigger'][data-selected]) {
 		color: var(--surface);
 	}
-	:global(.segmented) :global([data-scope='tabs'][data-part='indicator']) {
+	:global(.segmented) > .bar > :global([data-part='list']) > :global([data-part='indicator']) {
 		top: var(--top);
 		height: var(--height);
 		border-radius: var(--radius-full);
 		background: var(--heading);
+	}
+	/* A view's rail under its subject's (Trevor, 2026-11-18: "a repetition of the nav, but in a
+	   slightly different color with slightly smaller font"; "the red pill, but it needs a rail"). */
+	:global(.minor) > .bar > :global([data-part='list']) > :global([data-part='trigger']) {
+		font-size: 0.85em;
+	}
+	:global(.minor)
+		> .bar
+		> :global([data-part='list'])
+		> :global([data-part='trigger'][data-selected]) {
+		color: var(--on-accent);
+	}
+	:global(.minor) > .bar > :global([data-part='list']) > :global([data-part='indicator']) {
+		background: var(--accent);
 	}
 	/* All panels in one cell: the hidden ones keep their room but can't be seen or reached. */
 	.steady {

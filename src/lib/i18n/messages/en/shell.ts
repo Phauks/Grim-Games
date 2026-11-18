@@ -60,6 +60,7 @@ export const shell = {
 	'shell.supportIntro': `${APP_NAME} is free, with no ads. If it helps your games, you can support it on Ko-fi.`,
 	'shell.supportKofi': 'Support on Ko-fi',
 	'shell.reportIssue': 'Report an issue',
+	'shell.fullScreen': 'Full screen',
 	'shell.switchToBeta': 'Switch to beta',
 	'shell.switchToProduction': 'Switch to production',
 	'shell.switchBuildTitle':
