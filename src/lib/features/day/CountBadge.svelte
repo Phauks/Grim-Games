@@ -12,10 +12,12 @@
 		label: string;
 		testid?: string;
 		onclick?: () => void;
+		/** Its seats marked on the board (count-highlight): ringed, as a toggle that is on. */
+		pressed?: boolean;
 		children: Snippet;
 	}
 
-	let { kind, label, testid, onclick, children }: Props = $props();
+	let { kind, label, testid, onclick, pressed, children }: Props = $props();
 </script>
 
 {#if onclick}
@@ -25,6 +27,7 @@
 		data-testid={testid}
 		aria-label={label}
 		title={label}
+		aria-pressed={pressed}
 		{onclick}>{@render children()}</button
 	>
 {:else}
@@ -57,6 +60,9 @@
 	}
 	button.badge {
 		cursor: pointer;
+	}
+	button.badge[aria-pressed='true'] {
+		border-color: var(--on-surface);
 	}
 	/* The team counts in their team's colour. --on-good reads on both teams (badge-colours.test.ts). */
 	/* Each team's edge in a lighter tint of its own colour, so it reads on a dark surface with

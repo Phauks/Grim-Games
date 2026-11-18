@@ -12,13 +12,16 @@
 	import CountBadge from './CountBadge.svelte';
 	import CountDialog from './CountDialog.svelte';
 	import type { DayPort } from './day-port.ts';
+	import { countHighlight } from './count-highlight.svelte.ts';
 
 	/** The day's counts, each opening how it was worked out (moved from DayPanel). */
 	interface Props {
 		game: DayPort;
+		/** Beside the board: a count marks its seats there instead of opening (count-highlight). */
+		onBoard?: boolean;
 	}
 
-	let { game }: Props = $props();
+	let { game, onBoard = false }: Props = $props();
 	/** Seats not in play yet count for nothing (Trevor, 2026-10-31). */
 	const g = $derived(inPlay(game.game));
 
@@ -48,10 +51,18 @@
 	let countShown = $state<DayCount | 'votes'>();
 	let countTitle = $state('');
 	function openCount(count: DayCount | 'votes', title: string) {
+		// The votes needed have no seats of their own: they still open how they are worked out.
+		if (onBoard && count !== 'votes') return countHighlight.toggle(count);
 		countShown = count;
 		countTitle = title;
 		countOpen = true;
 	}
+	const marked = (count: DayCount) => onBoard && countHighlight.current === count;
+	// The board stops marking when the counts go: the Day tab left, or the pane a sheet.
+	$effect(() => {
+		if (!onBoard) return;
+		return () => countHighlight.clear();
+	});
 </script>
 
 <!--
@@ -62,22 +73,30 @@
 <div class="counts" data-testid="day-counts">
 	<!-- Each one opens how it was worked out (Trevor, 2026-10-19). The living as one pill: good
 	     on its blue half, the heart in the middle, evil on its red half (Trevor, 2026-11-17, "B
-	     Folded into living"); each part still its own tap. -->
+	     Folded into living"); each part still its own tap. The heart with the living total
+	     (Trevor, 2026-11-18: "the total count of living players more informational"). -->
 	<span class="teams">
 		<CountBadge
 			kind="good"
+			pressed={marked('good')}
 			label={goodLabel}
 			testid="alive-good"
 			onclick={() => openCount('good', goodLabel)}>{teams.good}</CountBadge
 		>
 		<CountBadge
 			kind="alive"
+			pressed={marked('alive')}
 			label={aliveLabel}
 			testid="alive-count"
-			onclick={() => openCount('alive', aliveLabel)}><Icon name="alive" /></CountBadge
+			onclick={() => openCount('alive', aliveLabel)}
+			><Icon name="alive" />{t('day.aliveBadge', {
+				count: teams.alive,
+				total: g.seating.length
+			})}</CountBadge
 		>
 		<CountBadge
 			kind="evil"
+			pressed={marked('evil')}
 			label={evilLabel}
 			testid="alive-evil"
 			onclick={() => openCount('evil', evilLabel)}>{teams.evil}</CountBadge
@@ -85,6 +104,7 @@
 	</span>
 	<CountBadge
 		kind="ghost"
+		pressed={marked('ghostVotes')}
 		label={ghostLabel}
 		testid="ghost-votes"
 		onclick={() => openCount('ghostVotes', ghostLabel)}
@@ -161,7 +181,7 @@
 	/* The heart on the split, as wide as its icon. */
 	.teams > :global(.badge.alive) {
 		flex: none;
-		padding: 0;
+		padding: 0 var(--space-1);
 	}
 	.counts {
 		container-type: inline-size;

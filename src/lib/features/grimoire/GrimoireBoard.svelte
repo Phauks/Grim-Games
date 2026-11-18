@@ -779,7 +779,6 @@
 		bind:beside={paneAt}
 		day={dayPane}
 		night={nightPane}
-		{phase}
 		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
