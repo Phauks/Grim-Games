@@ -137,6 +137,11 @@
 		countOpen?: boolean;
 		/** Starts closed until opened (e.g. About's Advanced part); remembered like any other. */
 		defaultOpen?: boolean;
+		/**
+		 * What it holds is only made while it is open, e.g. one of many rows that each open to a
+		 * list of their own (Players' rows).
+		 */
+		lazy?: boolean;
 		/** Kept in place but can't open yet, e.g. while what it holds is still loading. */
 		disabled?: boolean;
 		/**
@@ -166,6 +171,7 @@
 		countOpen = false,
 		defaultOpen = true,
 		disabled = false,
+		lazy = false,
 		pinned = true,
 		children
 	}: Props = $props();
@@ -245,7 +251,7 @@
 		{#if aside}<div class="aside">{@render aside()}</div>{/if}
 	</div>
 	<div id="{id}-body" class="body" hidden={!shown}>
-		{@render children()}
+		{#if shown || !lazy}{@render children()}{/if}
 	</div>
 </section>
 
@@ -337,6 +343,11 @@
 	   stopped short of the band's edge (Trevor, 2026-11-17: "doesn't touch the edge"). */
 	.head[data-type-band] .aside :global(.button[data-variant='quiet']) {
 		box-shadow: none;
+	}
+	/* An icon button on a band (Players' eye) takes the band's text colour, as its title does
+	   (Trevor, 2026-11-18: "eyeball in players should match color of text in row"). */
+	.head[data-type-band] .aside :global(.icon-button) {
+		color: var(--on-type-band);
 	}
 	.toggle[aria-disabled='true'] {
 		cursor: default;

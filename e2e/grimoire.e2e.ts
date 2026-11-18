@@ -4072,8 +4072,8 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	await expect(players.getByTestId('room-player').first()).toBeVisible();
 	const ana = players.getByTestId('room-player').filter({ hasText: 'Ana' });
 	await ana.getByRole('button').tap();
-	await expect(ana.getByRole('button')).toHaveAttribute('aria-current', 'true');
-	const player = players.getByTestId('room-player-sheet');
+	await expect(ana.getByRole('button').first()).toHaveAttribute('aria-expanded', 'true');
+	const player = ana.getByTestId('room-player-sheet');
 	await expect(player).toHaveAttribute('data-seat', /.+/);
 	const playerCards = noteRows(player);
 	await expect(playerCards).toHaveCount(0);
@@ -4103,7 +4103,7 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	await mark.tap();
 	const seatCards = noteRows(player);
 	await expect(player).toBeVisible();
-	await expect(ana.getByRole('button')).toHaveAttribute('aria-current', 'true');
+	await expect(ana.getByRole('button').first()).toHaveAttribute('aria-expanded', 'true');
 	await expectNotes(player, ['Word: Secret word: lantern', 'Claim: Chef: 1']);
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
 	// A note's trash deletes it after asking.
@@ -4124,7 +4124,7 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	await again.getByRole('button', { name: 'Seat actions' }).tap();
 	await page.getByRole('dialog', { name: 'Ana' }).getByRole('button', { name: 'Notes' }).tap();
 	await expect(player).toBeVisible();
-	await expect(player.locator('[data-character-id="poisoner"]')).toBeVisible();
+	await expect(ana.locator('[data-character-id="poisoner"]')).toBeVisible();
 	await addNote(page, player, { title: 'Bluffs' });
 	await expectNotes(player, ['Word: Secret word: lantern', 'Bluffs']);
 	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });

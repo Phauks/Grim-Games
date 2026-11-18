@@ -73,8 +73,8 @@ test("a seated player's message marks their seat, and the mark opens them in Pla
 		'true'
 	);
 	const row = pane.getByTestId('room-player').filter({ hasText: 'Alex' });
-	await expect(row.getByRole('button')).toHaveAttribute('aria-current', 'true');
-	const item = pane.getByTestId('room-player-sheet').getByTestId('inbox-item');
+	await expect(row.getByRole('button').first()).toHaveAttribute('aria-expanded', 'true');
+	const item = row.getByTestId('room-player-sheet').getByTestId('inbox-item');
 	await expect(item).toContainText('Can we talk about my info?');
 	// Drawn as a note is: a line under it, the words in the notes' lighter well.
 	await expect(item.locator('.preview')).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');

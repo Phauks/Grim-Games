@@ -62,16 +62,22 @@ export async function openPlayers(page: Page) {
 	return openPane(page, 'Players');
 }
 
+/** A player's row in Players: its header opens their messages and notes beneath it. */
+export function playerRow(players: Locator, name: string) {
+	const row = players.getByTestId('room-player').filter({ hasText: name });
+	return { row, toggle: row.getByRole('button').first() };
+}
+
 /**
- * Opens Players at one player: their line tapped, so their messages, notes and reported
- * picture show beside the list (below it in the pane) (Trevor, 2026-11-01).
+ * Opens Players at one player: their row opened, so their messages and notes show beneath it
+ * (Trevor, 2026-11-18).
  */
 export async function openPlayerSheet(page: Page, name: string) {
 	const players = await openPlayers(page);
-	const row = players.getByTestId('room-player').filter({ hasText: name });
-	await row.getByRole('button').tap();
-	await expect(row.getByRole('button')).toHaveAttribute('aria-current', 'true');
-	const sheet = players.getByTestId('room-player-sheet');
+	const { row, toggle } = playerRow(players, name);
+	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+	const sheet = row.getByTestId('room-player-sheet');
 	await expect(sheet).toBeVisible();
 	return sheet;
 }
