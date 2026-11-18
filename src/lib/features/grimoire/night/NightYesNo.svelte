@@ -10,6 +10,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import { boardPick } from '#lib/features/grimoire/seats/board-pick.svelte.ts';
 	import NightReasonTag from './NightReasonTag.svelte';
 
 	/**
@@ -26,9 +27,11 @@
 		onShowAnswer?: (answer: string) => void;
 		/** An answer was shown to the player: record it (`record-shown.ts`). */
 		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
+		/** Beside the board: the next player chosen is picked by tapping their seat there. */
+		pickOnBoard?: boolean;
 	}
 
-	let { grimoire, step, onShowAnswer, onRecord }: Props = $props();
+	let { grimoire, step, onShowAnswer, onRecord, pickOnBoard = false }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -48,6 +51,28 @@
 		chosen = { ...chosen, [p.seatId]: next };
 	}
 	const chosenOf = (p: InfoPicker) => picked(p).filter((s): s is SeatId => s !== undefined);
+	/**
+	 * The first field still empty waits for a seat tapped on the board (Trevor, 2026-11-17),
+	 * marked as a reminder in hand marks its seats; its drop-down still works.
+	 */
+	const waiting = $derived.by(() => {
+		if (!pickOnBoard) return undefined;
+		for (const p of pickers)
+			for (let n = 0; n < p.seatCount; n++) if (picked(p)[n] === undefined) return { p, n };
+		return undefined;
+	});
+	$effect(() => {
+		const at = waiting;
+		if (!at) return;
+		const { p, n } = at;
+		return boardPick.ask({
+			characterId: step.character?.id,
+			label: 'Chosen',
+			seats: yesNoSeats(game, p),
+			sources: [p.seatId],
+			pick: (seatId) => choose(p, n, seatId)
+		});
+	});
 	const answers = (p: InfoPicker) => {
 		const seats = chosenOf(p);
 		return new Set(seats).size === p.seatCount ? yesNoAnswers(game, p, seats) : [];

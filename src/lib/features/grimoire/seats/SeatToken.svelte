@@ -318,6 +318,7 @@
 	data-role={role}
 	data-misfit={misfit || undefined}
 	data-testid="seat"
+	data-seat-id={seat.seatId}
 	data-hold-moves={onHold ? '' : undefined}
 	aria-label={label}
 	style:--size="{size}px"

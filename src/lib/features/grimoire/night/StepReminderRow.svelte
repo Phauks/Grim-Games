@@ -2,15 +2,16 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/characters.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
 	import { placingAlignment } from '#lib/features/grimoire/board.ts';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 
 	/**
-	 * One copy of a night step's reminder token (`GuidedStep`): the token, where it is, Place or
-	 * Move, and back to the reminder bank. Beneath the line that names it, or under Reminders.
+	 * One copy of a night step's reminder token (`GuidedStep`): the token, where it is, and back
+	 * to the reminder bank. Beneath the line that names it, or under Reminders. No Move button
+	 * (Trevor, 2026-11-17, "C Tap badge to move"): where it is is the button that places or
+	 * moves it, as tapping or dragging the token does, so the seat's badge has the room.
 	 */
 	interface Props {
 		game: Game;
@@ -32,55 +33,65 @@
 </script>
 
 <span class="reminder-row">
-	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
+	<!-- The token itself, as on the board (Trevor, 2026-10-30), never squeezed. -->
 	<!-- Tapped, as Place or Move; dragged, onto the board (Trevor, 2026-11-16). -->
-	<BoardReminder
-		{label}
-		{character}
-		alignment={character ? placingAlignment(game, character.id, characters) : undefined}
-		ariaLabel={`${label} token`}
-		onTap={onchoose}
-		onDrag={ondrag && ((x, y, end) => ondrag(x, y, end))}
-		onCancel={ondrag && (() => ondrag(0, 0, 'cancel'))}
-	/>
-	<!-- The seat and its character (Trevor, 2026-10-18): the badge with its player, shortened
-	     rather than past the step's edge (2026-11-12). -->
-	<span class="where"
-		>{#if at}<SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
+	<span class="token"
+		><BoardReminder
+			{label}
+			{character}
+			alignment={character ? placingAlignment(game, character.id, characters) : undefined}
+			ariaLabel={`${label} token`}
+			onTap={onchoose}
+			onDrag={ondrag && ((x, y, end) => ondrag(x, y, end))}
+			onCancel={ondrag && (() => ondrag(0, 0, 'cancel'))}
+		/></span
 	>
-	<!-- On the token's line, so a reminder takes one row (Trevor, 2026-11-16). -->
-	<span class="actions">
-		<Button variant="quiet" onclick={onchoose}>{at ? 'Move' : 'Place'}</Button>
-		<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17);
-		     there but unusable while not placed. -->
-		<DeleteButton
-			label={`Return ${label} to the reminder bank`}
-			disabled={!at}
-			onclick={() => at && onreturn(at.reminderId)}
-		/>
-	</span>
+	<!-- The seat and its character (Trevor, 2026-10-18), whole: tapping it places or moves the
+	     token. -->
+	<button
+		type="button"
+		class="where"
+		aria-label={at ? 'Move' : 'Place'}
+		title={at ? 'Move' : 'Place'}
+		onclick={onchoose}
+		>{#if at}<SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</button
+	>
+	<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17);
+	     there but unusable while not placed. -->
+	<DeleteButton
+		label={`Return ${label} to the reminder bank`}
+		disabled={!at}
+		onclick={() => at && onreturn(at.reminderId)}
+	/>
 </span>
 
 <style>
 	.reminder-row {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2) var(--space-3);
+		gap: var(--space-2);
 		font-family: var(--font-body);
 	}
-	.where {
-		flex: 1 1 auto;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
+	.token {
+		flex: none;
 	}
-	.actions {
+	.where {
 		display: flex;
+		flex: 1 1 auto;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-3);
-		margin-inline-start: auto;
+		min-width: 0;
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-2);
+		border: 0;
+		border-radius: var(--radius-md);
+		/* The standard button edge (Trevor: one border for every button). */
+		background: none;
+		box-shadow: var(--button-ring);
+		color: var(--on-surface-muted);
+		font: inherit;
+		font-size: 0.9rem;
+		text-align: start;
+		cursor: pointer;
 	}
 </style>

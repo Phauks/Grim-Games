@@ -2811,9 +2811,9 @@ test('a night step is filled in with help, and the night can be walked through',
 	// A step shows the game state that matters: the Empath is poisoned (core nightStepAlerts).
 	// In its own Status section, above the Steps (Trevor, 2026-11-17).
 	const empath = await openStep(page, 'Empath');
-	await expect(empath.getByTestId('step-afflictions')).toContainText(
-		/Poisoned\s*Empath\s*Seat 2\s*by\s*Poisoner\s*Seat 1/
-	);
+	// The board's Poisoned token, then the player (Trevor, 2026-11-17, "B Token only").
+	await expect(empath.getByTestId('step-afflictions')).toContainText(/Poisoned\s*Empath\s*Seat 2/);
+	await expect(empath.getByTestId('step-afflictions')).not.toContainText('by');
 	await expect(empath.getByTestId('night-alerts')).toHaveCount(0);
 	await closeStep(page, empath);
 

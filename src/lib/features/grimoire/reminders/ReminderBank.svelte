@@ -20,6 +20,7 @@
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import ReminderHandPill from './ReminderHandPill.svelte';
+	import BoardPickPill from './BoardPickPill.svelte';
 	import ReminderTray from './ReminderTray.svelte';
 	import { traySeats } from '#lib/features/board/setup-tray.ts';
 	import {
@@ -231,6 +232,7 @@
 		/>{/snippet}
 	{#snippet run()}{#if runButton}<BankRunButton run={runButton} />{/if}{/snippet}
 	<ReminderHandPill {grimoire} {gestures} {board} {onHints} />
+	<BoardPickPill characters={grimoire.open.characters} {board} holding={!!gestures.hand.held} />
 	{@render children?.()}
 </ReminderTray>
 

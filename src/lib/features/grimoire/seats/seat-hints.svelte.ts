@@ -4,9 +4,15 @@
  * the one being dragged, or the one the bank's setup suggestions point at.
  */
 import type { CharacterLookup, Game, Reminder, SeatId } from '#lib/core/model/index.ts';
-import { handMarks, handRole, type HandRole } from '#lib/features/grimoire/reminders/hand-marks.ts';
+import {
+	handMarks,
+	handRole,
+	pickMarks,
+	type HandRole
+} from '#lib/features/grimoire/reminders/hand-marks.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import { extraReminders } from '#lib/features/board/reminders.ts';
+import { boardPick } from './board-pick.svelte.ts';
 
 /** No seat marked: never changed, so a plain Set. */
 const NONE: ReadonlySet<SeatId> = new Set();
@@ -42,7 +48,9 @@ export class SeatHints {
 	/** The marks for the reminder in hand (hand-marks.ts, shared with a player's grim). */
 	readonly #marks = $derived.by(() => {
 		const { grimoire, game, characters } = this.#context();
-		return this.#hand ? handMarks(game, this.#hand, characters, grimoire.atDawn) : undefined;
+		if (this.#hand) return handMarks(game, this.#hand, characters, grimoire.atDawn);
+		// A player to pick for a night step looks the same (board-pick.svelte.ts).
+		return boardPick.current && pickMarks(game, boardPick.current);
 	});
 
 	/**
