@@ -8410,6 +8410,27 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 		);
 	});
 	expect(under).toBe(true);
+	// Each line's edge is the character token's rim colour, not black (Trevor, 2026-11-18).
+	const edge = await page.evaluate(() => {
+		const probe = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+		probe.style.stroke = 'var(--token-face-shade, var(--border))';
+		document.querySelector('svg.tethers')!.append(probe);
+		const rim = getComputedStyle(probe).stroke;
+		probe.remove();
+		return { rim, edge: getComputedStyle(document.querySelector('svg.tethers line.edge')!).stroke };
+	});
+	expect(edge.edge).toBe(edge.rim);
+
+	// While one reminder is dragged, the seat's other lines stay (Trevor, 2026-11-18); only the
+	// dragged one, which has left its spot, loses its line.
+	const chip = (await page.locator('.chip-slot[data-seat="1"]').first().boundingBox())!;
+	await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(chip.x + chip.width / 2 + 60, chip.y + chip.height / 2 + 60, { steps: 6 });
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(3);
+	await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2, { steps: 6 });
+	await page.mouse.up();
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
 
 	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
