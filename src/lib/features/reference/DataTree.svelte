@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import DataTree from './DataTree.svelte';
 
@@ -26,9 +27,9 @@
 	);
 </script>
 
-{#snippet plain(v: unknown)}{#if v === null || v === undefined}<span class="none"
-			>{t('common.none')}</span
-		>{:else if typeof v === 'boolean'}{t(
+{#snippet plain(v: unknown)}{#if v === null || v === undefined}<NoneState
+			inline
+		/>{:else if typeof v === 'boolean'}{t(
 			v ? 'reference.data.yes' : 'reference.data.no'
 		)}{:else}{String(v)}{/if}{/snippet}
 
@@ -105,8 +106,5 @@
 	.list > li {
 		padding-inline-start: var(--space-2);
 		border-inline-start: 2px solid var(--border);
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

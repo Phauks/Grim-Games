@@ -1,6 +1,7 @@
 <script lang="ts">
 	// What a waiting build brings: in the update card and in About (Trevor, 2026-10-19). A
 	// merged PR shows as its number and title and opens the PR (Trevor, 2026-10-20).
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { REPOSITORY_URL } from './report-issue.ts';
 	import type { BuildCommit, Changes } from './update-notes.ts';
@@ -30,7 +31,7 @@
 		</ul>
 		{#if !changes.complete}<p class="more">{t('shell.olderChanges')}</p>{/if}
 	{:else}
-		<p class="more">{t('common.none')}</p>
+		<NoneState />
 	{/if}
 </div>
 

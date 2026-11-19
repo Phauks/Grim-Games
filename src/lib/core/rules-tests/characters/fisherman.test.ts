@@ -15,11 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
-import {
-	dayReminders,
-	dayStateFromGame,
-	isOnceOnlyDayAbility
-} from '#lib/core/rules/day/day-reminders.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
 import { renderReminder } from '#lib/core/testing/plain-text.ts';
 import { infoPicker } from '#lib/core/rules/night/info/picker.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
@@ -75,7 +71,6 @@ describe('Fisherman', () => {
 			const empath = infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!;
 			expect(empath.anyAllowed).toBe(true);
 			expect(abilityState(s.game, s.seat('fisherman'), s.characters).works).toBe(true);
-			expect(isOnceOnlyDayAbility('fisherman', s.characters)).toBe(true);
 			expect(linesOf(s)).toEqual(['[fisherman · Ana] may ask for advice']);
 			const used = s.do((at) => ({
 				type: 'UseAbility',

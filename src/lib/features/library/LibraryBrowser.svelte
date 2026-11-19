@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import { onMount } from 'svelte';
@@ -674,7 +675,7 @@
 			{inline}
 		/>
 	{:else if inline}
-		<ItemPane title={t('library.pane')} inline>{t('common.none')}</ItemPane>
+		<ItemPane title={t('library.pane')} inline><NoneState /></ItemPane>
 	{/if}
 {/snippet}
 

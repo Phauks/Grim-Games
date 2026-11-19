@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ReminderId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -128,7 +129,7 @@
 				{/if}
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 </Dialog>

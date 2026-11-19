@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -124,9 +125,9 @@
 				})}{:else}–{/if}</span
 		>
 		<span class="st"
-			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}{t(
-					'common.none'
-				)}{/if}</span
+			>{#if info.text}<NightText text={info.text} {character} {night} />{:else}<NoneState
+					inline
+				/>{/if}</span
 		>
 	</span>
 {/snippet}
@@ -206,7 +207,7 @@
 		<span class="icons">
 			{#each variants as v (v.label)}
 				<img src={v.src} alt={v.label} title={v.label} width="28" height="28" loading="lazy" />
-			{:else}{t('common.none')}{/each}
+			{:else}<NoneState inline />{/each}
 		</span>
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
@@ -215,11 +216,11 @@
 				text={entry.setup.summary}
 			/>{#if entry.setup.notes.length}<span class="small block"
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
-				>{/if}{:else}{t('common.none')}{/if}
+				>{/if}{:else}<NoneState inline />{/if}
 	{:else if field === 'ability'}
 		<span class="ability"><AbilityText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'flavor'}
-		{#if character.flavor}<q class="flavor">{character.flavor}</q>{:else}{t('common.none')}{/if}
+		{#if character.flavor}<q class="flavor">{character.flavor}</q>{:else}<NoneState inline />{/if}
 	{:else if field === 'tokens'}
 		<span class="tokens"
 			>{#each entry.tokens as token, i (i)}{@const note = tokenNote(token)}<span class="token-row"
@@ -227,18 +228,18 @@
 							count={token.copies}
 							times
 						/>{/if}{#if note}<span class="small">{note}</span>{/if}</span
-				>{:else}{t('common.none')}{/each}</span
+				>{:else}<NoneState inline />{/each}</span
 		>
 	{:else if field === 'special'}
 		<span class="spaced"
-			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}{t(
-					'common.none'
-				)}{/each}</span
+			>{#each character.special as s, i (i)}<code>{special(s)}</code>{:else}<NoneState
+					inline
+				/>{/each}</span
 		>
 	{:else if field === 'cards'}
 		<span class="spaced"
 			>{#each cardsOfCharacter(character) as card (card.id)}<span>{t(card.titleKey)}</span
-				>{:else}{t('common.none')}{/each}</span
+				>{:else}<NoneState inline />{/each}</span
 		>
 	{:else if field === 'firstNight'}
 		{@render nightValue('night-first', 'first', entry.firstNight)}
@@ -267,7 +268,7 @@
 					{/each}
 				</ul></Collapsible
 			>
-		{:else}<span data-testid="no-jinxes">{t('common.none')}</span>{/if}
+		{:else}<NoneState inline testid="no-jinxes" />{/if}
 	{:else if field === 'prep'}
 		{#if prep.length}
 			<ul class="list">
@@ -285,7 +286,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}{t('common.none')}{/if}
+		{:else}<NoneState inline />{/if}
 	{:else if field === 'preDay'}
 		{#if entry.dayReminders.length}
 			<ul class="list">
@@ -302,7 +303,7 @@
 			</ul>
 		{:else}
 			<span class="none-row" data-testid="no-day"
-				>{t('common.none')}{#if entry.noDayReason}<IconButton
+				><NoneState inline />{#if entry.noDayReason}<IconButton
 						icon="info"
 						label={t('reference.whyNoDay')}
 						onclick={() =>
@@ -319,7 +320,7 @@
 			<ul class="problems">
 				{#each entry.problems as problem (problem)}<li>{problem}</li>{/each}
 			</ul>
-		{:else}{t('common.none')}{/if}
+		{:else}<NoneState inline />{/if}
 	{/if}
 </span>
 

@@ -119,6 +119,35 @@ describe('counting runs in the bank (plan M53)', () => {
 	});
 });
 
+describe("bankItems with a countdown run (the Courtier's Drunk 1, 2, 3)", () => {
+	// Wiki (https://wiki.bloodontheclocktower.com/Courtier#How_to_Run): "Tonight, mark them with
+	// the Courtier’s DRUNK 1 reminder. The next night, replace the DRUNK 1 reminder with the
+	// DRUNK 2 reminder. The next night, replace the DRUNK 2 reminder with the DRUNK 3 reminder."
+	// Trevor (2026-11-19): "Courtier drunkenness does not stack?" The run stacks as one token,
+	// as a counting run does, the next one on top.
+	const drunk = (items: ReturnType<typeof bankItems>) =>
+		items.filter((i) => i.characterId === 'courtier' && i.label.startsWith('Drunk'));
+
+	it('stacks the run as one token, Drunk 1 on top', () => {
+		const s = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner']);
+		const items = drunk(bankItems(s.game, s.characters, options));
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({ label: 'Drunk 1', count: 3 });
+		expect(items[0].run).toEqual(['Drunk 1', 'Drunk 2', 'Drunk 3']);
+	});
+
+	it('puts the next one on top once Drunk 1 is on the board', () => {
+		const s = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner']).reminder(
+			'shabaloth',
+			'courtier',
+			'Drunk 1'
+		);
+		const items = drunk(bankItems(s.game, s.characters, options));
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({ label: 'Drunk 2', count: 2 });
+	});
+});
+
 describe('bankItems with borrowed abilities (M50)', () => {
 	it("offers a gained character's reminders, with the living while someone living has it", () => {
 		// Wiki (https://wiki.bloodontheclocktower.com/Philosopher): "During the first night, the

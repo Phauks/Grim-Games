@@ -1,7 +1,7 @@
 <script lang="ts" generics="T">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import type { Snippet } from 'svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
@@ -48,7 +48,7 @@
 				<button type="button" onclick={() => onChoose(item)}>{@render row(item)}</button>
 			</li>
 		{:else}
-			<li>{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 	{#snippet actions()}

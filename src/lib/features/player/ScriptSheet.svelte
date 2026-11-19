@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -150,7 +151,7 @@
 					{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
 				</ul>
 			{:else}
-				<p class="none" data-testid="no-travellers">{t('common.none')}</p>
+				<NoneState testid="no-travellers" />
 			{/if}
 		{/snippet}
 		{@render section(
@@ -256,10 +257,6 @@
 		padding-left: var(--space-1);
 		font-family: var(--font-ability);
 		line-height: 1.35;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	/* A rule has no badge: its name at the badge's height keeps the rows even. */
 	.rule-name {

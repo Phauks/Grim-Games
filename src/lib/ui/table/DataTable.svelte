@@ -62,6 +62,7 @@
 </script>
 
 <script lang="ts" generics="T, K extends string">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -535,7 +536,7 @@
 						{/each}
 					</tr>
 				{:else}
-					<tr class="empty"><td colspan={columns.length}>{empty}</td></tr>
+					<tr class="empty"><NoneState as="td" colspan={columns.length} text={empty} /></tr>
 				{/each}
 				{#if paging.undrawn > 0}
 					<!-- Comes near the screen: more rows are drawn (a new watcher each time). -->
@@ -902,10 +903,8 @@
 	.more-rows {
 		height: calc(var(--undrawn) * var(--row-estimate));
 	}
-	.empty td {
+	.empty > :global(td) {
 		grid-column: 1 / -1;
-		padding: var(--space-4);
-		color: var(--on-surface-muted);
 	}
 	.visually-hidden {
 		position: absolute;
@@ -1043,7 +1042,7 @@
 		.stack tr.pending th {
 			grid-column: auto;
 		}
-		.stack .empty td::before {
+		.stack .empty > :global(td)::before {
 			content: none;
 		}
 	}

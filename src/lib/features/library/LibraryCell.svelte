@@ -17,6 +17,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -92,9 +93,7 @@
 	<span class="text">{where || t('library.heading')}</span>
 {:else}
 	<span class="chips">
-		{#each tags as name (name)}<span class="chip">{name}</span>{:else}<span class="muted"
-				>{t('common.none')}</span
-			>{/each}
+		{#each tags as name (name)}<span class="chip">{name}</span>{:else}<NoneState inline />{/each}
 	</span>
 {/if}
 
@@ -174,8 +173,5 @@
 		font-family: var(--font-control);
 		font-size: 0.85rem;
 		white-space: nowrap;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

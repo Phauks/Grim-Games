@@ -3,6 +3,7 @@
 	asks for, each set on its own (Trevor, 2026-10-18), and the characters it belongs to.
 -->
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { MAX_ASKED_CHARACTERS } from '#lib/core/data/info-tokens.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -219,7 +220,7 @@
 								characterId={owner.id}
 								character={owner}
 								interactive={false}
-							/>{:else}{t('common.none')}{/each}
+							/>{:else}<NoneState inline />{/each}
 					</span>
 					<Button icon="edit" onclick={() => (editView = 'characters')}
 						>{t('info-tokens.chooseCharacters')}</Button

@@ -9,6 +9,7 @@ import { deleteButton } from './delete-button.js';
 import { dropdownChoice } from './dropdown-choice.js';
 import { iconMeaning } from './icon-meaning.js';
 import { modalActions } from './modal-actions.js';
+import { noneState } from './none-state.js';
 import { namesAsBadges } from './names-as-badges.js';
 import { passwordField } from './password-field.js';
 import { rulesFor } from './rules-for.js';
@@ -31,6 +32,7 @@ export default {
 		'share-panel': sharePanel,
 		'caret-section': caretSection,
 		'count-badge': countBadge,
+		'none-state': noneState,
 		'character-display': characterDisplay,
 		'script-name': scriptName,
 		'rules-for': rulesFor

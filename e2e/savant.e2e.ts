@@ -305,6 +305,8 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 // One Day More's Signal Failure (https://beardytas.com/garden-of-djinn/one-day-more/): "There
 // is a 24 hour delay impacting all characters with abilities that know or learn information."
 test('with One Day More, the Savant is given yesterday’s statements today', async ({ page }) => {
+	// Eight seats, two nights and a day: about 20s on a quiet machine, past 30s on a busy CI runner.
+	test.slow();
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Create game' }).tap();

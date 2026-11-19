@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from '#lib/features/grimoire/CharacterHistoryDialog.svelte';
@@ -486,7 +487,7 @@
 									interactive={false}
 									{game}
 									seatId={n.nominee}
-								/>{:else}None{/each}</span
+								/>{:else}<NoneState inline />{/each}</span
 						>
 					</button>
 				</div>
@@ -505,7 +506,7 @@
 									interactive={false}
 									{game}
 									seatId={nominations.received.nominator}
-								/>{:else}None{/if}</span
+								/>{:else}<NoneState inline />{/if}</span
 						>
 					</button>
 				</div>
@@ -516,7 +517,7 @@
 				<h3>Reminders</h3>
 			</div>
 			{#if seat.reminders.length === 0}
-				<p class="none">None</p>
+				<NoneState />
 			{:else}
 				<ReminderTokenRow>
 					{#each seat.reminders as reminder (reminder.reminderId)}
@@ -615,6 +616,7 @@
 </ConfirmDialog>
 
 {#snippet fakeOption(option: { value: string; label: string })}
+	<!-- eslint-disable-next-line grim/none-state -- a choice: no fake character. -->
 	{#if option.value === FAKE_NONE}None{:else}<CharacterPiece
 			template="badge"
 			characterId={option.value}

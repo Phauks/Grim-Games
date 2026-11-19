@@ -35,6 +35,11 @@ export class ReminderHand {
 	/** The look a tray's plain ∞ or # token is given in hand, before it goes on a seat. */
 	look = $state<GenericLook>({});
 
+	/** The board token in hand, by id: it draws over the tokens beside it (Trevor, 2026-11-19). */
+	get placed(): ReminderId | undefined {
+		return this.held?.kind === 'placed' ? this.held.reminderId : undefined;
+	}
+
 	/** Holds the token, or puts it down if it is the one in hand (tapping an open item closes it). */
 	toggle(token: HeldToken): void {
 		this.held = sameToken(this.held, token) ? undefined : token;

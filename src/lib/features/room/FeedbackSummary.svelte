@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { ACCOLADES, summarizeFeedback, type AccoladeId } from '#lib/core/feedback/index.ts';
 	import type { SavedFeedbackEntry } from '#lib/core/feedback/index.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
@@ -38,7 +39,7 @@
 	<section aria-labelledby="feedback-accolades">
 		<h3 id="feedback-accolades">{t('room.feedback.accolades')}</h3>
 		{#if given.length === 0}
-			<p>{t('common.none')}</p>
+			<NoneState />
 		{:else}
 			<ul class="badges" data-testid="feedback-accolade-counts">
 				{#each given as { id, count } (id)}
@@ -50,7 +51,7 @@
 	<section aria-labelledby="feedback-entries">
 		<h3 id="feedback-entries">{t('room.feedback.entries')}</h3>
 		{#if entries.length === 0}
-			<p>{t('common.none')}</p>
+			<NoneState />
 		{:else}
 			<ul class="entries">
 				{#each entries as entry (entry.id)}

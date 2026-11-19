@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { LabFiller } from '#lib/core/lab/lab-game.ts';
@@ -140,7 +141,7 @@
 						><CharacterPiece template="badge" characterId={opponent.id} interactive={false} /></Chip
 					>
 				{:else}
-					<p class="none">{t('common.none')}</p>
+					<NoneState />
 				{/each}
 			</div>
 			<div class="nav" data-testid="lab-opponent">
@@ -248,10 +249,6 @@
 	.count {
 		font-size: 0.85rem;
 		font-variant-numeric: tabular-nums;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.partners {
 		display: flex;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
@@ -96,7 +97,7 @@
 					</CharacterPiece>
 				</li>
 			{:else}
-				<li class="none">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 	</section>
@@ -127,8 +128,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

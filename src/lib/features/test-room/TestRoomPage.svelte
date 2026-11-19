@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { BOT_ACTIONS, type BotAction } from '#lib/core/sync/room-bots/brain.ts';
@@ -276,7 +277,7 @@
 				{#each bench.log as line, i (i)}<li>{line}</li>{/each}
 			</ol>
 		{:else}
-			<p>{t('common.none')}</p>
+			<NoneState />
 		{/if}
 	</BottomSheet>
 </Page>

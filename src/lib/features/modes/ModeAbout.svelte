@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { shownAbout } from './own-wording.svelte.ts';
@@ -31,7 +32,7 @@
 		<dd data-testid="inspect-authors">
 			{#each mode.authors ?? [] as author (author.title + author.url)}<span class="item"
 					><ModeValue field="author" value={author} /></span
-				>{:else}{t('common.none')}{/each}
+				>{:else}<NoneState inline />{/each}
 		</dd>
 	</div>
 	<div class="row">
@@ -39,7 +40,7 @@
 		<dd>
 			{#each mode.sources as source (source.url)}<span class="item"
 					><ModeValue field="source" value={source} /></span
-				>{:else}{t('common.none')}{/each}
+				>{:else}<NoneState inline />{/each}
 		</dd>
 	</div>
 	{#if !compact && mode.aliases?.length}

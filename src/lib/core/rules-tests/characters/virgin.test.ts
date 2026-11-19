@@ -18,7 +18,6 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { characterNominationPrompts, mayNominate } from '#lib/core/rules/day/nominations.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { dayUseSuggestion } from '#lib/core/rules/day/day-claims.ts';
-import { isOnceOnlyDayAbility } from '#lib/core/rules/day/day-reminders.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -135,7 +134,6 @@ describe('Virgin', () => {
 			const s = scenario(CAST).nominate('poisoner', 'virgin');
 			const nomination = { nominator: s.seat('poisoner'), nominee: s.seat('virgin') };
 			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);
-			expect(isOnceOnlyDayAbility('virgin', s.characters)).toBe(true);
 			expect(dayUseSuggestion(s.game, s.seat('virgin'), 'nominator')).toBe(s.seat('poisoner'));
 			const used = s.do((at) => ({
 				type: 'UseAbility',

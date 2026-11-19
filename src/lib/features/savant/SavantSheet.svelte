@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
@@ -404,7 +405,7 @@
 	{#snippet aside()}<section aria-label={t('savant.earlier')}>
 			<h3 class="pane-title">{t('savant.earlier')}</h3>
 			{#if earlier.length === 0}
-				<p class="none">{t('common.none')}</p>
+				<NoneState />
 			{:else}
 				<ol class="earlier" data-testid="savant-earlier">
 					{#each earlier as given, k (k)}
@@ -503,8 +504,7 @@
 						<p class="sentence">
 							{#if line}
 								{@render parts(line.parts)}
-							{:else}
-								{t('common.none')}
+							{:else}<NoneState inline />
 							{/if}
 						</p>
 					{/if}
@@ -593,10 +593,6 @@
 		margin: 0;
 		font-size: 1rem;
 		color: var(--heading);
-	}
-	.none {
-		margin: var(--space-2) 0 0;
-		color: var(--on-surface-muted);
 	}
 	/* Earlier days as rows with lines between, not bordered cards (Trevor's UI rules). */
 	.earlier {

@@ -1,4 +1,5 @@
 <script lang="ts" generics="T">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 
 	/**
@@ -52,7 +53,7 @@
 			</div>
 		{/if}
 	{/each}
-	{#if empty}<p class="none">None</p>{/if}
+	{#if empty}<NoneState />{/if}
 </div>
 
 <style>
@@ -94,9 +95,5 @@
 		   isn't cut off (Trevor, 2026-10-31: the Scarlet Woman's "Is the Demon"). */
 		padding-inline: max(0.25rem, calc((var(--band, var(--d)) - var(--d)) / 2 + 0.1rem));
 		padding-bottom: calc(0.375 * var(--u));
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

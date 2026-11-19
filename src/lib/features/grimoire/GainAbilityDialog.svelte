@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { trueCharacter, type GivenAbility, type SeatId } from '#lib/core/model/index.ts';
@@ -120,7 +121,7 @@
 			</li>
 		{/each}
 		{#if held.length === 0 && custom.length === 0}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/if}
 	</ul>
 	<div class="add">
@@ -183,8 +184,7 @@
 		min-height: var(--tap-target);
 		border-bottom: 1px solid var(--border); /* px-ok: a hairline divider */
 	}
-	.from,
-	.none {
+	.from {
 		flex: 1;
 		color: var(--on-surface-muted);
 	}
