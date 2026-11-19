@@ -22,6 +22,8 @@ import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { withCharacterChangeSteps } from '#lib/core/rules/night/character-changes.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day/day-reminders.ts';
+import { renderReminder } from '#lib/core/testing/plain-text.ts';
 
 describe('Scarlet Woman', () => {
 	const character = committedCharacter('scarletwoman');
@@ -155,6 +157,40 @@ describe('Scarlet Woman', () => {
 			expect(reminderTargetMisses(s.game, token, s.seat('baron'), s.characters)).toEqual([
 				'not-self'
 			]);
+		});
+	});
+
+	describe('day reminder (https://wiki.bloodontheclocktower.com/Scarlet_Woman)', () => {
+		const lines = (s: ReturnType<typeof scenario>) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.filter((r) => r.characterId === 'scarletwoman')
+				.map((r) => renderReminder(r.segments, (id) => s.characters.get(id)?.name ?? id));
+
+		it('shows how many players are alive', () => {
+			// Wiki: "There are five players alive: the Imp, the Scarlet Woman, the Baron, and two
+			// Townsfolk. The Imp is executed. The Scarlet Woman becomes the Imp, and the game continues."
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']);
+			expect(lines(s)).toEqual([expect.stringMatching(/is alive, 5 players alive$/)]);
+		});
+
+		it('leaves Travellers out of the count', () => {
+			// Wiki: "There are seven players alive: the Imp, the Scarlet Woman, two Townsfolk, and three
+			// Travellers. The Imp is executed, so the game ends and good wins because Travellers do not
+			// add to the player count for the Scarlet Woman's ability."
+			const s = scenario(['imp', 'scarletwoman', 'chef', 'monk', 'beggar', 'gunslinger', 'thief']);
+			expect(lines(s)).toEqual([]);
+			const eight = scenario([
+				'imp',
+				'scarletwoman',
+				'chef',
+				'monk',
+				'empath',
+				'beggar',
+				'gunslinger',
+				'thief'
+			]);
+			expect(lines(eight)).toEqual([expect.stringMatching(/is alive, 5 players alive$/)]);
 		});
 	});
 

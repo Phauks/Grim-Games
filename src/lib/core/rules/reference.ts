@@ -35,6 +35,8 @@ export type ReferenceSegment =
 	/** A player from today's nominations: the one a nominee chose, or the nominee. */
 	| { kind: 'nomination'; who: 'chosen' | 'nominee' }
 	| { kind: 'value'; placeholder: string }
+	/** How many players are alive, counted in the game. */
+	| { kind: 'alive' }
 	| { kind: 'text'; text: string };
 
 /**
@@ -216,7 +218,9 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 								? { kind: 'nomination', who: 'nominee' }
 								: 'value' in part
 									? { kind: 'value', placeholder: part.placeholder }
-									: { kind: 'text', text: part.text }
+									: 'alive' in part
+										? { kind: 'alive' }
+										: { kind: 'text', text: part.text }
 				),
 				when: describeWhen(spec, character, name)
 			});
