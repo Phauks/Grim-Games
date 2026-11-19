@@ -1732,17 +1732,26 @@ test('the board can go full screen from the app menu, and back', async ({ page }
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
 	// The drawer closes as an item runs, so each look opens the menu again.
+	const drawer = page.getByRole('dialog', { name: 'Grimbinder' });
 	const item = async () =>
-		(await theMenu(page)).getByRole('button', { name: 'Full screen', exact: true });
+		((await drawer.isVisible()) ? drawer : await theMenu(page)).getByRole('button', {
+			name: 'Full screen',
+			exact: true
+		});
 	const full = await item();
 	await expect(full).toHaveAttribute('aria-pressed', 'false');
 	await full.tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	// The switch says it is on; leaving full screen is the browser's own as well.
-	const on = await item();
-	await expect(on).toHaveAttribute('aria-pressed', 'true');
+	// The switch says it is on; leaving full screen is the browser's own as well. The screen
+	// changing size may close the drawer, so each look opens it again until it shows.
+	const pressed = (value: string) =>
+		expect(async () => {
+			await expect(await item()).toHaveAttribute('aria-pressed', value, { timeout: 1000 });
+		}).toPass();
+	await pressed('true');
 	await page.evaluate(() => document.exitFullscreen());
-	await expect(on).toHaveAttribute('aria-pressed', 'false');
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await pressed('false');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
