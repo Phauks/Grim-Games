@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { loadScriptText, type LoadedScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -140,7 +141,7 @@
 		</div>
 		{#if where === DEVICE}
 			{#if deviceScripts.length === 0}
-				<p class="none">{t('common.none')}</p>
+				<NoneState />
 			{/if}
 			{#each GROUPS as group (group)}
 				{@const rows = deviceScripts.filter((o) => o.group === group)}
@@ -260,9 +261,5 @@
 	.row:focus-visible {
 		outline: 3px solid var(--focus); /* px-ok: focus ring */
 		outline-offset: -3px; /* px-ok: focus ring */
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { ScriptRating } from '#lib/core/feedback/index.ts';
 	import AccoladeBadge from '#lib/features/room/AccoladeBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -61,7 +62,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p>{t('common.none')}</p>
+			<NoneState />
 		{/if}
 	</div>
 </BottomSheet>

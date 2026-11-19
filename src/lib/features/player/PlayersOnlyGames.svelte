@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import ResumeGameRow from '#lib/features/room/ResumeGameRow.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
@@ -29,7 +30,7 @@
 	count={games.length}
 >
 	{#if games.length === 0}
-		<p class="none">{t('common.none')}</p>
+		<NoneState />
 	{:else}
 		<ul class="games" data-testid="players-only-games">
 			{#each games as game (key(game.visit))}
@@ -48,10 +49,6 @@
 </PageSection>
 
 <style>
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.games {
 		display: grid;
 		gap: var(--space-2);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
@@ -82,7 +83,7 @@
 				</button>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 </Dialog>
@@ -140,10 +141,6 @@
 	}
 	.state {
 		flex: none;
-		color: var(--on-surface-muted);
-	}
-	.none {
-		min-height: var(--tap-target);
 		color: var(--on-surface-muted);
 	}
 </style>

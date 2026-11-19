@@ -8,6 +8,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import type { GameData } from '#lib/core/data/index.ts';
@@ -131,7 +132,7 @@
 					</p>
 				</section>
 			{:else}
-				<p class="muted">{t('common.none')}</p>
+				<NoneState />
 			{/each}
 		</div>
 	{/if}
@@ -230,9 +231,5 @@
 		padding: 0 var(--space-1);
 		border: var(--card-border);
 		border-radius: var(--radius-sm);
-	}
-	.muted {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

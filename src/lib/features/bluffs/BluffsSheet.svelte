@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
@@ -266,7 +267,7 @@
 											{#snippet marks()}<BluffTag />{/snippet}
 										</CharacterPiece>
 									{:else}
-										<span class="none">{t('common.none')}</span>
+										<NoneState inline />
 									{/if}
 								</li>
 							{/each}
@@ -511,9 +512,5 @@
 		gap: var(--space-1);
 		margin-left: auto;
 		font-size: 0.85rem;
-	}
-	.none {
-		padding-left: var(--space-2);
-		color: var(--on-surface-muted);
 	}
 </style>

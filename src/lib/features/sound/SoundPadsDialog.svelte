@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import {
 		BOARD_SOUNDS,
 		MIX_NAME_MAX,
@@ -91,7 +92,7 @@
 				/>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 
@@ -107,7 +108,7 @@
 				/>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 
@@ -160,9 +161,6 @@
 	}
 	.sounds {
 		font-size: 0.85em;
-		color: var(--on-surface-muted);
-	}
-	.none {
 		color: var(--on-surface-muted);
 	}
 	.chips {

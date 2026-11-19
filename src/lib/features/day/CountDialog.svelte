@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
@@ -149,7 +150,7 @@
 						{#if status}<td>{status(seatId)}</td>{/if}
 					</tr>
 				{:else}
-					<tr><td colspan={status ? 2 : 1}>{t('common.none')}</td></tr>
+					<tr><NoneState as="td" colspan={status ? 2 : 1} /></tr>
 				{/each}
 			</tbody>
 			<tfoot>

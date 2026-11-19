@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { onMount } from 'svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
@@ -386,8 +387,7 @@
 						<Button variant="quiet" icon="script" onclick={() => openScript(current)}>
 							{current.scriptName || t('reports.script')}
 						</Button>
-					{:else}
-						{t('common.none')}
+					{:else}<NoneState inline />
 					{/if}
 				</dd>
 				<!-- The game it was sent from (Trevor, 2026-10-30): opened here to step through. -->
@@ -404,8 +404,7 @@
 								{t('reports.downloadGame')}
 							</Button>
 						</div>
-					{:else}
-						{t('common.none')}
+					{:else}<NoneState inline />
 					{/if}
 				</dd>
 			</dl>

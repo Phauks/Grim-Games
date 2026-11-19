@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { countdownMoves } from '#lib/core/rules/reminders/countdown.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
@@ -58,7 +59,7 @@
 				{#if m.to}<BoardReminder label={m.to} {character} {alignment} />{/if}
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 	<Button variant="quiet" disabled={moves.length === 0} onclick={countDown}>Count down</Button>
@@ -83,8 +84,5 @@
 	}
 	.rows li + li {
 		border-top: var(--card-border);
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

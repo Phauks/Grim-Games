@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { madAsChoice } from '#lib/core/rules/abilities/mad-as.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
@@ -60,7 +61,7 @@
 				character={characters.get(token.madAs)}
 			/>
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/if}
 		<Button variant="quiet" disabled={!token} onclick={() => (pickerOpen = true)}>
 			{token?.madAs ? 'Change' : 'Choose'}
@@ -90,9 +91,5 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
-	}
-	.none {
-		flex: 1;
-		color: var(--on-surface-muted);
 	}
 </style>

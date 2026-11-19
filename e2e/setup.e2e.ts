@@ -1364,7 +1364,7 @@ test('Demon bluffs: left out of Show only selected, warned when chosen, new on e
 
 	for (let i = 0; i < 3; i++) {
 		await page.getByRole('button', { name: 'Random selection' }).tap();
-		await expect(bluffs.locator('li:not(.none)')).toHaveCount(3);
+		await expect(bluffs.locator('li:not(.none-state)')).toHaveCount(3);
 		await expect(bluffs.locator('li[data-in-play]')).toHaveCount(0);
 		await expect(check).not.toContainText('is a Demon bluff');
 	}

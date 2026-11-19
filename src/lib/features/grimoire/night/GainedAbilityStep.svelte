@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		abilityChoice,
@@ -78,7 +79,7 @@
 				<span class="where">Drunk: <SeatBadge {game} {characters} seatId={chosen.fromSeat} /></span>
 			{/if}
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/if}
 		<Button variant="quiet" onclick={() => (pickerOpen = true)}>
 			{chosen ? 'Change' : 'Choose'}
@@ -109,10 +110,6 @@
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
 	}
-	.none {
-		flex: 1;
-	}
-	.none,
 	.where {
 		color: var(--on-surface-muted);
 	}

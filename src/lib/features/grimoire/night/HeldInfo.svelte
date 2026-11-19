@@ -39,6 +39,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
@@ -75,7 +76,7 @@
 		{#each held as { seatId, items } (seatId)}
 			{#if seats.length > 1}<p class="who"><PlayerBadge name={seatName(game, seatId)} /></p>{/if}
 			{#if items.length === 0}
-				<p class="muted">None</p>
+				<NoneState />
 			{:else}
 				<ul>
 					{#each items as item (item.entryId)}
@@ -119,12 +120,10 @@
 	.text {
 		flex: 1 1 auto;
 	}
-	.muted,
 	.who,
 	.note {
 		margin: 0;
 	}
-	.muted,
 	.note {
 		color: var(--on-surface-muted);
 	}

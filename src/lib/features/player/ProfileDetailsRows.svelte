@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import {
 		DETAIL_SUGGESTIONS,
 		MAX_DETAILS,
@@ -180,7 +181,7 @@
 							template="badge"
 							characterId={pick}
 							character={pickedCharacter}
-						/>{:else}{t('common.none')}{/if}</span
+						/>{:else}<NoneState inline />{/if}</span
 				>
 				<Button
 					icon="edit"

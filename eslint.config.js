@@ -536,6 +536,13 @@ export default defineConfig(
 		rules: { 'grim/count-badge': 'error' }
 	},
 	{
+		// Every empty state is one look, the shared NoneState (Trevor, 2026-11-19).
+		files: ['src/**/*.svelte'],
+		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
+		plugins: { grim },
+		rules: { 'grim/none-state': 'error' }
+	},
+	{
 		// Characters and their abilities show through the shared character components, the
 		// Script tab's look (Trevor, 2026-10-30). Type-aware: see scripts/lint/character-display.js.
 		// CHARACTER_DISPLAY_TODO only shrinks.

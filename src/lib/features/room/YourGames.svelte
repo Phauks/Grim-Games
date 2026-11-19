@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -52,7 +53,7 @@
 	count={shown.length}
 >
 	{#if shown.length === 0}
-		<p class="none">{t('common.none')}</p>
+		<NoneState />
 	{:else}
 		<ul class="recent" data-testid="recent-rooms">
 			{#each shown as room (room.code)}
@@ -75,10 +76,6 @@
 </PageSection>
 
 <style>
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.recent {
 		display: grid;
 		gap: var(--space-2);

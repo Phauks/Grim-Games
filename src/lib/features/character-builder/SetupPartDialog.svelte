@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { SEATED_TYPES, type SeatedType } from '#lib/core/data/types.ts';
@@ -156,7 +157,7 @@
 					character={linkedCharacter}
 				/>
 			{:else}
-				<span class="muted">{t('common.none')}</span>
+				<NoneState inline />
 			{/if}
 		</div>
 		<TextField
@@ -203,9 +204,6 @@
 		align-items: center;
 		gap: var(--space-3);
 		min-height: var(--tap-target);
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 	.result {
 		margin: 0;

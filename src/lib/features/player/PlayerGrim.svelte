@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -421,7 +422,7 @@
 			room={final.room}
 		/>{/await}{/if}
 {#if seats.length === 0 || (!code && !local)}
-	<p class="none" data-testid="grim-none">{t('common.none')}</p>
+	<NoneState testid="grim-none" />
 {:else}
 	{#snippet townBoard()}
 		<div
@@ -649,7 +650,7 @@
 			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder, i (i)}<BoardReminder
 					{...playerLook(reminder, characterOf)}
 					onTap={() => chosen && bin?.showAbout(chosen.seatId, reminder)}
-				/>{:else}<span class="none">{t('common.none')}</span>{/each}</ReminderTokenRow
+				/>{:else}<NoneState inline />{/each}</ReminderTokenRow
 		>
 	</div>
 	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26), each
@@ -704,10 +705,6 @@
 	.row-label {
 		font-family: var(--font-control);
 		font-weight: 600;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	/* The board's shape (plan J13): the screen's width, seats as on the Storyteller's board. */
 	.town {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -94,7 +95,7 @@
 					{#each filters[list] as id (id)}
 						<CharacterPiece template="badge" characterId={id as CharacterId} />
 					{:else}
-						<span class="muted">{t('common.none')}</span>
+						<NoneState inline />
 					{/each}
 				</p>
 			</section>
@@ -144,8 +145,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-1) var(--space-2);
 		align-items: center;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

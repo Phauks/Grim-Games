@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, ReminderLabel } from '#lib/core/data/index.ts';
@@ -154,7 +155,7 @@
 				</button>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 {/snippet}
@@ -262,9 +263,6 @@
 	}
 	.list > li + li {
 		border-top: thin solid var(--border);
-	}
-	.none {
-		padding-block: var(--space-2);
 	}
 	.pick {
 		display: grid;

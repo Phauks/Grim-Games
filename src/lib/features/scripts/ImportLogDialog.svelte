@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CopyButton from '#lib/ui/share/CopyButton.svelte';
@@ -34,7 +35,7 @@
 			{/each}
 		</ol>
 	{:else}
-		<p class="none">{t('common.none')}</p>
+		<NoneState />
 	{/if}
 </Dialog>
 
@@ -70,10 +71,6 @@
 		font-weight: 700;
 	}
 	.at {
-		color: var(--on-surface-muted);
-	}
-	.none {
-		margin: 0;
 		color: var(--on-surface-muted);
 	}
 </style>

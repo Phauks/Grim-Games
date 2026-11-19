@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { rise } from '#lib/ui/motion.ts';
 	import NightAlerts from './NightAlerts.svelte';
@@ -170,7 +171,7 @@
 			</span>
 		</button>
 	{:else}
-		<span class="step none">None</span>
+		<NoneState inline />
 	{/if}
 	<!-- Next ticks the step; the bank's End night ends the night (Trevor, 2026-10-18), and Next
 	     past the last step lights it up (Trevor, 2026-10-19). -->
@@ -321,10 +322,5 @@
 	 */
 	.step {
 		padding-top: calc(var(--tap-target) + var(--space-2));
-	}
-	.none {
-		display: grid;
-		place-items: center;
-		color: var(--on-surface-muted);
 	}
 </style>
