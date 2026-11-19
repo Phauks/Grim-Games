@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
@@ -75,9 +76,10 @@
 	<section aria-labelledby={headingId} data-testid="night-shown-to">
 		<h3 id={headingId}>{t('show.shownTo.heading')}</h3>
 		<p class="row">
-			{#each seats as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge {game} {seatId} />{:else}{t(
-					'common.none'
-				)}{/each}
+			{#each seats as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge
+					{game}
+					{seatId}
+				/>{:else}<NoneState inline />{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
 			<CharacterPiece
 				template="badge"
@@ -97,7 +99,7 @@
 			{#each learns.evil as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge
 					{game}
 					{seatId}
-				/>{:else}{t('common.none')}{/each}
+				/>{:else}<NoneState inline />{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
 			{#if learns.marked}
 				{text('this-player-is')}

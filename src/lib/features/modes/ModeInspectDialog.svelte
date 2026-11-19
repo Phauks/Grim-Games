@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import {
 		FILE_SECTIONS,
@@ -119,7 +120,7 @@
 					</li>
 				{/each}
 				{#if shown.length === 0 && ruleParts.length === 0}
-					<li class="none">{t('common.none')}</li>
+					<NoneState as="li" />
 				{/if}
 			</ul>
 		</section>
@@ -176,10 +177,6 @@
 	.title h3 {
 		padding-bottom: 0;
 		border-bottom: 0;
-	}
-	.parts li.none {
-		padding: var(--space-1) var(--space-3);
-		color: var(--on-surface-muted);
 	}
 	.parts {
 		display: grid;

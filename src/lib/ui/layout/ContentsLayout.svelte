@@ -11,8 +11,8 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { rise } from '#lib/ui/motion.ts';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
@@ -108,7 +108,7 @@
 							>
 						</li>
 					{:else}
-						<li class="none">{t('common.none')}</li>
+						<NoneState as="li" />
 					{/each}
 				</ul>
 			</nav>
@@ -198,10 +198,6 @@
 		border-inline-start-color: var(--heading);
 		color: var(--heading);
 		font-weight: 700;
-	}
-	.none {
-		padding: var(--space-2);
-		color: var(--on-surface-muted);
 	}
 	.label {
 		min-width: 0;

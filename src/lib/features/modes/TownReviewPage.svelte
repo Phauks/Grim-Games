@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterType } from '#lib/core/data/index.ts';
@@ -91,7 +92,7 @@
 						</Button>
 					</div>
 					{#if groups.length === 0}
-						<p class="muted">{t('common.none')}</p>
+						<NoneState />
 					{/if}
 					{#each groups as g (g.type)}
 						<div class="type">

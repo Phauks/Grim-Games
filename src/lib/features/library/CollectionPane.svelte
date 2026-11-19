@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId, GameData } from '#lib/core/data/index.ts';
 	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/character-builder.ts';
@@ -93,7 +94,7 @@
 					/>
 				</li>
 			{:else}
-				<li class="none">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 		{#if missing > 0}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Snippet } from 'svelte';
@@ -84,7 +85,7 @@
 									{character}
 									alignment={seat.alignment}
 									interactive={false}
-								/>{:else}None{/if}</span
+								/>{:else}<NoneState inline />{/if}</span
 						>
 						<span class="name"><PlayerBadge name={seatName(game, seat.seatId)} /></span
 						>{#if misfits?.has(seat.seatId)}<span class="visually-hidden">Not a usual place</span

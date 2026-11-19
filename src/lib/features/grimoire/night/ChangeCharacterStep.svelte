@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/index.ts';
 	import { rulesFor } from '#lib/core/rules/rules-for.ts';
@@ -442,7 +443,7 @@
 				{@render newCharacter(seatId, game.seats[seatId]?.characterId)}
 			{/each}
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 			<Button variant="quiet" onclick={() => (firstOpen = true)}>Choose</Button>
 		{/if}
 	</div>
@@ -475,7 +476,7 @@
 				{@render newCharacter(seatId, game.seats[seatId]?.characterId)}
 			{/each}
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 			<Button variant="quiet" onclick={() => (charmOpen = true)}>Choose</Button>
 		{/if}
 	</div>
@@ -495,7 +496,7 @@
 		{#each made as change (change.seatId)}
 			{@render newCharacter(change.seatId, change.characterId)}
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/each}
 		{#if !made.length || ((rule.sameType || rule.upTo) && acts)}
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>

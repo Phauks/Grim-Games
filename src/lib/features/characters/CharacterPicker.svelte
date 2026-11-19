@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { tick, type Snippet } from 'svelte';
@@ -241,12 +242,10 @@
 				startClosed={closedTypes.includes(group.type)}
 			>
 				{#snippet aside()}{@render groupAside?.(group.type)}{/snippet}
-				{#if group.characters.length > 0}{@render rows(group)}{:else}<p class="none empty-slot">
-						{t('common.none')}
-					</p>{/if}
+				{#if group.characters.length > 0}{@render rows(group)}{:else}<NoneState />{/if}
 			</Collapsible>
 		{:else}
-			{#if !onNone}<p class="none">{t('common.none')}</p>{/if}
+			{#if !onNone}<NoneState />{/if}
 		{/each}
 	</div>
 </div>
@@ -348,20 +347,6 @@
 		flex: none;
 		width: 1.25em;
 		align-self: center;
-	}
-	.none {
-		margin: 0;
-	}
-	/* An empty type's None is a dashed slot a character row tall, where its characters would
-	   be (Trevor, 2026-11-03, picked "C: Dashed empty slot" for setup's Fabled and Loric). */
-	.empty-slot {
-		display: grid;
-		place-items: center;
-		min-height: calc(2 * var(--tap-target));
-		margin-block: var(--space-1) var(--space-2);
-		border: 2px dashed var(--border); /* px-ok: hairline dash, as the "+ New" card's */
-		border-radius: var(--radius-md);
-		color: var(--on-surface-muted);
 	}
 	.none-row {
 		align-items: center;

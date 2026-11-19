@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -37,7 +38,7 @@
 	<!-- None while the roadmap has no entries (Trevor, 2026-11-06); otherwise one caret section
 		per area of the app (Trevor, 2026-10-30), its done count beside it. -->
 	{#if areas.length === 0}
-		<p class="none" data-testid="roadmap-none">{t('common.none')}</p>
+		<NoneState testid="roadmap-none" />
 	{:else}
 		<SectionStack edge>
 			{#each areas as { area, items, done } (area)}
@@ -84,10 +85,6 @@
 </Page>
 
 <style>
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	ul {
 		display: flex;
 		flex-direction: column;

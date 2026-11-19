@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
@@ -67,7 +68,7 @@
 {/snippet}
 
 {#snippet night(n: NightCheck)}
-	{#if !n.wakes}{t('common.none')}{:else}
+	{#if !n.wakes}<NoneState inline />{:else}
 		<span class="after">{t('setup.ownCheck.after')}</span>
 		{#if n.after?.kind === 'character'}<StepPiece
 				template="badge"
@@ -81,29 +82,29 @@
 {#snippet firstNight(c: CustomCheck)}{@render night(c.first)}{/snippet}
 {#snippet otherNights(c: CustomCheck)}{@render night(c.other)}{/snippet}
 {#snippet tokens(c: CustomCheck)}
-	{#each c.reminders as label, i (i)}<ReminderToken {label} {character} />{:else}{t(
-			'common.none'
-		)}{/each}
+	{#each c.reminders as label, i (i)}<ReminderToken {label} {character} />{:else}<NoneState
+			inline
+		/>{/each}
 {/snippet}
 {#snippet placedOn(c: CustomCheck)}
 	{#if c.placedOn}
 		{c.placedOn === 'rules' ? t('setup.ownCheck.asRules') : t('setup.ownCheck.anySeat')}
 		{@render source(c.placedOn)}
-	{:else}{t('common.none')}{/if}
+	{:else}<NoneState inline />{/if}
 {/snippet}
 {#snippet beforeGame(c: CustomCheck)}
 	{#if c.beforeGame}
 		{c.beforeGame === 'rules' ? t('setup.ownCheck.asRules') : t('common.none')}
 		{@render source(c.beforeGame)}
-	{:else}{t('common.none')}{/if}
+	{:else}<NoneState inline />{/if}
 {/snippet}
 {#snippet day(c: CustomCheck)}
 	{#each c.day as reminder, i (i)}<span class="line"
 			>{reminder.text}{@render source(reminder.source)}</span
-		>{:else}{t('common.none')}{/each}
+		>{:else}<NoneState inline />{/each}
 {/snippet}
 {#snippet setup(c: CustomCheck)}
-	{#if c.setup}{c.setup.summary}{@render source(c.setup.source)}{:else}{t('common.none')}{/if}
+	{#if c.setup}{c.setup.summary}{@render source(c.setup.source)}{:else}<NoneState inline />{/if}
 {/snippet}
 {#snippet rules(c: CustomCheck)}<CountBadge
 		count={c.rules}

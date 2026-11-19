@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterId, GameData, Script } from '#lib/core/data/index.ts';
@@ -343,7 +344,7 @@
 					{@const c = nameOf(id)}
 					<li><CharacterPiece template="badge" characterId={id} character={c} /></li>
 				{:else}
-					<li class="muted">{t('common.none')}</li>
+					<NoneState as="li" />
 				{/each}
 			</ul>
 		</PageSection>
@@ -367,7 +368,7 @@
 					/>
 				</li>
 			{:else}
-				<li class="muted">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 
@@ -381,7 +382,7 @@
 						{#if r.in}
 							<CharacterPiece template="badge" characterId={r.in.id} character={r.in} />
 						{:else}
-							<span class="muted">{t('common.none')}</span>
+							<NoneState inline />
 						{/if}
 					</span>
 					<IconButton
@@ -406,7 +407,7 @@
 				</li>
 			{/if}
 			{#if replacements.length === 0 && !added}
-				<li class="muted">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/if}
 		</ul>
 		<p class="muted">{t('modes.campaign.scriptSize', { count: nextCharacters.length })}</p>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import {
 		setupAlignmentTasks,
@@ -81,7 +82,7 @@
 				{/each}
 				{#if !task.done}
 					<li>
-						<span class="none">None</span>
+						<NoneState inline />
 						<span class="spacer"></span>
 						<Button
 							variant="quiet"

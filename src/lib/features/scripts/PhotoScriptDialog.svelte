@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		loadScript,
@@ -447,7 +448,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="none">{t('common.none')}</p>
+			<NoneState />
 		{/if}
 	</section>
 	{#snippet actions()}
@@ -534,9 +535,5 @@
 	.issues ul {
 		margin: 0 0 var(--space-2);
 		padding-inline-start: var(--space-4);
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { appliedEntries, recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
@@ -187,9 +188,7 @@
 			</li>
 		{/each}
 		{#if died.length === 0 && !nobodyDied && revived.length === 0 && announcers.length === 0}
-			<!-- Quiet, inset to where a row's text starts (Trevor, 2026-11-18, "None as italics is
-			     best. But left align, so 3 and 4"). -->
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/if}
 	</ul>
 </Collapsible>
@@ -213,14 +212,6 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.none {
-		display: flex;
-		align-items: center;
-		min-height: var(--tap-target);
-		padding-inline: var(--space-3);
-		color: var(--on-surface-muted);
-		font-style: italic;
 	}
 	.sentence {
 		font-family: var(--font-ability);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -201,7 +202,7 @@
 				<div class="warnings" data-testid="town-warnings">
 					<span class="muted" id="warnings-heading">{t('modes.towns.warnings')}</span>
 					{#if warnings.length === 0}
-						{t('common.none')}
+						<NoneState inline />
 					{:else}
 						{#each warnings as w, i (i)}
 							<p role="alert">
@@ -262,7 +263,7 @@
 					</button>
 				</li>
 			{:else}
-				<li class="muted">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 	{/each}

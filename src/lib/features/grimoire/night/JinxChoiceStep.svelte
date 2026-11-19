@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { alignmentOf, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		jinxChoiceMisfits,
@@ -80,7 +81,7 @@
 				<SeatBadge {game} seatId={tonight.seatId} />
 			{/if}
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/if}
 		<Button variant="quiet" disabled={by === undefined} onclick={() => (open = true)}>
 			{tonight ? 'Change' : 'Choose'}
@@ -117,9 +118,5 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
-	}
-	.none {
-		flex: 1;
-		color: var(--on-surface-muted);
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AlignmentPill from '#lib/features/board/AlignmentPill.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -124,7 +125,7 @@
 						template="badge"
 						characterId={demonSeat.characterId}
 						character={grimoire.open.characters.get(demonSeat.characterId)}
-					/>{:else}None{/if}
+					/>{:else}<NoneState inline />{/if}
 			</dd>
 			<dt>New character</dt>
 			<dd>

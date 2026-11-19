@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { PlayerName } from '#lib/core/data/index.ts';
@@ -125,7 +126,7 @@
 				{/if}
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ol>
 </Dialog>
@@ -180,10 +181,6 @@
 	.filter button[aria-pressed='true'] {
 		border-color: var(--accent);
 		background: var(--surface-selected);
-	}
-	.none {
-		display: block;
-		color: var(--on-surface-muted);
 	}
 	.history {
 		flex: 1;

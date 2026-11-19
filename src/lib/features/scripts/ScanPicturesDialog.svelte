@@ -15,6 +15,7 @@
 </script>
 
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
@@ -60,7 +61,7 @@
 			</div>
 		</figure>
 	{:else}
-		<p class="none">{t('common.none')}</p>
+		<NoneState />
 	{/each}
 </Dialog>
 
@@ -130,9 +131,5 @@
 	}
 	[data-mark='unused'] {
 		--mark: var(--fabled);
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

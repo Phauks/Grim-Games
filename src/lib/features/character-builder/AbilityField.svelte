@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { SORT_ORDER_PHRASES, type Character } from '#lib/core/data/index.ts';
 	import {
@@ -107,7 +108,7 @@
 					/>
 				</li>
 			{:else}
-				<li class="muted">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 	</section>
@@ -151,8 +152,5 @@
 		justify-content: space-between;
 		align-items: center;
 		min-height: var(--tap-target);
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

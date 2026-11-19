@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import type { RoomMember } from '#lib/core/sync/room.ts';
@@ -197,7 +198,7 @@
 		aside={show}
 	>
 		{#if players.length === 0}
-			<p class="none">{t('common.none')}</p>
+			<NoneState />
 		{:else}
 			<ul class="list" aria-label={t('room.players.title')} bind:this={list}>
 				{#each players as entry (entry.key)}{@render row(entry)}{/each}
@@ -215,7 +216,7 @@
 	>
 		<div data-testid="room-spectators">
 			{#if spectators.length === 0}
-				<p class="none">{t('common.none')}</p>
+				<NoneState />
 			{:else}
 				<ul class="list" aria-label={t('room.spectators')}>
 					{#each spectators as entry (entry.key)}{@render row(entry)}{/each}
@@ -337,7 +338,6 @@
 		/* The pane's side inset inside this scroll box, so its scrollbar is flush (the pane's). */
 		padding: 0 var(--pane-gutter, 0rem) var(--space-3);
 	}
-	.none,
 	.muted {
 		margin: 0;
 		color: var(--on-surface-muted);

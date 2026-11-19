@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { onDestroy, untrack, type Snippet } from 'svelte';
 	import {
 		REMINDER_NUMBER_MAX,
@@ -214,7 +215,7 @@
 						<TextField label="Search" hideLabel type="search" bind:value={query} />
 					{/if}
 					<div class="grid" data-fill={v !== 'symbols' || undefined}>
-						{#if v === 'search' && found.length === 0}<span class="none">None</span>{/if}
+						{#if v === 'search' && found.length === 0}<NoneState inline />{/if}
 						<ChoiceGroup
 							label={v === 'symbols'
 								? 'Symbols'

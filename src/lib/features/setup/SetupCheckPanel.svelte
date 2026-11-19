@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
@@ -84,7 +85,7 @@
 							</li>
 						{/if}
 					</ul>
-				{:else}<p>{t('common.none')}</p>{/if}
+				{:else}<NoneState />{/if}
 			</Collapsible>
 
 			<Collapsible
@@ -119,7 +120,7 @@
 							</li>
 						{/each}
 					</ul>
-				{:else}<p>{t('common.none')}</p>{/if}
+				{:else}<NoneState />{/if}
 			</Collapsible>
 
 			<Collapsible
@@ -145,11 +146,11 @@
 										onclick={() => onStandIn(standIn.characterId)}
 										>{standIn.shows ? name(standIn.shows) : t('setup.check.choose')}</Button
 									>
-								{:else}<span>{t('common.none')}</span>{/if}
+								{:else}<NoneState inline />{/if}
 							</li>
 						{/each}
 					</ul>
-				{:else}<p>{t('common.none')}</p>{/if}
+				{:else}<NoneState />{/if}
 			</Collapsible>
 
 			<Collapsible
@@ -166,7 +167,7 @@
 						{/each}
 						{#each analysis.notes as note, i (i)}<li><GlossaryText text={note} /></li>{/each}
 					</ul>
-				{:else}<p>{t('common.none')}</p>{/if}
+				{:else}<NoneState />{/if}
 			</Collapsible>
 
 			<Collapsible
@@ -186,7 +187,7 @@
 							</li>
 						{/each}
 					</ul>
-				{:else}<p>{t('common.none')}</p>{/if}
+				{:else}<NoneState />{/if}
 			</Collapsible>
 		</div>
 	</Collapsible>
@@ -211,7 +212,6 @@
 		gap: var(--space-1);
 		font-size: 0.9rem;
 	}
-	p,
 	ul {
 		margin: 0;
 	}

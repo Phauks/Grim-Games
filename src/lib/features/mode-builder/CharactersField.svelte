@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { onMount } from 'svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -45,7 +46,7 @@
 		{#each ids as id (id)}
 			<CharacterPiece template="badge" characterId={id} />
 		{:else}
-			<span class="muted">{t('common.none')}</span>
+			<NoneState inline />
 		{/each}
 	</p>
 </div>
@@ -64,8 +65,5 @@
 		flex-wrap: wrap;
 		gap: var(--space-1);
 		margin: 0;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

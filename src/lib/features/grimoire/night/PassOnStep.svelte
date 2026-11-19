@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
@@ -10,7 +11,6 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import SeatChooser from '#lib/features/grimoire/seats/SeatChooser.svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * A step whose character passes on when its player dies (`passesOn`: the Farmer's alive
@@ -62,7 +62,7 @@
 			/>
 			<ShowToPlayerButton onclick={() => onShow(characterId)} />
 		{:else}
-			<span class="none">{t('common.none')}</span>
+			<NoneState inline />
 			<Button variant="quiet" disabled={offered.size === 0} onclick={() => (open = true)}
 				>Choose</Button
 			>
@@ -89,9 +89,5 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
-	}
-	.none {
-		flex: 1;
-		color: var(--on-surface-muted);
 	}
 </style>
