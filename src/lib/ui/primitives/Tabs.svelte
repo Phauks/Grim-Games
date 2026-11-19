@@ -107,9 +107,16 @@
 			// The toggle keeps its place at the end of the bar.
 			const button = sizes.querySelector<HTMLElement>('[data-toggle]');
 			const toggleRoom = button ? button.getBoundingClientRect().width + gap : 0;
+			// The row's own padding (the segmented track's) is not room for tabs: counted, the last
+			// tab was cut off at the track's end (Trevor, 2026-11-18: "slightly cut off on right side").
+			const padding = [row, row.querySelector('[data-part="list"]')].reduce((sum, el) => {
+				if (!el) return sum;
+				const style = getComputedStyle(el);
+				return sum + (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+			}, 0);
 			shown = fitTabs(
 				faces.map((face) => face.getBoundingClientRect().width),
-				row.clientWidth - toggleRoom,
+				row.clientWidth - padding - toggleRoom,
 				gap,
 				more?.getBoundingClientRect().width ?? 0
 			);
@@ -211,7 +218,12 @@
 			/>
 		{/if}
 		<!-- The tabs' natural widths, unseen, to tell how many fit. -->
-		<div class="sizes" aria-hidden="true" data-dense={dense || undefined}>
+		<div
+			class="sizes"
+			aria-hidden="true"
+			data-dense={dense || undefined}
+			data-segmented={(segmented && !bottom) || undefined}
+		>
 			<div class="faces" bind:this={measure}>
 				{#each tabs as tab (tab.value)}<span
 						class="face"
@@ -337,12 +349,21 @@
 	:global([data-scope='tabs'][data-part='content']) {
 		padding-top: var(--space-4);
 	}
-	/* Segmented: a rounded track, the chosen tab a gold pill sliding under its name. */
+	/* Segmented: a rounded track, the chosen tab a gold pill sliding under its name. The track's
+	   padding is the list's, not the bar's: the list clips at its padding's edge, so the pill,
+	   measured in whole pixels, is never cut where it meets the track's end. */
 	:global(.segmented) > .bar {
-		padding: var(--space-1);
 		border-bottom: 0;
 		border-radius: var(--radius-full);
 		background: var(--surface-selected);
+	}
+	:global(.segmented) :global([data-scope='tabs'][data-part='list']) {
+		padding: var(--space-1);
+	}
+	/* Inside the track's own padding the pill needs less of its own, so four names fit. */
+	:global(.segmented) :global([data-scope='tabs'][data-part='trigger']),
+	.sizes[data-segmented] .face {
+		padding-inline: var(--space-2);
 	}
 	:global(.segmented) :global([data-scope='tabs'][data-part='trigger']) {
 		position: relative;

@@ -22,7 +22,7 @@ import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-
 import { nightTextPlain } from '#lib/core/testing/plain-text.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { starPass } from '#lib/core/rules/game-end/game-end.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Monk', () => {
@@ -65,9 +65,7 @@ describe('Monk', () => {
 				characterId: 'monk',
 				seatId: s.seat('monk')
 			});
-			expect(preventedDeaths(s.game, s.characters).map((p) => p.seatId)).toEqual([
-				s.seat('fortuneteller')
-			]);
+			expect(savedBy(s, 'imp', s.seat('fortuneteller')).map((b) => b.kind)).toEqual(['protected']);
 		});
 		it('Example 2: Imp targets protected Mayor; no deaths', () => {
 			// Wiki: "The Monk protects the Mayor, and the Imp attacks the Mayor. The Mayor's "another
@@ -77,8 +75,7 @@ describe('Monk', () => {
 			const s = scenario(['monk', 'mayor', 'imp', 'chef', 'poisoner'])
 				.reminder('mayor', 'monk', 'Safe')
 				.reminder('mayor', 'imp', 'Dead');
-			const [survivor] = preventedDeaths(s.game, s.characters);
-			expect(survivor.because.map((b) => b.kind)).toEqual(['protected']);
+			expect(savedBy(s, 'imp', s.seat('mayor')).map((b) => b.kind)).toEqual(['protected']);
 		});
 		it('Example 3: Imp self-kills under protection, staying alive', () => {
 			// Wiki: "The Monk protects the Imp . The Imp chooses to kill themself tonight, but nothing

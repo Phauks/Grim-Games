@@ -10,6 +10,12 @@
 	--space-5: calc(1.5 * var(--u));
 	--space-6: calc(2 * var(--u));
 	--space-7: calc(3 * var(--u));
+	/*
+	 * How far a filled band (a Collapsible's band, a pane's tab track and counts) reaches out
+	 * into its gutter, so every band in a column shares one edge (Trevor, 2026-11-18: "the
+	 * navigational rails match the width of the collapsible menus beneath it").
+	 */
+	--band-reach: var(--space-2);
 
 	/*
 	 * Page width (Trevor 2026-10-16: pages use the width a screen has). Pages fill the window

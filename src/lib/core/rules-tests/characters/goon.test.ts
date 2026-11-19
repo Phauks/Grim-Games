@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
@@ -87,9 +87,12 @@ describe('Goon', () => {
 				.reminder('shabaloth', 'goon', 'Drunk')
 				.reminder('goon', 'shabaloth', 'Dead')
 				.reminder('gossip', 'shabaloth', 'Dead');
-			const survivors = preventedDeaths(night1.game, night1.characters);
-			expect(survivors.map((p) => p.seatId)).toEqual([night1.seat('goon'), night1.seat('gossip')]);
-			for (const p of survivors) expect(p.because.map((b) => b.kind)).toEqual(['killer-impaired']);
+			// Drunk, the Shabaloth has no ability: neither kill happens.
+			expect(abilityState(night1.game, night1.seat('shabaloth'), night1.characters).works).toBe(
+				false
+			);
+			for (const p of ['goon', 'gossip'] as const)
+				expect(savedBy(night1, 'shabaloth', night1.seat(p))).toEqual([]);
 			expect(offer(night1, 'shabaloth')).toMatchObject({
 				seatId: night1.seat('goon'),
 				alignment: 'evil'
@@ -107,9 +110,9 @@ describe('Goon', () => {
 				.reminder('shabaloth', 'goon', 'Drunk')
 				.reminder('goon', 'shabaloth', 'Dead');
 			expect(night2.game.seats[night2.seat('gambler')].dead).toBe(true);
-			expect(preventedDeaths(night2.game, night2.characters)).toMatchObject([
-				{ seatId: night2.seat('goon'), because: [{ kind: 'killer-impaired' }] }
-			]);
+			expect(abilityState(night2.game, night2.seat('shabaloth'), night2.characters).works).toBe(
+				false
+			);
 			// Already evil: nothing to change.
 			expect(offer(night2, 'shabaloth')).toBeUndefined();
 		});

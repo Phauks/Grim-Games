@@ -13,7 +13,7 @@ import { gameEnds, starPass } from '#lib/core/rules/game-end/game-end.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night/info/picker.ts';
 import { characterNominationPrompts } from '#lib/core/rules/day/nominations.ts';
 import { nightAnswer } from '#lib/core/rules/night/info/answers.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
@@ -155,14 +155,12 @@ describe('a Trouble Brewing game (M42)', () => {
 
 	it('night 2: a sober Monk saves the Empath from the Imp; a poisoned one does not', () => {
 		const attacked = dusk1.reminder('empath', 'monk', 'Safe').reminder('empath', 'imp', 'Dead');
-		expect(preventedDeaths(attacked.game, attacked.characters)).toMatchObject([
-			{ seatId: attacked.seat('empath'), because: [{ kind: 'protected' }] }
+		expect(savedBy(attacked, 'imp', attacked.seat('empath'))).toMatchObject([
+			{ kind: 'protected', source: { characterId: 'monk' } }
 		]);
 		// Poisoned, the Monk's Safe gives no reason the Empath lives: the kill goes ahead.
 		const poisoned = attacked.reminder('monk', 'poisoner', 'Poisoned');
-		expect(preventedDeaths(poisoned.game, poisoned.characters)).toMatchObject([
-			{ seatId: poisoned.seat('empath'), because: [] }
-		]);
+		expect(savedBy(poisoned, 'imp', poisoned.seat('empath'))).toEqual([]);
 	});
 
 	// ── Day 2: Safe comes off at dawn; the Imp is executed and good wins ──

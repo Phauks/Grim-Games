@@ -3889,47 +3889,6 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(script.getByTestId('traveller-in-play')).toHaveCount(1);
 });
 
-test("the day's Announcements explain a kill that didn't happen", async ({ page }) => {
-	await startGame(page);
-	for (const [number, name] of [
-		[1, 'Imp'],
-		[2, 'Soldier']
-	] as const) {
-		const sheet = await openSeat(page, number);
-		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-		await page
-			.getByRole('dialog', { name: `Character for Seat ${number}` })
-			.getByRole('button', { name, exact: true })
-			.tap();
-		await closeSheet(page);
-	}
-	await paneDay(page);
-	const day = page.getByTestId('pane-day');
-	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
-	await expect(day.getByTestId('prevented-button')).toBeDisabled();
-	await closePane(page);
-
-	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
-	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
-	await putReminder(page, 'Dead', 2);
-	// The Soldier lives, so the Storyteller says no to marking them dead.
-	await page
-		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
-		.getByRole('button', { name: 'Cancel', exact: true })
-		.tap();
-	await closeBin(page);
-
-	await paneDay(page);
-	await day.getByTestId('prevented-button').tap();
-	const prevented = page.getByRole('dialog', { name: 'What didn’t happen' });
-	await expect(prevented.getByTestId('prevented')).toContainText('chose');
-	// The Soldier's own TPI ability text says why.
-	await expect(prevented.locator('[data-character="soldier"]')).toContainText(
-		'You are safe from the Demon.'
-	);
-	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
-});
-
 test('game notes and Players have a button beside the grim cover, styled like it, in every game', async ({
 	page
 }) => {
