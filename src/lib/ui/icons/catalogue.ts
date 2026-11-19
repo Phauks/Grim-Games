@@ -50,8 +50,9 @@ export const ICON_SLOTS = {
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
 	notes: { label: 'Notes', choices: ['ph:note-pencil', 'ph:notepad', 'ph:feather'] },
-	/** The Storyteller's pane of Day, Night, Notes and Players, on a phone (Trevor, 2026-11-16). */
-	gamePane: { label: 'Game pane', choices: ['ph:sidebar-simple', 'ph:notebook'] },
+	/** The Storyteller's pane of Day, Night, Notes and Players, on a phone (Trevor, 2026-11-16): a
+	 *  clipboard, as the pane doesn't come from a sidebar there (Trevor, 2026-11-19, "C Clipboard"). */
+	gamePane: { label: 'Game pane', choices: ['ph:clipboard-text', 'ph:notebook'] },
 	undo: { label: 'Undo', choices: ['ph:arrow-counter-clockwise', 'ph:arrow-u-up-left'] },
 	refresh: { label: 'Refresh', choices: ['ph:arrow-clockwise'] },
 	redo: { label: 'Redo', choices: ['ph:arrow-clockwise', 'ph:arrow-u-up-right'] },
