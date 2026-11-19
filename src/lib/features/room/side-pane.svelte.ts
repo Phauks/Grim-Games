@@ -6,13 +6,14 @@
  *
  * Three subjects, each with its own views (Trevor, 2026-11-18: "i like nav with sub-nav"; "only
  * game, players, and more"): the pane is also where the board's ⋯ menu went, so the
- * Soundboard and the session's start and end are views of More. History is Game's last view
- * (Trevor, 2026-11-19), so More fits a phone without its own ⋯.
+ * Soundboard and the session's start and end are views of More, with Theme, the board's looks
+ * beside the board itself (Trevor, 2026-11-18). History is Game's last view (Trevor,
+ * 2026-11-19), so More fits a phone without its own ⋯.
  */
 export const PANE_VIEWS = {
 	game: ['day', 'night', 'bluffs', 'history'],
 	players: ['players', 'notes'],
-	more: ['seats', 'sounds', 'session']
+	more: ['seats', 'sounds', 'theme', 'session']
 } as const;
 
 export type PaneSubject = keyof typeof PANE_VIEWS;

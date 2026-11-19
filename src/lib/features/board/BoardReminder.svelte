@@ -471,7 +471,7 @@
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 	}
-	/* Character icon size (Settings > Tokens). */
+	/* Character icon size (Theme > Character tokens). */
 	img {
 		width: calc(84% * var(--reminder-icon, 1));
 		height: calc(84% * var(--reminder-icon, 1));

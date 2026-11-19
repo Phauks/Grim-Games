@@ -17,7 +17,6 @@
 	} from '#lib/ui/token/token-appearance.ts';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import TokenAppearanceRow from './TokenAppearanceRow.svelte';
-	import TokenAppearancePreview from './TokenAppearancePreview.svelte';
 	import NameSizeSlider from '#lib/features/board/NameSizeSlider.svelte';
 	import type { Snippet } from 'svelte';
 	import {
@@ -36,9 +35,12 @@
 		reminderFont?: Snippet;
 		/** The Player names font, with the player name badge's other settings. */
 		playerFont?: Snippet;
+		/** Only one kind of token's box, for one band of the game pane's Theme. */
+		part?: 'token' | 'reminder' | 'inText';
 	}
 
-	let { value, theme, onChange, characterFont, reminderFont, playerFont }: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont, playerFont, part }: Props = $props();
+	const shows = (kind: 'token' | 'reminder' | 'inText') => !part || part === kind;
 
 	const contrast = $derived(tokenContrast(value, theme));
 
@@ -55,122 +57,119 @@
 		});
 </script>
 
-<!-- One box per kind of token, each with its own preview (Trevor, 2026-10-18). Space for the
-     largest sizes is kept in each preview, so changing a size never moves the settings. -->
-<SettingGroup title={t('characters.group.token')} testid="token-preview">
-	{#snippet preview()}<TokenAppearancePreview kind="token" {value} />{/snippet}
-	<TokenAppearanceRow key="tokenScale" {value} {onChange} />
-	<TokenAppearanceRow key="tokenIconScale" {value} {onChange} />
-	<TokenAppearanceRow key="boardNames" {value} {onChange} />
-	<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
-	<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
-		{#snippet control(labelId)}<Select
-				label={t('characters.nightLeaves')}
-				labelledBy={labelId}
-				value={value.nightLeaves}
-				options={NIGHT_LEAVES.map((leaves) => ({
-					value: leaves,
-					label: t(`characters.nightLeaves.${leaves}`)
-				}))}
-				onChange={(nightLeaves) => onChange({ ...value, nightLeaves })}
-			/>{/snippet}
-	</SettingRow>
-	<!-- Always shown, so switching the badges on or off never moves the settings below;
+<!-- One group per kind of token (Trevor, 2026-10-18), each a band of the game pane's Theme,
+     where the real board shows every change (Trevor, 2026-11-18). -->
+{#if shows('token')}<SettingGroup title={t('characters.group.token')}>
+		<TokenAppearanceRow key="tokenScale" {value} {onChange} />
+		<TokenAppearanceRow key="tokenIconScale" {value} {onChange} />
+		<TokenAppearanceRow key="boardNames" {value} {onChange} />
+		<!-- The side leaves and their night order numbers, one setting (Trevor, 2026-10-22). -->
+		<SettingRow label={t('characters.nightLeaves')} description={t('characters.nightLeavesHelp')}>
+			{#snippet control(labelId)}<Select
+					label={t('characters.nightLeaves')}
+					labelledBy={labelId}
+					value={value.nightLeaves}
+					options={NIGHT_LEAVES.map((leaves) => ({
+						value: leaves,
+						label: t(`characters.nightLeaves.${leaves}`)
+					}))}
+					onChange={(nightLeaves) => onChange({ ...value, nightLeaves })}
+				/>{/snippet}
+		</SettingRow>
+		<!-- Always shown, so switching the badges on or off never moves the settings below;
 	     disabled while they are off. -->
-	<TokenAppearanceRow
-		key="nightBadgeScale"
-		{value}
-		{onChange}
-		disabled={value.nightLeaves !== 'numbers'}
-	/>
-	<SettingToggle
-		label={t('characters.reminderLeaves')}
-		description={t('characters.reminderLeavesHelp')}
-		checked={value.reminderLeaves}
-		onChange={(reminderLeaves) => onChange({ ...value, reminderLeaves })}
-	/>
-	<SettingToggle
-		label={t('characters.setupFlower')}
-		description={t('characters.setupFlowerHelp')}
-		checked={value.setupFlower}
-		onChange={(setupFlower) => onChange({ ...value, setupFlower })}
-	/>
-	<!-- Always shown, disabled without the flower, so switching it never moves the settings below. -->
-	<SettingToggle
-		label={t('characters.setupMovesName')}
-		description={t('characters.setupMovesNameHelp')}
-		checked={value.setupMovesName}
-		disabled={!value.setupFlower}
-		onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
-	/>
-	<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
-	     should have settings in tokens under character tokens"), shown on the preview's token. -->
-	{@render playerFont?.()}
-	<NameSizeSlider />
-	<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
-	<SettingSlider
-		label={t('settings.nameOffset')}
-		value={boardLooks.current.nameOffset}
-		{...NAME_OFFSET}
-		defaultValue={DEFAULT_BOARD_LOOKS.nameOffset}
-		format={(offset) => intl.number(offset, { style: 'percent' })}
-		onChange={(nameOffset) => boardLooks.update({ nameOffset })}
-	/>
-	{@render colourRow('face')}
-	{@render colourRow('rim')}
-	{@render colourRow('ink')}
-	{@render contrastRow('characters.contrast.face', contrast.face)}
-</SettingGroup>
+		<TokenAppearanceRow
+			key="nightBadgeScale"
+			{value}
+			{onChange}
+			disabled={value.nightLeaves !== 'numbers'}
+		/>
+		<SettingToggle
+			label={t('characters.reminderLeaves')}
+			description={t('characters.reminderLeavesHelp')}
+			checked={value.reminderLeaves}
+			onChange={(reminderLeaves) => onChange({ ...value, reminderLeaves })}
+		/>
+		<SettingToggle
+			label={t('characters.setupFlower')}
+			description={t('characters.setupFlowerHelp')}
+			checked={value.setupFlower}
+			onChange={(setupFlower) => onChange({ ...value, setupFlower })}
+		/>
+		<!-- Always shown, disabled without the flower, so switching it never moves the settings below. -->
+		<SettingToggle
+			label={t('characters.setupMovesName')}
+			description={t('characters.setupMovesNameHelp')}
+			checked={value.setupMovesName}
+			disabled={!value.setupFlower}
+			onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
+		/>
+		<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
+	     should have settings in tokens under character tokens") -->
+		{@render playerFont?.()}
+		<NameSizeSlider />
+		<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
+		<SettingSlider
+			label={t('settings.nameOffset')}
+			value={boardLooks.current.nameOffset}
+			{...NAME_OFFSET}
+			defaultValue={DEFAULT_BOARD_LOOKS.nameOffset}
+			format={(offset) => intl.number(offset, { style: 'percent' })}
+			onChange={(nameOffset) => boardLooks.update({ nameOffset })}
+		/>
+		{@render colourRow('face')}
+		{@render colourRow('rim')}
+		{@render colourRow('ink')}
+		{@render contrastRow('characters.contrast.face', contrast.face)}
+	</SettingGroup>{/if}
 
-<SettingGroup title={t('characters.group.reminder')} testid="reminder-preview">
-	{#snippet preview()}<TokenAppearancePreview kind="reminder" {value} />{/snippet}
-	{@render reminderFont?.()}
-	<TokenAppearanceRow key="reminderScale" {value} {onChange} />
-	<TokenAppearanceRow key="reminderIconScale" {value} {onChange} />
-	<TokenAppearanceRow key="reminderLabelWidth" {value} {onChange} />
-	<TokenAppearanceRow key="reminderLabelWrap" {value} {onChange} />
-	<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
+{#if shows('reminder')}<SettingGroup title={t('characters.group.reminder')}>
+		{@render reminderFont?.()}
+		<TokenAppearanceRow key="reminderScale" {value} {onChange} />
+		<TokenAppearanceRow key="reminderIconScale" {value} {onChange} />
+		<TokenAppearanceRow key="reminderLabelWidth" {value} {onChange} />
+		<TokenAppearanceRow key="reminderLabelWrap" {value} {onChange} />
+		<!-- Reminder glow and owner's icon (Trevor, 2026-10-20). The drop-downs stay in place,
 	     disabled while their switch is off, so nothing below moves. -->
-	<SettingToggle
-		label={t('characters.reminderHighlight')}
-		description={t('characters.reminderHighlightHelp')}
-		checked={value.reminderHighlight}
-		onChange={(reminderHighlight) => onChange({ ...value, reminderHighlight })}
-	/>
-	<SettingRow label={t('characters.reminderHighlightLook')}>
-		{#snippet control(labelId)}<Select
-				label={t('characters.reminderHighlightLook')}
-				labelledBy={labelId}
-				value={value.reminderHighlightLook}
-				disabled={!value.reminderHighlight}
-				options={REMINDER_HIGHLIGHT_LOOKS.map((look) => ({
-					value: look,
-					label: t(`characters.highlightLook.${look}`)
-				}))}
-				onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
-			/>{/snippet}
-	</SettingRow>
-	{@render colourRow('reminder')}
-	{@render colourRow('reminderLabel')}
-	{@render colourRow('reminderInk')}
-	{@render contrastRow('characters.contrast.reminder', contrast.reminder)}
-</SettingGroup>
+		<SettingToggle
+			label={t('characters.reminderHighlight')}
+			description={t('characters.reminderHighlightHelp')}
+			checked={value.reminderHighlight}
+			onChange={(reminderHighlight) => onChange({ ...value, reminderHighlight })}
+		/>
+		<SettingRow label={t('characters.reminderHighlightLook')}>
+			{#snippet control(labelId)}<Select
+					label={t('characters.reminderHighlightLook')}
+					labelledBy={labelId}
+					value={value.reminderHighlightLook}
+					disabled={!value.reminderHighlight}
+					options={REMINDER_HIGHLIGHT_LOOKS.map((look) => ({
+						value: look,
+						label: t(`characters.highlightLook.${look}`)
+					}))}
+					onChange={(reminderHighlightLook) => onChange({ ...value, reminderHighlightLook })}
+				/>{/snippet}
+		</SettingRow>
+		{@render colourRow('reminder')}
+		{@render colourRow('reminderLabel')}
+		{@render colourRow('reminderInk')}
+		{@render contrastRow('characters.contrast.reminder', contrast.reminder)}
+	</SettingGroup>{/if}
 
 <!-- Reminders and character names inside lines of text (Trevor, 2026-10-18: "add the settings
      for in-line reminder tokens"). -->
-<SettingGroup title={t('characters.group.inText')} testid="in-text-preview">
-	{#snippet preview()}<TokenAppearancePreview kind="inText" {value} />{/snippet}
-	<!-- Here, not under Character token: the names in this line always show the font, while
-	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
-	{@render characterFont?.()}
-	<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
-	<TokenAppearanceRow key="inlineNameTextScale" {value} {onChange} />
-	<TokenAppearanceRow key="inlineNameIconScale" {value} {onChange} />
-	<TokenAppearanceRow key="inlineNameBadgeScale" {value} {onChange} />
-	<TokenAppearanceRow key="inlineReminderScale" {value} {onChange} />
-	<TokenAppearanceRow key="inlineReminderIconScale" {value} {onChange} />
-	<TokenAppearanceRow key="inlineReminderBadgeScale" {value} {onChange} />
-</SettingGroup>
+{#if shows('inText')}<SettingGroup title={t('characters.group.inText')}>
+		<!-- Here, not under Character token: the names in this line always show the font, while
+	     names on tokens are a switch (Trevor, 2026-10-22). -->
+		{@render characterFont?.()}
+		<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
+		<TokenAppearanceRow key="inlineNameTextScale" {value} {onChange} />
+		<TokenAppearanceRow key="inlineNameIconScale" {value} {onChange} />
+		<TokenAppearanceRow key="inlineNameBadgeScale" {value} {onChange} />
+		<TokenAppearanceRow key="inlineReminderScale" {value} {onChange} />
+		<TokenAppearanceRow key="inlineReminderIconScale" {value} {onChange} />
+		<TokenAppearanceRow key="inlineReminderBadgeScale" {value} {onChange} />
+	</SettingGroup>{/if}
 
 {#snippet colourRow(key: TokenColour)}
 	{@const colour = TOKEN_COLOURS.find((c) => c.key === key)!}

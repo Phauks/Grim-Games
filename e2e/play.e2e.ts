@@ -11,7 +11,7 @@ import {
 	noteTitle,
 	rewriteNote
 } from './notes.ts';
-import { openPlayerSettings, openProfile, setPlayerName } from './player-name.ts';
+import { openCogSettings, openPlayerSettings, openProfile, setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { expectTitleBesideOrUnder } from './title-row.ts';
 import { toBoard } from './new-game.ts';
@@ -95,19 +95,32 @@ test('the player view is a reading page, with no Storyteller controls', async ({
 	await expect(page.getByRole('button', { name: /seat/i })).toHaveCount(0);
 });
 
-test('the settings cog opens the one Settings, at its list of sections', async ({ page }) => {
+test('the settings cog opens Theme, the board looks, and Theme opens the one Settings', async ({
+	page
+}) => {
 	// Plan E2 (Trevor, 2026-10-26: "easier access to accessibility, zoom, font size for
-	// players"), then one Settings everywhere (Trevor, 2026-10-27: "Change your settings into
-	// settings"): the cog opens the app's Settings, where Text and Tokens hold every size.
+	// players"); the board's looks left Settings for a Theme panel beside the board (Trevor,
+	// 2026-11-18), which the cog opens; its own cog opens the one Settings.
 	const cog = page.getByTestId('you-button');
 	await expect(cog).toHaveAccessibleName('Settings');
 	await cog.tap();
+	const theme = page.getByRole('dialog', { name: 'Theme', exact: true });
+	const bands = theme.getByTestId('theme-panel').getByRole('button', { expanded: false });
+	await expect(bands).toHaveCount(7);
+	// One band open at a time.
+	await theme.getByRole('button', { name: 'Character tokens' }).tap();
+	await expect(theme.getByRole('slider', { name: 'Character token size' })).toBeVisible();
+	await theme.getByRole('button', { name: 'Reminder tokens' }).tap();
+	await expect(theme.getByRole('slider', { name: 'Character token size' })).toHaveCount(0);
+	await expect(theme.getByRole('slider', { name: 'Reminder token size' })).toBeVisible();
+	await theme.getByTestId('theme-sheet-settings').tap();
+	await expect(theme).toBeHidden();
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
 	await expect(sections).toBeVisible();
-	// The root: phones show only the list; wide screens the list beside the first section.
-	if (await settings.getByRole('button', { name: 'All settings' }).isHidden())
-		await expect(sections.getByRole('button').first()).toHaveAttribute('aria-current', 'page');
+	// Nine sections: Board and Tokens are in Theme now.
+	await expect(sections.getByRole('button', { name: 'Board', exact: true })).toHaveCount(0);
+	await expect(sections.getByRole('button', { name: 'Tokens', exact: true })).toHaveCount(0);
 	await sections.getByRole('button', { name: 'Text', exact: true }).tap();
 	const size = settings.getByRole('slider', { name: 'Text size', exact: true });
 	await size.fill('1.25');
@@ -117,13 +130,15 @@ test('the settings cog opens the one Settings, at its list of sections', async (
 			getComputedStyle(document.documentElement).getPropertyValue('--text-scale')
 		)
 	).toBe('1.25');
+	// Pinch to zoom zooms every screen, so it is in Text.
+	await expect(
+		settings.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true })
+	).toHaveCount(1);
 	// Not in a room: Settings > Player has no name to set yet.
 	const back = settings.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();
 	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
 	await expect(settings.getByRole('button', { name: 'Edit your name' })).toHaveCount(0);
-	// The sizes live once, in Tokens, not again under Player.
-	await expect(settings.getByRole('slider', { name: 'Character token size' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(settings).toBeHidden();
 });
@@ -977,8 +992,7 @@ test('the script sheet leaves out the Djinn until Settings shows it', async ({ p
 	await expect(copy.locator('[data-character="djinn"]')).toHaveCount(0);
 	await expect(copy.getByRole('button', { name: /^Jinxes/ })).toBeVisible();
 
-	await page.getByTestId('you-button').tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const settings = await openCogSettings(page);
 	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
 	await sections.getByRole('button', { name: 'Player', exact: true }).tap();
 	await settings.getByText('Djinn on script sheets', { exact: true }).tap();

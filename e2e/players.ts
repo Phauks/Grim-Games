@@ -27,6 +27,7 @@ const SUBJECTS = {
 	Notes: 'Players',
 	Seats: 'More',
 	Sounds: 'More',
+	Theme: 'More',
 	History: 'Game',
 	Session: 'More'
 } as const;

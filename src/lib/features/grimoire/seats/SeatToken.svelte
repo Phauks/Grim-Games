@@ -83,7 +83,7 @@
 		trueCharacters?: TrueCharacterMark[];
 		/**
 		 * What the player believes they are, when the big token shows who they really are
-		 * (Settings › Board, Big token shows; Trevor, 2026-11-03): a small token marked ?. A tap
+		 * (Theme › Board, Big token shows; Trevor, 2026-11-03): a small token marked ?. A tap
 		 * says it in words, with the "Is The …" reminder it comes from.
 		 */
 		believes?: { character: Character; reminderId: ReminderId };
