@@ -69,11 +69,17 @@ export async function openPane(page: Page, tab?: PaneTab) {
 	return pane;
 }
 
-/** Back to the board: a phone's sheet closes; beside the board the pane stays. */
+/**
+ * Back to the board: a phone's sheet closes by its Close, as a phone user does (Escape runs
+ * zag's own close, whose flushSync can crash Svelte 5.57 in a sheet over Grim view's dialog);
+ * beside the board the pane stays.
+ */
 export async function closePane(page: Page) {
 	const sheet = page.getByRole('dialog', { name: 'Game', exact: true });
 	if (!(await sheet.isVisible())) return;
-	await page.keyboard.press('Escape');
+	// Already on its way out (closed a moment ago): only wait for it to go.
+	if ((await sheet.getAttribute('data-state')) !== 'closed')
+		await press(sheet.getByRole('button', { name: 'Close', exact: true }));
 	await expect(sheet).toBeHidden();
 }
 

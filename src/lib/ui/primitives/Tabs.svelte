@@ -390,8 +390,10 @@
 	}
 	/* A view's rail under its subject's (Trevor, 2026-11-18: "a repetition of the nav, but in a
 	   slightly different color with slightly smaller font"; "the red pill, but it needs a rail"). */
+	/* Its smaller names need less room each, so five views fit across a phone. */
 	:global(.minor) > .bar > :global([data-part='list']) > :global([data-part='trigger']) {
 		font-size: 0.85em;
+		padding-inline: var(--space-1);
 	}
 	:global(.minor)
 		> .bar
