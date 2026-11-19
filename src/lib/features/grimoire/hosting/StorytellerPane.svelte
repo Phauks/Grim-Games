@@ -23,6 +23,9 @@
 	 * sub-nav"; "only game, players, and more"): Game, the day and night; Players, them and the
 	 * notes; More, what the board's ⋯ menu held. History is in More, as it shouldn't be touched
 	 * often (Trevor, 2026-11-18). Players counts what waits from them.
+	 *
+	 * A spectator gets the same pane, to read (Trevor, 2026-11-18): Game's Day and Bluffs, and
+	 * More's History and Session, without the night's steps, the players, the seats or sounds.
 	 */
 	interface Props {
 		game: OpenGame;
@@ -30,17 +33,19 @@
 		run?: (command: Command) => boolean;
 		/** The Day's contents, from the board. */
 		day: Snippet;
-		/** The Night's contents, from the board. */
-		night: Snippet;
+		/** The Night's contents, from the board; a spectator's pane has none. */
+		night?: Snippet;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
 		/** The Demon's bluffs; none in a mode without them (Sushi Buffet, Whale Buffet). */
 		bluffs?: Snippet;
-		/** More's views, from the board. */
-		seats: Snippet;
-		sounds: Snippet;
+		/** More's views, from the board; a spectator's pane has no Seats or Sounds. */
+		seats?: Snippet;
+		sounds?: Snippet;
 		history: Snippet;
 		session: Snippet;
+		/** A spectator's pane: only what they may read. */
+		watching?: boolean;
 	}
 
 	let {
@@ -53,7 +58,8 @@
 		seats,
 		sounds,
 		history,
-		session
+		session,
+		watching = false
 	}: Props = $props();
 	const live = $derived(new LiveDay(game));
 
@@ -77,22 +83,50 @@
 		{ value: PaneSubject; label: string; count?: number; warn?: boolean }[]
 	>([
 		{ value: 'game', label: t('room.pane.game') },
-		{ value: 'players', label: t('room.players.title'), count: unread, warn: host.inbox.urgent },
+		...(watching
+			? []
+			: [
+					{
+						value: 'players' as const,
+						label: t('room.players.title'),
+						count: unread,
+						warn: host.inbox.urgent
+					}
+				]),
 		{ value: 'more', label: t('room.pane.more') }
 	]);
+	/** What a view needs from the board; a spectator's board gives no Night, Seats or Sounds. */
+	const given = $derived<Partial<Record<PaneView, unknown>>>({ bluffs, night, seats, sounds });
+	function viewsOf(subject: PaneSubject): PaneView[] {
+		return (PANE_VIEWS[subject] as readonly PaneView[]).filter(
+			(view) => !(view in given) || given[view]
+		);
+	}
 	function views(subject: PaneSubject) {
-		return PANE_VIEWS[subject]
-			.filter((view) => view !== 'bluffs' || bluffs)
-			.map((view) => ({ value: view as PaneView, label: labels[view] }));
+		return viewsOf(subject).map((view) => ({ value: view, label: labels[view] }));
+	}
+	// A spectator's pane shows what it has: Game in place of Players, Day in place of Night (the
+	// store is the Storyteller's too, and keeps its choice).
+	const subject = $derived(
+		subjects.some((own) => own.value === sidePane.subject) ? sidePane.subject : 'game'
+	);
+	function viewIn(subject: PaneSubject): PaneView {
+		const own = viewsOf(subject);
+		return own.includes(sidePane.views[subject]) ? sidePane.views[subject] : own[0];
 	}
 </script>
 
 <div class="storyteller-pane" data-testid="storyteller-pane">
-	<Tabs bind:value={sidePane.subject} tabs={subjects} label={t('room.players.pane')} segmented>
+	<Tabs
+		bind:value={() => subject, (value) => (sidePane.subject = value)}
+		tabs={subjects}
+		label={t('room.players.pane')}
+		segmented
+	>
 		{#snippet panel(subject)}
 			<div class="subject">
 				<Tabs
-					bind:value={sidePane.views[subject]}
+					bind:value={() => viewIn(subject), (value) => (sidePane.views[subject] = value)}
 					tabs={views(subject)}
 					label={t('room.pane.views', {
 						subject: subjects.find((s) => s.value === subject)?.label ?? ''
@@ -111,7 +145,7 @@
 								{@render day()}
 							</div>
 						{:else if view === 'night'}
-							<div class="phase" data-testid="pane-night">{@render night()}</div>
+							<div class="phase" data-testid="pane-night">{@render night?.()}</div>
 						{:else if view === 'bluffs'}
 							<div class="phase">{@render bluffs?.()}</div>
 						{:else if view === 'players'}
@@ -128,9 +162,9 @@
 								/>
 							</div>
 						{:else if view === 'seats'}
-							<div class="phase">{@render seats()}</div>
+							<div class="phase">{@render seats?.()}</div>
 						{:else if view === 'sounds'}
-							<div class="phase">{@render sounds()}</div>
+							<div class="phase">{@render sounds?.()}</div>
 						{:else if view === 'history'}
 							<div class="phase">{@render history()}</div>
 						{:else}

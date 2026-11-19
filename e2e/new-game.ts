@@ -69,21 +69,15 @@ export async function toBoard(page: Page): Promise<void> {
 }
 
 /**
- * Game info: from the corner, or from the pane's More, Session where the board hides the corner.
- * A spectator's comes from ⋯.
+ * Game info: from the corner, or from the pane's More, Session where the board hides the corner
+ * (a spectator's too, Trevor 2026-11-18).
  */
 export async function openGameInfo(page: Page) {
 	const corner = page.getByTestId('mode-menu');
 	// Once the board is up, so a corner still on its way isn't taken for a hidden one.
 	await expect(page.getByTestId('cover-button')).toBeVisible();
 	if (await corner.isVisible()) await corner.tap();
-	else if (await page.getByRole('button', { name: 'More', exact: true }).isVisible()) {
-		await page.getByRole('button', { name: 'More', exact: true }).tap();
-		await page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByRole('button', { name: 'Game info' })
-			.tap();
-	} else await paneButton(page, 'Session', 'Game info');
+	else await paneButton(page, 'Session', 'Game info');
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 
