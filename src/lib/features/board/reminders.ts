@@ -485,6 +485,8 @@ export interface TokenRow {
 	label: ReminderLabel;
 	at?: { seatId: SeatId; reminderId: string };
 	key: string;
+	/** Which copy of its label, from 0. */
+	copy: number;
 }
 
 /**
@@ -510,6 +512,7 @@ export function tokenRows(
 		return Array.from({ length: n }, (_, i) => ({
 			label,
 			at: on[i],
+			copy: i,
 			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
 			key: `${label}:${i}`
 		}));

@@ -40,6 +40,7 @@
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import StepReminderRow from './StepReminderRow.svelte';
+	import { lastPlaced } from '#lib/core/engine/last-placed.ts';
 	import type { PaneTokenDrag } from '#lib/features/grimoire/hosting/pane-tokens.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
@@ -236,18 +237,22 @@
 	}
 	function put(seatId: SeatId) {
 		chooserOpen = false;
-		const picked = choosing;
+		if (choosing) putOn(choosing.label, choosing.at, seatId);
 		choosing = undefined;
-		const id = tokensOf?.id;
-		if (!picked || !id) return;
-		if (picked.at) moveConfirm?.request(picked.at.reminderId, seatId);
-		else
-			grimoire.run({
-				type: 'AddReminder',
-				seatId,
-				reminder: { characterId: id, label: picked.label }
-			});
 	}
+	/** One copy of `label` onto `seatId`: moved there if on the board, else placed. */
+	function putOn(label: string, at: { reminderId: string } | undefined, seatId: SeatId) {
+		const id = tokensOf?.id;
+		if (!id) return;
+		if (at) moveConfirm?.request(at.reminderId, seatId);
+		else grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId: id, label } });
+	}
+	/** Where each label's copies were before tonight (M89), copy by copy. */
+	const lastSeats = $derived.by(() => {
+		const id = tokensOf?.id;
+		const labels = [...new Set(rows.map((r) => r.label))];
+		return new Map(labels.map((l) => [l, id ? lastPlaced(grimoire.open.session.log, id, l) : []]));
+	});
 
 	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
 	let stepChanges = $state<readonly CharacterId[]>([]);
@@ -377,12 +382,14 @@
 {/snippet}
 
 <!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
-{#snippet reminderRow({ label, at }: (typeof rows)[number])}<StepReminderRow
+{#snippet reminderRow({ label, at, copy }: (typeof rows)[number])}<StepReminderRow
 		{game}
 		{characters}
 		character={tokensOf}
 		{label}
 		{at}
+		last={lastSeats.get(label)?.[copy]}
+		onagain={(seatId) => putOn(label, at, seatId)}
 		onchoose={() => choose(label, at)}
 		onreturn={(id) => moveConfirm?.requestReturn(id)}
 		ondrag={onDrag &&
