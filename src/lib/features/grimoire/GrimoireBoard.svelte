@@ -387,9 +387,7 @@
 		const host = roomHost();
 		const member = host.code ? host.members.find((m) => m.seatId === seatId) : undefined;
 		const messages = fromMark && !!member && host.inbox.waitingFrom(member.memberId).count > 0;
-		setTimeout(() =>
-			messages ? playersDialog.showPlayer(seatId) : playersDialog.showSeat(seatId)
-		);
+		setTimeout(() => playersDialog[messages ? 'showPlayer' : 'showSeat'](seatId));
 	}
 	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
 	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
@@ -592,8 +590,7 @@
 	let feedbackOpen = $state(false);
 	/** Where Game notes and Players show beside the board (plan M86), if they can. */
 	let paneAt = $state<BesidePlacement>();
-	// Beside the pane the timer is the toolbar's, with no corner on the board to keep clear.
-	$effect(() => void (paneAt && (sizing.timerW = sizing.timerH = 0)));
+	$effect(() => void (paneAt && (sizing.timerW = sizing.timerH = 0))); // The toolbar's, beside.
 	/** Export's picture: the board and its game info only (Trevor, 2026-10-26, 2026-11-01). */
 	let grimoireEl = $state<HTMLElement>();
 	const capture = (type?: 'image/png' | 'image/jpeg') => {
@@ -1266,11 +1263,7 @@
 	}
 	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
 	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
-	.board.showing .board-timer {
-		visibility: hidden;
-	}
-	/* The timer and, once the game ends, Game over in one cell, right-aligned: the cell is as
-	   wide as the wider, so the timer's hidden room holds Game over without covering Share. */
+	.board.showing .board-timer,
 	.board-timer {
 		position: absolute;
 		top: var(--space-1);
@@ -1278,6 +1271,8 @@
 		z-index: var(--z-above-2);
 		display: flex;
 	}
+	/* The timer and, once the game ends, Game over in one cell, right-aligned: the cell is as
+	   wide as the wider, so the timer's hidden room holds Game over without covering Share. */
 	.toolbar-timer {
 		display: inline-grid;
 		flex: none;
