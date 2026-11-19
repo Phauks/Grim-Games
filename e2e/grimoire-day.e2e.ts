@@ -641,7 +641,7 @@ test('the day view names a homebrew character by its script name', async ({ page
 test('the board timer opens its own controls and settings', async ({ page }) => {
 	await page.clock.install();
 	await startGame(page);
-	const board = page.locator('.board-timer').getByTestId('day-timer');
+	const board = page.locator('.toolbar-timer').getByTestId('day-timer');
 	await board.getByRole('button', { name: /^Day timer, \d+:\d\d; open its controls$/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Day timer' });
 	await expect(sheet).toBeVisible();

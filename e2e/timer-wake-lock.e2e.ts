@@ -32,7 +32,7 @@ test('the day timer keeps the screen on while it runs, by a switch', async ({ pa
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	// The board's timer, the only one since the Day moved beside the board (Trevor, 2026-11-16).
-	const board = page.locator('.board-timer').getByTestId('day-timer');
+	const board = page.locator('.toolbar-timer').getByTestId('day-timer');
 	await board.getByRole('button', { name: /open its controls$/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Day timer' });
 	expect(await held()).toBe(0);

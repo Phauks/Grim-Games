@@ -107,7 +107,7 @@ test('starting the timer at night asks to start the day', async ({ page }) => {
 	await newGame(page);
 	await firstNight(page);
 
-	const board = page.locator('.board-timer').getByTestId('day-timer');
+	const board = page.locator('.toolbar-timer').getByTestId('day-timer');
 	await board.getByRole('button', { name: /open its controls$/ }).tap();
 	await page
 		.getByRole('dialog', { name: 'Day timer' })

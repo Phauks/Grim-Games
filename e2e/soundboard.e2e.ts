@@ -25,7 +25,7 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	// The pane's More, Sounds (Trevor, 2026-11-18), no longer beside the day timer, which has
 	// Back to town.
 	await expect(
-		page.locator('.board-timer').getByRole('button', { name: 'Soundboard' })
+		page.locator('.toolbar-timer').getByRole('button', { name: 'Soundboard' })
 	).toHaveCount(0);
 	const sheet = await openSoundboard(page);
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });

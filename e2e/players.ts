@@ -115,21 +115,40 @@ export async function openPlayerSheet(page: Page, name: string) {
 }
 
 /**
- * The day timer's full controls: the board's timer, the only one since the Day moved into the
- * pane (Trevor, 2026-11-16), opened as its sheet. A phone's pane closes first.
+ * The day timer's full controls: the toolbar's timer (Trevor, 2026-11-18), the only one since
+ * the Day moved into the pane (2026-11-16), opened as its sheet. A phone's pane closes first.
  */
 export async function boardTimer(page: Page): Promise<Locator> {
 	const sheet = page.getByTestId('timer-sheet');
 	if (!(await sheet.isVisible())) {
 		await closePane(page);
 		await page
-			.locator('.board-timer')
+			.locator('.toolbar-timer')
 			.getByTestId('day-timer')
 			.getByRole('button', { name: /open its controls$/ })
 			.tap();
 	}
 	await expect(sheet).toBeVisible();
 	return sheet.getByTestId('day-timer');
+}
+
+/**
+ * The timer with Back to town and Start: the toolbar's own where there is room, or on a phone,
+ * where the toolbar shows the clock only (Trevor, 2026-11-18), its sheet's.
+ */
+export async function timerControls(page: Page): Promise<Locator> {
+	const bar = page.locator('.toolbar-timer').getByTestId('day-timer');
+	await expect(bar).toBeVisible();
+	if (await bar.getByRole('button', { name: 'Back to town' }).isVisible()) return bar;
+	return boardTimer(page);
+}
+
+/** Closes the timer's sheet, if a phone opened it for its controls. */
+export async function closeTimerSheet(page: Page) {
+	const sheet = page.getByTestId('timer-sheet');
+	if (!(await sheet.isVisible())) return;
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 }
 
 /**

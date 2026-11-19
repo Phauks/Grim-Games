@@ -3,7 +3,8 @@ import {
 	boardTimer as openBoardTimer,
 	paneIsSheet,
 	storytellerPane,
-	paneButton
+	paneButton,
+	timerControls
 } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
@@ -171,7 +172,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	// Back to town, confirmed: the rest of the day is Town, still saying which day; the day
 	// timer stops and the players' sun has set (Trevor, 2026-10-27).
 	// On the day timer, on the board as in the day (Trevor, 2026-11-01).
-	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
+	const boardTimer = await timerControls(page);
 	await boardTimer.getByRole('button', { name: 'Back to town' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
