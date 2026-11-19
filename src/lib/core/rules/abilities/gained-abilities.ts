@@ -113,18 +113,20 @@ export function gainedBy(
 
 /**
  * Whether `holder`'s own ability works for an ability it gives them: no drunkenness or
- * poisoning, and alive, or dead holding an ability that works even if dead.
+ * poisoning (unless `evenIfImpaired`), and alive, or dead holding an ability that works even
+ * if dead.
  */
 function ownGiverWorks(
 	game: Game,
 	holder: SeatId,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	evenIfImpaired = false
 ): boolean {
 	const seat = game.seats[holder];
 	if (!seat) return false;
-	const state = abilityState(game, holder, characters);
-	return state.impairments.length === 0 && (!seat.dead || worksWhenDead(characterId, characters));
+	const sober = evenIfImpaired || abilityState(game, holder, characters).impairments.length === 0;
+	return sober && (!seat.dead || worksWhenDead(characterId, characters));
 }
 
 /**
@@ -134,13 +136,16 @@ function ownGiverWorks(
  * no `via` is the Storyteller's own call and always counts. One whose `via` is the holder's
  * own true character with a `gainedFrom` rule (the Storyteller recording the ability the
  * Philosopher chose, https://wiki.bloodontheclocktower.com/Philosopher) counts while their
- * own ability works.
+ * own ability works. With `wakes`, an ability their own character gives them still counts while
+ * they are drunk or poisoned: the Storyteller wakes them as usual, and what they learn may be
+ * false (Trevor, 2026-11-19).
  */
 export function holdsAbility(
 	game: Game,
 	holder: SeatId,
 	held: HeldAbility,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	wakes = false
 ): boolean {
 	if (held.via === undefined) return true;
 	const rules = rulesFor(game, held.via, characters);
@@ -149,13 +154,13 @@ export function holdsAbility(
 		// Their own ability gives it: while it works, and after death only an ability that
 		// works even if dead.
 		if (game.seats[holder]?.characterId !== held.via) return false;
-		return ownGiverWorks(game, holder, held.characterId, characters);
+		return ownGiverWorks(game, holder, held.characterId, characters, wakes);
 	}
 	// Their own character gains it (the Philosopher's choice, the Alchemist's Minion or the
 	// Apprentice's ability, Gain ability in the seat's ⋯ menu): kept on their own token.
 	if (!rule && (rules?.gainedFrom || rules?.swapsForAbility)) {
 		if (trueCharacter(game, holder, characters) !== held.via) return false;
-		return ownGiverWorks(game, holder, held.characterId, characters);
+		return ownGiverWorks(game, holder, held.characterId, characters, wakes);
 	}
 	if (rule?.to === 'storyteller') {
 		// A Minion holds it instead, by a jinx (the Plague Doctor's Spy,
@@ -211,9 +216,14 @@ export function keptWhenDead(
  * player's gained ability they keep after death (`keptWhenDead`). They wake by
  * the token they hold (a Drunk who thinks they are the Pixie too), or by their true character
  * when their token was swapped for the character they chose (the Philosopher's). Abilities held without a
- * token (`Seat.abilities`) follow, while `holdsAbility`.
+ * token (`Seat.abilities`) follow, while `holdsAbility`; with `wakes` (the night steps), also
+ * while their own character that gives it is drunk or poisoned.
  */
-export function gainedAbilities(game: Game, characters: CharacterLookup): GainedAbility[] {
+export function gainedAbilities(
+	game: Game,
+	characters: CharacterLookup,
+	wakes = false
+): GainedAbility[] {
 	const out: GainedAbility[] = [];
 	for (const seatId of game.seating) {
 		const dead = game.seats[seatId].dead;
@@ -247,7 +257,7 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 		const seat = game.seats[seatId];
 		if (seat.dead) continue;
 		for (const held of allHeld(game, seatId, characters)) {
-			if (!holdsAbility(game, seatId, held, characters)) continue;
+			if (!holdsAbility(game, seatId, held, characters, wakes)) continue;
 			// Already gained by their token (a Philosopher's swapped token, also recorded here).
 			if (out.some((g) => g.seatId === seatId && g.characterId === held.characterId)) continue;
 			out.push({
@@ -264,8 +274,11 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 /**
  * Adds a step for each gained ability, right after the gained character's own step, with
  * that character's night text. A character not in play (the Boffin's) has no step of its
- * own, so its step goes where `order` (the night sheet's ids for tonight) puts it; with no
- * place there, just before Dawn. A gained
+ * own, so its step goes where `order` (the night sheet's ids for tonight) puts it. One woken on
+ * another night by its first-night text (the Clockmaker gained on night three) goes where
+ * `firstOrder` (the first night's ids) puts it: before the next character after it there that
+ * has a place tonight. With no place at all, just before Dawn. A drunk or poisoned holder whose
+ * own character gives the ability still wakes there (`gainedAbilities` `wakes`). A gained
  * ability with no night text adds nothing. The step keeps the gaining character (the Pixie) as
  * its character, with `gained` saying whose ability it is and whether it is still `if-mad`.
  */
@@ -274,16 +287,27 @@ export function withGainedSteps<T extends NightStep>(
 	game: Game,
 	characters: CharacterLookup,
 	night: Night,
-	order: readonly string[] = []
+	order: readonly string[] = [],
+	firstOrder: readonly string[] = []
 ): (T | NightStep)[] {
 	const out: (T | NightStep)[] = [...steps];
-	// Before the first step the sheet puts after `id`.
-	const bySheet = (id: string) => {
+	// A step's place on the sheet: a copy's is its character's (`sheetStepId`).
+	const sheetAt = (s: NightStep) => order.indexOf(s.copy && s.character ? s.character.id : s.id);
+	// Before the first step the sheet puts after `id` (or at it, `from` 0).
+	const bySheet = (id: string, from = 1) => {
 		const at = order.indexOf(id);
 		if (at < 0) return -1;
-		return out.findIndex((s) => order.indexOf(s.id) > at);
+		return out.findIndex((s) => sheetAt(s) >= at + from);
 	};
-	for (const gained of gainedAbilities(game, characters)) {
+	// For an ability woken by its first-night text tonight: before the next character after it
+	// on the first night's sheet that has a place on tonight's.
+	const byFirstNight = (id: string) => {
+		const at = firstOrder.indexOf(id);
+		const next =
+			at < 0 ? undefined : firstOrder.slice(at + 1).find((n) => n !== 'dawn' && order.includes(n));
+		return next === undefined ? -1 : bySheet(next, 0);
+	};
+	for (const gained of gainedAbilities(game, characters, true)) {
 		// The step is the holder's own token's: the Pixie's, or the Demon holding the Boffin's.
 		const token = game.seats[gained.seatId]?.characterId;
 		const by = token ?? gained.via;
@@ -331,7 +355,12 @@ export function withGainedSteps<T extends NightStep>(
 					: gained
 		};
 		const anchor = out.findIndex((s) => s.id === gained.characterId);
-		const placed = anchor >= 0 ? anchor + 1 : bySheet(gained.characterId);
+		const placed =
+			anchor >= 0
+				? anchor + 1
+				: order.includes(gained.characterId)
+					? bySheet(gained.characterId)
+					: byFirstNight(gained.characterId);
 		const dawn = out.findIndex((s) => s.id === 'dawn');
 		const at = placed >= 0 ? placed : dawn >= 0 ? dawn : out.length;
 		out.splice(at, 0, step);
