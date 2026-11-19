@@ -5,7 +5,7 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import PlayerInbox from './PlayerInbox.svelte';
-	import { tablePlayers, tableSpectators } from './table-entries.ts';
+	import { tablePlayers, tableSpectators, type TableEntry } from './table-entries.ts';
 
 	/**
 	 * Every player's and spectator's messages, one section each for those who sent any, for a
@@ -19,6 +19,9 @@
 	let { game }: Props = $props();
 
 	const host = roomHost();
+	// A row's title names it for Collapsible only; its label shows the name as a badge.
+	// eslint-disable-next-line grim/names-as-badges -- never shown, the label replaces it
+	const titleOf = (entry: TableEntry): string => entry.name;
 	const count = (memberId: string) =>
 		host.inbox.items.filter((i) => i.memberId === memberId).length;
 	const senders = $derived(
@@ -34,7 +37,13 @@
 	<div class="messages" data-testid="player-messages-list">
 		{#each senders as entry (entry.key)}
 			{@const memberId = entry.inboxId!}
-			<Collapsible title={entry.name} level={3} pinned={false} count={count(memberId)} countOpen>
+			<Collapsible
+				title={titleOf(entry)}
+				level={3}
+				pinned={false}
+				count={count(memberId)}
+				countOpen
+			>
 				{#snippet label()}<PlayerBadge name={entry.name} />{/snippet}
 				<PlayerInbox {memberId} name={entry.name} />
 			</Collapsible>

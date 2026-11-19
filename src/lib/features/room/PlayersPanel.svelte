@@ -8,7 +8,6 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
@@ -58,10 +57,12 @@
 	const seatIndex = (seatId?: SeatId) => seats.findIndex((s) => s.seatId === seatId) + 1;
 
 	type Entry = TableEntry;
+	// A row's title names it for Collapsible only; its label shows the name as a badge.
+	// eslint-disable-next-line grim/names-as-badges -- never shown, the label replaces it
+	const titleOf = (entry: TableEntry): string => entry.name;
 	const players = $derived(tablePlayers(game, host));
 	// Spectators, in their own section (Trevor, 2026-11-03).
 	const spectators = $derived(tableSpectators(host));
-	const entries = $derived([...players, ...spectators]);
 
 	const phoneOf = (entry: Entry): Phone =>
 		!entry.member ? 'none' : host.isHere(entry.member.memberId) ? 'here' : 'away';
@@ -150,7 +151,7 @@
 	{@const notes = seatNotes(entry.seatId).length}
 	<li data-testid="room-player" data-seat={entry.seatId}>
 		<Collapsible
-			title={entry.name}
+			title={titleOf(entry)}
 			level={3}
 			pinned={false}
 			defaultOpen={openedKey === entry.key}

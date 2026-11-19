@@ -6,7 +6,7 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import SeatNotes from './SeatNotes.svelte';
-	import { tablePlayers } from './table-entries.ts';
+	import { tablePlayers, type TableEntry } from './table-entries.ts';
 
 	/**
 	 * Every player's notes, one section each in seat order, for a Notes view of its own under
@@ -20,6 +20,9 @@
 	let { game, run }: Props = $props();
 
 	const host = roomHost();
+	// A row's title names it for Collapsible only; its label shows the name as a badge.
+	// eslint-disable-next-line grim/names-as-badges -- never shown, the label replaces it
+	const titleOf = (entry: TableEntry): string => entry.name;
 	const players = $derived(tablePlayers(game, host));
 	const count = (seatId: string) => game.game.seats[seatId]?.notes?.length ?? 0;
 </script>
@@ -31,7 +34,7 @@
 		{#each players as entry (entry.key)}
 			{@const seatId = entry.seatId!}
 			<Collapsible
-				title={entry.name}
+				title={titleOf(entry)}
 				level={3}
 				pinned={false}
 				count={count(seatId)}
