@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import ThemeSheet from '#lib/features/settings/ThemeSheet.svelte';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { fromScript, type LoadedScript } from '#lib/core/data/index.ts';
@@ -136,6 +137,7 @@
 	 * that can't be shown is said in a toast and the next one that can replaces it.
 	 */
 	let boardReady = $state(false);
+	let themeOpen = $state(false);
 	let boardProblem = $state<string>();
 	const showBoard = $derived(admin && !message && !!town?.grimoire);
 	$effect(() => {
@@ -157,6 +159,12 @@
 						label: t(townShape ? 'room.town.fillScreen' : 'room.town.boardShape'),
 						disabled: !parseAspect(table.layout?.aspect),
 						onSelect: () => playerSettings.update({ townMatchShape: !townShape })
+					},
+					// The board's looks beside the town, as from the player's cog (Trevor, 2026-11-18).
+					{
+						value: 'theme',
+						label: t('settings.theme.title'),
+						onSelect: () => (themeOpen = true)
 					},
 					// The one Settings, at its list of sections, as everywhere (Trevor, 2026-10-27).
 					{
@@ -245,6 +253,8 @@
 		</div>
 	</Page>
 {/if}
+
+<ThemeSheet bind:open={themeOpen} />
 
 <style>
 	.status-line {

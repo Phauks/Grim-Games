@@ -3,6 +3,7 @@ import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { openSettingsDialog } from './shell.ts';
+import { openCogSettings } from './player-name.ts';
 
 // Players opt in or out of the Storyteller's sounds on their phone (Trevor, 2026-11-14: "make
 // it so that players can opt in or out of this feature ... have them just approve and be able
@@ -95,9 +96,9 @@ test('a player is asked on joining, plays nothing until they say yes, and is not
 	await phone.waitForTimeout(500);
 	await expect(question).toBeHidden();
 
-	// Settings > Sound changes it, and the night's recording starts at once.
-	await phone.getByRole('button', { name: 'Settings', exact: true }).first().tap();
-	const settings = phone.getByRole('dialog', { name: 'Settings' });
+	// Settings > Sound changes it, and the night's recording starts at once. The cog opens
+	// Theme, whose own cog opens Settings (Trevor, 2026-11-18).
+	const settings = await openCogSettings(phone);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })

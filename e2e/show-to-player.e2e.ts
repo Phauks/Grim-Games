@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openSettingsDialog } from './shell.ts';
 import { toBoard } from './new-game.ts';
+import { openBand, openTheme } from './theme.ts';
 
 test('an info token is shown full screen and only the close button hides it', async ({ page }) => {
 	await page.goto('/info-tokens');
@@ -121,16 +122,11 @@ test('a shown character stops growing before its name is cut or a word breaks', 
 test('a shown token fits the screen at any token size', async ({ page }) => {
 	// Trevor (2026-10-19): at 150% the Sweetheart ran off the phone. Token size is for the board
 	// only now, so the player's view fits the token to the screen at the largest size too.
-	await page.goto('/info-tokens');
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Tokens' })
-		.tap();
+	const settings = await openTheme(page, 'Character tokens');
 	await settings.getByRole('slider', { name: 'Character token size' }).fill('2');
+	await openBand(settings, 'Reminder tokens');
 	await settings.getByRole('slider', { name: 'Reminder token size' }).fill('2');
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await page.goto('/info-tokens');
 
 	await page.getByRole('button', { name: 'You are', exact: true }).tap();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Sweetheart');

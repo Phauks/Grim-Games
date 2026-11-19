@@ -86,7 +86,7 @@
 	const modeNames = $derived(corner?.modes ?? []);
 	const watcherCount = $derived(corner?.watchers ?? 0);
 	const meta = $derived(game ? game.script.meta : givenMeta);
-	// Each line has an eye in Game info and Settings > Board (corner-lines.ts); the name always shows.
+	// Each line has an eye in Game info and Theme > Board (corner-lines.ts); the name always shows.
 	const author = $derived(corner?.author === false ? undefined : meta?.author);
 	const version = $derived(corner?.version);
 	const players = $derived(corner?.players);

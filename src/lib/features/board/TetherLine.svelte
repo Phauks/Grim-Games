@@ -4,7 +4,7 @@
 	/**
 	 * One seat-to-reminder line, as every board draws it: bold, with an edge so it shows on every
 	 * background (Trevor, 2026-11-13: the thin line was weak and hard to see). The edge is the
-	 * character token's rim colour (Settings > Tokens), as TokenFace draws it, not black (Trevor,
+	 * character token's rim colour (Theme > Character tokens), as TokenFace draws it, not black (Trevor,
 	 * 2026-11-18). Goes inside an `<svg>`: ReminderTethers on the boards, and the Settings Board
 	 * preview's sample.
 	 */
