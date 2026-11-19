@@ -1505,7 +1505,7 @@ test('the Evil Twin step shows each twin the other', async ({ page }) => {
 	await expect(rows.first()).toContainText('Clockmaker');
 	await expect(rows.first()).toContainText('Seat 2');
 	const shownTo = step.getByTestId('night-shown-to');
-	await expect(shownTo).toContainText(/Seat 2\s*is shown\s*Evil Twin/);
+	await expect(shownTo).toContainText(/Seat 2\s*is shown\s*This character is in play\s*Evil Twin/);
 	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Evil Twin token/ })).toBeVisible();
@@ -4869,10 +4869,13 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 
 	const minionInfo = await openStep(page, 'Minion info');
 	const damsel = minionInfo.locator('[data-testid="evil-info-card"][data-row="shown-damsel"]');
-	await expect(damsel).toContainText('Damsel');
-	await minionInfo.getByRole('button', { name: 'Show to player: Damsel' }).tap();
+	// On the "This character is in play" card (Trevor, 2026-11-19).
+	await expect(damsel).toContainText(/This character is in play\s*Damsel/);
+	await minionInfo
+		.getByRole('button', { name: 'Show to player: This character is in play · Damsel' })
+		.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await expect(shown).toContainText('Damsel');
+	await expect(shown).toContainText(/This character is in play[\s\S]*Damsel/);
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// On through the night, step by step, to the Widow's.
 	const widow = nightStep(page, 'Widow');
@@ -4881,9 +4884,9 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 		await page.waitForTimeout(300);
 	}
 	const shownTo = widow.getByTestId('night-shown-to');
-	await expect(shownTo).toContainText(/Seat 4\s*is shown\s*Widow/);
+	await expect(shownTo).toContainText(/Seat 4\s*is shown\s*This character is in play\s*Widow/);
 	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
-	await expect(shown).toContainText('Widow');
+	await expect(shown).toContainText(/This character is in play[\s\S]*Widow/);
 });
 
 // https://wiki.bloodontheclocktower.com/Storm_Catcher (M10e): each evil player learns who is

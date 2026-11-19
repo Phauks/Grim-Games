@@ -495,11 +495,6 @@
 				<NightShownTo
 					{grimoire}
 					{step}
-					onShow={(id) => {
-						shownCard = undefined;
-						shownId = id;
-						showOpen = true;
-					}}
 					onShowCard={(card) => {
 						shownId = undefined;
 						shownCard = card;

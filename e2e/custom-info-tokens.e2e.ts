@@ -298,7 +298,8 @@ test("Trevor's Enhanced tokens sit apart, and the number is picked from a drop-d
 		'Select a player',
 		'Select a character',
 		'Please choose again',
-		'Are you sure?'
+		'Are you sure?',
+		'This character is in play'
 	])
 		await expect(enhanced.getByRole('button', { name, exact: true })).toBeVisible();
 	const shown = page.locator('[data-testid="show-to-player"][open]');

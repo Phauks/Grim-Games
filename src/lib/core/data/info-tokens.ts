@@ -119,6 +119,17 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true },
 	// Trevor's wording (2026-10-25).
 	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true },
+	// The character whose token a player is woken to see (`shownTo`): the Damsel at Minion info
+	// ("All Minions know a Damsel is in play", https://wiki.bloodontheclocktower.com/Damsel) and
+	// the Widow's Know player (https://wiki.bloodontheclocktower.com/Widow). Trevor's own card
+	// (2026-11-19: picked a card over the token alone); TPI only says to show the token.
+	{
+		id: 'in-play',
+		text: 'This character is in play',
+		source: 'standard',
+		asks: { characters: 1 },
+		extra: true
+	},
 	// Asked of the player the Harlot chose; with a yes, the Harlot learns their character
 	// (Trevor's wording, 2026-11-02; https://wiki.bloodontheclocktower.com/Harlot). The
 	// Harlot's own card, so Character-Specific, not Enhanced (Trevor, 2026-11-05).
