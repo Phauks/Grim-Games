@@ -76,7 +76,9 @@ export async function openPane(page: Page, tab?: PaneTab) {
 export async function closePane(page: Page) {
 	const sheet = page.getByRole('dialog', { name: 'Game', exact: true });
 	if (!(await sheet.isVisible())) return;
-	await press(sheet.getByRole('button', { name: 'Close', exact: true }));
+	// Already on its way out (closed a moment ago): only wait for it to go.
+	if ((await sheet.getAttribute('data-state')) !== 'closed')
+		await press(sheet.getByRole('button', { name: 'Close', exact: true }));
 	await expect(sheet).toBeHidden();
 }
 
