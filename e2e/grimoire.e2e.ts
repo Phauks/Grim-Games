@@ -21,7 +21,9 @@ import {
 	openPlayerSheet,
 	storytellerPane,
 	paneDay,
-	paneButton
+	paneButton,
+	closeTimerSheet,
+	timerControls
 } from './players.ts';
 import {
 	chooseRulesOnSetup,
@@ -1150,13 +1152,17 @@ test('the night order is walked through from the bank, and End night starts the 
 	// End night at the end of the reminder bank ends the night and starts Day 1 (Trevor,
 	// 2026-10-18), once Dusk has started it.
 	// The day timer is on the board from the start (Trevor, 2026-10-17).
-	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
+	const boardTimer = page.locator('.toolbar-timer').getByTestId('day-timer');
 	await expect(boardTimer).toBeVisible();
 	await endNight(page);
 	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
-	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
+	// Start is in the top bar, or a phone's timer sheet from its clock.
+	await expect(
+		(await timerControls(page)).getByRole('button', { name: 'Start timer' })
+	).toBeVisible();
+	await closeTimerSheet(page);
 	// Day has come: the button can't start another day; Execution, in place of End day,
 	// starts the next night (Trevor, 2026-10-19; 2026-10-22).
 	await expect(bankNight(page, 'End night')).toHaveCount(0);
@@ -3491,7 +3497,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	// Read-only: nothing pops up (Trevor, 2026-10-18). The game over line is out of
 	// History's strip, leaving it its room (2026-10-25), and sits in the day timer's place,
 	// top right, clear of the script's logo (2026-11-15).
-	await expect(page.locator('.board-timer').getByTestId('game-over')).toBeVisible();
+	await expect(page.locator('.toolbar-timer').getByTestId('game-over')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 	await expect(steps.getByTestId('game-over')).toHaveCount(0);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
@@ -3650,9 +3656,14 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	// The controls are left out: History's strip and the timer, with Back to town on it (the
 	// Soundboard is in ⋯ since 2026-11-01).
 	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
-	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
+	await expect(page.locator('.toolbar-timer .timer-slot')).toHaveAttribute(
+		'data-screenshot',
+		'skip'
+	);
 	// By its label: the open Export dialog hides the board from getByRole.
-	await expect(page.locator('.board-timer .timer-slot [aria-label="Back to town"]')).toBeAttached();
+	await expect(
+		page.locator('.toolbar-timer .timer-slot [aria-label="Back to town"]')
+	).toBeAttached();
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
