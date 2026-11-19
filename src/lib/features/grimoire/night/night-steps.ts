@@ -118,3 +118,18 @@ export function answerValueText(v: AnswerValue): string {
 export function alignmentText(value: 'good' | 'evil' | 'neither'): string {
 	return value === 'good' ? 'Good' : value === 'evil' ? 'Evil' : 'Neither';
 }
+
+/**
+ * A step's place among the night's counted steps, from 0, and how many there are. Dusk and
+ * Dawn bookend the night and are not counted (Trevor, 2026-11-18: "Dawn and dusk shouldn't
+ * count as night order steps"); on them `place` is -1.
+ */
+export function countedPlace(
+	steps: readonly NightStep[],
+	step: NightStep | undefined
+): { place: number; of: number } {
+	const bookend = (s: NightStep) => s.kind === 'marker' && (s.id === 'dusk' || s.id === 'dawn');
+	const counted = steps.filter((s) => !bookend(s));
+	const place = step && !bookend(step) ? counted.findIndex((s) => s.id === step.id) : -1;
+	return { place, of: counted.length };
+}

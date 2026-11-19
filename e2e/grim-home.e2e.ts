@@ -94,12 +94,16 @@ test("tonight's step is the pane's Night tab, with the strip's Next", async ({ p
 	await expect(walkName(page)).not.toHaveText('Dusk');
 
 	if (!(await paneIsSheet(page))) {
-		// Beside the board there is no strip: the pane has the step, its count by the night.
+		// Beside the board there is no strip: the pane has the step and its arrows. With no
+		// characters the night is only Dusk and Dawn, its bookends, which have no count (Trevor,
+		// 2026-11-18: "Dawn and dusk shouldn't count as night order steps").
 		await expect(page.getByTestId('night-strip')).toHaveCount(0);
 		const step = storytellerPane(page).getByRole('region', { name: 'First night' });
-		await expect(step.getByTestId('step-count')).toHaveText(/^2 of \d+$/);
+		await expect(walkName(page)).toHaveText('Dawn');
+		await expect(step.getByTestId('step-count')).toHaveCount(0);
 		await step.getByRole('button', { name: 'Previous step', exact: true }).tap();
 		await expect(walkName(page)).toHaveText('Dusk');
+		await expect(step.getByTestId('step-count')).toHaveCount(0);
 	}
 });
 
