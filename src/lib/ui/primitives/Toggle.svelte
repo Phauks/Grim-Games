@@ -42,6 +42,11 @@
 		font-family: var(--font-control);
 		cursor: pointer;
 		touch-action: manipulation;
+		/* Holds the hidden checkbox (Ark places it absolutely). Without it, the input sits
+		   against the nearest positioned box outside a scroll box, and a long list of switches
+		   made the box around that scroll box scroll too: Theme's second scrollbar (Trevor,
+		   2026-11-19). */
+		position: relative;
 	}
 	.toggle-text {
 		display: grid;

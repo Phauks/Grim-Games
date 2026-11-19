@@ -4,6 +4,7 @@ import { walkName, walkNext, walkThrough } from './night-step.ts';
 import { pickNumber } from './number-select.ts';
 import { tapStartGame } from './start-game.ts';
 import { openPane, paneIsSheet, storytellerPane } from './players.ts';
+import { openBoardTheme } from './theme.ts';
 
 // The grim as the home screen (Trevor, 2026-11-16: "make the grim the home screen"): the Day
 // and the Night are tabs of the Storyteller's pane, with Notes and Players. Beside the board
@@ -189,4 +190,22 @@ test("a day row lists its character's reminder tokens to place, move or drag, as
 		await page.mouse.up();
 	}
 	await expect(seat(3)).toHaveAttribute('aria-label', /1 reminder/);
+});
+
+test.describe('on a wide screen', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	// Trevor (2026-11-19): "fix different scrollbars in theme section". Only the view scrolls,
+	// never the pane around it, so there is one scrollbar, at the screen's edge.
+	test('a long Theme band scrolls inside its view, never the whole pane', async ({ page }) => {
+		await newGame(page);
+		const panel = await openBoardTheme(page, 'Board');
+		await expect(
+			panel.getByRole('checkbox', { name: 'Vignette', includeHidden: true })
+		).toBeAttached();
+		const overflow = (testId: string) =>
+			page.getByTestId(testId).evaluate((el) => el.scrollHeight - el.clientHeight);
+		expect(await overflow('pane-theme')).toBeGreaterThan(0);
+		expect(await overflow('beside-pane')).toBeLessThanOrEqual(1);
+	});
 });
