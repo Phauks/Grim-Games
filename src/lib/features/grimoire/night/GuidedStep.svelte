@@ -40,7 +40,6 @@
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import StepReminderRow from './StepReminderRow.svelte';
-	import { lastPlaced } from '#lib/core/engine/last-placed.ts';
 	import type { PaneTokenDrag } from '#lib/features/grimoire/hosting/pane-tokens.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
@@ -247,12 +246,6 @@
 		if (at) moveConfirm?.request(at.reminderId, seatId);
 		else grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId: id, label } });
 	}
-	/** Where each label's copies were before tonight (M89), copy by copy. */
-	const lastSeats = $derived.by(() => {
-		const id = tokensOf?.id;
-		const labels = [...new Set(rows.map((r) => r.label))];
-		return new Map(labels.map((l) => [l, id ? lastPlaced(grimoire.open.session.log, id, l) : []]));
-	});
 
 	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
 	let stepChanges = $state<readonly CharacterId[]>([]);
@@ -388,7 +381,8 @@
 		character={tokensOf}
 		{label}
 		{at}
-		last={lastSeats.get(label)?.[copy]}
+		log={grimoire.open.session.log}
+		{copy}
 		onagain={(seatId) => putOn(label, at, seatId)}
 		onchoose={() => choose(label, at)}
 		onreturn={(id) => moveConfirm?.requestReturn(id)}

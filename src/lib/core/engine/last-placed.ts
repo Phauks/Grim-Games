@@ -10,8 +10,11 @@ import { appliedEntries } from './applied-entries.ts';
 
 export interface LastPlaced {
 	seatId: SeatId;
-	/** `night`: on the board when the last day began; `day`: placed during that day. */
-	when: 'night' | 'day';
+	/**
+	 * When it was there, numbered as the day view numbers them (`rules/game-phase.ts`): the
+	 * night before the last New day, or that day itself.
+	 */
+	phase: { kind: 'night' | 'day'; number: number };
 }
 
 /**
@@ -26,21 +29,27 @@ export function lastPlaced(log: GameLog, characterId: CharacterId, label: string
 	const dawn = entries.findLastIndex((e) => e.events.some((ev) => ev.type === 'DayStarted'));
 	if (dawn < 0) return [];
 	const dusk = entries.findLastIndex((e, i) => i > dawn && e.command === 'Dusk');
+	/** Day N follows Night N: the last New day is day `number`. */
+	const number = entries
+		.slice(0, dawn + 1)
+		.filter((e) => e.events.some((ev) => ev.type === 'DayStarted')).length;
+	const night = { kind: 'night', number } as const;
+	const day = { kind: 'day', number } as const;
 
 	const on = new Map<string, SeatId>();
 	const out = new Map<string, LastPlaced>();
 	for (let i = 0; i < (dusk < 0 ? dawn : dusk); i++) {
-		if (i === dawn) for (const [id, seatId] of on) out.set(id, { seatId, when: 'night' });
+		if (i === dawn) for (const [id, seatId] of on) out.set(id, { seatId, phase: night });
 		for (const ev of entries[i].events) {
 			if (ev.type === 'ReminderAdded') {
 				const r = ev.reminder;
 				if (r.characterId !== characterId || r.label !== label) continue;
 				on.set(r.reminderId, ev.seatId);
-				if (i > dawn) out.set(r.reminderId, { seatId: ev.seatId, when: 'day' });
+				if (i > dawn) out.set(r.reminderId, { seatId: ev.seatId, phase: day });
 			} else if (ev.type === 'ReminderMoved' && on.has(ev.reminderId)) {
 				on.set(ev.reminderId, ev.toSeatId);
-				if (i > dawn && out.get(ev.reminderId)?.when === 'day')
-					out.set(ev.reminderId, { seatId: ev.toSeatId, when: 'day' });
+				if (i > dawn && out.get(ev.reminderId)?.phase === day)
+					out.set(ev.reminderId, { seatId: ev.toSeatId, phase: day });
 			} else if (
 				ev.type === 'ReminderRemoved' ||
 				ev.type === 'ReminderLoosened' ||
@@ -50,6 +59,57 @@ export function lastPlaced(log: GameLog, characterId: CharacterId, label: string
 			}
 		}
 	}
-	if (dusk < 0) for (const [id, seatId] of on) out.set(id, { seatId, when: 'night' });
+	if (dusk < 0) for (const [id, seatId] of on) out.set(id, { seatId, phase: night });
 	return [...out.values()];
+}
+
+/** Where a token was put, and in which night or day (`tokenHistory`). */
+export interface TokenPlacement {
+	seatId: SeatId;
+	phase: { kind: 'night' | 'day'; number: number };
+}
+
+/**
+ * Every seat `characterId`'s `label` token was put on, oldest first, each with the night or
+ * day it happened in (M89, Trevor 2026-11-19: tap last night to see that token's history).
+ * Night 1 runs until the first New day; Day N from the Nth New day until a Dusk, then Night
+ * N+1. A night whose Dusk changed nothing leaves no Dusk in the log, so its placements count
+ * as the day before. The same seat twice in one night or day is listed once.
+ */
+export function tokenHistory(
+	log: GameLog,
+	characterId: CharacterId,
+	label: string
+): TokenPlacement[] {
+	const out: TokenPlacement[] = [];
+	const ids = new Set<string>();
+	let days = 0;
+	let night = true;
+	for (const entry of appliedEntries(log)) {
+		if (entry.command === 'Dusk') night = true;
+		for (const ev of entry.events) {
+			if (ev.type === 'DayStarted') {
+				days += 1;
+				night = false;
+			}
+			let seatId: SeatId | undefined;
+			if (
+				ev.type === 'ReminderAdded' &&
+				ev.reminder.characterId === characterId &&
+				ev.reminder.label === label
+			) {
+				ids.add(ev.reminder.reminderId);
+				seatId = ev.seatId;
+			} else if (ev.type === 'ReminderMoved' && ids.has(ev.reminderId)) seatId = ev.toSeatId;
+			if (seatId === undefined) continue;
+			const phase = night
+				? { kind: 'night' as const, number: days + 1 }
+				: { kind: 'day' as const, number: days };
+			const same = out.some(
+				(p) => p.seatId === seatId && p.phase.kind === phase.kind && p.phase.number === phase.number
+			);
+			if (!same) out.push({ seatId, phase });
+		}
+	}
+	return out;
 }

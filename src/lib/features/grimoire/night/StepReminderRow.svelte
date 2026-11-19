@@ -7,8 +7,11 @@
 	import { placingAlignment } from '#lib/features/grimoire/board.ts';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import type { LastPlaced } from '#lib/core/engine/last-placed.ts';
+	import { lastPlaced, tokenHistory } from '#lib/core/engine/last-placed.ts';
+	import type { GameLog } from '#lib/core/engine/log.ts';
+	import TokenHistoryDialog from './TokenHistoryDialog.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
+	import { phaseText } from '#lib/features/game/phase-text.ts';
 
 	/**
 	 * One copy of a night step's reminder token (`GuidedStep`): the token, where it is, and back
@@ -31,24 +34,49 @@
 		/** The token dragged onto the board (beside it, not a phone's sheet); `end` when let go. */
 		ondrag?: (x: number, y: number, end: boolean | 'cancel') => void;
 		/**
-		 * Where this copy was before tonight (M89, Trevor 2026-11-19): a small line above the
-		 * row, with a small button that puts it there again. Never placed by itself.
+		 * The game's log, for where this copy was before tonight (M89, Trevor 2026-11-19): a
+		 * small line above the row, with a small button that puts it there again (never placed
+		 * by itself), and its night or day opens the token's history.
 		 */
-		last?: LastPlaced;
-		/** Puts this copy on `last`'s seat. */
+		log?: GameLog;
+		/** Which copy of `label` this row is, from 0. */
+		copy?: number;
+		/** Puts this copy on its last seat. */
 		onagain?: (seatId: SeatId) => void;
 	}
 
-	let { game, characters, character, label, at, onchoose, onreturn, ondrag, last, onagain }: Props =
-		$props();
-	const lastName = $derived(last?.when === 'day' ? 'Today' : 'Last night');
+	let {
+		game,
+		characters,
+		character,
+		label,
+		at,
+		onchoose,
+		onreturn,
+		ondrag,
+		log,
+		copy = 0,
+		onagain
+	}: Props = $props();
+	const last = $derived(log && character ? lastPlaced(log, character.id, label)[copy] : undefined);
+	let historyOpen = $state(false);
+	const history = $derived(
+		historyOpen && log && character ? tokenHistory(log, character.id, label) : []
+	);
 </script>
 
 <span class="step-reminder">
 	{#if last}
-		<!-- Last night's (or today's) seat, small, above tonight's (Trevor, 2026-11-19). -->
+		<!-- Last night's (or today's) seat, small, above tonight's, named by the night or day it
+	     was placed (Trevor, 2026-11-19). -->
 		<span class="last" data-testid="last-placed">
-			<Icon name={last.when === 'day' ? 'day' : 'night'} label={lastName} />
+			<!-- Tapped, the token's history this game (Trevor, 2026-11-19). -->
+			<button
+				type="button"
+				class="when"
+				aria-label={`${label} history: ${phaseText(last.phase)}`}
+				onclick={() => (historyOpen = true)}>{phaseText(last.phase)}</button
+			>
 			<SeatBadge {game} {characters} interactive={false} seatId={last.seatId} />
 			{#if onagain}<button
 					type="button"
@@ -60,6 +88,13 @@
 				>{/if}
 		</span>
 	{/if}
+	{#if historyOpen}<TokenHistoryDialog
+			bind:open={historyOpen}
+			{game}
+			{characters}
+			{label}
+			{history}
+		/>{/if}
 	<span class="reminder-row">
 		<!-- The token itself, as on the board (Trevor, 2026-10-30), never squeezed. -->
 		<!-- Tapped, as Place or Move; dragged, onto the board (Trevor, 2026-11-16). -->
@@ -113,6 +148,28 @@
 		color: var(--on-surface-muted);
 		font-family: var(--font-body);
 		font-size: 0.8rem;
+	}
+	/* Small words, underlined as something to tap, with a full-height hit area. */
+	.when {
+		position: relative;
+		min-height: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		white-space: nowrap;
+		text-decoration: underline dotted;
+		text-underline-offset: 0.15em;
+		cursor: pointer;
+	}
+	.when::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		top: 50%;
+		height: var(--tap-target);
+		translate: 0 -50%;
 	}
 	.again {
 		position: relative;

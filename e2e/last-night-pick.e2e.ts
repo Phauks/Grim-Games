@@ -20,7 +20,19 @@ test("the Poisoner's step shows last night's pick and places it again on a tap",
 	let step = await openStep(page, 'Poisoner');
 	const lastLine = () => nightStep(page, 'Poisoner').getByTestId('last-placed');
 	await expect(lastLine()).toContainText('Seat 5');
-	await expect(lastLine().getByRole('img', { name: 'Last night' })).toBeAttached();
+	// Named by the night it was placed, not an icon (Trevor, 2026-11-19).
+	await expect(lastLine()).toContainText('Night 1');
+	// Tapped, that token's history this game.
+	await lastLine().getByRole('button', { name: 'Poisoned history: Night 1' }).tap();
+	const history = page.getByRole('dialog', { name: 'Poisoned history' });
+	await expect(history.getByTestId('token-history').getByRole('listitem')).toHaveCount(1);
+	await expect(history.getByTestId('token-history')).toContainText('Night 1');
+	await expect(history.getByTestId('token-history')).toContainText('Seat 5');
+	await page.screenshot({
+		path: `test-results/last-night-history-${test.info().project.name}.png`
+	});
+	await page.keyboard.press('Escape');
+	await expect(history).toBeHidden();
 	// Last night's token still on until Dusk: off it comes, as Dusk would take it.
 	const back = step.getByRole('button', { name: 'Return Poisoned to the reminder bank' });
 	if (await back.isEnabled()) {
