@@ -35,14 +35,6 @@ export function grayOf(rgba: Uint8ClampedArray, width: number, height: number): 
 	return { width, height, values };
 }
 
-/** How different two frames of the same size are: the mean change in brightness, 0 to 255. */
-export function difference(a: Gray, b: Gray): number {
-	if (a.width !== b.width || a.height !== b.height) return 255;
-	let sum = 0;
-	for (let i = 0; i < a.values.length; i++) sum += Math.abs(a.values[i] - b.values[i]);
-	return sum / a.values.length;
-}
-
 /**
  * How sharp a frame is: the mean squared change in brightness between neighbouring pixels.
  * Motion blur smears edges, so the same sheet held still scores higher than while it moves.

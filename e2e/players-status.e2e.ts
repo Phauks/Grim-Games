@@ -2,7 +2,6 @@ import {
 	closePane,
 	boardTimer as openBoardTimer,
 	paneIsSheet,
-	storytellerPane,
 	paneButton,
 	timerControls
 } from './players.ts';
@@ -113,7 +112,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const day = page.getByTestId('pane-day');
 	await expect(day).toBeVisible();
 	// The day's counts sit above the pane's tabs (Trevor, 2026-11-17).
-	const stCounts = storytellerPane(page).getByTestId('day-counts');
+	const stCounts = page.getByTestId('day-counts');
 	await expect(status).toContainText('Day 1');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',

@@ -575,15 +575,8 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(final.getByTestId('history-strip')).toBeVisible();
 	// Nothing is secret once the game is over.
 	await expect(final.getByTestId('fair-play')).toHaveCount(0);
-	// The same as the Storyteller's own board shows it on a phone, where the game's name
-	// reaches the bottom seat's box too (known there, not from this dialog).
-	await expectNothingCovered(
-		phone,
-		final,
-		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
-			() => testInfo.project.name === 'phone'
-		)
-	);
+	// The same as the Storyteller's own board shows it on a phone.
+	await expectNothingCovered(phone, final);
 	// Its close puts the town back, guesses and all; the switch opens it again.
 	await finalDialog.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(finalDialog).toHaveCount(0);
@@ -605,13 +598,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await view.getByRole('tab', { name: 'Grim' }).tap();
 	const viewFinal = page.getByRole('dialog', { name: 'Final grimoire' });
 	await expect(viewFinal.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
-	await expectNothingCovered(
-		page,
-		viewFinal.getByTestId('final-grimoire'),
-		['<button.seat> "Seat 5: no name, no character" covered by <button.name> "mode-menu"'].filter(
-			() => testInfo.project.name === 'phone'
-		)
-	);
+	await expectNothingCovered(page, viewFinal.getByTestId('final-grimoire'));
 	// Escape closes the grimoire first, then the player view.
 	await page.keyboard.press('Escape');
 	await expect(viewFinal).toHaveCount(0);
