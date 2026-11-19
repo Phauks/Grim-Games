@@ -4,17 +4,16 @@
 	import type { QuietStart } from '#lib/core/data/parts/quiet-start.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_END_SOUNDS, type TimerSound, type TimerEndSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import DayTimer from './DayTimer.svelte';
 	import { liveDayTimer } from './day-timer.svelte.ts';
 	import type { WatchedTimer } from './watched-timer.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import VibrateToggle from '#lib/features/sound/VibrateToggle.svelte';
-	import TimerSoundToggle from '#lib/features/sound/TimerSoundToggle.svelte';
+	import MomentSoundSelect from '#lib/features/sound/MomentSoundSelect.svelte';
+	import { soundName } from '#lib/features/sound/sound-names.svelte.ts';
 	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
 	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
@@ -102,15 +101,8 @@
 	/** The clock opens the Timer sheet: always on the board, and in the day with Back to town. */
 	const opens = $derived(!inSheet && (variant === 'compact' || !!town));
 	const clock = $derived(town?.called ? t('day.town') : timer.clock);
-	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
-	/** The Timer sound is off while counting up or while the end sound is switched off. */
-	const soundOff = $derived(
-		preferences.current.timerMode === 'up' || !preferences.current.timerSoundOn
-	);
-	// Not played here: the board is the Storyteller's device (Trevor, 2026-10-30).
-	function chooseSound(sound: TimerEndSound) {
-		preferences.update({ timerSound: sound });
-	}
+	/** A stopwatch has no end, so no sound for it. */
+	const soundOff = $derived(preferences.current.timerMode === 'up');
 </script>
 
 {#snippet keepAwake()}
@@ -223,9 +215,7 @@
 			<IconButton
 				icon="sound"
 				label={t('day.timerSoundButton', {
-					sound: soundLabel(
-						preferences.current.timerSoundOn ? preferences.current.timerSound : 'none'
-					)
+					sound: soundName(preferences.current.momentSounds.timeUp)
 				})}
 				onclick={() => (soundOpen = true)}
 			/>
@@ -239,16 +229,8 @@
 {#if !inSheet && variant === 'full' && !opens}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
 		<div class="controls">
-			<TimerSoundToggle />
-			<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
-			<Select
-				label={t('day.timerSoundTitle')}
-				hideLabel
-				value={preferences.current.timerSound}
-				options={TIMER_END_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
-				disabled={soundOff}
-				onChange={chooseSound}
-			/>
+			<!-- Time is up's sound, as in Settings > Sound (Trevor, 2026-11-19); None is silent. -->
+			<MomentSoundSelect moment="timeUp" disabled={soundOff} preview={false} />
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow game />
@@ -259,14 +241,7 @@
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
 			<DayTimer {alive} inSheet {quiet} {town} {readOnly} {beforeStart} />
-			<TimerSoundToggle />
-			<Select
-				label={t('day.timerSoundTitle')}
-				value={preferences.current.timerSound}
-				options={TIMER_END_SOUNDS.map((value) => ({ value, label: soundLabel(value) }))}
-				disabled={soundOff}
-				onChange={chooseSound}
-			/>
+			<MomentSoundSelect moment="timeUp" disabled={soundOff} preview={false} />
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow game />

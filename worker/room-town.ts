@@ -7,9 +7,9 @@ import { hearsSound, parseSoundOutput } from '../src/lib/core/sound/soundboard.t
 import { pushCallTown, type PushEnv } from './push.ts';
 import { sendText, type Attachment } from './room-sockets.ts';
 
-/** A sound's name as the app sends it (TIMER_SOUNDS); the phones check it against their own list. */
+/** A sound's id as the app sends it (GAME_SOUNDS); the phones check it against their own list. */
 export function callTownSound(value: unknown): string | undefined {
-	return typeof value === 'string' && /^[a-z]{1,20}$/.test(value) ? value : undefined;
+	return typeof value === 'string' && /^[a-z-]{1,40}$/.test(value) ? value : undefined;
 }
 
 /**

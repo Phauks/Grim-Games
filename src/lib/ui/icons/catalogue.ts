@@ -79,6 +79,9 @@ export const ICON_SLOTS = {
 	/** Holds the soundboard and day and night sound where they are (Trevor, 2026-10-27). */
 	soundPause: { label: 'Pause sound', choices: ['ph:pause', 'ph:pause-circle'] },
 	soundResume: { label: 'Resume sound', choices: ['ph:play', 'ph:play-circle'] },
+	/** Plays the sound picked in the pane's Sounds, and stops it (Trevor, 2026-11-19). */
+	soundPlay: { label: 'Play sound', choices: ['ph:play-circle', 'ph:play'] },
+	soundStop: { label: 'Stop sound', choices: ['ph:stop-circle', 'ph:stop'] },
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },

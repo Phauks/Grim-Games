@@ -82,25 +82,24 @@ describe('parsePreferences', () => {
 			tileOrderRandom: true,
 			ownWording: true,
 			soundVolume: 0.35,
-			timerSound: 'buzzer',
-			timerSoundOn: false,
 			timerMode: 'up',
 			reminderRemoval: 'auto',
 			countingReminders: 'auto',
 			timerVibrate: false,
-			townCallSound: 'chime',
 			ambienceOn: true,
 			ambienceLevel: 0.3,
 			nightAmbience: 'night-loons',
 			dayAmbience: 'weather-rain-wood',
-			actionSoundsOn: true,
-			actionSounds: { dusk: 'none', dawn: 'hand-bell', execution: 'gallows', gameEnd: 'heartbeat' },
-			soundboardLevel: 0.5,
-			soundboardOverlap: true,
-			soundMixes: { heartbeat: { volume: 0.4, loop: true } },
+			momentSounds: {
+				dusk: 'none',
+				dawn: 'hand-bell',
+				execution: 'gallows',
+				timeUp: 'buzzer',
+				townCall: 'none',
+				gameEnd: 'heartbeat'
+			},
 			soundOutput: 'phones',
 			speaker: 'abc123',
-			soundPads: [{ sound: 'gallows' }, { mix: 'mix-1', name: 'Doom', sounds: ['heartbeat'] }],
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
 			setupForPlayers: 'town',
@@ -134,12 +133,6 @@ describe('parsePreferences', () => {
 	it('keeps any bag tile label, and reads an unknown one as numbers', () => {
 		expect(parsePreferences({ tileFace: 'random' }).tileFace).toBe('random');
 		expect(parsePreferences({ tileFace: 'shapes' }).tileFace).toBe('numbers');
-		expect(parsePreferences({ timerSound: 'chime' }).timerSound).toBe('chime');
-		expect(parsePreferences({ timerSound: 'gong' }).timerSound).toBe('bell');
-		// Silence is the on/off switch, not a sound (Trevor, 2026-11-15).
-		expect(parsePreferences({ timerSound: 'none' }).timerSound).toBe('bell');
-		expect(parsePreferences({}).timerSoundOn).toBe(true);
-		expect(parsePreferences({ timerSoundOn: false }).timerSoundOn).toBe(false);
 		expect(parsePreferences({}).timerVibrate).toBe(true);
 		expect(parsePreferences({}).ownWording).toBe(false);
 		expect(parsePreferences({ timerVibrate: false }).timerVibrate).toBe(false);
@@ -167,13 +160,15 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ soundVolume: 0.42 }).soundVolume).toBe(0.4);
 		expect(parsePreferences({ soundVolume: 3 }).soundVolume).toBe(1);
 		expect(parsePreferences({ soundVolume: 'loud' }).soundVolume).toBe(1);
-		// Plan U2: the Back to town sound, the clock tower by default.
-		// What Back to town sends (Trevor, 2026-11-06): each phone's own sound until picked.
-		// Phones have no choice of their own (Trevor, 2026-11-06); the clock tower by default.
-		expect(parsePreferences({}).townCallSound).toBe('clocktower');
-		expect(parsePreferences({ townCallSound: 'bell' }).townCallSound).toBe('bell');
-		expect(parsePreferences({ townCallSound: 'own' }).townCallSound).toBe('clocktower');
-		expect(parsePreferences({ townCallSound: 'gong' }).townCallSound).toBe('clocktower');
+		// The game's moments play by themselves (Trevor, 2026-11-19): every one on by default,
+		// Back to town on the clock tower and time up on the bell as before.
+		const moments = parsePreferences({}).momentSounds;
+		expect(moments.townCall).toBe('clocktower');
+		expect(moments.timeUp).toBe('bell');
+		expect(moments.execution).toBe('gallows');
+		expect(parsePreferences({ momentSounds: { townCall: 'gong' } }).momentSounds.townCall).toBe(
+			'clocktower'
+		);
 	});
 
 	// Plan U3: day and night sound is off until turned on, and older builds saved none.
@@ -183,8 +178,6 @@ describe('parsePreferences', () => {
 		expect(prefs.ambienceLevel).toBe(0.6);
 		expect(prefs.nightAmbience).toBe('night-meadow');
 		expect(prefs.dayAmbience).toBe('day-forest');
-		expect(prefs.actionSoundsOn).toBe(false);
-		expect(prefs.actionSounds.execution).toBe('gallows');
 		const chosen = parsePreferences({
 			ambienceOn: true,
 			ambienceLevel: 9,

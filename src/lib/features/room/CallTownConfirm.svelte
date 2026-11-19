@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { TIMER_SOUNDS } from '#lib/ui/preferences.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { callTown } from './call-town.ts';
 
@@ -11,9 +8,8 @@
 	 * Back to town, confirmed first (Trevor, 2026-10-27: a Cancel/Confirm sheet), since every
 	 * phone in the room sounds and a stray tap can't be taken back. Confirmed, it calls the
 	 * town (plan U2) and stops the day timer; players' phones then show Town, the sun set.
-	 * The sound every phone plays is picked here and kept for the next call (Trevor, 2026-11-06:
-	 * phones have no choice of their own); it never plays on this device, the Storyteller's
-	 * (2026-10-30).
+	 * The sound every phone plays is Back to town's in Settings > Sound (Trevor, 2026-11-19);
+	 * it never plays on this device, the Storyteller's (2026-10-30).
 	 */
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
@@ -24,23 +20,11 @@
 </script>
 
 <ConfirmDialog bind:open title={t('room.callTownConfirm')} onConfirm={call}>
-	<div class="body">
-		<p>{t('room.callTownWhat')}</p>
-		<Select
-			label={t('room.callTownSound')}
-			value={preferences.current.townCallSound}
-			options={TIMER_SOUNDS.map((value) => ({ value, label: t(`day.timerSound.${value}`) }))}
-			onChange={(townCallSound) => preferences.update({ townCallSound })}
-		/>
-	</div>
+	<p>{t('room.callTownWhat')}</p>
 </ConfirmDialog>
 
 <style>
-	.body {
-		display: grid;
-		gap: var(--space-4);
-	}
-	.body p {
+	p {
 		margin: 0;
 	}
 </style>

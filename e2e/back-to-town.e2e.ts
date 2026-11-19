@@ -1,3 +1,4 @@
+import { openSettingsDialog } from './shell.ts';
 import {
 	paneDay,
 	boardTimer,
@@ -195,10 +196,11 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await expect(day.getByTestId('day-timer')).toHaveCount(0);
 });
 
-// Trevor, 2026-11-06: "Back to town button should have more controls on deciding which sound to
-// send" (option A: a Sound drop-down in the confirm sheet, kept for the next call), and
-// "Remove each phones own choice for back to town": every phone plays the Storyteller's pick.
-test('Back to town sends the sound the Storyteller picks, and keeps it for next time', async ({
+// Trevor, 2026-11-06: "Remove each phones own choice for back to town": every phone plays the
+// Storyteller's pick. Since 2026-11-19 ("lets identify the full sound flow") the pick is Back to
+// town's row in Settings > Sound, Game moments, from the one list of game sounds, and the confirm
+// sheet only confirms.
+test('Back to town sends the sound set for it in Settings, or none', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -210,6 +212,11 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
+	const fetched: string[] = [];
+	phone.on('request', (request) => {
+		const path = new URL(request.url()).pathname;
+		if (path.startsWith('/sounds/board/')) fetched.push(path);
+	});
 	await phone.addInitScript(() => {
 		const calls: string[] = [];
 		(window as unknown as { alerts: string[] }).alerts = calls;
@@ -225,22 +232,24 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
-	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
-	await (await timerControls(page)).getByRole('button', { name: 'Back to town' }).tap();
-	const sound = confirm.getByRole('combobox', { name: 'Sound' });
-	// The clock tower until the Storyteller picks another; no choice left to each phone.
+	const settings = await openSettingsDialog(page);
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Sound' })
+		.tap();
+	const sound = settings.getByRole('combobox', { name: 'Back to town' });
+	// The clock tower until the Storyteller picks another.
 	await expect(sound).toContainText('Clock tower chimes');
 	await sound.tap();
-	await expect(page.getByRole('option')).toHaveText([
-		'Bell',
-		'Chime',
-		'Clock tower chimes',
-		'Buzzer',
-		'None'
-	]);
 	// None: the phone only vibrates, so what it plays is the Storyteller's pick, not its own.
 	await page.getByRole('option', { name: 'None', exact: true }).tap();
 	await expect(sound).toContainText('None');
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
+	await (await timerControls(page)).getByRole('button', { name: 'Back to town' }).tap();
+	await expect(confirm.getByRole('combobox')).toHaveCount(0);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toBeHidden();
 	await expect(phone.getByText('Back to town', { exact: true })).toBeVisible();
@@ -251,12 +260,7 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 	expect(await phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts)).toEqual([
 		'vibrate'
 	]);
-
-	// Kept for the next call, on this device.
-	await page.reload();
-	await (await timerControls(page)).getByRole('button', { name: 'Back to town' }).tap();
-	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('None');
-	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	expect(fetched).toEqual([]);
 	await phoneContext.close();
 });
 
