@@ -5409,6 +5409,14 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	await expect(section.getByRole('combobox', { name: 'First player chosen' })).toHaveAttribute(
 		'data-attention'
 	);
+	// Each drop-down on a line of its own, never side by side (Trevor, 2026-11-19).
+	const firstBox = await section
+		.getByRole('combobox', { name: 'First player chosen' })
+		.boundingBox();
+	const secondBox = await section
+		.getByRole('combobox', { name: 'Second player chosen' })
+		.boundingBox();
+	expect(secondBox!.y).toBeGreaterThanOrEqual(firstBox!.y + firstBox!.height);
 	await pick('First player chosen', 'Seat 2');
 	await pick('Second player chosen', 'Seat 3');
 	await expect(answers).toHaveCount(1);
