@@ -871,6 +871,7 @@
 				nominations={seatNominationMarks}
 				{heldSeat}
 				{heldDrag}
+				heldReminder={hand.placed}
 				{placeSpots}
 				onPlace={placeAt}
 				onSeat={tapSeat}
