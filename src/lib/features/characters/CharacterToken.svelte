@@ -3,6 +3,7 @@
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
+	import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
@@ -34,10 +35,12 @@
 		showName ?? (preferences.current.tokenAppearance.boardNames && size >= NAME_MIN_SIZE)
 	);
 
+	// Its own reminders only: the Hermit's stand-in 1, 2 and 3 are never used (own-reminders.ts).
+	const own = $derived(ownReminders(character));
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
 		otherNight: character.otherNightReminder !== undefined || character.otherNight !== undefined,
-		reminders: character.reminders.length + character.remindersGlobal.length,
+		reminders: own.reminders.length + own.remindersGlobal.length,
 		setup: character.setup
 	});
 	const src = $derived(iconUrl(character, alignment));

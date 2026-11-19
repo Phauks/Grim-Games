@@ -42,6 +42,7 @@ import {
 	reminderTargetMisses
 } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { analyseSetup } from '#lib/core/rules/setup/setup.ts';
+import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 
 // A script whose Outsiders are the Hermit, Klutz, Butler and Recluse (the wiki's first example).
 const IDS: CharacterId[] = [
@@ -274,6 +275,18 @@ describe('Hermit', () => {
 			const copy = (ownerSeatId: string) => ({ characterId: 'butler', ownerSeatId });
 			expect(borrowedCopyHolder(s.game, copy(s.seat('hermit')), s.characters)).toBe('hermit');
 			expect(borrowedCopyHolder(s.game, copy(s.seat('butler')), s.characters)).toBeUndefined();
+		});
+
+		it('never lists its 1, 2 and 3: its own copies of the real tokens stand in', () => {
+			// Wiki: "If the Hermit duplicates an in-play Outsider, use the Hermits "1", "2" and "3"
+			// reminders instead."
+			// The app makes the Hermit its own copies of the real tokens in their place (M68), so
+			// the 1, 2 and 3 are left out everywhere tokens are listed or counted (Trevor,
+			// 2026-11-19: "remove the hermit tokens").
+			const hermit = characters.get('hermit')!;
+			expect(ownReminders(hermit)).toEqual({ reminders: [], remindersGlobal: [] });
+			const butler = characters.get('butler')!;
+			expect(ownReminders(butler).reminders).toEqual(butler.reminders);
 		});
 	});
 });

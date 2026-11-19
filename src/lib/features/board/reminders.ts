@@ -3,6 +3,7 @@
  * with recent reminders first. Reminder tokens come from TPI's data: a character's
  * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
+import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import {
 	borrowedAbilities,
@@ -84,9 +85,10 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 	for (const id of [...inPlay, ...onScript]) {
 		const character = characters.get(id);
 		if (!character) continue;
+		const own = ownReminders(character);
 		const labels = inPlay.includes(id)
-			? unique([...character.reminders, ...character.remindersGlobal])
-			: unique(character.remindersGlobal);
+			? unique([...own.reminders, ...own.remindersGlobal])
+			: unique(own.remindersGlobal);
 		if (labels.length > 0) groups.push({ character, labels: labels.sort(byLabel) });
 	}
 	// In script order, then characters off the script by name (Trevor, 2026-10-16).
@@ -495,7 +497,7 @@ export function tokenRows(
 	character: Character,
 	total: ReadonlyMap<string, number>
 ): TokenRow[] {
-	return [...new Set(character.reminders)].flatMap((label) => {
+	return [...new Set(ownReminders(character).reminders)].flatMap((label) => {
 		const on = game.seating.flatMap((seatId) =>
 			game.seats[seatId].reminders
 				.filter((x) => x.characterId === character.id && x.label === label)
