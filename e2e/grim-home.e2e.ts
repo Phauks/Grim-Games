@@ -4,6 +4,7 @@ import { walkName, walkNext, walkThrough } from './night-step.ts';
 import { pickNumber } from './number-select.ts';
 import { tapStartGame } from './start-game.ts';
 import { openPane, paneIsSheet, storytellerPane } from './players.ts';
+import { openBoardTheme } from './theme.ts';
 
 // The grim as the home screen (Trevor, 2026-11-16: "make the grim the home screen"): the Day
 // and the Night are tabs of the Storyteller's pane, with Notes and Players. Beside the board
@@ -123,13 +124,13 @@ test("tonight's step is the pane's Night tab, with the strip's Next", async ({ p
 		const step = storytellerPane(page).getByRole('region', { name: 'First night' });
 		await expect(walkName(page)).toHaveText('Dawn');
 		await expect(step.getByTestId('step-count')).toHaveCount(0);
-		// The bar is full on Dawn and empty on Dusk (Trevor, 2026-11-19: "Bar should be at start
-		// and end on highest and lowest numbers").
-		await expect(step.getByTestId('step-progress')).toHaveAttribute('style', /inline-size: 100%/);
+		// No bar on Dawn or Dusk (Trevor, 2026-11-19: "there should be no progress bar when on
+		// dusk or dawn").
+		await expect(step.getByTestId('step-progress')).toBeHidden();
 		await step.getByRole('button', { name: 'Previous step', exact: true }).tap();
 		await expect(walkName(page)).toHaveText('Dusk');
 		await expect(step.getByTestId('step-count')).toHaveCount(0);
-		await expect(step.getByTestId('step-progress')).toHaveAttribute('style', /inline-size: 0%/);
+		await expect(step.getByTestId('step-progress')).toBeHidden();
 	}
 });
 
@@ -220,4 +221,22 @@ test("a heading pinned as the pane scrolls keeps the pane's own background", asy
 	expect(paneColour).not.toBe('');
 	await expect(heading).toHaveCSS('background-color', paneColour);
 	await expect(heading).toHaveCSS('background-image', 'none');
+});
+
+test.describe('on a wide screen', () => {
+	test.use({ viewport: { width: 1440, height: 900 } });
+
+	// Trevor (2026-11-19): "fix different scrollbars in theme section". Only the view scrolls,
+	// never the pane around it, so there is one scrollbar, at the screen's edge.
+	test('a long Theme band scrolls inside its view, never the whole pane', async ({ page }) => {
+		await newGame(page);
+		const panel = await openBoardTheme(page, 'Board');
+		await expect(
+			panel.getByRole('checkbox', { name: 'Vignette', includeHidden: true })
+		).toBeAttached();
+		const overflow = (testId: string) =>
+			page.getByTestId(testId).evaluate((el) => el.scrollHeight - el.clientHeight);
+		expect(await overflow('pane-theme')).toBeGreaterThan(0);
+		expect(await overflow('beside-pane')).toBeLessThanOrEqual(1);
+	});
 });

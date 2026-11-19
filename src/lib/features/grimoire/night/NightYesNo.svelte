@@ -184,9 +184,11 @@
 		color: var(--on-surface-muted);
 		font-variant-numeric: tabular-nums;
 	}
+	/* Each player chosen on a line of its own (Trevor, 2026-11-19), never side by side. */
 	.chosen {
-		display: inline-flex;
-		flex-wrap: wrap;
+		display: grid;
+		justify-items: start;
+		width: 100%;
 		gap: var(--space-2);
 	}
 	/* Room for both answers, so picking players never moves what follows. */

@@ -33,6 +33,9 @@
 		{:else if segment.kind === 'value'}
 			<!-- A value the Storyteller enters during prep (the Yaggababble's phrase). -->
 			<span>({segment.placeholder})</span>
+		{:else if segment.kind === 'alive'}
+			<!-- How many players are alive, counted in the game. -->
+			<span>{t('reference.aliveCount')}</span>
 		{:else}
 			<span><GlossaryText segments={explained[i] ?? []} /></span>
 		{/if}

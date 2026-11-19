@@ -43,7 +43,8 @@ const SEGMENT = variants(
 	{ label: 'Its target', has: 'target', spec: obj({ target: T }) },
 	{ label: 'The nominee', has: 'nominee', spec: obj({ nominee: T }) },
 	{ label: 'Text', has: 'text', spec: obj({ text: STR }) },
-	{ label: 'A value', has: 'value', spec: obj({ value: STR, placeholder: STR }) }
+	{ label: 'A value', has: 'value', spec: obj({ value: STR, placeholder: STR }) },
+	{ label: 'Players alive', has: 'alive', spec: obj({ alive: T }) }
 );
 export type TemplateSegment = SpecValue<typeof SEGMENT>;
 
@@ -56,6 +57,7 @@ const CONDITION = optObj({
 	noReminder: TOKEN,
 	cause: STRS,
 	minAlive: NUM,
+	notTravellers: T,
 	targetAlive: B,
 	nomineeChose: T,
 	noWish: T,
@@ -93,7 +95,9 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  *     `when.reminder` ("[Librarian · Alex]");
  *   - `{ text }`: our own words, kept short;
  *   - `{ value, placeholder }`: a value the Storyteller entered during prep (`SetupNote.value`,
- *     stored on the game as `prepValues`), shown as `placeholder` until entered.
+ *     stored on the game as `prepValues`), shown as `placeholder` until entered;
+ *   - `{ alive: true }`: how many players are alive now ("6 players alive"), for an ability
+ *     that needs enough of them (the Scarlet Woman's five).
  * - `impairable: true`: while that player's ability does not work (drunk, poisoned, or no
  *   ability: `abilityState`), one line "[Slayer] is poisoned by [Poisoner]" replaces the
  *   character's lines about its living ability, so the two never show together.
@@ -115,6 +119,8 @@ export type DayInteraction = SpecValue<typeof INTERACTION>;
  * - `day`: only on that day, day 1 being the day after the first night (the Juggler's
  *   guesses);
  * - `minAlive`: only while at least this many players are alive;
+ * - `notTravellers: true`: Travellers don't count toward `minAlive` or an `alive` segment (the
+ *   Scarlet Woman: https://wiki.bloodontheclocktower.com/Scarlet_Woman);
  * - `targetAlive`: with `reminder`, only while the player carrying the token is alive;
  * - `nomineeChose: true`: one reminder per nomination today whose nominee chose a player
  *   (the Big Wig's speaker, recorded on the nomination).
@@ -153,6 +159,12 @@ export const dayReminders = partWords(
 					issues.add(`${at}.used`, 'used words need the noReminder token that marks it used');
 				if (template.some((p) => 'nominee' in p) && !when?.nomineeChose)
 					issues.add(`${at}.when.nomineeChose`, 'a nominee segment needs nomineeChose');
+				if (
+					when?.notTravellers &&
+					when.minAlive === undefined &&
+					!template.some((p) => 'alive' in p)
+				)
+					issues.add(`${at}.when.notTravellers`, 'needs minAlive or an alive segment to count');
 			});
 			if (value.none !== undefined && value.reminders?.length)
 				issues.add(`${path}.none`, 'a character with day reminders has something to watch');
@@ -193,6 +205,10 @@ export const dayReminders = partWords(
 		'reminders.*.template.*<A value>.placeholder': {
 			label: 'Until noted down'
 		},
+		'reminders.*.template.*<Players alive>.alive': {
+			label: 'Players alive',
+			about: 'How many players are alive now.'
+		},
 		'reminders.*.when': {
 			label: 'Only when'
 		},
@@ -216,6 +232,10 @@ export const dayReminders = partWords(
 		},
 		'reminders.*.when.minAlive': {
 			label: 'At least this many alive'
+		},
+		'reminders.*.when.notTravellers': {
+			label: 'Travellers don’t count',
+			about: 'Leaves Travellers out of the players alive.'
 		},
 		'reminders.*.when.targetAlive': {
 			label: 'The player with the reminder is alive'
