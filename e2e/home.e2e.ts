@@ -18,7 +18,9 @@ test('Home starts a game, takes a room code and links the Prepare and Create pag
 	await expect(main.getByTestId('room-preview')).toHaveText('No open game has this code.');
 	await expect(join).toBeDisabled();
 
-	// Every place in the menu's Prepare and Create groups, each a big enough tap target.
+	// Every place in the menu's Prepare and Create groups, under one Prepare heading (Trevor,
+	// 2026-11-09), each a big enough tap target.
+	await expect(main.getByRole('heading', { name: 'Prepare', exact: true })).toBeVisible();
 	const places = main.getByTestId('home-places').getByRole('link');
 	await expect(places).toHaveText([
 		'Search',

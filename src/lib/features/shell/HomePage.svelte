@@ -17,7 +17,8 @@
 	 * Home (plan M69, Trevor 2026-11-06: option A, "want ppl to be able to type in code from
 	 * home", "reuse what we have"): New game, then Join game's own code form and games to
 	 * resume (JoinPanel, so a code typed here works as it does there), then a button for each
-	 * place in the menu's Prepare and Create groups. The app's name is the
+	 * place in the menu's Prepare and Create groups, under one Prepare heading with each
+	 * button's icon and label at the start (Trevor, 2026-11-09). The app's name is the
 	 * title, so on a phone the hamburger has its row and covers nothing.
 	 */
 	const places = NAV_SECTIONS.filter((s) => s.id === 'prepare' || s.id === 'build').flatMap(
@@ -40,11 +41,13 @@
 			{#snippet aside()}<HomeProfile />{/snippet}
 		</JoinPanel>
 		<GroupGames onJoin={openRoom} />
-		<PageSection title={`${t('shell.navSectionPrepare')} · ${t('shell.navSectionCreate')}`}>
+		<PageSection title={t('shell.navSectionPrepare')}>
 			<ul class="places" data-testid="home-places">
 				{#each places as item (item.id)}
 					<li>
-						<Button icon={item.icon} href={resolve(item.path)}>{label(item.label)}</Button>
+						<Button icon={item.icon} align="start" href={resolve(item.path)}
+							>{label(item.label)}</Button
+						>
 					</li>
 				{/each}
 			</ul>
