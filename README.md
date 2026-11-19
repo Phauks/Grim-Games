@@ -36,6 +36,7 @@ static/data/       synced TPI data and icons (generated; see Data)
 | `npm run icons`                                  | Regenerate the bundled icon modules after editing the icon catalogue                                                       |
 | `npm run test:unit -- --run`                     | Vitest (node + browser projects)                                                                                           |
 | `npm run test:e2e`                               | Playwright touch tests (phone + tablet)                                                                                    |
+| `npm run test:e2e:area -- <area>`                | One area of the touch tests (`e2e/areas.ts`: board, rules, rooms, day, app, scripts); CI runs each area as its own check   |
 | `npm run verify`                                 | check + lint + unit tests; the pre-push hook in `.githooks` runs it (`npm install` turns the hook on)                      |
 | `npm run sync:data`                              | Refresh TPI's data and icons in `static/data/` (see [Data](#data))                                                         |
 | `npm run bots -- <room code> [--players 15]`     | Fake players' phones join a live room and play along (see [Room bots](#room-bots))                                         |
