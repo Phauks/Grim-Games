@@ -263,7 +263,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Gives an ability.** It gives another player an ability held without its token.
 
 - Part: `src/lib/core/data/parts/gives-ability.ts`
-- Read by: `core/engine/decide/characters.ts`, `core/rules/abilities/ability.ts`, `core/rules/abilities/gained-abilities.ts`, `core/rules/night/board-steps.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/bag-plan.ts`, `features/grimoire/BoardRules.svelte`, `features/grimoire/RuleCharacters.svelte`, `features/grimoire/night/StorytellerAbilityStep.svelte`, `features/grimoire/seats/SeatCharacterFlow.svelte`
+- Read by: `core/engine/decide/characters.ts`, `core/rules/abilities/ability.ts`, `core/rules/abilities/gained-abilities.ts`, `core/rules/night/board-steps.ts`, `core/rules/reminders/own-reminders.ts`, `core/rules/reminders/reminder-targets.ts`, `core/rules/setup/bag-plan.ts`, `features/grimoire/BoardRules.svelte`, `features/grimoire/RuleCharacters.svelte`, `features/grimoire/night/StorytellerAbilityStep.svelte`, `features/grimoire/seats/SeatCharacterFlow.svelte`
 
 ### guessLimit
 
