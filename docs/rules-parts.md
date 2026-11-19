@@ -116,14 +116,14 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Countdown.** Its token counts down one step a night.
 
 - Part: `src/lib/core/data/parts/countdown.ts`
-- Read by: `core/rules/reminders/countdown.ts`, `features/board/bank-items.ts`, `features/grimoire/night/CountdownStep.svelte`
+- Read by: `core/rules/reminders/countdown.ts`, `features/board/bank-items.ts`, `features/board/board-stacks.ts`, `features/grimoire/night/CountdownStep.svelte`
 
 ### counter
 
 **Counter.** Its run of day or night tokens gains the next one each dawn or dusk.
 
 - Part: `src/lib/core/data/parts/counter.ts`
-- Read by: `core/rules/reminders/counters.ts`, `features/board/bank-items.ts`
+- Read by: `core/rules/reminders/counters.ts`, `features/board/bank-items.ts`, `features/board/board-stacks.ts`
 
 ### createsDemon
 

@@ -102,7 +102,7 @@ export const wakesMarked = (
  * alignment (`withTravellerAlignmentStep`), and before that one for Travellers not in play
  * (`withTravellerJoinsStep`); on the first night a step for players a setup change makes start
  * with the other alignment (`withSetupAlignmentStep`); `order` places a gained ability not in
- * play.
+ * play, and `firstOrder` (the first night's) one woken by its first-night text.
  * Steps get a copy; the order is not otherwise
  * changed.
  */
@@ -112,7 +112,8 @@ export function withNightInfo<T extends NightStep>(
 	characters: CharacterLookup,
 	night?: Night,
 	today?: NightToday,
-	order?: readonly string[]
+	order?: readonly string[],
+	firstOrder?: readonly string[]
 ): (T | NightStep)[] {
 	const all = withTravellerJoinsStep(
 		withTravellerAlignmentStep(
@@ -121,7 +122,7 @@ export function withNightInfo<T extends NightStep>(
 						withStorytellerSteps(
 							withRevivedFirstNightSteps(
 								withLateEvilInfoSteps(
-									withGainedSteps(steps, game, characters, night, order),
+									withGainedSteps(steps, game, characters, night, order, firstOrder),
 									game,
 									characters,
 									night

@@ -129,7 +129,7 @@
 							</Select>
 						{/each}
 					</span>
-					<ul class="valid" aria-label="Valid information">
+					<ul class="valid" data-eye-rows aria-label="Valid information">
 						{#each answers(p) as a (a.yes)}
 							<li data-reason={a.reason}>
 								<strong>{answerText(p.answer, a.yes)}</strong>
