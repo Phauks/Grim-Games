@@ -449,6 +449,15 @@ function describeEntry(
 				seatPart(before, b.seatId)
 			];
 	}
+	// A note given to the game or a player (Trevor, 2026-11-19) is one line: whose it is now.
+	if (entry.command === 'MoveNote') {
+		const kept = entry.events[1];
+		const title = kept && 'note' in kept ? kept.note.title : '';
+		const named = title ? `: ${title}` : '';
+		if (kept?.type === 'SeatNoteSaved')
+			return [text('Note given to '), seatPart(before, kept.seatId), text(named)];
+		if (kept?.type === 'GameNoteSet') return [text(`Note given to the game${named}`)];
+	}
 	if (entry.command === 'AddLatePlayer') {
 		const added = entry.events.flatMap((e) => (e.type === 'SeatAdded' ? [e.seatId] : []));
 		const changed = entry.events.filter((e) => e.type === 'CharacterAssigned').length;

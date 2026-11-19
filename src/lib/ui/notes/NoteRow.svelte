@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ClearableField from '#lib/ui/primitives/ClearableField.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -27,9 +28,22 @@
 		 * 2026-11-17: no world where a Storyteller hides notes), which then always show it.
 		 */
 		hideable?: boolean;
+		/** Whose the note is, on the title's line (the Storyteller's notes: the game or a player). */
+		owner?: Snippet;
+		/** A ⋯ menu in place of the trash, which holds Delete with the note's other choices. */
+		menu?: Snippet;
 	}
 
-	let { note, readonly = false, onSave, onDelete, onLeaveBlank, hideable = true }: Props = $props();
+	let {
+		note,
+		readonly = false,
+		onSave,
+		onDelete,
+		onLeaveBlank,
+		hideable = true,
+		owner,
+		menu
+	}: Props = $props();
 
 	let row = $state<HTMLElement>();
 	let titleInput = $state<HTMLInputElement>();
@@ -122,7 +136,8 @@
 					}}
 					testid="note-hide"
 				/>{/if}
-			{#if !readonly}
+			{#if owner}<span class="owner">{@render owner()}</span>{/if}
+			{#if menu}{#if !readonly}{@render menu()}{/if}{:else if !readonly}
 				<DeleteButton label={t('player.deleteNote')} onclick={() => onDelete(note)} />
 			{/if}
 		</span>
@@ -149,6 +164,7 @@
 	.note {
 		position: relative;
 		display: grid;
+		gap: var(--space-1);
 		padding-block-end: var(--space-2);
 		border-bottom: 1px solid var(--border);
 	}
@@ -158,6 +174,18 @@
 		gap: var(--space-1);
 		min-height: var(--tap-target);
 	}
+	/* The title is written in the same well as the text under it, so the two read as one note
+	   (Trevor, 2026-11-19: they "look and feel different"); a view-only note has neither. */
+	.line :global(.title-field) {
+		border-radius: var(--radius-md);
+		background: var(--surface-selected);
+	}
+	.line :global(.title-field:focus-within) {
+		box-shadow: inset 0 0 0 2px var(--focus); /* px-ok: the focus ring's width, as the text's */
+	}
+	.note:has(.title:disabled) :global(.title-field) {
+		background: none;
+	}
 	.line :global(.title-field:not(:focus-within) .clear) {
 		visibility: hidden;
 	}
@@ -165,7 +193,7 @@
 		flex: 1;
 		min-width: 0;
 		min-height: var(--tap-target);
-		padding: 0;
+		padding: 0 var(--space-3);
 		border: 0;
 		background: none;
 		color: var(--on-surface);
@@ -184,6 +212,13 @@
 	.actions {
 		display: flex;
 		align-items: center;
+		gap: var(--space-1);
+	}
+	.owner {
+		display: flex;
+		align-items: center;
+		max-width: 50%;
+		min-width: 0;
 	}
 	[data-typing] .actions {
 		visibility: hidden;

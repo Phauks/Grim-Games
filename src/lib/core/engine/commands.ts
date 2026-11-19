@@ -38,6 +38,9 @@ export interface TileSpec {
 	reminders?: Reminder[];
 }
 
+/** Whose a Storyteller's note is: the game's own, or a seat's. */
+export type NoteOwner = 'game' | SeatId;
+
 export type Command =
 	| {
 			type: 'CreateGame';
@@ -88,6 +91,12 @@ export type Command =
 	 */
 	| { type: 'SetGameNote'; noteId?: string; title: string; text: string; hidden: boolean }
 	| { type: 'DeleteGameNote'; noteId: string }
+	/**
+	 * Moves one of the Storyteller's notes to the game or to another seat, as is, in one step:
+	 * it goes last there, with that list's next id (Trevor, 2026-11-19: "assign a note to a
+	 * player or generally to the game").
+	 */
+	| { type: 'MoveNote'; noteId: string; from: NoteOwner; to: NoteOwner }
 	/**
 	 * Puts a character token on a seat. Without `alignment`, an empty seat takes the
 	 * default for the character type and a seat that had a character keeps its alignment
