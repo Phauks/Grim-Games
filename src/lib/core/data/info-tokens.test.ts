@@ -23,7 +23,8 @@ describe('info tokens', () => {
 			'Select a player',
 			'Select a character',
 			'Please choose again',
-			'Are you sure?'
+			'Are you sure?',
+			'This character is in play'
 		]);
 		const shared = STANDARD_INFO_TOKENS.filter((t) => !t.characterId);
 		const firstExtra = shared.findIndex((t) => t.extra);
@@ -50,6 +51,17 @@ describe('info tokens', () => {
 		// characters; https://wiki.bloodontheclocktower.com/Snitch: each Minion learns 3 too.
 		expect(byId('not-in-play')?.asks).toEqual({ characters: 3, exactly: true, notInPlay: true });
 		expect(byId('you-are')?.asks).toEqual({ characters: 1 });
+	});
+
+	it('shows one character with "This character is in play", for the Damsel and the Widow', () => {
+		// https://wiki.bloodontheclocktower.com/Damsel: "All Minions know a Damsel is in play."
+		// Trevor (2026-11-19) picked a card over the Damsel's token alone.
+		expect(byId('in-play')).toMatchObject({
+			text: 'This character is in play',
+			asks: { characters: 1 },
+			extra: true
+		});
+		expect(byId('in-play')?.characterId).toBeUndefined();
 	});
 
 	it('lets "This player is" name several characters, e.g. for the Dreamer', () => {
