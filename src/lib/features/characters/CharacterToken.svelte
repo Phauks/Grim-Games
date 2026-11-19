@@ -25,7 +25,7 @@
 		 * settings preview passes its unsaved value.
 		 */
 		showName?: boolean;
-		/** Night order numbers for the side leaves' badges (Settings > Board and tokens). */
+		/** Night order numbers for the side leaves' badges (Theme > Board and Character tokens). */
 		nightNumbers?: { first?: number; other?: number };
 	}
 
@@ -68,7 +68,7 @@
 </script>
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
-<!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
+<!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Theme > Character tokens) -->
 <TokenFace
 	{src}
 	{fallback}

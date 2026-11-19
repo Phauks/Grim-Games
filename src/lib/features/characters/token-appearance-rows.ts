@@ -6,7 +6,7 @@ import {
 } from '#lib/ui/token/token-appearance.ts';
 
 /**
- * The token look's sizes and switches as setting rows, one entry each, so Settings > Tokens
+ * The token look's sizes and switches as setting rows, one entry each, so Theme > Character tokens
  * and the player's own settings draw the same row from one place (Trevor, 2026-10-27: players
  * get the Storyteller's text and token sizes).
  */

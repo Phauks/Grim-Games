@@ -1,26 +1,29 @@
 import { expect, test, type Page } from '@playwright/test';
-import { openSettingsDialog } from './shell.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { closePane } from './players.ts';
+import { openBoardTheme } from './theme.ts';
 
 /**
  * Moving backgrounds (M43, Trevor 2026-11-03: "let's implement this"): picked among the
- * background tiles, customised in their own dialog with a preview, held still while
- * animations are off (Trevor, 2026-11-16).
+ * background tiles in the game's Theme (Trevor, 2026-11-18: changes show on the real board),
+ * customised in their own dialog with a preview, held still while animations are off
+ * (Trevor, 2026-11-16).
  */
 
-async function openSection(page: Page, section: string) {
-	const dialog = await openSettingsDialog(page);
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: section })
-		.tap();
-	await expect(dialog.getByRole('heading', { name: section, level: 2 })).toBeVisible();
-	return dialog;
+// A new game, then the Theme: longer than a test's usual 30 seconds.
+test.describe.configure({ timeout: 90_000 });
+
+async function startGame(page: Page) {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
 }
 
-test('a moving background is picked, customised and shown in the preview', async ({ page }) => {
-	await page.goto('/');
-	const dialog = await openSection(page, 'Board');
-	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
+test('a moving background is picked, customised and shown on the board', async ({ page }) => {
+	await startGame(page);
+	const dialog = await openBoardTheme(page, 'Background');
+	const preview = page.getByTestId('board-background');
 	const customise = dialog.getByRole('button', { name: /^Customise/ });
 	const thirty = dialog.getByRole('checkbox', {
 		name: 'Animated background at 30 frames a second'
@@ -55,9 +58,9 @@ test('a moving background is picked, customised and shown in the preview', async
 });
 
 test('a still background is customised: Stone made into slate (M72)', async ({ page }) => {
-	await page.goto('/');
-	const dialog = await openSection(page, 'Board');
-	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
+	await startGame(page);
+	const dialog = await openBoardTheme(page, 'Background');
+	const preview = page.getByTestId('board-background');
 	// Still and Animated are labelled groups (Trevor, 2026-11-06: option A).
 	const still = dialog.getByRole('group', { name: 'Still', exact: true });
 	await expect(dialog.getByRole('group', { name: 'Animated', exact: true })).toBeVisible();
@@ -89,24 +92,25 @@ test('a moving background holds still while animations are off', async ({ page }
 	// Off by the device's Reduce motion (Match device), then by the app's own Animations
 	// setting (Trevor, 2026-11-16: one switch for every role).
 	await page.emulateMedia({ reducedMotion: 'reduce' });
-	await page.goto('/');
-	let dialog = await openSection(page, 'Board');
-	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
+	await startGame(page);
+	let dialog = await openBoardTheme(page, 'Background');
+	const preview = page.getByTestId('board-background');
 	const thirty = dialog.getByRole('checkbox', {
 		name: 'Animated background at 30 frames a second'
 	});
 	await dialog.getByRole('button', { name: 'Stars' }).tap();
 	await expect(preview).toHaveAttribute('data-still', '');
 	await expect(thirty).toBeDisabled();
-	await page.getByRole('button', { name: 'Close' }).first().tap();
 
-	// Animations On moves it whatever the device says.
-	dialog = await openSection(page, 'Theme');
-	await dialog.getByRole('combobox', { name: 'Animations' }).tap();
+	// Animations On moves it whatever the device says. It is beside the colours in Theme, as in
+	// Settings > Theme.
+	const colours = await openBoardTheme(page, 'Colours');
+	await colours.getByRole('combobox', { name: 'Animations' }).tap();
 	await page.getByRole('option', { name: 'On', exact: true }).tap();
-	await page.getByRole('button', { name: 'Close' }).first().tap();
-	dialog = await openSection(page, 'Board');
-	await expect(preview).not.toHaveAttribute('data-still', '');
+	dialog = await openBoardTheme(page, 'Background');
 	await expect(thirty).toBeEnabled();
 	await expect(dialog.getByText('Hold animated backgrounds still', { exact: true })).toHaveCount(0);
+	// A phone's pane is a sheet over the board, which pauses it while open.
+	await closePane(page);
+	await expect(preview).not.toHaveAttribute('data-still', '');
 });

@@ -143,7 +143,7 @@
 	 * One design everywhere (Trevor, 2026-10-20: "We should only have one character inline
 	 * design"): a pill sized to sit inside a line of text, so it never makes the line taller
 	 * (Trevor, 2026-10-16: names sat high and crowded the underlined word above). It grows with
-	 * Settings > Tokens' name badge, text and icon sizes, each its own setting (Trevor,
+	 * Theme > Character tokens' name badge, text and icon sizes, each its own setting (Trevor,
 	 * 2026-10-18), and the tap area still reaches 44px.
 	 */
 	.badge {
