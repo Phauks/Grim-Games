@@ -198,10 +198,17 @@ export class NightWalk {
 		return this.#steps(night).filter(wakes);
 	}
 
-	/** The walk-through's steps: those that wake someone tonight. */
+	/**
+	 * The walk-through's steps: those that wake someone tonight, and the open step though it no
+	 * longer does. A token placed inside a step may end its own wake (the Courtier's No Ability,
+	 * `wakesWhen.untilToken`): the step stays where it is, so Next still moves on to the next.
+	 */
 	steps = $derived.by(() => {
 		const { wakes } = this.#context();
-		return this.walk ? this.#steps(this.walk.night).filter(wakes) : [];
+		const walk = this.walk;
+		if (!walk) return [];
+		const open = this.guided?.night === walk.night ? this.guided.step.id : undefined;
+		return this.#steps(walk.night).filter((s) => s.id === open || wakes(s));
 	});
 
 	/** The open step's night, for Previous and Next inside it, skipping the dead likewise. */
