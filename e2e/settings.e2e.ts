@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton, openMenu, openSettingsDialog } from './shell.ts';
 import { pickNumber } from './number-select.ts';
+import { openTheme } from './theme.ts';
 
 /** Opens settings from the menu and goes to a section (drill-in on phones). */
 async function openSettings(page: Page, section: string) {
@@ -141,13 +142,10 @@ test('heading font, text size and icon weight apply live', async ({ page }) => {
 	if (await back.isVisible()) await back.tap();
 	await dialog.getByRole('button', { name: 'Icons' }).tap();
 	await choose(page, 'Icon style', 'Fill');
-	await page.getByRole('radiogroup', { name: 'Dead' }).getByRole('img', { name: 'cross' }).tap();
+	// The board's marks (Dead and the rest) are chosen in the game's Theme (Trevor, 2026-11-18).
+	await expect(page.getByRole('radiogroup', { name: 'Dead' })).toHaveCount(0);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 
-	await expect(page.getByRole('img', { name: 'Dead' })).toHaveAttribute(
-		'data-icon',
-		'ph:cross-fill'
-	);
 	await expect(page.getByRole('img', { name: 'Night' })).toHaveAttribute(
 		'data-icon',
 		'ph:moon-stars-fill'
@@ -176,34 +174,36 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 	).toBeChecked();
 });
 
-// Trevor (2026-10-17): settings appear where they act and in Settings; these are the same
-// values as the board's own Background row (Board over the board).
-test('the board looks and background are in Board, saved with the board', async ({ page }) => {
-	await page.goto('/');
-	const dialog = await openSettings(page, 'Board');
-	const felt = dialog.getByRole('button', { name: 'Felt', exact: true });
+// Trevor (2026-10-17): settings appear where they act; these are the same values as the
+// board's own Background row. They left Settings for the game's Theme (Trevor, 2026-11-18).
+test('the board looks and background are in Theme, saved for the board', async ({ page }) => {
+	const theme = await openTheme(page, 'Background');
+	const felt = theme.getByRole('button', { name: 'Felt', exact: true });
 	await expect(felt).toHaveAttribute('aria-pressed', 'false');
 	await felt.tap();
 	await expect(felt).toHaveAttribute('aria-pressed', 'true');
 	// None is the first background in the list, not a separate button (Trevor, 2026-10-18).
-	const backgrounds = dialog.getByRole('group', { name: 'Background for all games' });
+	const backgrounds = theme.getByRole('group', { name: 'Background for all games' });
 	await expect(backgrounds.getByRole('button').first()).toHaveAccessibleName('None');
-	await expect(dialog.getByRole('button', { name: 'None', exact: true })).toHaveCount(1);
-	const vignette = dialog.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
+	await expect(theme.getByRole('button', { name: 'None', exact: true })).toHaveCount(1);
+	// One band open at a time: Board closes Background.
+	await theme.getByRole('button', { name: 'Board', exact: true }).tap();
+	await expect(felt).toBeHidden();
+	const vignette = theme.getByRole('checkbox', { name: 'Vignette', includeHidden: true });
 	await expect(vignette).toBeChecked();
 	await slide(page, 'Vignette strength', 0.3);
-	await dialog.getByText('Vignette', { exact: true }).tap();
+	await theme.getByText('Vignette', { exact: true }).tap();
 	await expect(vignette).not.toBeChecked();
 	// Shown but disabled while the vignette is off (Trevor, 2026-10-18).
-	const strength = dialog.getByRole('slider', { name: 'Vignette strength' });
+	const strength = theme.getByRole('slider', { name: 'Vignette strength' });
 	await expect(strength).toBeDisabled();
-	await dialog.getByText('Vignette', { exact: true }).tap();
+	await theme.getByText('Vignette', { exact: true }).tap();
 	await expect(strength).toBeEnabled();
-	await dialog.getByText('Vignette', { exact: true }).tap();
-	// The player name badge is set in Tokens now (Trevor, 2026-10-20).
-	await expect(dialog.getByRole('slider', { name: 'Player name distance' })).toHaveCount(0);
+	await theme.getByText('Vignette', { exact: true }).tap();
+	// The player name badge is set in Character tokens (Trevor, 2026-10-20).
+	await expect(theme.getByRole('slider', { name: 'Player name distance' })).toHaveCount(0);
 	// The Fabled and Loric are always in the corner (Trevor, 2026-10-30: "only corner").
-	await expect(dialog.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
+	await expect(theme.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
@@ -222,7 +222,7 @@ test('the board looks and background are in Board, saved with the board', async 
 	});
 
 	await page.reload();
-	const again = await openSettings(page, 'Board');
+	const again = await openTheme(page, 'Background');
 	await expect(again.getByRole('button', { name: 'Felt', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'true'
@@ -358,8 +358,6 @@ test('settings are one list by topic, with no audience groups or Applies to line
 		'Theme',
 		'Text',
 		'Icons',
-		'Board',
-		'Tokens',
 		'Storyteller',
 		'Sound',
 		'Player',
@@ -564,7 +562,7 @@ test('every theme colour is its own setting, warns on low contrast, and Reset Th
 });
 
 // Trevor (2026-10-19): two thumbs on the screen zoomed the whole app by accident. Pinch to zoom
-// is off by default and a switch in Settings > Board turns it back on (moved from Text, 2026-10-27).
+// is off by default and a switch in Settings > Text turns it back on (back from Board, 2026-11-18).
 test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) => {
 	await page.goto('/');
 	await expect(menuButton(page)).toBeVisible();
@@ -586,7 +584,7 @@ test('a pinch never zooms the app unless Pinch to zoom is on', async ({ page }) 
 		'pan-x pan-y'
 	);
 
-	const dialog = await openSettings(page, 'Board');
+	const dialog = await openSettings(page, 'Text');
 	const zoom = dialog.getByRole('checkbox', { name: 'Pinch to zoom', includeHidden: true });
 	await expect(zoom).not.toBeChecked();
 	await dialog.getByText('Pinch to zoom', { exact: true }).tap();
@@ -658,85 +656,6 @@ test('opened as an installed app, Settings has no Install app button', async ({ 
 	const nav = page.getByRole('navigation', { name: 'Settings sections' });
 	await expect(nav.getByRole('button', { name: 'Data' })).toBeVisible();
 	await expect(nav.getByRole('button', { name: 'Install app' })).toHaveCount(0);
-});
-
-test('Board settings show their looks in a live preview', async ({ page }) => {
-	// Trevor (2026-10-20): "Should we have a preview area for the board as well? Since you
-	// can't really see changes until you leave".
-	await page.goto('/');
-	const dialog = await openSettings(page, 'Board');
-	const preview = dialog.getByTestId('board-preview');
-	await expect(preview.getByTestId('token-player-name')).toHaveCount(2);
-	await expect(preview.getByTestId('preview-background')).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Felt', exact: true }).tap();
-	await expect(preview.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
-	const vignette = preview.getByTestId('preview-vignette');
-	await expect(vignette).toBeAttached();
-	await slide(page, 'Vignette strength', 0.3);
-	await expect(vignette).toHaveAttribute('style', /--vignette: 0\.3/);
-	await dialog.getByText('Vignette', { exact: true }).tap();
-	await expect(vignette).toHaveCount(0);
-	// The dead player's used ghost vote follows its look.
-	const dead = preview.getByTestId('dead-mark');
-	await expect(dead).toHaveAttribute('data-used-look', 'hollow');
-	await dialog.getByText('Strike through used ghost votes', { exact: true }).tap();
-	await expect(dead).toHaveAttribute('data-used-look', 'struck');
-});
-
-test('every Board setting shows in its preview', async ({ page }) => {
-	// Trevor (2026-10-22): "all preview settings should populate in the preview area, stacking
-	// reminders, the reminder token bin, fabled/loric settings", and the script's logo.
-	await page.goto('/');
-	const dialog = await openSettings(page, 'Board');
-	const preview = dialog.getByTestId('board-preview');
-	const choose = async (name: string, option: string) => {
-		await dialog.getByRole('combobox', { name, exact: true }).tap();
-		await page.getByRole('option', { name: option, exact: true }).tap();
-	};
-
-	// The script's logo, faint in the middle, and the script's name in the corner.
-	const logo = preview.getByTestId('script-logo');
-	await expect(logo).toHaveAttribute('data-logo', /^(data:image\/svg|.*example-script-logo)/);
-	await slide(page, 'Script logo opacity', 0.6);
-	await expect.poll(() => logo.evaluate((el) => getComputedStyle(el).opacity)).toBe('0.6');
-	await dialog.getByText('Script logo', { exact: true }).tap();
-	await expect(logo).toHaveCount(0);
-	await expect(preview.getByTestId('preview-script-title')).toContainText('Example script');
-	// The join code under the name, switched on its own; it needs the name shown.
-	const joinCode = dialog.getByRole('checkbox', { name: 'Join code', exact: true });
-	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
-		(await joinCode.isChecked()) ? 1 : 0
-	);
-	await dialog.getByText('Join code', { exact: true }).tap();
-	await expect(preview.getByTestId('preview-room-code')).toHaveCount(
-		(await joinCode.isChecked()) ? 1 : 0
-	);
-	if (!(await joinCode.isChecked())) await dialog.getByText('Join code', { exact: true }).tap();
-	await expect(preview.getByTestId('preview-room-code')).toHaveText('Join code 482 913');
-	// The script's name is always on the board (Trevor, 2026-10-23), so the join code never waits
-	// on it.
-	await expect(dialog.getByText('Script name', { exact: true })).toHaveCount(0);
-	await expect(preview.getByTestId('preview-script-title')).toBeVisible();
-	await expect(joinCode).toBeEnabled();
-
-	// Duplicate reminders in the bank, one token with a count when stacked.
-	const bank = preview.getByTestId('preview-bank');
-	await expect(bank.locator('li')).toHaveCount(5);
-	await dialog.getByText('Stack duplicate reminders', { exact: true }).tap();
-	await expect(bank.locator('li')).toHaveCount(4);
-	await expect(bank.locator('[aria-label="2 copies"]')).toBeVisible();
-
-	// The walked-through step's reminders: first, alone, or lit with the rest faded.
-	await expect(bank.locator('li').first()).toHaveClass(/now/);
-	await choose("Show this character's reminders", 'Only this character');
-	await expect(bank.locator('li')).toHaveCount(2);
-	await choose("Show this character's reminders", 'Highlight');
-	await expect(bank.locator('li.dim')).toHaveCount(2);
-
-	// The Fabled and Loric: in the corner, with no Grouping choice (Trevor, 2026-10-31).
-	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();
-	await expect(dialog.getByRole('combobox', { name: 'Grouping', exact: true })).toHaveCount(0);
-	await preview.screenshot({ path: test.info().outputPath('board-preview.png') });
 });
 
 // Trevor, 2026-10-27: Print has its own settings section; Player keeps Sheet background.

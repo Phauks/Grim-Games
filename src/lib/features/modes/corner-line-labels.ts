@@ -1,7 +1,7 @@
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CornerLine } from '#lib/ui/corner-lines.ts';
 
-/** Each corner line by its Game info row's name, for its eye there and in Settings > Board. */
+/** Each corner line by its Game info row's name, for its eye there and in Theme > Board. */
 export function cornerLineLabel(line: CornerLine): string {
 	switch (line) {
 		case 'author':

@@ -1,19 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openSettingsDialog, theMenu } from './shell.ts';
+import { openTheme } from './theme.ts';
 
 // Laurels round seat tokens (L4, A1): each player's own pick in their Profile. The fixed
 // frames are laurel forms, and the Storyteller's Board default is gone (Trevor, 2026-10-27).
-
-async function openSettings(page: Page, section: string) {
-	await openSettingsDialog(page);
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: section })
-		.tap();
-	await expect(dialog.getByRole('heading', { name: section, level: 2 })).toBeVisible();
-	return dialog;
-}
 
 /**
  * Opens the Profile from the button beside Settings' X (Trevor, 2026-10-27): its own dialog,
@@ -97,10 +87,8 @@ test('the Profile is its own dialog: from the menu, with the seat pinned while i
 });
 
 test("the Board has no frame of its own: laurels are each player's", async ({ page }) => {
-	await page.goto('/');
-	const dialog = await openSettings(page, 'Board');
+	const dialog = await openTheme(page, 'Board');
 	await expect(dialog.getByRole('combobox', { name: 'Seat frame' })).toHaveCount(0);
-	await expect(dialog.getByTestId('board-preview').locator('svg[data-frame]')).toHaveCount(0);
 });
 
 test('the Profile warns that the look on a seat must never hint at a character', async ({

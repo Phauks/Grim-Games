@@ -108,7 +108,7 @@
 		outline-offset: 0.15rem;
 	}
 	/* The walked-through step's reminders already on the board: the bank's highlight, a ring,
-	   glow or both (Settings > Tokens). */
+	   glow or both (Theme > Character tokens). */
 	.chip-slot.now > :global(.reminder) {
 		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
