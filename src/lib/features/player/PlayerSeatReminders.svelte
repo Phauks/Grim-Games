@@ -7,6 +7,7 @@
 	import type { Box } from '#lib/features/board/name-placement.ts';
 	import { fitReminders } from '#lib/features/board/reminder-fan.ts';
 	import ReminderTethers from '#lib/features/board/ReminderTethers.svelte';
+	import { reminderStacks } from '#lib/features/board/board-stacks.ts';
 	import type { TrayGestures } from '#lib/features/board/tray-gestures.svelte.ts';
 	import { placedId } from './player-tray-places.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -70,10 +71,20 @@
 	const pickUp = (seatId: string, reminder: PlayerReminder) =>
 		gestures.hand.toggle({ kind: 'placed', reminderId: placedId(seatId, reminder), from: seatId });
 
+	/**
+	 * Each seat's reminders as stacks, as on the board (board-stacks.ts): a run's tokens are one
+	 * token with a count. A player's seat never holds the same reminder twice.
+	 */
+	const stacks = $derived(
+		seats.map((seat) => reminderStacks(remindersOn(reminders, seat.seatId), characterOf, false))
+	);
+	/** Each stack's top, the one a tap or drag takes. */
+	const tops = $derived(stacks.map((row) => row.map((stack) => stack.at(-1)!)));
+
 	/** Where the dragged reminder sits in a seat's row, when it is that seat's: it gets no line. */
 	function liftedIndex(seatId: string): number | undefined {
 		if (drag === undefined) return undefined;
-		const k = remindersOn(reminders, seatId).findIndex(
+		const k = (tops[seats.findIndex((s) => s.seatId === seatId)] ?? []).findIndex(
 			(r) => placedId(seatId, r) === drag.reminderId
 		);
 		return k < 0 ? undefined : k;
@@ -86,7 +97,7 @@
 			seats.map((seat, i) => ({
 				seat: toPx(points[i], board),
 				middle: { x: board.width / 2, y: board.height / 2 },
-				count: remindersOn(reminders, seat.seatId).length,
+				count: stacks[i]?.length ?? 0,
 				size,
 				chip,
 				avoid: avoidBoxes({
@@ -122,12 +133,13 @@
 />
 
 {#each seats as seat, i (seat.seatId)}
-	{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
+	{#each tops[i] ?? [] as reminder, k (placedKey(reminder))}
 		{@const id = placedId(seat.seatId, reminder)}
 		{@const dragged = drag?.reminderId === id}
 		<div class="hold" role="presentation" onpointerdown={() => (held = seat.seatId)}>
 			<BoardReminderChip
 				look={playerLook(reminder, characterOf)}
+				count={stacks[i]?.[k]?.length ?? 1}
 				at={dragged && drag ? drag.at : (fan[i]?.[k] ?? points[i] ?? { x: 50, y: 50 })}
 				size={chip}
 				disabled={false}

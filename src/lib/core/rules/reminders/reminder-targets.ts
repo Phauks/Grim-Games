@@ -13,7 +13,11 @@
  * https://wiki.bloodontheclocktower.com/Spy). So does a neighbour of a seat that may register
  * as the Demon (the Marionette beside a Recluse; Trevor, 2026-10-23).
  */
-import type { NeighbourRule, TargetRule } from '#lib/core/data/parts/reminder-targets.ts';
+import type {
+	DiffersFrom,
+	NeighbourRule,
+	TargetRule
+} from '#lib/core/data/parts/reminder-targets.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -24,6 +28,7 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
+import type { PastPicks, Pick } from '#lib/core/model/picks.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { registrations } from '#lib/core/rules/abilities/registration.ts';
 import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
@@ -46,8 +51,9 @@ export interface CharacterTargets {
  * - `neighbour`: not a neighbour as the rule counts them;
  * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
  * - `max-placed`: as many copies of the token as may be out at once are on other players;
- * - `last-night`: the ability says "different to last night", and this player carried the
- *   token at the latest dawn (or, for `type`, has that player's character type);
+ * - `last-night` / `previous-pick` / `earlier-pick`: the pick must differ (`differsFrom`) from
+ *   last night's, the previous one or every earlier one, and this player was picked then
+ *   (or, for `type`, has the character type that pick's player had then);
  * - `jinx`: a jinx on the script says who carries this `carrierIsDemon` token, and it is not
  *   this player (`carrierJinx`: a Minion while the Magician lives, the Scarlet Woman once she
  *   babysits Lil' Monsta), or that this `becomes` token makes no second Demon while another
@@ -71,6 +77,8 @@ export type TargetMiss =
 	| 'not-with-label'
 	| 'max-placed'
 	| 'last-night'
+	| 'previous-pick'
+	| 'earlier-pick'
 	| 'jinx'
 	| 'jinx-choice'
 	| 'jinx-redirect';
@@ -211,16 +219,16 @@ function mayBeFalse(
 /**
  * Whether `seatId` fits the token's rule. A seat always fits a token with no rule. Rules
  * that depend on the owner (its seat, alignment or neighbours) are skipped while the
- * owner isn't in play, so nothing is flagged that can't be judged. `atDawn` is the game as
- * it stood at the latest "New day" (`dawnGames`), for "different to last night"; without it
- * (the first night) that check is skipped.
+ * owner isn't in play, so nothing is flagged that can't be judged. `past` is the token's
+ * earlier picks from the game's log (`pickHistory`), for `differsFrom`; without it that
+ * check is skipped.
  */
 export function reminderTargetMisses(
 	game: Game,
 	reminder: Reminder,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): TargetMiss[] {
 	if (!Object.hasOwn(game.seats, seatId)) return [];
 	const chosen = choiceJinx(game, reminder, seatId, characters);
@@ -350,14 +358,9 @@ export function reminderTargetMisses(
 		.map((r) => r.label);
 	if (rule.withLabel && !labels.includes(rule.withLabel)) misses.push('with-label');
 	if (rule.notWithLabel && labels.includes(rule.notWithLabel)) misses.push('not-with-label');
-	if (rule.differsFromLastNight && atDawn) {
-		const before = seatsWith(atDawn, reminder.characterId, reminder.label);
-		const type = typeOf(game, seatId, characters);
-		const repeat =
-			rule.differsFromLastNight === 'player'
-				? before.includes(seatId)
-				: type !== undefined && before.some((id) => typeOf(atDawn, id, characters) === type);
-		if (repeat) misses.push('last-night');
+	if (rule.differsFrom && past) {
+		const miss = earlierPickMiss(game, reminder, seatId, characters, rule.differsFrom, past);
+		if (miss) misses.push(miss);
 	}
 	if (
 		rulesFor(game, reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
@@ -372,15 +375,50 @@ export function reminderTargetMisses(
 	return misses;
 }
 
+/** Which earlier picks `from` names, and the miss for a repeat of one of them. */
+const EARLIER: Record<
+	DiffersFrom['from'],
+	{ picks: (picks: readonly Pick[], past: PastPicks) => readonly Pick[]; miss: TargetMiss }
+> = {
+	'last-night': {
+		picks: (picks, past) => picks.filter((p) => p.night === past.tonight - 1),
+		miss: 'last-night'
+	},
+	previous: { picks: (picks) => picks.slice(-1), miss: 'previous-pick' },
+	every: { picks: (picks) => picks, miss: 'earlier-pick' }
+};
+
+/**
+ * Whether putting the token on `seatId` repeats an earlier pick its rule rules out: the same
+ * player, or (`by: type`) a player of the type that pick's player had when picked.
+ */
+function earlierPickMiss(
+	game: Game,
+	reminder: Reminder,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	{ by, from }: DiffersFrom,
+	past: PastPicks
+): TargetMiss | undefined {
+	const { picks, miss } = EARLIER[from];
+	const earlier = picks(past.of(reminder), past);
+	const type = by === 'type' ? typeOf(game, seatId, characters) : undefined;
+	const repeat =
+		by === 'player'
+			? earlier.some((p) => p.seatId === seatId)
+			: type !== undefined && earlier.some((p) => typeOf(p.game, p.seatId, characters) === type);
+	return repeat ? miss : undefined;
+}
+
 /** Every seat in seating order, with why it doesn't fit (empty when it does). */
 export function reminderTargets(
 	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): TargetFit[] {
 	return game.seating.map((seatId) => ({
 		seatId,
-		misses: reminderTargetMisses(game, reminder, seatId, characters, atDawn)
+		misses: reminderTargetMisses(game, reminder, seatId, characters, past)
 	}));
 }

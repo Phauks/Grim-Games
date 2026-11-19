@@ -97,6 +97,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A contents list beside its text (phone: list, then detail): `ui/layout/ContentsLayout.svelte` (an item's `count` is drawn as a CountBadge; lines between entries and beside the text) (enforced by review)
 - The back arrow of a list-and-detail view on a phone: `ui/primitives/BackButton.svelte` (`hideLabel` for the arrow only) (enforced by review)
 - Show to player beside an answer or row in a night or setup step: `features/show/ShowToPlayerButton.svelte`, the outlined eye (`showToPlayer`), never the words (Trevor, 2026-11-06) (enforced by review)
+- A night step's Valid Information rows with an eye each (NightSuggested, NightYesNo): the `data-eye-rows` attribute on the list (base.css: each row's eye at its end, every eye in one column at the step's right edge, Trevor 2026-11-19) (enforced by review)
 - A row already marked or shown (a night step's Valid information row its reminders mark): the `data-marked-row` attribute (base.css: gold edge down its start on the selected surface, Trevor 2026-11-06), never a "Marked" word (enforced by review)
 - Hide contents (a note, a scratch pad, guesses on the Grim): `ui/primitives/HideContentsButton.svelte` (enforced by review)
 - The grim cover (the Storyteller's opaque screen): `features/show/CoverButton.svelte` (script, night or day, timer from `CoverScreen`; PIN through `PinDialog` with `purpose="cover"`); overlays opened inside it portal into it (`ui/primitives/portal-target.ts`) (enforced by `e2e/grim-cover.e2e.ts`)

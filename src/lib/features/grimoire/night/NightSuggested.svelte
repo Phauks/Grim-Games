@@ -348,7 +348,7 @@
 			{#if info && info.kind === 'answer' && info.answers.length > 1}<span class="whose"
 					>{@render player(a.seatId)}:</span
 				>{/if}
-			<ul class="valid" aria-label="Valid information" data-testid="answer-options">
+			<ul class="valid" data-eye-rows aria-label="Valid information" data-testid="answer-options">
 				{#each listed as o, i (i)}{@render answerRow(a, o, i)}{/each}
 			</ul>
 			{@render flagLines(flags(a, true))}
@@ -495,7 +495,7 @@
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if numberPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
 							>{/if}
-						<ul class="valid" aria-label="Valid information">
+						<ul class="valid" data-eye-rows aria-label="Valid information">
 							{#each valid(p) as v, i (i)}
 								<li data-reason={v.reason}>
 									<span class="main option">
@@ -537,7 +537,7 @@
 					<li data-unreliable={p.unreliable ? '' : undefined}>
 						{#if rolePickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span>{/if}
 						<div class="options" data-testid="learned-roles">
-							<ul class="valid" aria-label="Valid information">
+							<ul class="valid" data-eye-rows aria-label="Valid information">
 								{#each marked.length > 0 ? marked : rest as row (rowKey(p, row))}
 									{@render roleRow(p, row)}
 								{/each}
@@ -550,7 +550,7 @@
 									defaultOpen={!markedValid(marked)}
 									count={others}
 								>
-									<ul class="valid" aria-label="Other valid information">
+									<ul class="valid" data-eye-rows aria-label="Other valid information">
 										{#each rest as row (rowKey(p, row))}{@render roleRow(p, row)}{/each}
 										{@render roleExtras(roles)}
 									</ul>
@@ -566,7 +566,7 @@
 						{#if playerPickers.length > 1}<span class="whose">{@render player(p.seatId)}:</span
 							>{/if}
 						<div class="options" data-testid="chosen-players">
-							<ul class="valid" aria-label="Valid information">
+							<ul class="valid" data-eye-rows aria-label="Valid information">
 								{#each marked.length > 0 ? marked : rest as row (playerRowKey(p, row))}
 									{@render playerRow(row)}
 								{/each}
@@ -579,7 +579,7 @@
 									defaultOpen={!markedValid(marked)}
 									count={others}
 								>
-									<ul class="valid" aria-label="Other valid information">
+									<ul class="valid" data-eye-rows aria-label="Other valid information">
 										{#each rest as row (playerRowKey(p, row))}{@render playerRow(row)}{/each}
 										{@render playerExtras(choices)}
 									</ul>
@@ -747,17 +747,13 @@
 		width: 100%;
 		gap: var(--space-1);
 	}
-	/* Every row's eye at its end, in one column (Trevor, 2026-11-17, "R Right, outlined"). */
+	/* Every row's eye at its end, in one column (base.css [data-eye-rows]). */
 	.valid > li {
 		flex-wrap: nowrap;
 	}
 	.valid > li > .main {
 		flex: 0 1 auto;
 		min-width: 0;
-	}
-	.valid > li > :global(.icon-button[data-outlined]) {
-		flex: none;
-		margin-inline-start: auto;
 	}
 	.valid > li + li {
 		padding-top: var(--space-1);
@@ -770,7 +766,6 @@
 	 */
 	.valid > li[data-marked] {
 		padding-block: var(--space-1);
-		padding-inline-end: var(--space-2);
 	}
 	.valid > li[data-marked] + li {
 		border-top: none;

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	/**
-	 * How many copies one stacked reminder stands for ("Stack duplicate reminders"), on its
-	 * top right: the reminder bank and the Board settings preview.
+	 * How many copies one stacked reminder stands for ("Stack duplicate reminders", or a run's
+	 * tokens), on its top right: the reminder bank, the Board settings preview and a seat's
+	 * stacks on the board (board-stacks.ts).
 	 */
 	let { count }: { count: number } = $props();
 </script>

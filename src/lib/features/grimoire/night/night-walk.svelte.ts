@@ -151,8 +151,10 @@ export class NightWalk {
 	 */
 	placeOnBoard(reminder: Pick<Reminder, 'characterId' | 'label'>, at?: PlacedAt): boolean {
 		const { hand, bank } = this.#context();
-		if (at) hand.held = { kind: 'placed', reminderId: at.reminderId, from: at.seatId };
+		if (at) hand.toggle({ kind: 'placed', reminderId: at.reminderId, from: at.seatId });
 		else if (!bank?.hold(reminder)) return false;
+		// Tapped again while in hand: put down, and the step stays open (Trevor, 2026-11-19).
+		if (!hand.held) return true;
 		this.#placing = true;
 		this.guideOpen = false;
 		return true;

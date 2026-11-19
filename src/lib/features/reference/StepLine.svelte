@@ -35,6 +35,15 @@
 		/* Its rows (a placed reminder's Move and delete) shrink to the step's width. */
 		min-width: 0;
 	}
+	/* With no eye after it, the line reaches the step's end, so the eyes in its rows (Valid
+	   Information) line up with the step's own (Trevor, 2026-11-19). */
+	.line:last-child,
+	.line:has(+ .end:empty) {
+		grid-column: 2 / -1;
+	}
+	.end:empty {
+		display: none;
+	}
 	.end {
 		grid-column: 3;
 		align-self: center;

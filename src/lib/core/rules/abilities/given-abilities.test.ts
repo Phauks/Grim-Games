@@ -89,7 +89,7 @@ describe('an ability given without changing the character', () => {
 		expect(atPlaceOf(steps, order, at, 'dreamer')).toBe(true);
 	});
 
-	it('takes it away while that Philosopher is poisoned', () => {
+	it('takes it away while that Philosopher is poisoned, but they still wake for it', () => {
 		// The Philosopher's page: drunk or poisoned, they have no ability.
 		const poisoned = holding(s.poisoned('philosopher').game, philosopher, {
 			characterId: 'dreamer',
@@ -97,8 +97,9 @@ describe('an ability given without changing the character', () => {
 		});
 		expect(abilityHolders(poisoned, 'dreamer', s.characters)).toEqual([]);
 		expect(heldAbilitiesOf(poisoned, philosopher, s.characters)[0]?.works).toBe(false);
+		// The Storyteller acts like they have it (Trevor, 2026-11-19: "Even if drunk or poisoned").
 		const { steps } = otherNight(s, poisoned);
-		expect(steps.some((step) => step.gained?.characterId === 'dreamer')).toBe(false);
+		expect(steps.some((step) => step.gained?.characterId === 'dreamer')).toBe(true);
 	});
 
 	it("doesn't count a Philosopher entry on a seat that isn't the Philosopher", () => {
