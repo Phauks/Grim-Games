@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
@@ -89,11 +89,8 @@ describe('Tinker', () => {
 			const s = scenario(['tinker', 'innkeeper', 'imp', 'chef', 'poisoner'])
 				.reminder('tinker', 'innkeeper', 'Safe')
 				.reminder('tinker', 'imp', 'Dead');
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					seatId: s.seat('tinker'),
-					because: [{ kind: 'protected', source: { characterId: 'innkeeper' } }]
-				}
+			expect(savedBy(s, 'imp', s.seat('tinker'))).toMatchObject([
+				{ kind: 'protected', source: { characterId: 'innkeeper' } }
 			]);
 			const after = s.dies('innkeeper');
 			expect(

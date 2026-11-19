@@ -70,6 +70,15 @@
 	const pickUp = (seatId: string, reminder: PlayerReminder) =>
 		gestures.hand.toggle({ kind: 'placed', reminderId: placedId(seatId, reminder), from: seatId });
 
+	/** Where the dragged reminder sits in a seat's row, when it is that seat's: it gets no line. */
+	function liftedIndex(seatId: string): number | undefined {
+		if (drag === undefined) return undefined;
+		const k = remindersOn(reminders, seatId).findIndex(
+			(r) => placedId(seatId, r) === drag.reminderId
+		);
+		return k < 0 ? undefined : k;
+	}
+
 	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
 	const fan = $derived.by(() => {
 		if (board.width <= 0 || board.height <= 0) return seats.map(() => []);
@@ -102,7 +111,8 @@
 	seats={seats.map((seat, i) => ({
 		at: points[i],
 		spots: fan[i] ?? [],
-		held: held === seat.seatId
+		held: held === seat.seatId,
+		lifted: liftedIndex(seat.seatId)
 	}))}
 	{board}
 	{size}

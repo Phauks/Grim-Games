@@ -72,9 +72,9 @@
 -->
 <div class="counts" data-testid="day-counts">
 	<!-- Each one opens how it was worked out (Trevor, 2026-10-19). The living as one pill: good
-	     on its blue half, the heart in the middle, evil on its red half (Trevor, 2026-11-17, "B
-	     Folded into living"); each part still its own tap. The heart with the living total
-	     (Trevor, 2026-11-18: "the total count of living players more informational"). -->
+	     on its blue half, living of all in the middle, evil on its red half (Trevor, 2026-11-17, "B
+	     Folded into living"; 2026-11-18: "we had a previous box which was like 10/12", with no
+	     heart); each part still its own tap. -->
 	<span class="teams">
 		<CountBadge
 			kind="good"
@@ -89,7 +89,7 @@
 			label={aliveLabel}
 			testid="alive-count"
 			onclick={() => openCount('alive', aliveLabel)}
-			><Icon name="alive" />{t('day.aliveBadge', {
+			>{t('day.aliveBadge', {
 				count: teams.alive,
 				total: g.seating.length
 			})}</CountBadge
@@ -178,7 +178,8 @@
 		border-width: 0;
 		background: none;
 	}
-	/* The heart on the split, as wide as its icon. */
+	/* The living on the split, as wide as its numbers: no heart, so the two halves balance
+	   (Trevor, 2026-11-18: "no need for a heart icon in the middle"). */
 	.teams > :global(.badge.alive) {
 		flex: none;
 		padding: 0 var(--space-1);

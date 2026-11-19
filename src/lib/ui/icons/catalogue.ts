@@ -229,6 +229,8 @@ export const ICON_SLOTS = {
 	markUnread: { label: 'Mark as unread', choices: ['ph:eye', 'ph:eye-closed'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */
 	asksText: { label: 'Asks for words', choices: ['ph:text-t', 'ph:textbox'] },
+	/** A quick card's words wrap to fill it, or keep each typed line whole (Trevor, 2026-11-18). */
+	wrapLines: { label: 'Wrap lines', choices: ['ph:arrow-u-down-left', 'ph:text-align-left'] },
 	asksNumber: { label: 'Asks for a number', choices: ['ph:hash', 'ph:calculator'] },
 	asksChoices: { label: 'Asks for an answer', choices: ['ph:list-bullets', 'ph:list-checks'] },
 	asksCharacters: { label: 'Asks for characters', choices: ['ph:user-circle', 'ph:users'] },

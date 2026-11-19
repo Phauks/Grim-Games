@@ -99,6 +99,7 @@ import ph_square_split_horizontal from '~icons/ph/square-split-horizontal';
 import ph_star from '~icons/ph/star';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_tag_simple from '~icons/ph/tag-simple';
+import ph_text_align_left from '~icons/ph/text-align-left';
 import ph_textbox from '~icons/ph/textbox';
 import ph_tote from '~icons/ph/tote';
 import ph_trash_simple from '~icons/ph/trash-simple';
@@ -214,6 +215,7 @@ const icons: IconMap = {
 	'ph:star': ph_star,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:tag-simple': ph_tag_simple,
+	'ph:text-align-left': ph_text_align_left,
 	'ph:textbox': ph_textbox,
 	'ph:tote': ph_tote,
 	'ph:trash-simple': ph_trash_simple,

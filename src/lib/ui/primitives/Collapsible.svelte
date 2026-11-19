@@ -376,8 +376,8 @@
 		/* Padding, not margin, so a pinned band's fill covers the room round it too and no row
 		   shows above or under it as it passes (Trevor, 2026-11-18). */
 		padding-block: var(--space-1);
-		margin-inline: calc(-1 * var(--space-2));
-		padding-inline: var(--space-2);
+		margin-inline: calc(-1 * var(--band-reach));
+		padding-inline: var(--band-reach);
 	}
 	.head[data-type-band]::before {
 		content: '';

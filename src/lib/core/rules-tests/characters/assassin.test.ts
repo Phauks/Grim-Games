@@ -18,7 +18,7 @@ import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { becomesOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
 import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { nightTextSegments, placeholdersFor } from '#lib/core/rules/night/night-text.ts';
@@ -102,9 +102,8 @@ describe('Assassin', () => {
 			expect(abilityState(s.game, s.seat('assassin'), s.characters).impairments).toMatchObject([
 				{ reason: 'drunk', source: { characterId: 'minstrel' } }
 			]);
-			const [survivor] = preventedDeaths(s.game, s.characters);
-			expect(survivor).toMatchObject({ killer: 'assassin', seatId: s.seat('moonchild') });
-			expect(survivor.because.map((b) => b.kind)).toEqual(['killer-impaired']);
+			expect(abilityState(s.game, s.seat('assassin'), s.characters).works).toBe(false);
+			expect(savedBy(s, 'assassin', s.seat('moonchild'))).toEqual([]);
 		});
 		it("Example 4: Drunk Assassin's kill fails; Goon turns evil", () => {
 			// Wiki: "The Assassin, who was drunk due to the Courtier, chooses to kill the Goon. The
@@ -114,9 +113,8 @@ describe('Assassin', () => {
 				.reminder('assassin', 'courtier', 'Drunk 3')
 				.reminder('goon', 'assassin', 'Dead')
 				.reminder('assassin', 'goon', 'Drunk');
-			const [survivor] = preventedDeaths(s.game, s.characters);
-			expect(survivor).toMatchObject({ killer: 'assassin', seatId: s.seat('goon') });
-			expect(survivor.because.map((b) => b.kind)).toEqual(['killer-impaired']);
+			expect(abilityState(s.game, s.seat('assassin'), s.characters).works).toBe(false);
+			expect(savedBy(s, 'assassin', s.seat('goon'))).toEqual([]);
 			expect(
 				becomesOffer(
 					s.game,
@@ -170,9 +168,9 @@ describe('Assassin', () => {
 			expect(byDemon.map((a) => a.seatId)).toContain(s.seat('chef'));
 			expect(otherNightText()).toContain('[+Dead]');
 			const poisoned = s.poisoned('assassin').reminder('sailor', 'assassin', 'Dead');
-			const [survivor] = preventedDeaths(poisoned.game, poisoned.characters);
-			expect(survivor).toMatchObject({ killer: 'assassin', seatId: poisoned.seat('sailor') });
-			expect(survivor.because.map((b) => b.kind)).toContain('killer-impaired');
+			expect(
+				abilityState(poisoned.game, poisoned.seat('assassin'), poisoned.characters).works
+			).toBe(false);
 		});
 
 		it('marks the Assassin No Ability once they have chosen', () => {

@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
@@ -105,8 +105,7 @@ describe('Fool', () => {
 			).toMatchObject({ spentToken: 'No Ability' });
 
 			// Protected, the Fool keeps their ability: protection is the only reason they live.
-			const [survivor] = preventedDeaths(s.game, s.characters);
-			expect(survivor.because.map((b) => b.kind)).toEqual(['protected']);
+			expect(savedBy(s, 'imp', s.seat('fool')).map((b) => b.kind)).toEqual(['protected']);
 		});
 	});
 
@@ -117,9 +116,9 @@ describe('Fool', () => {
 			// Wiki: "If the Fool would die, they remain alive. (But they die if they are drunk or
 			// poisoned.)"
 			const s = scenario(cast).newDay().reminder('fool', 'imp', 'Dead');
-			const [survivor] = preventedDeaths(s.game, s.characters);
-			expect(survivor).toMatchObject({ killer: 'imp', seatId: s.seat('fool') });
-			expect(survivor.because.map((b) => b.kind)).toEqual(['survives-first-death']);
+			expect(savedBy(s, 'imp', s.seat('fool')).map((b) => b.kind)).toEqual([
+				'survives-first-death'
+			]);
 			const drunk = s.reminder('fool', 'innkeeper', 'Drunk');
 			expect(
 				survivesFirstDeath(drunk.game, drunk.seat('fool'), 'demon', drunk.characters)
@@ -146,7 +145,7 @@ describe('Fool', () => {
 			expect(reminderTargetMisses(s.game, spent, s.seat('fool'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).not.toEqual([]);
 			const used = s.reminder('fool', 'fool', 'No Ability').reminder('fool', 'imp', 'Dead');
-			expect(preventedDeaths(used.game, used.characters)).toMatchObject([{ because: [] }]);
+			expect(savedBy(used, 'imp', used.seat('fool'))).toEqual([]);
 		});
 	});
 

@@ -56,6 +56,8 @@ export interface InfoToken {
 	 * not with the standard or enhanced cards (Trevor, 2026-11-05: the Harlot's question).
 	 */
 	characterId?: string;
+	/** Each typed line kept whole when shown, not wrapped to fill the card (a quick card). */
+	nowrap?: true;
 }
 
 /** The most characters a card can ask for: the Demon's three bluffs, with room to spare. */

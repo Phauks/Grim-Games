@@ -3889,47 +3889,6 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await expect(script.getByTestId('traveller-in-play')).toHaveCount(1);
 });
 
-test("the day's Announcements explain a kill that didn't happen", async ({ page }) => {
-	await startGame(page);
-	for (const [number, name] of [
-		[1, 'Imp'],
-		[2, 'Soldier']
-	] as const) {
-		const sheet = await openSeat(page, number);
-		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-		await page
-			.getByRole('dialog', { name: `Character for Seat ${number}` })
-			.getByRole('button', { name, exact: true })
-			.tap();
-		await closeSheet(page);
-	}
-	await paneDay(page);
-	const day = page.getByTestId('pane-day');
-	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
-	await expect(day.getByTestId('prevented-button')).toBeDisabled();
-	await closePane(page);
-
-	// The Storyteller puts the Imp's Dead token on the Soldier, who doesn't die (Trevor,
-	// 2026-10-16; https://wiki.bloodontheclocktower.com/Soldier).
-	await putReminder(page, 'Dead', 2);
-	// The Soldier lives, so the Storyteller says no to marking them dead.
-	await page
-		.getByRole('alertdialog', { name: /^Mark .* dead\?$/ })
-		.getByRole('button', { name: 'Cancel', exact: true })
-		.tap();
-	await closeBin(page);
-
-	await paneDay(page);
-	await day.getByTestId('prevented-button').tap();
-	const prevented = page.getByRole('dialog', { name: 'What didn’t happen' });
-	await expect(prevented.getByTestId('prevented')).toContainText('chose');
-	// The Soldier's own TPI ability text says why.
-	await expect(prevented.locator('[data-character="soldier"]')).toContainText(
-		'You are safe from the Demon.'
-	);
-	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
-});
-
 test('game notes and Players have a button beside the grim cover, styled like it, in every game', async ({
 	page
 }) => {
@@ -8451,6 +8410,27 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 		);
 	});
 	expect(under).toBe(true);
+	// Each line's edge is the character token's rim colour, not black (Trevor, 2026-11-18).
+	const edge = await page.evaluate(() => {
+		const probe = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+		probe.style.stroke = 'var(--token-face-shade, var(--border))';
+		document.querySelector('svg.tethers')!.append(probe);
+		const rim = getComputedStyle(probe).stroke;
+		probe.remove();
+		return { rim, edge: getComputedStyle(document.querySelector('svg.tethers line.edge')!).stroke };
+	});
+	expect(edge.edge).toBe(edge.rim);
+
+	// While one reminder is dragged, the seat's other lines stay (Trevor, 2026-11-18); only the
+	// dragged one, which has left its spot, loses its line.
+	const chip = (await page.locator('.chip-slot[data-seat="1"]').first().boundingBox())!;
+	await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(chip.x + chip.width / 2 + 60, chip.y + chip.height / 2 + 60, { steps: 6 });
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(3);
+	await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2, { steps: 6 });
+	await page.mouse.up();
+	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
 
 	await boardSettings(page, 'Board');
 	const dialog = page.getByRole('dialog', { name: 'Settings' });

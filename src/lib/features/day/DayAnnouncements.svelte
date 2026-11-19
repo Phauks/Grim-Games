@@ -1,11 +1,9 @@
 <script lang="ts">
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { appliedEntries, recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
 	import { afterDawn, dayNumber } from '#lib/core/rules/night/night-order.ts';
 	import { notDeclared } from '#lib/core/rules/jinxes/jinxes.ts';
-	import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
 	import { type Night } from '#lib/core/model/overrides.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -14,11 +12,9 @@
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { DayPort } from './day-port.ts';
-	import PreventedSheet from './PreventedSheet.svelte';
 
 	/** The day's Announcements section: who died or came back, and what to read out (moved from DayPanel). */
 	interface Props {
@@ -88,8 +84,6 @@
 	const privateDeaths = $derived(gameModeOf(g.gameId)?.setup.deaths?.kind === 'private');
 
 	// ── What didn't happen: a kill whose Dead token sits on a living player (Trevor) ──
-	const prevented = $derived(preventedDeaths(g, game.characters));
-	let preventedOpen = $state(false);
 
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
@@ -120,17 +114,6 @@
 	storageKey="day.announcements"
 	count={died.length + revived.length + announcers.length}
 >
-	{#snippet aside()}
-		<Button
-			variant="quiet"
-			icon="protected"
-			data-testid="prevented-button"
-			disabled={prevented.length === 0}
-			aria-label={t('day.preventedButton', { count: prevented.length })}
-			title={t('day.preventedButton', { count: prevented.length })}
-			onclick={() => (preventedOpen = true)}><CountBadge count={prevented.length} /></Button
-		>
-	{/snippet}
 	{#if customInPlay}
 		<p class="custom-note" data-testid="custom-announcements">{t('day.announce.custom')}</p>
 	{/if}
@@ -204,12 +187,12 @@
 			</li>
 		{/each}
 		{#if died.length === 0 && !nobodyDied && revived.length === 0 && announcers.length === 0}
-			<li>{t('common.none')}</li>
+			<!-- Quiet, inset to where a row's text starts (Trevor, 2026-11-18, "None as italics is
+			     best. But left align, so 3 and 4"). -->
+			<li class="none">{t('common.none')}</li>
 		{/if}
 	</ul>
 </Collapsible>
-
-<PreventedSheet bind:open={preventedOpen} {game} {prevented} />
 
 <!-- What to say aloud, the player's name as their badge. -->
 {#snippet spoken(text: string, seatId: SeatId)}<Sentence {text}
@@ -230,6 +213,14 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	.none {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
+		padding-inline: var(--space-3);
+		color: var(--on-surface-muted);
+		font-style: italic;
 	}
 	.sentence {
 		font-family: var(--font-ability);

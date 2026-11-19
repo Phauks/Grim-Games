@@ -170,6 +170,7 @@
 								title={card.title}
 								characters={card.characters}
 								detail={card.detail}
+								nowrap={card.nowrap}
 								compact
 							/>
 						</section>
@@ -184,7 +185,12 @@
 							aria-label={t('show.card', { number: i + 1, count: shownCards.length })}
 							inert={i !== current}
 						>
-							<ShownCard title={card.title} characters={card.characters} detail={card.detail} />
+							<ShownCard
+								title={card.title}
+								characters={card.characters}
+								detail={card.detail}
+								nowrap={card.nowrap}
+							/>
 						</section>
 					{/each}
 				</div>
@@ -214,6 +220,7 @@
 					title={shownCards[0]?.title}
 					characters={shownCards[0]?.characters}
 					detail={shownCards[0]?.detail}
+					nowrap={shownCards[0]?.nowrap}
 				/>
 			{/if}
 			{#snippet fallback()}
