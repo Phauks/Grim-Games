@@ -33,6 +33,7 @@ export const E2E_AREAS: E2eArea[] = [
 		files: [
 			'board-pane.e2e.ts',
 			'board-pick.e2e.ts',
+			'board-stacks.e2e.ts',
 			'board-timer-look.e2e.ts',
 			'corner-seams.e2e.ts',
 			'count-off.e2e.ts',
@@ -63,7 +64,8 @@ export const E2E_AREAS: E2eArea[] = [
 			'table-resize.e2e.ts',
 			'token-flow.e2e.ts',
 			'token-flow-b.e2e.ts',
-			'tray-caption-reopen.e2e.ts'
+			'tray-caption-reopen.e2e.ts',
+			'valid-info-eyes.e2e.ts'
 		],
 		features: ['board', 'grimoire', 'info-tokens', 'bluffs']
 	},
