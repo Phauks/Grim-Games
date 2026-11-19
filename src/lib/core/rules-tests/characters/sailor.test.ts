@@ -18,7 +18,7 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { placeholdersFor } from '#lib/core/rules/night/night-text.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
@@ -60,13 +60,8 @@ describe('Sailor', () => {
 			const s = scenario(['sailor', 'exorcist', 'shabaloth', 'chef', 'poisoner'])
 				.reminder('exorcist', 'sailor', 'Drunk')
 				.reminder('sailor', 'shabaloth', 'Dead');
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					seatId: s.seat('sailor'),
-					because: [
-						{ kind: 'protected', source: { characterId: 'sailor', seatId: s.seat('sailor') } }
-					]
-				}
+			expect(savedBy(s, 'shabaloth', s.seat('sailor'))).toMatchObject([
+				{ kind: 'protected', source: { characterId: 'sailor', seatId: s.seat('sailor') } }
 			]);
 			const executed = s.newDay().execute('sailor');
 			expect(executed.game.seats[s.seat('sailor')].dead).toBe(false);

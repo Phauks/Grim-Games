@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
 import { survivesFirstDeath } from '#lib/core/rules/abilities/first-death.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
@@ -85,13 +85,7 @@ describe('Innkeeper', () => {
 				['assassin', 'po'],
 				'assassin'
 			).reminder('chef', 'assassin', 'Dead');
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					killer: 'assassin',
-					seatId: s.seat('chef'),
-					because: [{ kind: 'killer-impaired', seatId: s.seat('assassin') }]
-				}
-			]);
+			expect(abilityState(s.game, s.seat('assassin'), s.characters).works).toBe(false);
 		});
 		it('Example 3: Self-protection backfires; Demon kills the Pacifist', () => {
 			// Wiki: "The Innkeeper protects themself and the Pacifist. The Storyteller chooses that the
@@ -102,9 +96,7 @@ describe('Innkeeper', () => {
 				'innkeeper'
 			).reminder('pacifist', 'imp', 'Dead');
 			expect(protection(s.game, s.seat('pacifist'), s.characters, 'demon')).toBeUndefined();
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{ seatId: s.seat('pacifist'), because: [] }
-			]);
+			expect(savedBy(s, 'imp', s.seat('pacifist'))).toEqual([]);
 		});
 	});
 

@@ -94,7 +94,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
-		margin: 0 var(--pane-gutter, 0rem) var(--space-2);
+		/* Out to the bands' edge below, as the tab track (--band-reach). */
+		margin: 0 calc(var(--pane-gutter, 0rem) - var(--band-reach)) var(--space-2);
 	}
 	.game-line > :global(.counts) {
 		flex: 1;
@@ -102,7 +103,7 @@
 	}
 	/* --pane-gutter: the pane's side inset, given by where it sits, inside each scroll box. */
 	.storyteller-pane :global([data-scope='tabs'][data-part='root'] > :has(> [data-part='list'])) {
-		margin-inline: var(--pane-gutter, 0rem);
+		margin-inline: calc(var(--pane-gutter, 0rem) - var(--band-reach));
 	}
 	.storyteller-pane > :global([data-scope='tabs'][data-part='root']) {
 		display: flex;

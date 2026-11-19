@@ -22,7 +22,7 @@ import {
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/abilities/protection.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { revivedSinceNewDay } from '#lib/core/rules/night/night-numbers.ts';
 import { revivedAfterStep } from '#lib/core/rules/night/revived-tonight.ts';
@@ -69,12 +69,8 @@ describe('Shabaloth', () => {
 				.reminder('gossip', 'shabaloth', 'Dead')
 				.reminder('gambler', 'shabaloth', 'Dead')
 				.dies('gossip', 'shabaloth');
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					killer: 'shabaloth',
-					seatId: s.seat('gambler'),
-					because: [{ kind: 'protected', source: { characterId: 'innkeeper' } }]
-				}
+			expect(savedBy(s, 'shabaloth', s.seat('gambler'))).toMatchObject([
+				{ kind: 'protected', source: { characterId: 'innkeeper' } }
 			]);
 		});
 
