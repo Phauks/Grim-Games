@@ -5,6 +5,11 @@
  * `jobs` splits a slow area over several CI jobs: keep each job under about 20 minutes
  * (Nov 19 2026: about 183 minutes of tests in all on a 2-worker runner).
  * `npm run test:e2e:area -- <id>` runs one area locally.
+ *
+ * A PR runs only the areas its changes belong to (scripts/e2e-area.ts `plan`): a change in an
+ * area's `features` folders (or their message file in src/lib/i18n/messages/en/) or to one of
+ * its e2e files. Any other change, such as core, ui, routes, the Worker, e2e helpers or config,
+ * runs every area, and so does every push to beta and main (Trevor, 2026-11-19).
  */
 export type E2eArea = {
 	/** Used in CI and on the command line. */
@@ -15,6 +20,8 @@ export type E2eArea = {
 	jobs: number;
 	/** File names in e2e/. */
 	files: string[];
+	/** Folders in src/lib/features/ whose changes run this area. */
+	features: string[];
 };
 
 export const E2E_AREAS: E2eArea[] = [
@@ -57,7 +64,8 @@ export const E2E_AREAS: E2eArea[] = [
 			'token-flow.e2e.ts',
 			'token-flow-b.e2e.ts',
 			'tray-caption-reopen.e2e.ts'
-		]
+		],
+		features: ['board', 'grimoire', 'info-tokens', 'bluffs']
 	},
 	// Character abilities and jinxes, night steps, game modes and setup.
 	{
@@ -93,7 +101,8 @@ export const E2E_AREAS: E2eArea[] = [
 			'setup-note.e2e.ts',
 			'wiki-gap-controls.e2e.ts',
 			'zenomancer.e2e.ts'
-		]
+		],
+		features: ['characters', 'setup', 'modes', 'savant']
 	},
 	// Rooms, joining and playing on a phone, friends, accounts, sharing, sounds.
 	{
@@ -130,7 +139,8 @@ export const E2E_AREAS: E2eArea[] = [
 			'spectator-messages.e2e.ts',
 			'storyteller-sounds.e2e.ts',
 			'test-room.e2e.ts'
-		]
+		],
+		features: ['room', 'player', 'friends', 'account', 'push', 'show', 'sound', 'test-room']
 	},
 	// The day, nominations and executions, starting and ending a game, late players.
 	{
@@ -161,7 +171,8 @@ export const E2E_AREAS: E2eArea[] = [
 			'start-flow.e2e.ts',
 			'timer-wake-lock.e2e.ts',
 			'traveller-pick.e2e.ts'
-		]
+		],
+		features: ['day', 'game', 'late-player', 'history']
 	},
 	// App shell, settings and theme, ways back, layout checks, offline, errors, reports.
 	{
@@ -209,6 +220,16 @@ export const E2E_AREAS: E2eArea[] = [
 			'type-bands.e2e.ts',
 			'update-prompt.e2e.ts',
 			'way-back.e2e.ts'
+		],
+		features: [
+			'settings',
+			'game-settings',
+			'shell',
+			'about',
+			'errors',
+			'offline',
+			'reports',
+			'spikes'
 		]
 	},
 	// Scripts, the library, the script, character and mode builders, printing, reference.
@@ -233,6 +254,16 @@ export const E2E_AREAS: E2eArea[] = [
 			'script-sheet.e2e.ts',
 			'script-travellers.e2e.ts',
 			'scripts.e2e.ts'
+		],
+		features: [
+			'scripts',
+			'library',
+			'script-builder',
+			'character-builder',
+			'character-lab',
+			'mode-builder',
+			'reference',
+			'glossary'
 		]
 	}
 ];
