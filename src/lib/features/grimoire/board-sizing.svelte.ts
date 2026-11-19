@@ -29,6 +29,7 @@ import {
 import type { Box } from '#lib/features/board/name-placement.ts';
 import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 import { fitReminders } from '#lib/features/board/reminder-fan.ts';
+import { reminderStacks } from '#lib/features/board/board-stacks.ts';
 import { remindersBeside } from '#lib/features/grimoire/seats/true-character-marks.ts';
 
 /**
@@ -178,8 +179,12 @@ export class BoardSizing {
 		// "Is The …" reminders sit in the seat's pill, not beside it, by what the big token shows.
 		const counts = seats.map(
 			(s) =>
-				remindersBeside(s, characters, boardLooks.current.bigToken).length +
-				(vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
+				// A stack of reminders takes one place (board-stacks.ts).
+				reminderStacks(
+					remindersBeside(s, characters, boardLooks.current.bigToken),
+					(id) => characters.get(id),
+					preferences.current.assistance.stackReminders
+				).length + (vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
 		);
 		const { width, height } = this;
 		if (width <= 0 || height <= 0)
