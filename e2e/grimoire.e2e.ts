@@ -1157,7 +1157,7 @@ test('the night order is walked through from the bank, and End night starts the 
 	await expect(boardTimer).toBeVisible();
 	await endNight(page);
 	await expect(page.getByTestId('pane-day')).toBeVisible();
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	await expect(boardTimer).toBeVisible();
 	// Start is in the top bar, or a phone's timer sheet from its clock.
 	await expect(
