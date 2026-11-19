@@ -108,7 +108,6 @@
 	import BoardPane from './hosting/BoardPane.svelte';
 	import type { BesidePlacement } from '#lib/ui/layout/beside.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
-	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
 	import DayPane from './hosting/DayPane.svelte';
 	import NightOrderPane from './hosting/NightOrderPane.svelte';
@@ -664,7 +663,6 @@
 	provideSeatPictures(() => (watching ? grimoire : undefined));
 	const secret = $derived(watching && !ended); // Nothing is secret once it is over (2026-11-15).
 	const lookNow = new ShownLook(() => ({ grimoire, watching }));
-	let menuOpen = $state(false);
 	/** The board shown to a player who looks at the Grimoire, from their night step. */
 	let showingGrim = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
@@ -696,7 +694,6 @@
 	// Starting the day timer while it is still night asks to start the day (Trevor, 2026-11-16:
 	// Storytellers often skip End night when little changed).
 	let startDayOpen = $state(false);
-	let watchDayOpen = $state(false);
 	let startTimer: (() => void) | undefined;
 	const askStartDay = $derived(
 		!watching && phaseNow.kind === 'night'
@@ -778,9 +775,9 @@
 		hidden={showingGrim}
 		bind:beside={paneAt}
 		day={dayPane}
-		night={nightPane}
+		night={watching ? undefined : nightPane}
 		bluffs={gameHasDemonBluffs(game.gameId)}
-		seats={seatsView}
+		seats={watching ? undefined : seatsView}
 		session={sessionView}
 		ended={!!ended}>{@render boardBody()}</BoardPane
 	>{/if}
@@ -811,11 +808,9 @@
 					showingGrim = false;
 					nw.guideOpen = true;
 				}}
-				onDay={watching ? () => (watchDayOpen = true) : undefined}
 				onInfo={() => (infoOpen = true)}
 				onScript={() => (scriptOpen = true)}
 				onShare={() => (phonesOpen = true)}
-				onMore={watching ? () => (menuOpen = true) : undefined}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26); a spectator's too. -->
 				{#snippet timer()}{@render toolbarTimer()}{/snippet}
@@ -827,9 +822,7 @@
 						actions={watching ? undefined : coverActions}
 						outlined
 					/>
-					{#if !watching}
-						<GamePaneButton />
-					{/if}
+					<GamePaneButton />
 				{/snippet}
 			</BoardToolbar>{/if}
 
@@ -965,18 +958,12 @@
 	<SessionDialogs />
 {/if}
 
-{#if watching}<!-- Spectators only: the Storyteller's ⋯ is the pane's More (Trevor, 2026-11-18). --><BoardMenu
-		bind:open={menuOpen}
-		{grimoire}
-		gameInfo={cornerHidden}
-		onBluffs={gameHasDemonBluffs(game.gameId) ? () => (bluffsOpen = true) : undefined}
-		onGameInfo={() => (modeMenuOpen = true)}
-	/>{/if}
 {#snippet seatsView()}
 	<PaneSeats onAddRule={() => rules?.add()} onArrange={() => enterSeating(seatArr)} />
 {/snippet}
 {#snippet sessionView()}
 	<PaneSession
+		{watching}
 		gameInfo={cornerHidden}
 		ended={!!ended}
 		onGameInfo={() => (modeMenuOpen = true)}
@@ -1094,11 +1081,6 @@
 	title={t('day.startDay')}
 	onConfirm={() => flow.endNight(() => startTimer?.())}
 />
-<!-- A spectator's Day, to look at (Trevor, 2026-11-15); they have no pane. -->
-{#if watching}<Dialog bind:open={watchDayOpen} title={t('room.pane.day')} size="full" scroll={false}
-		>{@render dayPane()}</Dialog
-	>{/if}
-
 <AlignmentDraw bind:open={drawOpen} {grimoire} seatId={drawFor} />
 
 <BluffsSheet

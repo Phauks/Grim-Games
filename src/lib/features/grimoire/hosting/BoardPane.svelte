@@ -16,7 +16,7 @@
 	 * as the home screen, Trevor 2026-11-16). Beside it where the screen is wide, under it on an
 	 * upright tablet, as player Notes are (plan E3), and always shown there, so the board never
 	 * changes size; over the screen on a phone, which has room for neither. A spectator's board
-	 * has none.
+	 * has the same pane, to read (Trevor, 2026-11-18).
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -27,14 +27,14 @@
 		beside?: BesidePlacement;
 		/** The Day tab's contents. */
 		day: Snippet;
-		/** The Night tab's contents. */
-		night: Snippet;
+		/** The Night tab's contents; none for a spectator. */
+		night?: Snippet;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
 		/** The game's mode gives the Demon bluffs, so the pane has a Bluffs view. */
 		bluffs?: boolean;
-		/** More's Seats and Session, from the board. */
-		seats: Snippet;
+		/** More's Seats and Session, from the board; a spectator has no Seats. */
+		seats?: Snippet;
 		session: Snippet;
 		children: Snippet;
 	}
@@ -56,7 +56,7 @@
 	let width = $state(0);
 	let height = $state(0);
 	$effect(() => {
-		beside = watching ? undefined : besidePlacement(width, height, rootRem());
+		beside = besidePlacement(width, height, rootRem());
 	});
 	$effect(() => {
 		sidePane.beside = !!beside;
@@ -79,54 +79,46 @@
 {#snippet bluffsView()}
 	<BluffsSheet
 		inline
+		readOnly={watching}
 		game={grimoire.game}
 		characters={grimoire.open.characters}
 		dispatch={(command) => grimoire.open.run(command)}
 	/>
 {/snippet}
 {#snippet soundsView()}<SoundboardPanel />{/snippet}
+{#snippet paneBody()}
+	<StorytellerPane
+		game={grimoire.open}
+		run={(command) => grimoire.run(command)}
+		{day}
+		{night}
+		{ended}
+		{watching}
+		bluffs={bluffs ? bluffsView : undefined}
+		{seats}
+		sounds={watching ? undefined : soundsView}
+		history={historyView}
+		{session}
+	/>
+{/snippet}
 {#snippet historyView()}<HistoryDialog inline {grimoire} />{/snippet}
 
 {#snippet pane()}
 	<div class="side-pane" data-at={beside} inert={hidden}>
-		{#if !hidden}<StorytellerPane
-				game={grimoire.open}
-				run={(command) => grimoire.run(command)}
-				{day}
-				{night}
-				{ended}
-				bluffs={bluffs ? bluffsView : undefined}
-				{seats}
-				sounds={soundsView}
-				history={historyView}
-				{session}
-			/>{/if}
+		{#if !hidden}{@render paneBody()}{/if}
 	</div>
 {/snippet}
 
-{#if !watching}
-	<Dialog
-		bind:open={() => sidePane.open && !beside, (on) => (sidePane.open = on)}
-		title={t('room.players.pane')}
-		size="full"
-		scroll={false}
-	>
-		<div class="sheet-pane">
-			<StorytellerPane
-				game={grimoire.open}
-				run={(command) => grimoire.run(command)}
-				{day}
-				{night}
-				{ended}
-				bluffs={bluffs ? bluffsView : undefined}
-				{seats}
-				sounds={soundsView}
-				history={historyView}
-				{session}
-			/>
-		</div>
-	</Dialog>
-{/if}
+<Dialog
+	bind:open={() => sidePane.open && !beside, (on) => (sidePane.open = on)}
+	title={t('room.players.pane')}
+	size="full"
+	scroll={false}
+>
+	<div class="sheet-pane">
+		{@render paneBody()}
+	</div>
+</Dialog>
 
 <style>
 	/* On a phone each tab's scroll box reaches into the sheet's side padding, so a band reaching
