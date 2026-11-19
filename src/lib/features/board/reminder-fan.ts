@@ -201,14 +201,13 @@ export function fitReminders(
 		// still leaves each one's middle free to take; then only the group's middle, at each.
 		points = place(shape, 0, INWARD, s.size * CLOSE, true);
 		// No room close by: whole and full size wherever the board is free, any way round,
-		// before any squeezing (Trevor, 2026-11-19, "Spill to free space"). Still nearer its own
-		// seat than another's, so it is never taken for a neighbour's (Trevor, 2026-11-19).
+		// before any squeezing (Trevor, 2026-11-19, "Spill to free space"). Every reminder still
+		// nearer its own seat than any other, so none is taken for a neighbour's (Trevor,
+		// 2026-11-19).
 		if (!points) {
 			fits = false;
 			for (const spilled of spillShapes(s.count, k + GAP)) {
-				points =
-					place(spilled, 0, SPILL_TURN, s.size * SPILL, true) ??
-					place(spilled, 0, SPILL_TURN, s.size * SPILL);
+				points = place(spilled, 0, SPILL_TURN, s.size * SPILL, true);
 				if (points) break;
 			}
 		}
