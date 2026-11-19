@@ -9,7 +9,7 @@
 	import { TOKEN_APPEARANCE_ROWS, type TokenAppearanceRowKey } from './token-appearance-rows.ts';
 
 	/**
-	 * One size or switch of the token look, drawn the same in Settings > Tokens and in the
+	 * One size or switch of the token look, drawn the same in Theme > Character tokens and in the
 	 * player's own settings (Trevor, 2026-10-27).
 	 */
 	interface Props {

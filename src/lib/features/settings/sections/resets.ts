@@ -1,10 +1,8 @@
-import { boardLooks, DEFAULT_BOARD_LOOKS } from '#lib/features/board/board-looks.svelte.ts';
-import { DEFAULT_STEP_FOCUS, stepFocus } from '#lib/features/board/step-focus.svelte.ts';
 import { DEFAULT_ASSISTANCE, type AssistKey } from '#lib/ui/assistance.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { DEFAULT_PREFERENCES, type Preferences } from '#lib/ui/preferences.ts';
 import type { FontRole } from '#lib/ui/fonts/catalogue.ts';
-import { TEXT_FONT_ROLES, TOKEN_FONT_ROLES } from './font-roles.ts';
+import { TEXT_FONT_ROLES } from './font-roles.ts';
 import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 
 /** The given Storyteller switches back to their defaults, the others as they are. */
@@ -32,31 +30,11 @@ export const resets = {
 	theme: () => preferences.update(pick('themeId', 'colors', 'animations')),
 	text: () =>
 		preferences.update({
-			...pick('textScale', 'textAlign'),
+			...pick('textScale', 'textAlign', 'allowZoom'),
 			fonts: fontsWithout(TEXT_FONT_ROLES),
 			assistance: assistanceWith(['explainTerms'])
 		}),
 	icons: () => preferences.update(pick('iconSet', 'iconOverrides', 'iconScale')),
-	board: () => {
-		preferences.update({
-			assistance: assistanceWith(STORYTELLER_GROUPS.board),
-			...pick('cornerLines', 'allowZoom')
-		});
-		// The player name badge is set in Tokens (Trevor, 2026-10-20), so it keeps its looks.
-		const { nameSize, nameOffset } = boardLooks.current;
-		boardLooks.update({ ...DEFAULT_BOARD_LOOKS, nameSize, nameOffset });
-		stepFocus.update(DEFAULT_STEP_FOCUS);
-	},
-	tokens: () => {
-		preferences.update({
-			...pick('tokenAppearance', 'characterIconScale'),
-			fonts: fontsWithout(TOKEN_FONT_ROLES)
-		});
-		boardLooks.update({
-			nameSize: DEFAULT_BOARD_LOOKS.nameSize,
-			nameOffset: DEFAULT_BOARD_LOOKS.nameOffset
-		});
-	},
 	assistance: () =>
 		preferences.update({
 			...pick(

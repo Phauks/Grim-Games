@@ -10,22 +10,19 @@ import { openSettingsDialog } from './shell.ts';
  * skipped; a file picker can't be driven here.
  */
 
-const SECTIONS = ['Board', 'Tokens', 'Storyteller'] as const;
+// Board and Tokens left Settings for the game pane's Theme, where the real board is the preview
+// (Trevor, 2026-11-18).
+const SECTIONS = ['Storyteller'] as const;
 /**
  * Settings that show only while another one is on, and also work outside the preview (so
  * they aren't disabled): the switch they need, turned on before they are measured.
  */
-const NEEDS: Record<string, string> = {
-	// Also the seat numbers, bag tiles and more; on the token it is the character's name.
-	'Token text': 'Show character names on tokens'
-};
+const NEEDS: Record<string, string> = {};
 /**
  * Settings whose line another one takes on the board: the switches turned off before they
  * are measured (the mode and rules take the author's line in the board's corner).
  */
-const HIDDEN_BY: Record<string, string[]> = {
-	Author: ['Game mode', 'Special rules']
-};
+const HIDDEN_BY: Record<string, string[]> = {};
 /** Kinds of control a setting row holds, as their roles and inputs. */
 const CONTROLS = [
 	'input[type="checkbox"]',

@@ -10,7 +10,7 @@ import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameModeParts } from '#lib/features/game/game-mode-name.ts';
 
 /**
- * The corner's lines as this device's eyes show them (Game info and Settings > Board; Trevor,
+ * The corner's lines as this device's eyes show them (Game info and Theme > Board; Trevor,
  * 2026-10-24). A spectator's board (`watching`) has no join code or Game time of its own.
  */
 export function cornerLines(options: {

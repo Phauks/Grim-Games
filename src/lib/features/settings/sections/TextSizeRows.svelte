@@ -6,7 +6,7 @@
 
 	/**
 	 * Text size: Settings > Text, and the player screen's You sheet, so players reach it in
-	 * one tap (Trevor, 2026-10-26, plan E2). Pinch to zoom is in Board (Trevor, 2026-10-27).
+	 * one tap (Trevor, 2026-10-26, plan E2). Pinch to zoom is its own row, after these in Text.
 	 */
 </script>
 

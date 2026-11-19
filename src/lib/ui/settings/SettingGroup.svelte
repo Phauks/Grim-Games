@@ -6,8 +6,11 @@
 		title: string;
 		/** The preview box's own test id, if a test needs it. */
 		testid?: string;
-		/** The live preview: give it a fixed height, so a change never moves the settings. */
-		preview: Snippet;
+		/**
+		 * The live preview: give it a fixed height, so a change never moves the settings. Left out
+		 * beside the real board (the game pane's Theme), which is its own preview.
+		 */
+		preview?: Snippet;
 		children: Snippet;
 	}
 
@@ -22,11 +25,11 @@
 	above them and stays under the section's name row until the group has scrolled away.
 -->
 <section class="setting-group" data-setting data-search-label={title} aria-labelledby="{id}-title">
-	<div class="layout">
-		<div class="box" data-testid={testid}>
-			<h3 id="{id}-title">{title}</h3>
-			<div class="body" aria-hidden="true">{@render preview()}</div>
-		</div>
+	<div class="layout" data-bare={preview ? undefined : ''}>
+		{#if preview}<div class="box" data-testid={testid}>
+				<h3 id="{id}-title">{title}</h3>
+				<div class="body" aria-hidden="true">{@render preview()}</div>
+			</div>{:else}<h3 id="{id}-title" class="visually-hidden">{title}</h3>{/if}
 		<div class="settings">{@render children()}</div>
 	</div>
 </section>
@@ -70,7 +73,7 @@
 		background: var(--card-background);
 	}
 	@container (min-width: 26rem) {
-		.layout {
+		.layout:not([data-bare]) {
 			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 			gap: var(--space-5);
 		}

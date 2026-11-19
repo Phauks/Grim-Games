@@ -15,6 +15,17 @@
 	import { THEMES } from '#lib/ui/themes/registry.ts';
 	import type { PlainMessageKey } from '#lib/i18n/catalog.ts';
 	import AnimationsSetting from '../AnimationsSetting.svelte';
+	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
+
+	interface Props {
+		/**
+		 * Each colour group under a plain heading, not its own fold: inside a band of the game
+		 * pane's Theme, only the band folds (Trevor, 2026-11-18).
+		 */
+		flat?: boolean;
+	}
+
+	let { flat = false }: Props = $props();
 
 	const theme = $derived(preferences.theme);
 	const colors = $derived(preferences.current.colors);
@@ -50,20 +61,27 @@
 />
 <AnimationsSetting />
 {#each groups as [group, tokens] (group)}
-	<SettingCollapsible
-		title={t(`settings.colorGroup.${group}`)}
-		storageKey="settings-colors-{group}"
-		defaultOpen={false}
-	>
-		{#each tokens as token (token)}
-			<SettingColor
-				label={name(token)}
-				value={colorFor(theme, colors, token)}
-				custom={token in colors}
-				warnings={warnings(token)}
-				onChange={(value) => setColor(token, value)}
-				onReset={() => setColor(token, undefined)}
-			/>
-		{/each}
-	</SettingCollapsible>
+	{#if flat}
+		<SettingHeading title={t(`settings.colorGroup.${group}`)} />
+		{#each tokens as token (token)}{@render colour(token)}{/each}
+	{:else}
+		<SettingCollapsible
+			title={t(`settings.colorGroup.${group}`)}
+			storageKey="settings-colors-{group}"
+			defaultOpen={false}
+		>
+			{#each tokens as token (token)}{@render colour(token)}{/each}
+		</SettingCollapsible>
+	{/if}
 {/each}
+
+{#snippet colour(token: ColorToken)}
+	<SettingColor
+		label={name(token)}
+		value={colorFor(theme, colors, token)}
+		custom={token in colors}
+		warnings={warnings(token)}
+		onChange={(value) => setColor(token, value)}
+		onReset={() => setColor(token, undefined)}
+	/>
+{/snippet}
