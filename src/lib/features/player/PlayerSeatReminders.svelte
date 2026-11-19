@@ -133,6 +133,7 @@
 				disabled={false}
 				seatNumber={i + 1}
 				dragging={dragged}
+				inHand={gestures.hand.placed === id}
 				onTap={() => pickUp(seat.seatId, reminder)}
 				onDrag={(x, y, end) => gestures.dragPlaced(id, seat.seatId, x, y, end)}
 				onCancel={() => gestures.cancel()}
