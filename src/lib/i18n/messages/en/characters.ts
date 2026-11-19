@@ -1,4 +1,4 @@
-/** Character badges, tokens, reminders, the character dialog and Settings > Tokens. */
+/** Character badges, tokens, reminders, the character dialog and Theme > Character tokens. */
 export const characters = {
 	'characters.token': '{name} token',
 	'characters.tokenMarks': '{name} token: {marks}',

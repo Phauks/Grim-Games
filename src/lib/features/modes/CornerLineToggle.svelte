@@ -6,7 +6,7 @@
 
 	/**
 	 * One line of the board's corner as a setting: the same choice as its eye in Game info
-	 * (Trevor, 2026-10-24), in Settings > Board. Under its Board corner heading the name alone,
+	 * (Trevor, 2026-10-24), in Theme > Board. Under its Board corner heading the name alone,
 	 * no "on the board" (Trevor, 2026-10-27: "since it is implied").
 	 */
 	interface Props {

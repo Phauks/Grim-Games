@@ -6,7 +6,7 @@ import { t } from '#lib/i18n/locale.svelte.ts';
  * leaves across the top, one per reminder token
  * (rulebook; https://wiki.bloodontheclocktower.com/Setup for the top leaves). Every mark sits
  * inside the token. A character that changes setup can show a flower at the bottom right
- * (Settings > Tokens, off by default: Trevor 2026-10-18). Our own simple drawing, not TPI's
+ * (Theme > Character tokens, off by default: Trevor 2026-10-18). Our own simple drawing, not TPI's
  * artwork.
  */
 export interface LeafMarks {

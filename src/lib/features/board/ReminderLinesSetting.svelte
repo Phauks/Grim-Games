@@ -5,7 +5,7 @@
 
 	/**
 	 * When a reminder shows its line back to its seat (Trevor, 2026-10-29), one row for the
-	 * Storyteller's board (Settings › Board) and one for a player's Grim tab (Settings › Player),
+	 * Storyteller's board (Theme › Board) and one for a player's Grim tab (Settings › Player),
 	 * each keeping its own choice.
 	 */
 	interface Props {

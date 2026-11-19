@@ -3,8 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { openSoundboard } from './board-menu.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
-import { paneButton } from './players.ts';
-import { openSettingsDialog } from './shell.ts';
+import { closePane, paneButton } from './players.ts';
+import { openBoardTheme } from './theme.ts';
 
 // Public Town (Trevor, 2026-10-26): "an additional tablet could be used to display the player
 // grim and that is it. Placed in the center of the table."
@@ -106,18 +106,12 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	const gear = (await cog.boundingBox())!;
 	expect(gear.x + gear.width).toBeLessThanOrEqual(corner.x + 1);
 	expect(Math.abs(gear.y - corner.y)).toBeLessThan(2);
-	// And the one Settings, at its list of sections, as everywhere (Trevor, 2026-10-27: "Change
-	// your settings into settings", one Settings everywhere).
-	const settings = tablet.getByRole('dialog', { name: 'Settings' });
-	const openSettings = async () => {
-		await cog.tap();
-		await tablet.getByRole('menuitem', { name: 'Settings', exact: true }).tap();
-		await expect(settings).toBeVisible();
-	};
-	await openSettings();
-	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
-	await expect(sections).toBeVisible();
-	await sections.getByRole('button', { name: 'Tokens', exact: true }).tap();
+	// And Theme, the board's looks beside the town (Trevor, 2026-11-18), then the one Settings
+	// (Trevor, 2026-10-27: one Settings everywhere).
+	await cog.tap();
+	await tablet.getByRole('menuitem', { name: 'Theme', exact: true }).tap();
+	const settings = tablet.getByRole('dialog', { name: 'Theme', exact: true });
+	await settings.getByRole('button', { name: 'Character tokens', exact: true }).tap();
 	const tokenSize = settings.getByRole('slider', { name: 'Character token size' });
 	await tokenSize.scrollIntoViewIfNeeded();
 	await tokenSize.fill('1.5');
@@ -145,10 +139,12 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	expect(Math.round(filled.width)).toBe(screen.width);
 	expect(Math.round(filled.height)).toBe(screen.height);
 	// Filling the screen, Settings still opens over the town.
-	await openSettings();
-	await expect(sections).toBeInViewport();
+	await cog.tap();
+	await tablet.getByRole('menuitem', { name: 'Settings', exact: true }).tap();
+	const all = tablet.getByRole('dialog', { name: 'Settings' });
+	await expect(all.getByRole('navigation', { name: 'Settings sections' })).toBeInViewport();
 	await tablet.keyboard.press('Escape');
-	await expect(settings).toBeHidden();
+	await expect(all).toBeHidden();
 	await fullScreen.tap();
 	await expect.poll(() => tablet.evaluate(() => !!document.fullscreenElement)).toBe(false);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'false');
@@ -270,17 +266,12 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	// Trevor (2026-10-26): "Even if player changes settings for their theme, the background for
 	// the shared grim should be the same. Although font settings may be different."
 	const board = await startGame(page);
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	let settings = await openBoardTheme(page, 'Background');
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -310,11 +301,7 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	expect(colours.town).toBe('#140b0b');
 
 	// A change on the board reaches it.
-	await openSettingsDialog(page);
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	settings = await openBoardTheme(page, 'Background');
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Velvet' })

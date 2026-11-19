@@ -8,6 +8,7 @@
 	import ReminderTokenRow from '#lib/features/board/ReminderTokenRow.svelte';
 	import CharacterGroupDialog from './CharacterGroupDialog.svelte';
 	import { groupSourceOf } from '#lib/core/data/index.ts';
+	import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 
 	/**
 	 * A character at a glance: the standard character row (icon, name, ability), then its
@@ -38,12 +39,16 @@
 			? (EDITION_LABELS[character.edition] ?? character.edition)
 			: t('characters.homebrew')
 	);
-	/** TPI's reminder tokens, then the global ones, as in the Reference. */
+	/**
+	 * TPI's reminder tokens, then the global ones, as in the Reference; never a stand-in the app
+	 * doesn't use (the Hermit's 1, 2 and 3, own-reminders.ts).
+	 */
+	const own = $derived(ownReminders(character));
 	const reminders = $derived(
 		showReminders
 			? [
-					...character.reminders.map((label) => ({ label, global: false })),
-					...character.remindersGlobal.map((label) => ({ label, global: true }))
+					...own.reminders.map((label) => ({ label, global: false })),
+					...own.remindersGlobal.map((label) => ({ label, global: true }))
 				]
 			: []
 	);

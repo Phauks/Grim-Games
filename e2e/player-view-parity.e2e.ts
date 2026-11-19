@@ -2,7 +2,7 @@ import { paneDay, closePane, paneIsSheet } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
-import { openSettingsDialog } from './shell.ts';
+import { openBoardTheme } from './theme.ts';
 
 // The Storyteller's player view shows what phones show (Trevor, 2026-10-27: "storyteller view
 // of player view is incorrect and does not include everything. Design it so that these
@@ -297,18 +297,12 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 	await toBoard(page);
 	// Over a background, where the toolbar's buttons get a backing that the cover, a dialog
 	// inside the toolbar, passed on to every seat (Trevor, 2026-10-31).
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	const settings = await openBoardTheme(page, 'Background');
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
-	await settings.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
+	await closePane(page);
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();

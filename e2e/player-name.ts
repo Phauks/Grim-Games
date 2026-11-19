@@ -1,13 +1,22 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
- * Opens Settings > Player from the player screen's cog, which opens the one Settings at its
- * list of sections (Trevor, 2026-10-27: one Settings everywhere). In a room, the section
- * starts with this phone's name.
+ * Opens the one Settings from the player screen's cog: the cog opens the Theme sheet (the
+ * board's looks, Trevor 2026-11-18), whose own cog opens Settings at its list of sections.
  */
-export async function openPlayerSettings(phone: Page) {
-	await phone.getByTestId('you-button').tap();
+export async function openCogSettings(phone: Page, within: Page | Locator = phone) {
+	await within.getByTestId('you-button').tap();
+	const theme = phone.getByRole('dialog', { name: 'Theme', exact: true });
+	await theme.getByTestId('theme-sheet-settings').tap();
+	await expect(theme).toBeHidden();
 	const settings = phone.getByRole('dialog', { name: 'Settings' });
+	await expect(settings).toBeVisible();
+	return settings;
+}
+
+/** Opens Settings > Player from the player screen's cog. In a room, it starts with this phone's name. */
+export async function openPlayerSettings(phone: Page) {
+	const settings = await openCogSettings(phone);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Player', exact: true })
@@ -21,8 +30,7 @@ export async function openPlayerSettings(phone: Page) {
  * (Trevor, 2026-10-27): its own dialog over its room, in Settings' place (2026-11-15).
  */
 export async function openProfile(phone: Page) {
-	await phone.getByTestId('you-button').tap();
-	const settings = phone.getByRole('dialog', { name: 'Settings' });
+	const settings = await openCogSettings(phone);
 	await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
 	await expect(settings).toBeHidden();
 	const profile = phone.getByRole('dialog', { name: 'Profile', exact: true });

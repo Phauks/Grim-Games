@@ -6,7 +6,7 @@ import { TEXT_PAIRS, type SemanticToken, type Theme } from './types.ts';
  * Picking a theme fills every colour; a custom colour replaces just that one token, and the
  * component tokens built from it (sheets, cards, choices) follow. Tokens that aren't one solid
  * colour (the border's see-through line, the backdrop, the shadow) stay the theme's, and the
- * token and reminder faces and ink keep their own settings in Settings › Tokens.
+ * token and reminder faces and ink keep their own settings in Theme › Character tokens.
  */
 export const COLOR_GROUPS = {
 	surfaces: ['--surface', '--surface-glow', '--surface-raised', '--surface-selected'],
@@ -14,7 +14,7 @@ export const COLOR_GROUPS = {
 	accents: ['--accent', '--on-accent', '--focus', '--button', '--on-button'],
 	// No team, Fabled or Loric colours: they never change (team-colors.ts).
 	types: ['--traveller', '--on-traveller'],
-	// The token face, reminder face and their ink are in Settings › Tokens already.
+	// The token face, reminder face and their ink are in Theme › Character tokens already.
 	tokens: ['--token-rim', '--token-flower', '--token-flower-centre', '--leaf'],
 	sheets: ['--sheet', '--on-sheet', '--on-sheet-muted']
 } as const satisfies Record<string, readonly SemanticToken[]>;

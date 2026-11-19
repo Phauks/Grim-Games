@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openMenu, openSettingsDialog } from './shell.ts';
+import { openTheme } from './theme.ts';
 
 // Local runs use the preview email sender: no email is sent and the code is shown on screen.
 const homebrew = [
@@ -226,11 +227,8 @@ const savedLooks = (page: Page) =>
 	}));
 
 async function strikeGhostVotes(page: Page, on: boolean) {
-	const settings = await openSettingsDialog(page);
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	// A board look, in Theme (Trevor, 2026-11-18).
+	const settings = await openTheme(page, 'Board');
 	const strike = settings.getByRole('checkbox', {
 		name: 'Strike through used ghost votes',
 		includeHidden: true
@@ -238,7 +236,8 @@ async function strikeGhostVotes(page: Page, on: boolean) {
 	if ((await strike.isChecked()) !== on) {
 		await settings.getByText('Strike through used ghost votes', { exact: true }).tap();
 	}
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
 }
 
 // Settings follow the account, sizes stay with each device (Trevor, 2026-11-09: settings
