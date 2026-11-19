@@ -131,7 +131,8 @@ test.describe('on a computer', () => {
 	});
 
 	// Trevor (2026-10-29): "modals get buttons, locations get the current". Every menu row goes
-	// to a place; Profile, Settings, Install app (where the browser can install, as this Android
+	// to a place; Profile, Settings, Full screen (where the browser can, since the board's menu went into its
+	// pane, 2026-11-18), Install app (where the browser can install, as this Android
 	// one can, 2026-11-16), Report an issue and the build switch are buttons under the sections.
 	test('menu rows only go to places; actions are buttons under them', async ({ page }) => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
@@ -147,6 +148,7 @@ test.describe('on a computer', () => {
 		await expect(nav.getByTestId(/^nav-action-/)).toHaveText([
 			'Profile',
 			'Settings',
+			'Full screen',
 			'Install app',
 			'Report an issue'
 		]);

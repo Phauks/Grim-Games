@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { signIn } from './admin.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
+import { paneButton } from './players.ts';
 
 // Public script ratings (Trevor, 2026-11-16, look B): a seated player's rating of a game told by
 // a signed-in Storyteller adds to the script's public rating, which the script's details show
@@ -64,11 +65,7 @@ test("a seated player's rating shows in the script's details for anyone", async 
 	await page.keyboard.press('Escape');
 	await expect(phone.getByTestId('player-status-row')).toHaveAttribute('data-seat', '2');
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

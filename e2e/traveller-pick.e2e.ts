@@ -1,4 +1,4 @@
-import { paneDay } from './players.ts';
+import { paneDay, openPane, closePane } from './players.ts';
 import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
@@ -87,13 +87,9 @@ test('Travellers choose on their phones: a tap holds one, Confirm puts it on the
 	// A Traveller arrives mid-game: Add seat only places the seat, not in play (Trevor,
 	// 2026-11-02). Its token asks "Add as a Traveller?"; with no phone there, Send to their phone
 	// starts off. The Storyteller turns it on, ticks the other three and sends the recommended.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(
-		page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByRole('button', { name: 'Travellers choose' })
-	).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	const seats = await openPane(page, 'Seats');
+	await expect(seats.getByRole('button', { name: 'Travellers choose' })).toHaveCount(0);
+	await closePane(page);
 	await startNight(page);
 	await addSeat(page, /^Place between Cy and /);
 	await expect(page.getByRole('dialog', { name: 'Add as a Traveller?' })).toHaveCount(0);

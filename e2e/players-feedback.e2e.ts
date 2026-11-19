@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
-import { closePane, openPlayers } from './players.ts';
+import { closePane, openPlayers, paneButton } from './players.ts';
 
 // Players is one column of pill sections (Trevor, 2026-11-17, "A"): Players with Show's eye on
 // its pill, Spectators, then Player feedback, kept in place but closed until the game is over
@@ -61,11 +61,7 @@ test('Player feedback sits under Spectators and opens once the game is over', as
 			),
 		`grim-games:game-feedback:${gameId}`
 	);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

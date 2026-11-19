@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
+import { paneButton } from './players.ts';
 
 // Players who swap or move seats (the Matron) take their own reminders with them, but the
 // Tea Lady's Cannot Die marks whoever sits next to her now, so it moves to her new
@@ -36,11 +37,7 @@ test("the Tea Lady's Cannot Die moves to her new neighbour when players move", a
 	await expect(page.getByRole('button', { name: 'Dismiss' })).toHaveCount(0, { timeout: 15000 });
 
 	// Seat 4's player takes seat 2's place, beside the Tea Lady.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Seating', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Seating');
 	const centre = async (n: number) => {
 		const box = (await page
 			.getByRole('button', { name: new RegExp(`^Seat ${n}:`) })

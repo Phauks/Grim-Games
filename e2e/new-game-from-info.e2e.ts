@@ -1,31 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { openGameInfo, pickScript, toBoard } from './new-game.ts';
+import { paneButton, openPane, closePane } from './players.ts';
 
 // A new script means a new game, never a change mid-game (Trevor, 2026-10-24): New game in
-// the board's ⋯ menu opens "a tiny modal version of the new game screen", and the room, seat
-// count and player names carry over. It was in Game info until 2026-10-26, and is on ⋯ only
-// once the game has ended, in End game's place (Trevor, 2026-10-26).
+// the board's menu, now the pane's Session, opens "a tiny modal version of the new game screen",
+// and the room, seat count and player names carry over. It was in Game info until 2026-10-26,
+// and is in Session only once the game has ended, in End game's place (Trevor, 2026-10-26).
 
-async function openGameInfo(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
-	return page.getByRole('dialog', { name: 'Game info', exact: true });
-}
-
-/** Ends the game from ⋯, with Good winning. */
+/** Ends the game from the pane's Session, with Good winning. */
 async function endGame(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -33,13 +17,9 @@ async function endGame(page: Page) {
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 }
 
-/** New game is in the board's ⋯ menu once the game has ended (Trevor, 2026-10-26). */
+/** New game is in the pane's Session once the game has ended (Trevor, 2026-10-26). */
 async function newGameFromMenu(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'New game' })
-		.tap();
+	await paneButton(page, 'Session', 'New game');
 }
 
 async function startTroubleBrewing(page: Page) {
@@ -112,12 +92,10 @@ test('New game in the board menu, once the game ends, starts the next game with 
 
 test('closing New game from an ended game changes nothing', async ({ page }) => {
 	await startTroubleBrewing(page);
-	// Character selection is on ⋯ until Start game.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
+	// Character selection is in the pane's Session until Start game.
+	const more = await openPane(page, 'Session');
 	await expect(more.getByRole('button', { name: 'Character selection' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(more).toBeHidden();
+	await closePane(page);
 
 	await endGame(page);
 	await newGameFromMenu(page);

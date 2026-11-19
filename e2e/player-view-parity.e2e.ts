@@ -2,6 +2,7 @@ import { paneDay, closePane, paneIsSheet, storytellerPane } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // The Storyteller's player view shows what phones show (Trevor, 2026-10-27: "storyteller view
 // of player view is incorrect and does not include everything. Design it so that these
@@ -296,11 +297,7 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 	await toBoard(page);
 	// Over a background, where the toolbar's buttons get a backing that the cover, a dialog
 	// inside the toolbar, passed on to every seat (Trevor, 2026-10-31).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

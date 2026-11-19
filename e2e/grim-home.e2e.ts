@@ -64,9 +64,16 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 		await expect(storytellerPane(page)).toBeVisible();
 		await expect(page.getByTestId('game-pane-button')).toHaveCount(0);
 	}
+	// Game holds the Day and Night, Players the players and the notes (Trevor, 2026-11-18).
 	const pane = await openPane(page);
-	for (const tab of ['Day', 'Night', 'Players', 'Notes'])
-		await expect(pane.getByRole('tab', { name: new RegExp(`^${tab}`) })).toBeVisible();
+	for (const tab of ['Game', 'Players', 'More'])
+		await expect(
+			pane
+				.getByRole('tablist', { name: 'Game', exact: true })
+				.getByRole('tab', { name: new RegExp(`^${tab}`) })
+		).toBeVisible();
+	for (const tab of ['Day', 'Night'])
+		await expect(pane.getByRole('tab', { name: tab, exact: true })).toBeVisible();
 	// Before the first night, the Day tab is open, with no second timer (the board's is the one).
 	await expect(pane.getByTestId('pane-day')).toBeVisible();
 	await expect(pane.getByTestId('day-timer')).toHaveCount(0);

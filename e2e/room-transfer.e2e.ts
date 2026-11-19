@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { nameStoryteller, toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
+import { openPane } from './players.ts';
 
 // Room transfer (Trevor, 2026-10-28): "Storyteller A can transfer the rights of hosting the
 // room to storyteller B so that people don't have to rejoin". The board's ⋯ > Room transfer
@@ -27,13 +28,11 @@ async function startGame(page: Page): Promise<{ board: string; code: string }> {
 	return { board, code };
 }
 
-/** Opens Room transfer from the board's ⋯ menu and reads its code. */
+/** Opens Room transfer from the pane's Session and reads its code. */
 async function openTransfer(page: Page, board: string, code: string): Promise<string> {
 	if (new URL(page.url()).pathname !== board) await page.goto(board);
-	await page.getByRole('button', { name: /^More/ }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Above End game, in Session.
-	const session = menu.getByRole('region', { name: 'Session' });
+	const session = (await openPane(page, 'Session')).getByTestId('pane-session');
 	await expect(session.getByRole('button')).toContainText(['Room transfer', 'End game']);
 	await session.getByRole('button', { name: 'Room transfer' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });

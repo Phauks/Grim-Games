@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { listedAdmin, signIn } from './admin.ts';
 import { toBoard } from './new-game.ts';
 import { theMenu } from './shell.ts';
+import { paneButton } from './players.ts';
 
 // Live games (plan J31, Trevor 2026-10-26): "admin should have new area that allows admin to view
 // all active games ... the admin would be invisible to the storyteller and players. they cannot
@@ -71,11 +72,7 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 
 	// A Fabled stays where the board puts it (Trevor, 2026-10-27: "Admin view allows moving
 	// fable and lorics"): only the Storyteller removes it.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name: 'Spirit of Ivory', exact: true })
@@ -166,11 +163,7 @@ test('Live games tells a finished game from one going on, and Game history keeps
 	await expect(row).not.toContainText('Game over');
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

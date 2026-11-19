@@ -2,6 +2,7 @@ import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Day and night sound (plan U3, Trevor 2026-10-26: "Ambient sound during the day or night",
 // one recording at a time, Trevor's pick of the same day): off until turned on, and only once
@@ -44,11 +45,7 @@ test('day and night sound plays on phones in the room once the night begins, nev
 	await page.goto(board);
 
 	// From the board's ⋯ > Settings, which opens all of Settings (Trevor, 2026-10-27).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -97,11 +94,7 @@ test('day and night sound plays on phones in the room once the night begins, nev
 	await page.waitForTimeout(1000);
 	expect(fetched).toEqual([]);
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })

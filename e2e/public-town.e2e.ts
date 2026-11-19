@@ -3,6 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { openSoundboard } from './board-menu.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
+import { paneButton } from './players.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Public Town (Trevor, 2026-10-26): "an additional tablet could be used to display the player
 // grim and that is it. Placed in the center of the table."
@@ -268,11 +270,7 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	// Trevor (2026-10-26): "Even if player changes settings for their theme, the background for
 	// the shared grim should be the same. Although font settings may be different."
 	const board = await startGame(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -312,11 +310,7 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 	expect(colours.town).toBe('#140b0b');
 
 	// A change on the board reaches it.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Board', exact: true })
@@ -385,11 +379,7 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 	await tablet.goto(`/town/${code}`);
 	await expect(tablet.getByTestId('player-grim').getByTestId('grim-seat')).toHaveCount(8);
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -411,11 +401,7 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 	await expect(final.getByTestId('seat')).toHaveCount(8);
 
 	// Reopening the game makes the grimoire private again, and the town comes back.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Reopen game' })
-		.tap();
+	await paneButton(page, 'Session', 'Reopen game');
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -450,8 +436,7 @@ test('the soundboard plays on the Public Town tablet unless Play on leaves it ou
 	// The tablet has been tapped, as a table's would be, so it may play sound.
 	await tablet.getByTestId('public-town').tap();
 
-	await openSoundboard(page);
-	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
+	const sheet = await openSoundboard(page);
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	const playOn = sheet.getByRole('combobox', { name: 'Play on' });
 	// The town and phones, the default; there is no choice for this device.

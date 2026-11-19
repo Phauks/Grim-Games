@@ -7,26 +7,40 @@
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
-	import { sidePane, type PaneTab } from '#lib/features/room/side-pane.svelte.ts';
+	import {
+		PANE_VIEWS,
+		sidePane,
+		type PaneSubject,
+		type PaneView
+	} from '#lib/features/room/side-pane.svelte.ts';
 	import DayCounts from '#lib/features/day/DayCounts.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
 
 	/**
-	 * The Storyteller's Day, Night, Game notes and Players as tabs (plan M86, Trevor 2026-11-15:
-	 * "I really like seeing the notes right next to the game grim"; 2026-11-16: the day and the
-	 * night there too, so the grim is the home screen), beside the board where there is room and
-	 * in a full-screen sheet on a phone. Players' tab counts what waits from them.
+	 * The Storyteller's pane (plan M86; the grim as the home screen, Trevor 2026-11-16), beside
+	 * the board where there is room and in a full-screen sheet on a phone. Three subjects, each
+	 * with a smaller rail of its own views under it (Trevor, 2026-11-18: "i like nav with
+	 * sub-nav"; "only game, players, and more"): Game, the day and night; Players, them and the
+	 * notes; More, what the board's ⋯ menu held. History is in More, as it shouldn't be touched
+	 * often (Trevor, 2026-11-18). Players counts what waits from them.
 	 */
 	interface Props {
 		game: OpenGame;
 		/** How a note is saved: the board's, with its toasts, or the game's own. */
 		run?: (command: Command) => boolean;
-		/** The Day tab's contents, from the board. */
+		/** The Day's contents, from the board. */
 		day: Snippet;
-		/** The Night tab's contents, from the board. */
+		/** The Night's contents, from the board. */
 		night: Snippet;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
+		/** The Demon's bluffs; none in a mode without them (Sushi Buffet, Whale Buffet). */
+		bluffs?: Snippet;
+		/** More's views, from the board. */
+		seats: Snippet;
+		sounds: Snippet;
+		history: Snippet;
+		session: Snippet;
 	}
 
 	let {
@@ -34,7 +48,12 @@
 		run = (command) => game.run(command).ok,
 		day,
 		night,
-		ended = false
+		ended = false,
+		bluffs,
+		seats,
+		sounds,
+		history,
+		session
 	}: Props = $props();
 	const live = $derived(new LiveDay(game));
 
@@ -43,41 +62,80 @@
 	const viewOnly = $derived(game.viewOnly);
 	const unread = $derived(host.code ? host.inbox.unread : 0);
 
-	const tabs = $derived<{ value: PaneTab; label: string; count?: number; warn?: boolean }[]>([
-		{ value: 'day', label: t('room.pane.day') },
-		{ value: 'night', label: t('room.pane.night') },
+	const labels: Record<PaneView, string> = {
+		day: t('room.pane.day'),
+		night: t('room.pane.night'),
+		bluffs: t('room.pane.bluffs'),
+		players: t('room.players.title'),
+		notes: t('room.pane.notes'),
+		seats: t('room.pane.seats'),
+		sounds: t('room.pane.sounds'),
+		history: t('room.pane.history'),
+		session: t('room.pane.session')
+	};
+	const subjects = $derived<
+		{ value: PaneSubject; label: string; count?: number; warn?: boolean }[]
+	>([
+		{ value: 'game', label: t('room.pane.game') },
 		{ value: 'players', label: t('room.players.title'), count: unread, warn: host.inbox.urgent },
-		// Notes last (Trevor, 2026-11-18: "swap players and notes in the top, notes should be last").
-		{ value: 'notes', label: t('room.pane.notes') }
+		{ value: 'more', label: t('room.pane.more') }
 	]);
+	function views(subject: PaneSubject) {
+		return PANE_VIEWS[subject]
+			.filter((view) => view !== 'bluffs' || bluffs)
+			.map((view) => ({ value: view as PaneView, label: labels[view] }));
+	}
 </script>
 
 <div class="storyteller-pane" data-testid="storyteller-pane">
-	<Tabs bind:value={sidePane.tab} {tabs} label={t('room.players.pane')} segmented>
-		{#snippet panel(tab)}
-			{#if tab === 'day'}
-				<!-- The day's counts head the Day tab only (Trevor, 2026-11-18: "the pills should just
-				     be in day view"); which day it is, game info already says. -->
-				<div class="phase" data-testid="pane-day">
-					<div class="game-line"><DayCounts game={live} onBoard={sidePane.beside} /></div>
-					{@render day()}
-				</div>
-			{:else if tab === 'night'}
-				<div class="phase" data-testid="pane-night">{@render night()}</div>
-			{:else if tab === 'notes'}
-				<!-- Each written where it sits (Trevor, 2026-11-02). -->
-				<div class="notes" data-testid="game-notes">
-					<NoteList
-						{notes}
-						readonly={viewOnly}
-						onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
-						onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
-						hideable={false}
-					/>
-				</div>
-			{:else}
-				<div class="players"><PlayersPanel {game} {run} {ended} /></div>
-			{/if}
+	<Tabs bind:value={sidePane.subject} tabs={subjects} label={t('room.players.pane')} segmented>
+		{#snippet panel(subject)}
+			<div class="subject">
+				<Tabs
+					bind:value={sidePane.views[subject]}
+					tabs={views(subject)}
+					label={t('room.pane.views', {
+						subject: subjects.find((s) => s.value === subject)?.label ?? ''
+					})}
+					segmented="minor"
+				>
+					{#snippet panel(view)}
+						{#if view === 'day'}
+							<!-- The day's counts head the Day only (Trevor, 2026-11-18: "the pills should just
+							     be in day view"); which day it is, game info already says. -->
+							<div class="phase" data-testid="pane-day">
+								<div class="game-line"><DayCounts game={live} onBoard={sidePane.beside} /></div>
+								{@render day()}
+							</div>
+						{:else if view === 'night'}
+							<div class="phase" data-testid="pane-night">{@render night()}</div>
+						{:else if view === 'bluffs'}
+							<div class="phase">{@render bluffs?.()}</div>
+						{:else if view === 'players'}
+							<div class="players"><PlayersPanel {game} {run} {ended} /></div>
+						{:else if view === 'notes'}
+							<!-- Each written where it sits (Trevor, 2026-11-02). -->
+							<div class="notes" data-testid="game-notes">
+								<NoteList
+									{notes}
+									readonly={viewOnly}
+									onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
+									onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
+									hideable={false}
+								/>
+							</div>
+						{:else if view === 'seats'}
+							<div class="phase">{@render seats()}</div>
+						{:else if view === 'sounds'}
+							<div class="phase">{@render sounds()}</div>
+						{:else if view === 'history'}
+							<div class="phase">{@render history()}</div>
+						{:else}
+							<div class="phase">{@render session()}</div>
+						{/if}
+					{/snippet}
+				</Tabs>
+			</div>
 		{/snippet}
 	</Tabs>
 </div>
@@ -105,7 +163,8 @@
 	.storyteller-pane :global([data-scope='tabs'][data-part='root'] > :has(> [data-part='list'])) {
 		margin-inline: calc(var(--pane-gutter, 0rem) - var(--band-reach));
 	}
-	.storyteller-pane > :global([data-scope='tabs'][data-part='root']) {
+	.storyteller-pane > :global([data-scope='tabs'][data-part='root']),
+	.subject > :global([data-scope='tabs'][data-part='root']) {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
@@ -117,6 +176,12 @@
 		flex-direction: column;
 		min-height: 0;
 		padding-top: var(--space-2);
+	}
+	.subject {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
 	}
 	.phase {
 		display: flex;

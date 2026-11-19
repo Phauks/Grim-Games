@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, paneButton } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
@@ -116,11 +116,7 @@ test('the Big Wig asks whom a nominee chose, who might die for breaking madness 
 	await choose(page, 1, 'Clockmaker');
 	await choose(page, 2, 'Dreamer');
 	await choose(page, 3, 'Oracle');
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
 	await adding.getByRole('button', { name: 'Big Wig', exact: true }).tap();
 	await expect(adding).toBeHidden();

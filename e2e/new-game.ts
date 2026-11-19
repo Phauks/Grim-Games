@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { setPlayerName } from './player-name.ts';
 import { openSettingsDialog } from './shell.ts';
+import { paneButton } from './players.ts';
 
 const BASE_THREE = ['Trouble Brewing', 'Bad Moon Rising', 'Sects & Violets'];
 
@@ -67,17 +68,22 @@ export async function toBoard(page: Page): Promise<void> {
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
 
-/** Game info: from ⋯ where the board lists it, otherwise from the corner. */
+/**
+ * Game info: from the corner, or from the pane's More, Session where the board hides the corner.
+ * A spectator's comes from ⋯.
+ */
 export async function openGameInfo(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
+	const corner = page.getByTestId('mode-menu');
+	// Once the board is up, so a corner still on its way isn't taken for a hidden one.
+	await expect(page.getByTestId('cover-button')).toBeVisible();
+	if (await corner.isVisible()) await corner.tap();
+	else if (await page.getByRole('button', { name: 'More', exact: true }).isVisible()) {
+		await page.getByRole('button', { name: 'More', exact: true }).tap();
+		await page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Game info' })
+			.tap();
+	} else await paneButton(page, 'Session', 'Game info');
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 

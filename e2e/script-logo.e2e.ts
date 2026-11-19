@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Script logos (Trevor, 2026-10-18): TPI's edition logo for the base three, the author's
 // `_meta.logo` link for other scripts, faint behind the board and beside the name in Search.
@@ -49,11 +50,7 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	await expect(logo).toHaveCSS('pointer-events', 'none');
 
 	// The board's settings, over the board (also in Settings).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const dialog = page.getByRole('dialog', { name: 'Settings' });
 	// It opens at its root (Trevor, 2026-10-27).
 	await dialog

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { closePane, openPlayers, openPlayerSheet } from './players.ts';
+import { closePane, openPlayers, openPlayerSheet, paneButton } from './players.ts';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 
@@ -65,11 +65,7 @@ test('spectators message the Storyteller, under Spectators, until it is turned o
 
 	// The Storyteller turns them off in Game settings (Trevor, 2026-11-16): the spectator may not send now.
 	await closePane(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game settings' })
-		.tap();
+	await paneButton(page, 'Session', 'Game settings');
 	const settings = page.getByRole('dialog', { name: 'Game settings' });
 	const allow = settings.getByRole('checkbox', {
 		name: 'Spectators can message',

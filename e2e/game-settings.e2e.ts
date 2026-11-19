@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { paneButton } from './players.ts';
 
 // Game settings (Trevor, 2026-10-28), the settings kept per game: each game keeps its own;
 // Settings holds the default for new games. Since 2026-10-29 it is no longer a start-flow step:
@@ -46,11 +47,7 @@ test('Game settings opens on Character selection, and a choice there is kept for
 	await expect(marks(page)).toBeVisible();
 
 	// The board's ⋯ › Game opens the same settings, for this game.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game settings' })
-		.tap();
+	await paneButton(page, 'Session', 'Game settings');
 	const dialog = page.getByRole('dialog', { name: 'Game settings' });
 	await expect(
 		dialog.getByRole('checkbox', { name: 'Track nominations', includeHidden: true })

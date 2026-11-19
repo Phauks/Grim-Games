@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
+import { openPane } from './players.ts';
 
 // With a mouse and keyboard: hover and focus effects show once, and never hide a control.
 test.use({ viewport: { width: 1280, height: 720 }, hasTouch: false, isMobile: false });
@@ -97,16 +99,15 @@ test('hovered buttons keep their labels readable', async ({ page }) => {
 		.click();
 	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).click();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	const history = menu.getByRole('button', { name: 'History' });
-	await history.hover();
+	const pane = await openPane(page, 'Session');
+	const settings = pane.getByRole('button', { name: 'Game settings' });
+	await settings.hover();
 	await page.waitForTimeout(300);
-	expect(await textContrast(history)).toBeGreaterThanOrEqual(4.5);
+	expect(await textContrast(settings)).toBeGreaterThanOrEqual(4.5);
 
-	await menu.getByRole('button', { name: 'Demon bluffs' }).click();
-	await page.getByRole('button', { name: 'Choose' }).first().click();
-	const cancel = page.getByRole('button', { name: 'Cancel' });
+	await openPane(page, 'Bluffs');
+	await pane.getByRole('button', { name: 'Choose' }).first().click();
+	const cancel = pane.getByRole('button', { name: 'Cancel' });
 	await cancel.hover();
 	await page.waitForTimeout(300);
 	expect(await textContrast(cancel)).toBeGreaterThanOrEqual(4.5);
@@ -142,8 +143,8 @@ test('the day timer sheet and Info tokens read on their panel', async ({ page })
 		page.getByRole('dialog', { name }).evaluate((el) => getComputedStyle(el).backgroundColor);
 	const sheetColour = await panel('Info tokens');
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'More', exact: true }).click();
-	expect(await panel('Grimoire')).toBe(sheetColour);
+	await openSettingsDialog(page);
+	expect(await panel('Settings')).toBe(sheetColour);
 });
 
 // The timer's focus ring goes round the whole pill, not round the clock alone, and clicking
@@ -202,12 +203,12 @@ test('close buttons are round and tint the same on hover', async ({ page }) => {
 		.click();
 	await page.getByRole('button', { name: 'Create game' }).click();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).click();
-	const sheet = page.getByRole('dialog', { name: 'Grimoire' });
-	const sheetTint = await roundTint(sheet.getByRole('button', { name: 'Close' }));
+	const sheet = await openSettingsDialog(page);
+	const sheetTint = await roundTint(sheet.getByRole('button', { name: 'Close' }).first());
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 
-	await sheet.getByRole('button', { name: 'Demon bluffs' }).click();
-	await page.getByRole('button', { name: 'Choose' }).first().click();
-	const dialog = page.getByRole('dialog').last();
+	await page.getByRole('button', { name: 'Info tokens', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Info tokens' });
 	expect(await roundTint(dialog.getByRole('button', { name: 'Close' }).first())).toBe(sheetTint);
 });
