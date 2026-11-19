@@ -64,6 +64,24 @@ describe('one seat', () => {
 });
 
 describe('fitReminders', () => {
+	it('with no room close by, keeps a group whole and full size where the board is free before squeezing it (Trevor, 2026-11-19, "Spill to free space")', () => {
+		// Something sits right in front of the seat, towards the middle; the sides are free.
+		const inFront = { x: 300, y: 150, w: 240, h: 120 };
+		const { at } = fitReminders([{ seat, middle, count: 4, size, chip }], [inFront], {
+			width: 600,
+			height: 600
+		});
+		expect(at[0]).toHaveLength(4);
+		for (let i = 0; i < 4; i++)
+			for (let j = i + 1; j < 4; j++) expect(apart(at[0][i], at[0][j])).toBe(true);
+		for (const p of at[0]) {
+			const clear =
+				Math.abs(p.x - inFront.x) >= (chip + inFront.w) / 2 ||
+				Math.abs(p.y - inFront.y) >= (chip + inFront.h) / 2;
+			expect(clear).toBe(true);
+		}
+	});
+
 	const box = (p: { x: number; y: number }, w: number) => ({ ...p, w, h: w });
 
 	it("keeps one seat's reminders off a crowded neighbour's (Trevor, 2026-10-16)", () => {
