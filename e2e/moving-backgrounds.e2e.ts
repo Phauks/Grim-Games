@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closePane } from './players.ts';
-import { openSettingsDialog } from './shell.ts';
 import { openBoardTheme } from './theme.ts';
 
 /**
@@ -19,16 +18,6 @@ async function startGame(page: Page) {
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-}
-
-async function openSection(page: Page, section: string) {
-	const dialog = await openSettingsDialog(page);
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: section })
-		.tap();
-	await expect(dialog.getByRole('heading', { name: section, level: 2 })).toBeVisible();
-	return dialog;
 }
 
 test('a moving background is picked, customised and shown on the board', async ({ page }) => {
@@ -113,13 +102,11 @@ test('a moving background holds still while animations are off', async ({ page }
 	await expect(preview).toHaveAttribute('data-still', '');
 	await expect(thirty).toBeDisabled();
 
-	// Animations On moves it whatever the device says.
-	await closePane(page);
-	const settings = await openSection(page, 'Theme');
-	await settings.getByRole('combobox', { name: 'Animations' }).tap();
+	// Animations On moves it whatever the device says. It is beside the colours in Theme, as in
+	// Settings > Theme.
+	const colours = await openBoardTheme(page, 'Colours');
+	await colours.getByRole('combobox', { name: 'Animations' }).tap();
 	await page.getByRole('option', { name: 'On', exact: true }).tap();
-	await page.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(settings).toBeHidden();
 	dialog = await openBoardTheme(page, 'Background');
 	await expect(thirty).toBeEnabled();
 	await expect(dialog.getByText('Hold animated backgrounds still', { exact: true })).toHaveCount(0);
