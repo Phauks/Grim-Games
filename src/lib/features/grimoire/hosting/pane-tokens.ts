@@ -59,9 +59,10 @@ export function paneTokens(gestures: TrayGestures, bank: () => PaneBank | undefi
 	const drag = paneTokenDrag(gestures, (token) => bank()?.itemFor(token));
 	return {
 		place(token, at) {
-			if (at) gestures.hand.held = { kind: 'placed', reminderId: at.reminderId, from: at.seatId };
+			if (at) gestures.hand.toggle({ kind: 'placed', reminderId: at.reminderId, from: at.seatId });
 			else if (!bank()?.hold(token)) return;
-			if (!sidePane.beside) sidePane.hide();
+			// Tapped again while in hand: put down (Trevor, 2026-11-19), the pane left as it is.
+			if (gestures.hand.held && !sidePane.beside) sidePane.hide();
 		},
 		get drag() {
 			return sidePane.beside ? drag : undefined;

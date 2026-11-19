@@ -185,7 +185,10 @@
 		position: static;
 		height: auto;
 	}
+	/* A solid pane fills a pinned header with its own colour, not the page's backdrop, which
+	   showed as a dark box round a pill once the pane scrolled (Trevor, 2026-11-19). */
 	.beside[data-solid] > .pane {
+		--pin-background: var(--dialog-background, var(--surface));
 		background: var(--dialog-background, var(--surface));
 	}
 	.beside[data-beside='under'] > .pane {

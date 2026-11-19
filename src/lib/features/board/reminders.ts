@@ -493,6 +493,8 @@ export interface TokenRow {
  * A character's own reminder tokens, one row per copy the game has (the Mathematician's five
  * "Abnormal", Trevor 2026-10-17), each with the seat it is on, in seating order: what a night
  * step and a day row list to place, move or take off (Trevor, 2026-11-16: day like night).
+ * Tokens that never run out (`unlimitedReminders`) list each placed copy and one empty row,
+ * not TPI's count (Trevor, 2026-11-19: the Amnesiac's three "?" before any was placed).
  */
 export function tokenRows(
 	game: Game,
@@ -505,10 +507,10 @@ export function tokenRows(
 				.filter((x) => x.characterId === character.id && x.label === label)
 				.map((r) => ({ seatId, reminderId: r.reminderId }))
 		);
-		const n = Math.max(
-			total.get(reminderKey({ characterId: character.id, label })) ?? 1,
-			on.length
-		);
+		// Tokens that never run out (the Amnesiac's): those placed, and one more to place.
+		const n = character.rules?.unlimitedReminders
+			? on.length + 1
+			: Math.max(total.get(reminderKey({ characterId: character.id, label })) ?? 1, on.length);
 		return Array.from({ length: n }, (_, i) => ({
 			label,
 			at: on[i],
