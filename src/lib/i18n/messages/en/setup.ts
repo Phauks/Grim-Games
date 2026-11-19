@@ -84,9 +84,9 @@ export const setup = {
 			'Now: {count} of {total} tiles not yet drawn. The bag is kept, so you can come back to the draw.'
 	},
 	'setup.replace.body': {
-		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character it dealt and its reminders are cleared; names stay. History can restore the old bag.',
+		one: 'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The character it dealt and its reminders are cleared; names stay.',
 		other:
-			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters it dealt and their reminders are cleared; names stay. History can restore the old bag.'
+			'Now: {count} of {total} tiles drawn. After: a new bag of {tiles} tiles and the draw starts again. The characters it dealt and their reminders are cleared; names stay.'
 	},
 	'setup.replace.keep': 'Keep',
 	'setup.replace.confirm': 'Replace',
