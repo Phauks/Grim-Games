@@ -641,8 +641,7 @@
 		drawOpen = true;
 	}
 
-	// Sheets and dialogs over the board blur it (Trevor, 2026-10-23: game integrity).
-	$effect(() => markBoardShown());
+	$effect(() => markBoardShown()); // Sheets and dialogs over it blur the board (Trevor, 2026-10-23).
 
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──

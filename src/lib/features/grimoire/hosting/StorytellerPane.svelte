@@ -106,7 +106,10 @@
 							<!-- The day's counts head the Day only (Trevor, 2026-11-18: "the pills should just
 							     be in day view"); which day it is, game info already says. -->
 							<div class="phase" data-testid="pane-day">
-								<div class="game-line"><DayCounts game={live} onBoard={sidePane.beside} /></div>
+								<!-- On a phone they are in the sheet's header instead (BoardPane). -->
+								{#if sidePane.beside}<div class="game-line">
+										<DayCounts game={live} onBoard />
+									</div>{/if}
 								{@render day()}
 							</div>
 						{:else if view === 'night'}

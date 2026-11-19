@@ -10,6 +10,8 @@
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import SoundboardPanel from '#lib/features/sound/SoundboardPanel.svelte';
 	import HistoryDialog from '#lib/features/grimoire/HistoryDialog.svelte';
+	import DayCounts from '#lib/features/day/DayCounts.svelte';
+	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
 
 	/**
 	 * The board with the Storyteller's pane: the Day, the Night, Game notes and Players (the grim
@@ -87,6 +89,10 @@
 {#snippet soundsView()}<SoundboardPanel />{/snippet}
 {#snippet historyView()}<HistoryDialog inline {grimoire} />{/snippet}
 
+<!-- On a phone the Day's counts sit small in the sheet's header, between Game and Close, so the
+     Day gains a row (Trevor, 2026-11-19, "B Header, compact"; "New pills look good"). -->
+{#snippet dayCounts()}<DayCounts game={new LiveDay(grimoire.open)} compact />{/snippet}
+
 {#snippet pane()}
 	<div class="side-pane" data-at={beside} inert={hidden}>
 		{#if !hidden}<StorytellerPane
@@ -110,6 +116,7 @@
 		title={t('room.players.pane')}
 		size="full"
 		scroll={false}
+		headActions={sidePane.view === 'day' ? dayCounts : undefined}
 	>
 		<div class="sheet-pane">
 			<StorytellerPane

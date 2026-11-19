@@ -77,12 +77,32 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 	// Before the first night, the Day tab is open, with no second timer (the board's is the one).
 	await expect(pane.getByTestId('pane-day')).toBeVisible();
 	await expect(pane.getByTestId('day-timer')).toHaveCount(0);
+	// The Day's counts: above it beside the board; on a phone small in the sheet's header,
+	// between Game and Close, so the Day gains a row (Trevor, 2026-11-19, "B Header, compact").
+	const counts = page.getByTestId('day-counts');
+	await expect(counts).toBeVisible();
+	if (sheet) {
+		await expect(pane.getByTestId('pane-day').getByTestId('day-counts')).toHaveCount(0);
+		await expect(page.getByTestId('dialog-head-actions').getByTestId('day-counts')).toBeVisible();
+		const title = await page
+			.getByRole('dialog', { name: 'Game', exact: true })
+			.getByRole('heading', { name: 'Game' })
+			.boundingBox();
+		const box = await counts.boundingBox();
+		expect(Math.abs(box!.y + box!.height / 2 - (title!.y + title!.height / 2))).toBeLessThan(8);
+	} else await expect(pane.getByTestId('pane-day').getByTestId('day-counts')).toBeVisible();
 
-	// The Night tab lists the nights' steps, each night closing from its header.
+	// The Night tab lists the nights' steps, each night closing from its header. The tabs stay
+	// put as the counts go (no reflow).
+	const subjects = pane.getByRole('tablist', { name: 'Game', exact: true });
+	const tabsAt = (await subjects.boundingBox())!.y;
 	await pane.getByRole('tab', { name: /^Night/ }).tap();
+	expect((await subjects.boundingBox())!.y).toBeCloseTo(tabsAt, 0);
 	const night = pane.getByTestId('pane-night');
 	await expect(night.getByRole('button', { name: /^First night/ })).toBeVisible();
 	await expect(night.getByRole('button', { name: /^Other nights/ })).toBeVisible();
+	// The counts are the Day's only (Trevor, 2026-11-18).
+	await expect(page.getByTestId('day-counts')).toBeHidden();
 });
 
 test("tonight's step is the pane's Night tab, with the strip's Next", async ({ page }) => {

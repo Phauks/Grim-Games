@@ -19,9 +19,11 @@
 		game: DayPort;
 		/** Beside the board: a count marks its seats there instead of opening (count-highlight). */
 		onBoard?: boolean;
+		/** Small, in a phone sheet's header beside its title (BoardPane). */
+		compact?: boolean;
 	}
 
-	let { game, onBoard = false }: Props = $props();
+	let { game, onBoard = false, compact = false }: Props = $props();
 	/** Seats not in play yet count for nothing (Trevor, 2026-10-31). */
 	const g = $derived(inPlay(game.game));
 
@@ -70,7 +72,7 @@
 	living, ghost votes left and votes to put a nominee on the block. Numbers with icons
 	or team colours; the words are in each one's accessible name.
 -->
-<div class="counts" data-testid="day-counts">
+<div class="counts" data-testid="day-counts" data-compact={compact || undefined}>
 	<!-- Each one opens how it was worked out (Trevor, 2026-10-19). The living as one pill: good
 	     on its blue half, living of all in the middle, evil on its red half (Trevor, 2026-11-17, "B
 	     Folded into living"; 2026-11-18: "we had a previous box which was like 10/12", with no
@@ -189,5 +191,22 @@
 		display: flex;
 		flex-basis: 100%;
 		gap: var(--space-1);
+	}
+	/* In a phone sheet's header (Trevor, 2026-11-19, "B Header, compact"): each count as wide as
+	   its number and the text smaller, each still a full tap target, so the header keeps its
+	   height. */
+	.counts[data-compact] {
+		container-type: normal;
+		flex-basis: auto;
+		font-size: 0.8rem;
+	}
+	.counts[data-compact] > :global(.badge),
+	.counts[data-compact] > .teams > :global(.badge) {
+		flex: none;
+		font-size: inherit;
+		padding: 0 var(--space-2);
+	}
+	.counts[data-compact] > .teams {
+		flex: none;
 	}
 </style>
