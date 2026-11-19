@@ -32,7 +32,8 @@
 					"choose": "townsfolk",
 					"choice": "any player, usually a Townsfolk"
 				},
-				"reason": "The player the Puzzlemaster makes drunk"
+				"reason": "The player the Puzzlemaster makes drunk",
+				"first": true
 			}
 		]
 	},
