@@ -4,8 +4,8 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 </script>
 
-<!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms
-     every screen, but the board is where two hands rest on the screen. Per device, never synced. -->
+<!-- Pinch to zoom: it zooms every screen (back in Text once the board's settings moved into the
+     game pane, Trevor 2026-11-18). Per device, never synced. -->
 <SettingToggle
 	label={t('settings.allowZoom')}
 	description={t('settings.allowZoomHelp')}

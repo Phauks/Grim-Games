@@ -15,21 +15,23 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import { DEFAULT_PREFERENCES, ICON_SCALE } from '#lib/ui/preferences.ts';
 	import { intl } from '#lib/i18n/locale.svelte.ts';
+	import { BOARD_MARKS } from './board-marks.ts';
 
 	interface Props {
-		/** Only these icons' choices, e.g. the board's marks in the game pane's Theme. */
-		only?: readonly IconSlot[];
-		/** The interface icon size row; the game pane's Theme leaves it to Settings. */
-		withSize?: boolean;
+		/**
+		 * The board's marks (the game pane's Theme), or every other icon (Settings > Icons): each
+		 * icon is chosen in one place.
+		 */
+		boardMarks?: boolean;
 	}
 
-	let { only, withSize = true }: Props = $props();
+	let { boardMarks = false }: Props = $props();
 	const theme = $derived(preferences.theme);
 	const setId = $derived(resolveIconSet(preferences.current, theme));
 	const weight = $derived(ICON_SETS.find((set) => set.id === setId)?.weight ?? 'regular');
 	const choosable = $derived(
 		iconSlots.filter(
-			(slot) => ICON_SLOTS[slot].choices.length > 1 && (!only || only.includes(slot))
+			(slot) => ICON_SLOTS[slot].choices.length > 1 && BOARD_MARKS.includes(slot) === boardMarks
 		)
 	);
 
@@ -45,7 +47,7 @@
 </script>
 
 <!-- Next to the icon style and choices it scales (Trevor, 2026-10-17). -->
-{#if withSize}<SettingSlider
+{#if !boardMarks}<SettingSlider
 		label={t('settings.iconSize')}
 		description={t('settings.iconSizeHelp')}
 		value={preferences.current.iconScale}

@@ -2,12 +2,10 @@
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import TokenAppearanceSettings from '#lib/features/characters/TokenAppearanceSettings.svelte';
 	import BoardBackgroundRows from './sections/BoardBackgroundRows.svelte';
 	import BoardRows from './sections/BoardRows.svelte';
-	import PinchZoomRow from './sections/PinchZoomRow.svelte';
 	import FontPreview from './sections/FontPreview.svelte';
 	import IconsSection from './sections/IconsSection.svelte';
 	import ThemeSection from './sections/ThemeSection.svelte';
@@ -19,22 +17,6 @@
 	 * time, so the list never runs on; each band holds the rows Settings has, from the same
 	 * components.
 	 */
-
-	/** The icons that mark a seat or a vote on the board. */
-	const BOARD_MARKS: readonly IconSlot[] = [
-		'alive',
-		'dead',
-		'ghostVote',
-		'poisoned',
-		'drunk',
-		'protected',
-		'night',
-		'day',
-		'vote',
-		'exile',
-		'nominator',
-		'nominated'
-	];
 
 	const tokens = $derived(preferences.current.tokenAppearance);
 	const setTokens = (tokenAppearance: typeof tokens) => preferences.update({ tokenAppearance });
@@ -57,14 +39,13 @@
 {/snippet}
 
 {#snippet background()}<BoardBackgroundRows />{/snippet}
-{#snippet board()}<BoardRows /><PinchZoomRow />{/snippet}
+{#snippet board()}<BoardRows />{/snippet}
 {#snippet characterTokens()}
 	<TokenAppearanceSettings
 		value={tokens}
 		theme={preferences.theme}
 		onChange={setTokens}
 		part="token"
-		previews={false}
 	>
 		{#snippet playerFont()}<FontPreview roles={['player']} testid="player-font" />{/snippet}
 	</TokenAppearanceSettings>
@@ -75,7 +56,6 @@
 		theme={preferences.theme}
 		onChange={setTokens}
 		part="reminder"
-		previews={false}
 	>
 		{#snippet reminderFont()}<FontPreview roles={['reminder']} testid="reminder-font" />{/snippet}
 	</TokenAppearanceSettings>
@@ -86,7 +66,6 @@
 		theme={preferences.theme}
 		onChange={setTokens}
 		part="inText"
-		previews={false}
 	>
 		{#snippet characterFont()}<FontPreview
 				roles={['character']}
@@ -94,7 +73,7 @@
 			/>{/snippet}
 	</TokenAppearanceSettings>
 {/snippet}
-{#snippet icons()}<IconsSection only={BOARD_MARKS} withSize={false} />{/snippet}
+{#snippet icons()}<IconsSection boardMarks />{/snippet}
 {#snippet colours()}<ThemeSection flat />{/snippet}
 
 <style>

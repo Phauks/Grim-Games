@@ -89,6 +89,7 @@ export const settings = {
 	'settings.sectionBoard': 'Board',
 	'settings.sectionTokens': 'Tokens',
 	// The game pane's More > Theme, one band each (Trevor, 2026-11-18).
+	'settings.theme.title': 'Theme',
 	'settings.theme.background': 'Background',
 	'settings.theme.board': 'Board',
 	'settings.theme.characterTokens': 'Character tokens',

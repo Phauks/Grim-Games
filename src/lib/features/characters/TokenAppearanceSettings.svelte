@@ -17,7 +17,6 @@
 	} from '#lib/ui/token/token-appearance.ts';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
 	import TokenAppearanceRow from './TokenAppearanceRow.svelte';
-	import TokenAppearancePreview from './TokenAppearancePreview.svelte';
 	import NameSizeSlider from '#lib/features/board/NameSizeSlider.svelte';
 	import type { Snippet } from 'svelte';
 	import {
@@ -38,20 +37,9 @@
 		playerFont?: Snippet;
 		/** Only one kind of token's box, for one band of the game pane's Theme. */
 		part?: 'token' | 'reminder' | 'inText';
-		/** Each box's preview; off beside the real board, which shows every change itself. */
-		previews?: boolean;
 	}
 
-	let {
-		value,
-		theme,
-		onChange,
-		characterFont,
-		reminderFont,
-		playerFont,
-		part,
-		previews = true
-	}: Props = $props();
+	let { value, theme, onChange, characterFont, reminderFont, playerFont, part }: Props = $props();
 	const shows = (kind: 'token' | 'reminder' | 'inText') => !part || part === kind;
 
 	const contrast = $derived(tokenContrast(value, theme));
@@ -69,13 +57,9 @@
 		});
 </script>
 
-<!-- One box per kind of token, each with its own preview (Trevor, 2026-10-18). Space for the
-     largest sizes is kept in each preview, so changing a size never moves the settings. -->
-{#if shows('token')}<SettingGroup
-		title={t('characters.group.token')}
-		testid="token-preview"
-		preview={previews ? tokenPreview : undefined}
-	>
+<!-- One group per kind of token (Trevor, 2026-10-18), each a band of the game pane's Theme,
+     where the real board shows every change (Trevor, 2026-11-18). -->
+{#if shows('token')}<SettingGroup title={t('characters.group.token')}>
 		<TokenAppearanceRow key="tokenScale" {value} {onChange} />
 		<TokenAppearanceRow key="tokenIconScale" {value} {onChange} />
 		<TokenAppearanceRow key="boardNames" {value} {onChange} />
@@ -121,7 +105,7 @@
 			onChange={(setupMovesName) => onChange({ ...value, setupMovesName })}
 		/>
 		<!-- The player name badge under each seat's token (Trevor, 2026-10-20: "player name badges
-	     should have settings in tokens under character tokens"), shown on the preview's token. -->
+	     should have settings in tokens under character tokens") -->
 		{@render playerFont?.()}
 		<NameSizeSlider />
 		<!-- Clear of the character's name on the token (Trevor, 2026-10-18). -->
@@ -139,11 +123,7 @@
 		{@render contrastRow('characters.contrast.face', contrast.face)}
 	</SettingGroup>{/if}
 
-{#if shows('reminder')}<SettingGroup
-		title={t('characters.group.reminder')}
-		testid="reminder-preview"
-		preview={previews ? reminderPreview : undefined}
-	>
+{#if shows('reminder')}<SettingGroup title={t('characters.group.reminder')}>
 		{@render reminderFont?.()}
 		<TokenAppearanceRow key="reminderScale" {value} {onChange} />
 		<TokenAppearanceRow key="reminderIconScale" {value} {onChange} />
@@ -178,13 +158,9 @@
 
 <!-- Reminders and character names inside lines of text (Trevor, 2026-10-18: "add the settings
      for in-line reminder tokens"). -->
-{#if shows('inText')}<SettingGroup
-		title={t('characters.group.inText')}
-		testid="in-text-preview"
-		preview={previews ? inTextPreview : undefined}
-	>
+{#if shows('inText')}<SettingGroup title={t('characters.group.inText')}>
 		<!-- Here, not under Character token: the names in this line always show the font, while
-	     names on tokens are a switch (Trevor, 2026-10-22: every setting shows in its preview). -->
+	     names on tokens are a switch (Trevor, 2026-10-22). -->
 		{@render characterFont?.()}
 		<!-- Text, icon and badge sizes for each, none shared (Trevor, 2026-10-18). -->
 		<TokenAppearanceRow key="inlineNameTextScale" {value} {onChange} />
@@ -194,10 +170,6 @@
 		<TokenAppearanceRow key="inlineReminderIconScale" {value} {onChange} />
 		<TokenAppearanceRow key="inlineReminderBadgeScale" {value} {onChange} />
 	</SettingGroup>{/if}
-
-{#snippet tokenPreview()}<TokenAppearancePreview kind="token" {value} />{/snippet}
-{#snippet reminderPreview()}<TokenAppearancePreview kind="reminder" {value} />{/snippet}
-{#snippet inTextPreview()}<TokenAppearancePreview kind="inText" {value} />{/snippet}
 
 {#snippet colourRow(key: TokenColour)}
 	{@const colour = TOKEN_COLOURS.find((c) => c.key === key)!}

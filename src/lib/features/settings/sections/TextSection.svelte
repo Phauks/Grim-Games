@@ -6,6 +6,7 @@
 	import { TEXT_FONT_ROLES } from './font-roles.ts';
 	import RulesTermsSection from './RulesTermsSection.svelte';
 	import TextSizeRows from './TextSizeRows.svelte';
+	import PinchZoomRow from './PinchZoomRow.svelte';
 </script>
 
 <!-- Text (Trevor, 2026-10-18: split from Theme): the fonts on their preview lines, size,
@@ -13,6 +14,9 @@
      Tokens, beside their previews (Trevor, 2026-10-18). -->
 <FontPreview roles={TEXT_FONT_ROLES} />
 <TextSizeRows />
+<!-- It zooms every screen, so it stays here as the board's settings move into the game pane
+     (Trevor, 2026-11-18). -->
+<PinchZoomRow />
 <!-- Two states, so a switch (Trevor, 2026-11-06): on spreads paragraphs to both edges. -->
 <SettingToggle
 	label={t('settings.textAlign')}
