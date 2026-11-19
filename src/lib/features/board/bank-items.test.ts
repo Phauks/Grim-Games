@@ -260,6 +260,14 @@ describe("a player's tray, built as the bank is", () => {
 		expect(days[0].run).toEqual(['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5']);
 	});
 
+	it("never offers the Hermit's stand-in 1, 2 and 3", () => {
+		// Trevor (2026-11-19): "remove the hermit tokens". The real Outsiders' tokens stand in
+		// (own-reminders.ts), as in the bank.
+		const hermit = data.byId.get('hermit')!;
+		const items = playerBankItems([...cast, hermit], [], []);
+		expect(items.filter((i) => i.characterId === 'hermit')).toEqual([]);
+	});
+
 	it('narrows to a search, without the generic stretch', () => {
 		const items = playerBankItems(cast, [], [token], 'washer');
 		expect(new Set(items.map((i) => i.characterId))).toEqual(new Set(['washerwoman']));
