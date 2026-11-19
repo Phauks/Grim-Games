@@ -58,6 +58,7 @@ import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
 import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 import { openInfoTokens } from './toolbar.ts';
+import { openBoardTheme } from './theme.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -1643,10 +1644,10 @@ test('the join code shows under the script name, a Board setting, read only', as
 	// Only read: Share is the toolbar's button, not the corner (Trevor, 2026-10-24).
 	await expect(page.getByRole('button', { name: /Join code/ })).toHaveCount(0);
 
-	await boardSettings(page, 'Board');
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	// The board's corner lines are in the pane's Theme, beside the board (Trevor, 2026-11-18).
+	let settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Join code', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(corner).toHaveCount(0);
 
 	// Game info's eye controls it, not Share (Trevor, 2026-10-27: "remove setting from share
@@ -1654,9 +1655,9 @@ test('the join code shows under the script name, a Board setting, read only', as
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
 	await expect(share.getByRole('checkbox', { name: 'Join code', exact: true })).toHaveCount(0);
 	await share.getByRole('button', { name: 'Close', exact: true }).tap();
-	await boardSettings(page, 'Board');
+	settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Join code', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(corner).toHaveText(codeLine);
 });
 
@@ -1668,11 +1669,6 @@ test("the board's corner names the Storyteller under the author, when named", as
 	await expect(page.getByTestId('board-storyteller')).toHaveCount(0);
 	await nameStoryteller(page, 'Sam');
 	await expect(page.getByTestId('board-storyteller')).toHaveText('Storyteller: Sam');
-	// The Board preview shows it too.
-	await boardSettings(page, 'Board');
-	await expect(
-		page.getByRole('dialog', { name: 'Settings' }).getByTestId('preview-storyteller')
-	).toHaveText('Storyteller: Sam');
 });
 
 // Trevor (2026-10-23): "when grim is not main screen, we should blur out for game integrity".
@@ -1729,20 +1725,6 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 			);
 		})
 		.toBeLessThan(1);
-});
-
-// Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
-test("the Board preview's bank has the board bank's outline and colour", async ({ page }) => {
-	await startGame(page);
-	const look = (el: Element) => {
-		const style = getComputedStyle(el);
-		return [style.borderTopWidth, style.borderTopColor, style.borderRadius, style.backgroundColor];
-	};
-	const board = await page.locator('[data-tray]').evaluate(look);
-	await boardSettings(page, 'Board');
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	await expect(dialog.getByRole('heading', { name: 'Board preview' })).toBeVisible();
-	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
 });
 
 // Trevor (2026-10-23): full screen on the board, for those who don't know how; in the app's
@@ -1857,11 +1839,10 @@ test('the cause of death offers only characters that could have killed the playe
 	await expect(skull).toHaveAttribute('data-used-look', 'hollow');
 	await expect(imp).toHaveAttribute('aria-label', /dead, ghost vote used/);
 	await expect(page.getByRole('dialog')).toHaveCount(0);
-	await boardSettings(page, 'Board');
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Strike through used ghost votes', { exact: true }).tap();
 	await expect(skull).toHaveAttribute('data-used-look', 'struck');
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await skull.tap();
 	await expect(skull).toHaveAttribute('data-vote', 'unused');
@@ -2324,22 +2305,12 @@ test('copies of a reminder are in the bank one by one, or stacked with a count',
 	await closeBin(page);
 
 	// With "Stack duplicate reminders" on, they show as one token with how many.
-	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page
-		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	const settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
 		settings.getByRole('checkbox', { name: 'Stack duplicate reminders', includeHidden: true })
 	).toBeChecked();
-	await page.keyboard.press('Escape');
-	await expect(settings).toBeHidden();
+	await closePane(page);
 	await openBin(page);
 	await expect(dead).toHaveCount(1);
 	await expect(bin.getByLabel('2 copies')).toBeVisible();
@@ -2397,10 +2368,9 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(page.locator('.corner-title')).toContainText('by The Pandemonium Institute');
 	await expect(page.locator('.watermark, .toolbar-title')).toHaveCount(0);
 
-	// Background is set in Board, the one way in (Trevor, 2026-10-18).
+	// Background is set in the pane's Theme, the one way in (Trevor, 2026-10-18, 2026-11-18).
 	await expect(page.getByRole('button', { name: 'Background', exact: true })).toHaveCount(0);
-	await boardSettings(page, 'Board');
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	let dialog = await openBoardTheme(page, 'Background');
 	await expect(dialog.getByTestId('background-now')).toHaveText('None (plain board)');
 	await expect(dialog.getByRole('button', { name: 'No script background' })).toBeDisabled();
 	// A 2×2 PNG, as if picked from the photo library.
@@ -2413,7 +2383,9 @@ test('the board background can be an image from the device, kept after a reload'
 		.setInputFiles({ name: 'table.png', mimeType: 'image/png', buffer: png });
 	// It stays open, so several can be tried (Trevor, 2026-10-17).
 	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
-	await dialog.getByRole('button', { name: 'Close' }).tap();
+	// Back to the Day, where the night's walk-through opens once the game starts.
+	await openPane(page, 'Day');
+	await closePane(page);
 	const backdrop = page.getByTestId('board-background');
 	await expect(backdrop).toHaveAttribute('style', /blob:/);
 	await expect(page.getByTestId('vignette')).toBeAttached();
@@ -2440,7 +2412,7 @@ test('the board background can be an image from the device, kept after a reload'
 
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('style', /blob:/);
-	await boardSettings(page, 'Board');
+	dialog = await openBoardTheme(page, 'Background');
 	await expect(dialog.getByTestId('background-now')).toHaveText('Your image, for this game');
 	await expect(dialog).not.toContainText('never uploaded');
 	// None is the first in the list (Trevor, 2026-10-18).
@@ -2451,10 +2423,8 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(none).toHaveAccessibleName('None');
 	await none.tap();
 	await expect(page.getByTestId('board-background')).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
 
 	// Built-in backgrounds, drawn in CSS (Trevor, 2026-10-16), kept after a reload.
-	await boardSettings(page, 'Board');
 	await dialog
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Felt', exact: true })
@@ -2473,8 +2443,9 @@ test('the board background can be an image from the device, kept after a reload'
 		width: pane && !under ? pane.x : viewport.width,
 		height: under ? pane.y : viewport.height
 	});
-	// The board's looks are here too, the same values as in Settings (Trevor, 2026-10-17).
+	// The board's looks, in Theme's Board band (Trevor, 2026-11-18).
 	await expect(page.getByTestId('vignette')).toBeAttached();
+	dialog = await openBoardTheme(page, 'Board');
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
 	// Always shown, with no switch (Trevor, 2026-10-23).
@@ -2483,10 +2454,9 @@ test('the board background can be an image from the device, kept after a reload'
 	// One place only (Trevor, 2026-10-18): no choice of where.
 	await expect(dialog.getByRole('combobox', { name: 'Script name', exact: true })).toHaveCount(0);
 	// The player name badge size is an option (Trevor, 2026-10-17), live on the board. It is
-	// set in Tokens, with the character token (Trevor, 2026-10-20).
+	// set with the character token (Trevor, 2026-10-20).
 	await expect(dialog.getByRole('slider', { name: 'Player name size' })).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await boardSettings(page, 'Tokens');
+	dialog = await openBoardTheme(page, 'Character tokens');
 	const nameSize = dialog.getByRole('slider', { name: 'Player name size' });
 	await nameSize.fill('1.4');
 	await expect(nameSize).toHaveAttribute('aria-valuetext', '140%');
@@ -2501,7 +2471,7 @@ test('the board background can be an image from the device, kept after a reload'
 	const bigger = await nameWidth();
 	await nameSize.fill('0.6');
 	await expect.poll(nameWidth).toBeLessThan(bigger);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await page.reload();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	await expect(page.getByTestId('vignette')).toHaveCount(0);
@@ -2512,7 +2482,12 @@ test('the board background can be an image from the device, kept after a reload'
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
-	await expect(settings.getByRole('heading', { name: 'Board', level: 2 })).toHaveCount(0);
+	// Board left Settings for the pane's Theme (Trevor, 2026-11-18).
+	await expect(
+		settings
+			.getByRole('navigation', { name: 'Settings sections' })
+			.getByRole('button', { name: 'Board', exact: true })
+	).toHaveCount(0);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Storyteller' })
@@ -2988,10 +2963,9 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
 	// Vanilla (Trevor, 2026-10-30): the Chef's token beside the Demon, as the wiki runs it; the
 	// pen goes back to its own mark.
-	await boardSettings(page, 'Board');
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Vanilla held abilities', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(pill).toHaveCount(0);
 	await expect(demonSeat.getByTestId('note-mark')).toBeVisible();
 	const token = page.locator('[data-testid="held-token"][data-seat="2"]');
@@ -3035,11 +3009,10 @@ test('Big token shows who a player really is, or what they believe, or the remin
 	).toBeAttached();
 
 	const pick = async (look: string) => {
-		await boardSettings(page, 'Board');
-		const settings = page.getByRole('dialog', { name: 'Settings' });
+		const settings = await openBoardTheme(page, 'Board');
 		await settings.getByRole('combobox', { name: 'Big token shows' }).tap();
 		await page.getByRole('option', { name: look, exact: true }).tap();
-		await settings.getByRole('button', { name: 'Close' }).tap();
+		await closePane(page);
 	};
 	await pick('What they believe');
 	await expect(believes).toHaveCount(0);
@@ -8367,14 +8340,13 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	await page.mouse.up();
 	await expect(page.locator('line[data-tether="1"]')).toHaveCount(4);
 
-	await boardSettings(page, 'Board');
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
+	const dialog = await openBoardTheme(page, 'Board');
 	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
 
 	// When the lines show is the Storyteller's choice (Trevor, 2026-10-29): Never takes them off.
 	await dialog.getByRole('combobox', { name: 'Reminder lines' }).tap();
 	await page.getByRole('option', { name: 'Never', exact: true }).tap();
-	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(page.locator('line[data-tether]')).toHaveCount(0);
 });
 

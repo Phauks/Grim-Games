@@ -1,7 +1,8 @@
 import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { openGameInfo, pickScript, toBoard } from './new-game.ts';
-import { openSettingsDialog } from './shell.ts';
+import { openBoardTheme } from './theme.ts';
+import { closePane } from './players.ts';
 
 // Game info has every line the board corner can show, so a phone whose corner has no room
 // still reads them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
@@ -102,19 +103,14 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 	await expect(page.getByTestId('board-phase')).toHaveCount(0);
 	await expect(page.getByTestId('board-game-clock')).toContainText('0:00');
 
-	// The same choices in Settings > Board (⋯ > Settings opens there), and after a reload.
+	// The same choices in the pane's Theme, beside the board, and after a reload.
 	await page.reload();
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	const settings = await openBoardTheme(page, 'Board');
 	const authorSetting = settings.getByRole('checkbox', { name: 'Author', exact: true });
 	await expect(authorSetting).not.toBeChecked();
 	await settings.getByText('Author', { exact: true }).tap();
 	await expect(authorSetting).toBeChecked();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(corner).toContainText('by The Pandemonium Institute');
 	info = await openGameInfo(page);
 	await expect(info.getByRole('button', { name: 'Author on the board' })).toHaveAttribute(

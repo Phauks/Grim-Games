@@ -2,6 +2,7 @@
 	import { readStoredText, writeStoredText } from '#lib/ui/stored.ts';
 
 	const PREFIX = 'grim-games:collapsed:';
+	const GROUP_PREFIX = 'grim-games:collapsed-group:';
 
 	// '1' closed, '0' opened (only stored for a section that starts closed), else the default.
 	function readOpen(key: string, defaultOpen: boolean): boolean {
@@ -13,6 +14,12 @@
 	function writeOpen(key: string, open: boolean, defaultOpen = true): void {
 		writeStoredText(PREFIX + key, open === defaultOpen ? undefined : open ? '0' : '1');
 	}
+
+	/**
+	 * Which section of each group is open: one at a time, so a long list of sections (the pane's
+	 * Theme) never runs on (Trevor, 2026-11-18: "collapsible may go on way too long").
+	 */
+	const groupOpen = $state<Record<string, string | undefined>>({});
 
 	/** Opens a remembered section before it is shown, e.g. a link straight to its content. */
 	export function rememberOpen(key: string): void {
@@ -171,6 +178,11 @@
 		 * off only where something else already holds that spot.
 		 */
 		pinned?: boolean;
+		/**
+		 * Sections with the same group open one at a time: opening one closes the others, and the
+		 * open one is remembered on this device. Each needs its own `storageKey` (or title).
+		 */
+		group?: string;
 		children: Snippet;
 	}
 
@@ -193,6 +205,7 @@
 		disabled = false,
 		lazy = false,
 		pinned = true,
+		group,
 		children
 	}: Props = $props();
 
@@ -211,7 +224,14 @@
 		if (empty && !wasEmpty) openWhileEmpty = false;
 		wasEmpty = empty;
 	});
-	const shown = $derived(!disabled && (forceOpen || (empty ? openWhileEmpty : open)));
+	const member = $derived(storageKey ?? title);
+	untrack(() => {
+		if (group && !(group in groupOpen)) groupOpen[group] = readStoredText(GROUP_PREFIX + group);
+	});
+	const shown = $derived(
+		!disabled &&
+			(forceOpen || (empty ? openWhileEmpty : group ? groupOpen[group] === member : open))
+	);
 	const id = $props.id();
 	let head = $state<HTMLElement>();
 	$effect(() => {
@@ -222,6 +242,11 @@
 		if (forceOpen || disabled) return;
 		if (empty) {
 			openWhileEmpty = !openWhileEmpty;
+			return;
+		}
+		if (group) {
+			groupOpen[group] = groupOpen[group] === member ? undefined : member;
+			writeStoredText(GROUP_PREFIX + group, groupOpen[group]);
 			return;
 		}
 		open = !open;

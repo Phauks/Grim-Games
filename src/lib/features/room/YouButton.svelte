@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
+	import ThemeSheet from '#lib/features/settings/ThemeSheet.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 	import { joinedRoom } from './joined-room.svelte.ts';
@@ -9,10 +9,10 @@
 	/**
 	 * The player screen's settings cog, among the title's icon buttons, the same button as Print
 	 * and Share beside it (Trevor, 2026-10-26: "Settings cog should be like other buttons for
-	 * players"). It opens the one Settings, at its list of sections, as everywhere else
-	 * (Trevor, 2026-10-27: "Change your settings into settings", one Settings everywhere);
-	 * while this phone is in a room, Settings > Player has its name there. The board's Script
-	 * shows it too (parity).
+	 * players"). It opens the board's looks (Theme) in a sheet, the Storyteller's More > Theme,
+	 * since they left Settings (Trevor, 2026-11-18); the sheet's own cog opens the one Settings,
+	 * where Settings > Player has this phone's name in a room. The board's Script shows it too
+	 * (parity).
 	 */
 	interface Props {
 		/** The room this phone is in; without one there is no name to set. */
@@ -36,6 +36,7 @@
 
 	/** The name this phone shows in the room, once it has one. */
 	const me = $derived(player?.view?.me.name);
+	let themeOpen = $state(false);
 </script>
 
 <!-- The cog; its name says the name this phone shows in the room, once it has one. -->
@@ -44,5 +45,6 @@
 	aria-haspopup="dialog"
 	label={me ? t('room.settingsNamed', { name: me }) : t('settings.title')}
 	data-testid="you-button"
-	onclick={() => settingsDialog.show()}
+	onclick={() => (themeOpen = true)}
 />
+<ThemeSheet bind:open={themeOpen} />

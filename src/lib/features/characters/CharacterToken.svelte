@@ -3,6 +3,7 @@
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { describeLeaves, type LeafMarks } from '#lib/ui/token/leaves.ts';
 	import TokenFace from '#lib/ui/token/TokenFace.svelte';
+	import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 
@@ -24,7 +25,7 @@
 		 * settings preview passes its unsaved value.
 		 */
 		showName?: boolean;
-		/** Night order numbers for the side leaves' badges (Settings > Board and tokens). */
+		/** Night order numbers for the side leaves' badges (Theme > Board and Character tokens). */
 		nightNumbers?: { first?: number; other?: number };
 	}
 
@@ -34,10 +35,12 @@
 		showName ?? (preferences.current.tokenAppearance.boardNames && size >= NAME_MIN_SIZE)
 	);
 
+	// Its own reminders only: the Hermit's stand-in 1, 2 and 3 are never used (own-reminders.ts).
+	const own = $derived(ownReminders(character));
 	const leaves = $derived<LeafMarks>({
 		firstNight: character.firstNightReminder !== undefined || character.firstNight !== undefined,
 		otherNight: character.otherNightReminder !== undefined || character.otherNight !== undefined,
-		reminders: character.reminders.length + character.remindersGlobal.length,
+		reminders: own.reminders.length + own.remindersGlobal.length,
 		setup: character.setup
 	});
 	const src = $derived(iconUrl(character, alignment));
@@ -65,7 +68,7 @@
 </script>
 
 <!-- The character token with its leaves (first night, other nights, reminders, setup). -->
-<!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Settings > Tokens) -->
+<!-- eslint-disable grim/names-as-badges -- the name printed on its own token (Theme > Character tokens) -->
 <TokenFace
 	{src}
 	{fallback}

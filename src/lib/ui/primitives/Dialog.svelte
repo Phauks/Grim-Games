@@ -34,6 +34,11 @@
 		/** Extra icon buttons in the header, just before Close (e.g. "Open wiki"). */
 		headActions?: Snippet;
 		/**
+		 * The title is read out but not drawn, so `headActions` start the header (the phone's
+		 * Game sheet on the Day: its counts in the title's place, Trevor 2026-11-19).
+		 */
+		titleHidden?: boolean;
+		/**
 		 * The title on its own line under the header's buttons, as on the player screen whose
 		 * copy this is (the board's Script, Trevor 2026-10-26).
 		 */
@@ -95,6 +100,7 @@
 		heading,
 		subtitle,
 		headActions,
+		titleHidden = false,
 		titleBelow = false,
 		actionSlots,
 		closeButton = true,
@@ -155,6 +161,7 @@
 				<div
 					class="head"
 					data-title-below={titleBelow || undefined}
+					data-title-hidden={titleHidden || undefined}
 					bind:this={head}
 					{@attach titleBelow
 						? oneRow(
@@ -168,7 +175,7 @@
 							)
 						: undefined}
 				>
-					<div class="titled" class:with-lead={!!lead}>
+					<div class="titled" class:with-lead={!!lead} class:visually-hidden={titleHidden}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
 						<Dialog.Title
 							>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
@@ -423,6 +430,10 @@
 	   uneven gaps); the head's gap stays between the title and the icons. */
 	.head-actions + :global([data-part='close-trigger']) {
 		margin-left: calc(var(--space-3) * -1);
+	}
+	/* With the title not drawn, the head's actions start the row and Close keeps the end. */
+	.head[data-title-hidden] .head-actions + :global([data-part='close-trigger']) {
+		margin-left: auto;
 	}
 	.titled {
 		flex: 1;

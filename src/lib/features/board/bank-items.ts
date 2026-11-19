@@ -3,6 +3,7 @@
  * place, every other reminder still off the board, the generic ∞, the # number token and the
  * game's own ∞ tokens with "+ New token", then the reminders of characters whose players are all dead.
  */
+import { ownReminders } from '#lib/core/rules/reminders/own-reminders.ts';
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import {
 	GENERIC_REMINDER_ID,
@@ -162,7 +163,8 @@ export function playerBankItems(
 ): BankItem[] {
 	const lookup: CharacterLookup = new Map(characters.map((c) => [c.id, c]));
 	const reminders = characters.flatMap((character) => {
-		const labels = [...new Set([...character.reminders, ...character.remindersGlobal])];
+		const own = ownReminders(character);
+		const labels = [...new Set([...own.reminders, ...own.remindersGlobal])];
 		const group: BankGroup = hasUnlimitedReminders(character.id, lookup)
 			? 'generic'
 			: guessed.includes(character.id)
