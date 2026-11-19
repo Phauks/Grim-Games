@@ -18,7 +18,7 @@ import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { currentSetupStep } from '#lib/features/setup/setup-steps.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { gameStarts } from '#lib/features/board/device-notes.ts';
+import { gameStarts, nightStarts } from '#lib/features/board/device-notes.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
 import type { ReminderHand } from '#lib/features/board/reminder-hand.svelte.ts';
@@ -104,6 +104,8 @@ export class PhaseFlow {
 		const { grimoire, game, nw, setDayOpen } = this.#context();
 		setDayOpen(false);
 		if (liveDayTimer.running) liveDayTimer.toggle();
+		// When the night began, for History's stages (Night 1 is Start game's).
+		if (!grimoire.open.viewOnly) nightStarts.start(game.gameId, game.pastDays.length + 1);
 		grimoire.beginNight();
 		const night = tonight(game);
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))

@@ -597,6 +597,9 @@ test('history, add seat and remove', async ({ page }) => {
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByTestId('history');
+	// By stage, each a gold band with its count (Trevor, 2026-11-19): all of this is Setup.
+	await expect(history.getByRole('button', { name: /^Setup/ })).toHaveCount(1);
+	await expect(history.getByRole('button', { name: /^(Night|Day) \d/ })).toHaveCount(0);
 	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
 	const numbers = history.getByTestId('history-number');
 	await expect(numbers.last()).toHaveText('1');

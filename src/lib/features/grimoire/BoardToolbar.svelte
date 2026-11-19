@@ -40,8 +40,8 @@
 		/** Beside ☰: the grim cover, in the same place on the board and the day (Trevor). */
 		lead?: Snippet;
 		/**
-		 * The day timer, last on the bar (Trevor, 2026-11-18); a phone shows its clock only,
-		 * which opens the Timer sheet with Back to town and Start.
+		 * The day timer, last on the bar (Trevor, 2026-11-18), beside the pane; a phone has its
+		 * whole timer in the board's corner instead (Trevor, 2026-11-19).
 		 */
 		timer?: Snippet;
 	}
@@ -286,33 +286,6 @@
 	@container beside (min-width: 720px) {
 		.toolbar :global(.tool-label) {
 			display: inline;
-		}
-	}
-	/* The day timer's clock only on a phone: tapping it opens the Timer sheet, which has Back
-	   to town and Start (Trevor, 2026-11-18). */
-	@container beside (max-width: 719.98px) {
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] > :not(.open)) {
-			display: none;
-		}
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] .clock) {
-			padding-inline: var(--space-1);
-		}
-	}
-	/* Seven tap targets fill a 360px phone: there the gaps narrow, as the menu's do on the
-	   smallest phones, and the clock's numbers are a little smaller. */
-	@container beside (max-width: 399.98px) {
-		.toolbar {
-			--menu-gap: min(var(--space-1), 1vw);
-		}
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] .clock) {
-			font-size: 0.85em;
-		}
-	}
-	/* Narrower still (a 320px phone) it doesn't fit beside them: the timer is on the grim
-	   cover, from the button beside ☰. */
-	@container beside (max-width: 344.98px) {
-		.toolbar > :global(.toolbar-timer .timer-slot) {
-			display: none;
 		}
 	}
 	/* Seating's tools have their words from a tablet up, icons only on a phone (Trevor,
