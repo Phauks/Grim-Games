@@ -6,6 +6,7 @@ import { openProfile, setPlayerName } from './player-name.ts';
 import { befriend, liveRoom, sendRequest, signedIn, unique } from './friends.ts';
 import { theMenu } from './shell.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
+import { paneButton } from './players.ts';
 
 // Friends (plan F1): two accounts, each in its own browser, find each other by username.
 // Local runs use the preview email sender, so each sign-in code is shown on screen.
@@ -341,11 +342,7 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await expect(bob.page.getByTestId('friend-recent-none')).toBeVisible();
 
 	await ann.page.goto(board);
-	await ann.page.getByRole('button', { name: 'More', exact: true }).tap();
-	await ann.page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game', exact: true })
-		.tap();
+	await paneButton(ann.page, 'Session', 'End game');
 	const end = ann.page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ann.page.getByTestId('game-over')).toBeVisible();
@@ -378,11 +375,7 @@ test('people from a finished game are on Recent players, with Add friend', async
 
 /** Ends the board's game from ⋯, as it stands. */
 async function endBoardGame(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game', exact: true })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toBeVisible();
@@ -416,11 +409,7 @@ test('Recent players counts every game together, with Add friend', async ({ brow
 	await expect(bob.page.getByRole('heading', { name: 'Suggestions' })).toHaveCount(0);
 
 	// The next game in the same room, with Bob still in seat 3.
-	await ann.page.getByRole('button', { name: 'More', exact: true }).tap();
-	await ann.page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'New game' })
-		.tap();
+	await paneButton(ann.page, 'Session', 'New game');
 	await ann.page
 		.getByRole('dialog', { name: 'New game' })
 		.getByRole('button', { name: 'Create game' })
@@ -706,11 +695,7 @@ test('the Storyteller hands the room to a friend in it, who takes over with no c
 
 	// Room transfer, before Bob is in the room: no friends listed, in their place.
 	await ann.page.goto(board);
-	await ann.page.getByRole('button', { name: /^More/ }).tap();
-	await ann.page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Room transfer' })
-		.tap();
+	await paneButton(ann.page, 'Session', 'Room transfer');
 	const dialog = ann.page.getByRole('dialog', { name: 'Room transfer' });
 	const friendsHere = dialog.getByRole('region', { name: 'Friends in the room' });
 	await expect(friendsHere.getByTestId('transfer-friends-none')).toHaveText('None');

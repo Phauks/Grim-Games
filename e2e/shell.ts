@@ -10,7 +10,8 @@ export const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu
 
 /** Opens the drawer from the hamburger and returns it. */
 export async function openMenu(page: Page) {
-	await menuButton(page).tap();
+	if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await menuButton(page).tap();
+	else await menuButton(page).click();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	await expect(drawer).toBeVisible();
 	return drawer;

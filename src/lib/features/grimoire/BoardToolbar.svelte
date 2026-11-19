@@ -39,7 +39,8 @@
 		onInfo: () => void;
 		onScript: () => void;
 		onShare: () => void;
-		onMore: () => void;
+		/** A spectator's ⋯ menu; the Storyteller's items are in the pane (Trevor, 2026-11-18). */
+		onMore?: () => void;
 		/** Beside ☰: the grim cover, in the same place on the board and the day (Trevor). */
 		lead?: Snippet;
 	}
@@ -135,7 +136,7 @@
 		<IconButton icon="close" label="Close" onclick={onStopShowing} />
 	{:else}
 		<!-- ☰ and the cover, in the same spot as on the day's sheet (GameLead). -->
-		<GameLead {watching}>{@render lead?.()}</GameLead>
+		<GameLead>{@render lead?.()}</GameLead>
 		<!-- Icons on phones; with their words on wider screens, where there is room. No
 		     "View-Only" label on a spectator's board (Trevor, 2026-11-15). -->
 		<span class="spacer"></span>
@@ -145,8 +146,8 @@
 		{#if watching && onDay}<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
 				><span class="tool-label">Day</span></Button
 			>{/if}
-		<!-- On the narrowest phones Info tokens is in More, so the pane's button keeps its place
-		     by the grim cover (Trevor, 2026-11-15); Share never moves there. Not a spectator's. -->
+		<!-- Info tokens on every phone, in the room More left (Trevor, 2026-11-18). Not a
+		     spectator's. -->
 		{#if !watching}<Button
 				variant="quiet"
 				icon="info"
@@ -173,9 +174,9 @@
 		>
 		<!-- A spectator's own share screen, as players have (Trevor, 2026-11-15). -->
 		{#if watching}<ViewerShare bind:open={viewerShareOpen} {grimoire} />{/if}
-		<Button variant="quiet" icon="more" aria-label="More" onclick={onMore}
-			><span class="tool-label">More</span></Button
-		>
+		{#if onMore}<Button variant="quiet" icon="more" aria-label="More" onclick={onMore}
+				><span class="tool-label">More</span></Button
+			>{/if}
 	{/if}
 </div>
 
@@ -275,12 +276,6 @@
 	.toolbar :global(.button[data-variant='quiet']:not(:hover):not([aria-pressed='true'])),
 	.toolbar :global(.icon-button[data-outlined]:not([aria-pressed='true'])) {
 		background: var(--surface);
-	}
-	/* Eight 44px buttons and their gaps need 412px; narrower, Info tokens is in More. */
-	@container beside (max-width: 411.98px) {
-		.toolbar :global([data-info-tokens]) {
-			display: none;
-		}
 	}
 	/* Phones show the toolbar's icons only; wider screens add the words. */
 	.toolbar :global(.tool-label) {

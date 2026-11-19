@@ -33,6 +33,7 @@
 	import { buildInfo } from '#lib/build-info.ts';
 	import { buildSwitch } from '#lib/features/about/build-switch.ts';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
+	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 
 	interface Props {
 		/** Called after a choice, e.g. to close the drawer. */
@@ -54,6 +55,8 @@
 		label: string;
 		icon: IconSlot;
 		title?: string;
+		/** A switch's state, for Full screen. */
+		pressed?: boolean;
 		run: () => void;
 	}
 
@@ -61,6 +64,19 @@
 		// The player's own Profile dialog, above Settings (Trevor, 2026-11-15).
 		{ id: 'profile', label: t('player.profile'), icon: 'profile', run: () => profileDialog.show() },
 		{ id: 'settings', label: t('shell.settings'), icon: 'settings', run: openSettings },
+		// Here since the board's ⋯ menu went into its pane (Trevor, 2026-11-18); only where the
+		// browser can, and the symbol says on or off.
+		...(appFullScreen.available
+			? [
+					{
+						id: 'full-screen',
+						label: t('shell.fullScreen'),
+						icon: (appFullScreen.on ? 'exitFullScreen' : 'fullScreen') as IconSlot,
+						pressed: appFullScreen.on,
+						run: () => appFullScreen.toggle()
+					}
+				]
+			: []),
 		// Under Settings while this browser can install the app (Trevor, 2026-11-16: option B).
 		...(installApp.route
 			? [
@@ -161,6 +177,7 @@
 				icon={action.icon}
 				align="start"
 				title={action.title}
+				aria-pressed={action.pressed}
 				data-testid="nav-action-{action.id}"
 				onclick={() => {
 					onChoose?.();

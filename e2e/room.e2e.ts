@@ -7,9 +7,9 @@ import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
-import { menuButton } from './shell.ts';
+import { menuButton, openSettingsDialog } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
-import { closePane, openPlayerSheet } from './players.ts';
+import { closePane, openPlayerSheet, paneButton, openPane } from './players.ts';
 import { pickNumber } from './number-select.ts';
 import { closeBin, dragToSeat, openBin } from './reminder-bank.ts';
 
@@ -331,11 +331,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 	await expectInRoom(phone);
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -349,11 +345,7 @@ test('End game keeps the room open and tells its phones the game is over', async
 	await expect(status).toHaveText('Game over: Good won');
 
 	// Reopening the game runs it again for the phones too.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Reopen game' })
-		.tap();
+	await paneButton(page, 'Session', 'Reopen game');
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -378,8 +370,7 @@ test('once the game has ended the Storyteller can close the room, which sends ev
 	await expectInRoom(phone);
 
 	await page.goto(board);
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	let menu = await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Close room' })).toHaveCount(0);
 	await menu.getByRole('button', { name: 'End game' }).tap();
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
@@ -388,7 +379,7 @@ test('once the game has ended the Storyteller can close the room, which sends ev
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Good won');
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	menu = await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'New game' })).toBeVisible();
 	await menu.getByRole('button', { name: 'Close room' }).tap();
 	await page
@@ -399,7 +390,7 @@ test('once the game has ended the Storyteller can close the room, which sends ev
 	// The room is gone: its code opens nothing, and the menu has no Close room.
 	await phone.goto(`/join/${code}`);
 	await expect(phone.getByRole('alert')).toHaveText('This room is closed, or the code is wrong.');
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	menu = await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Close room' })).toHaveCount(0);
 	await phoneContext.close();
 });
@@ -423,11 +414,7 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	await expect(rate).toHaveCount(0);
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -532,8 +519,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(page.getByRole('button', { name: 'Share grim' })).toHaveCount(0);
 
 	await page.goto(board);
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	const menu = await openPane(page, 'Session');
 	await expect(menu.getByTestId('menu-share-grim')).toHaveCount(0);
 	await menu.getByRole('button', { name: 'End game' }).tap();
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
@@ -544,15 +530,14 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 
 	// Not on End game: Game over, in the day timer's place, offers Share grim once the game is
 	// over (Trevor, 2026-11-15), with its own icon, and asks what goes with it: History on,
-	// the notes and Demon bluffs off. Reopen game and New game stay in ⋯ only.
+	// the notes and Demon bluffs off. Reopen game and New game stay in the pane only.
 	const seats = await page.getByTestId('seat').count();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Reopen game' })).toBeVisible();
 	await expect(
 		menu.getByRole('button', { name: /Share grim|Export game|Player feedback/ })
 	).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(menu).toBeHidden();
+	await closePane(page);
 	await page.getByTestId('game-over').tap();
 	await expect(page.getByRole('menuitem')).toHaveText([
 		'Share grim',
@@ -656,11 +641,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(shared).toBeHidden();
 
 	// Reopening the game makes the grimoire private again.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Reopen game' })
-		.tap();
+	await paneButton(page, 'Session', 'Reopen game');
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -696,11 +677,7 @@ test('Share grim after End game lets each phone step through the History in the 
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toHaveCount(0);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
@@ -747,11 +724,7 @@ test('after a game the room votes on the next script, and the next game opens in
 	await expectInRoom(phone);
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	await page
 		.getByRole('alertdialog', { name: 'End game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -910,21 +883,18 @@ test('after a game the room vote runs over the board, without leaving the game s
 	await expectInRoom(phone);
 
 	await page.goto(board);
-	const more = page.getByRole('button', { name: 'More', exact: true });
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await more.tap();
-	await menu.getByRole('button', { name: 'End game' }).tap();
+	await paneButton(page, 'Session', 'End game');
 	await page
 		.getByRole('alertdialog', { name: 'End game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(status).toHaveText('Game over');
 
-	// From New game's own Room vote; the ⋯ menu has no item for it (Trevor, 2026-11-15: it
+	// From New game's own Room vote; the pane has no item for it (Trevor, 2026-11-15: it
 	// "is already in the new game area").
-	await more.tap();
-	await expect(menu.getByRole('button', { name: 'Room vote' })).toHaveCount(0);
-	await menu.getByRole('button', { name: 'New game' }).tap();
+	const session = await openPane(page, 'Session');
+	await expect(session.getByRole('button', { name: 'Room vote' })).toHaveCount(0);
+	await session.getByRole('button', { name: 'New game' }).tap();
 	const newGame = page.getByRole('dialog', { name: 'New game' });
 	const roomVote = newGame.getByRole('button', { name: 'Room vote' });
 	await roomVote.tap();
@@ -999,11 +969,7 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 
 	// The same script again, in the same room.
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	await page
 		.getByRole('alertdialog', { name: 'End game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -1712,11 +1678,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 
 	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
 	await expect(viewer.getByTestId('board-background')).toHaveCount(0);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
@@ -1729,11 +1691,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// A picture of the Storyteller's own reaches it through the room too.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Board', exact: true })
@@ -1856,11 +1814,7 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 		await expect(counts.getByTestId(`count-${type}`)).toHaveText(n);
 	// A Fabled the Storyteller adds reaches the phones with its setup change (Trevor,
 	// 2026-10-27; https://wiki.bloodontheclocktower.com/Sentinel).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name: 'Sentinel', exact: true })

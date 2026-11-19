@@ -12,20 +12,58 @@ export function storytellerPane(page: Page): Locator {
 		.or(page.getByRole('dialog', { name, exact: true }));
 }
 
-export type PaneTab = 'Day' | 'Night' | 'Notes' | 'Players';
+/** A tap on a touch screen, a click where the page has only a mouse. */
+async function press(target: Locator) {
+	if (await target.page().evaluate(() => navigator.maxTouchPoints > 0)) await target.tap();
+	else await target.click();
+}
 
-/** Opens the pane at a tab: its button on a phone; beside the board it always shows. */
+/** The pane's views, each under its subject (Trevor, 2026-11-18: nav with a sub-nav). */
+const SUBJECTS = {
+	Day: 'Game',
+	Night: 'Game',
+	Bluffs: 'Game',
+	Players: 'Players',
+	Notes: 'Players',
+	Seats: 'More',
+	Sounds: 'More',
+	History: 'More',
+	Session: 'More'
+} as const;
+export type PaneTab = keyof typeof SUBJECTS;
+
+/**
+ * Taps a tab in one of the pane's rails, unless it is chosen already; from the rail's own
+ * "More tabs" when the pane is too narrow for it.
+ */
+async function choose(pane: Locator, rail: string, name: string) {
+	const list = pane.getByRole('tablist', { name: rail, exact: true });
+	const trigger = list.getByRole('tab', { name: new RegExp(`^${name}`) });
+	await expect(list).toBeVisible();
+	if (!(await trigger.count())) {
+		await press(list.locator('..').getByRole('button', { name: 'More tabs' }));
+		await press(
+			pane.page().getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name })
+		);
+	} else if ((await trigger.getAttribute('aria-selected')) !== 'true') await press(trigger);
+	await expect(trigger).toHaveAttribute('aria-selected', 'true');
+}
+
+/**
+ * Opens the pane at a view: its subject in the top rail, then the view in the subject's own
+ * rail. Its button on a phone; beside the board it always shows.
+ */
 export async function openPane(page: Page, tab?: PaneTab) {
 	const pane = storytellerPane(page);
 	const button = page.getByTestId('game-pane-button');
 	// Beside the board the pane shows, on a phone its button: whichever, once the board is up.
 	await expect(pane.or(button).first()).toBeVisible();
-	if (!(await pane.isVisible())) await button.tap();
+	if (!(await pane.isVisible())) await press(button);
 	await expect(pane).toBeVisible();
 	if (tab) {
-		const trigger = pane.getByRole('tab', { name: new RegExp(`^${tab}`) });
-		await trigger.tap();
-		await expect(trigger).toHaveAttribute('aria-selected', 'true');
+		const subject = SUBJECTS[tab];
+		await choose(pane, 'Game', subject);
+		await choose(pane, `${subject} views`, tab);
 	}
 	return pane;
 }
@@ -101,4 +139,21 @@ export async function boardTimer(page: Page): Promise<Locator> {
 export async function closeStep(page: Page, step: Locator) {
 	await closePane(page);
 	if (await paneIsSheet(page)) await expect(step).toBeHidden();
+}
+
+/**
+ * Taps a button in one of the pane's views, where the board's ⋯ items went (Trevor,
+ * 2026-11-18). Seats' and Session's buttons all close a phone's sheet.
+ */
+export async function paneButton(page: Page, view: PaneTab, name: string | RegExp) {
+	const sheet = await paneIsSheet(page);
+	const pane = await openPane(page, view);
+	await press(pane.getByRole('button', { name, exact: typeof name === 'string' }));
+	// Each of these closes a phone's sheet first; the board takes taps once it has gone.
+	if (sheet) {
+		await expect(page.getByRole('dialog', { name: 'Game', exact: true })).toBeHidden();
+		await expect(
+			page.locator('[data-scope="dialog"][data-part="backdrop"][data-state="closed"]')
+		).toHaveCount(0);
+	}
 }

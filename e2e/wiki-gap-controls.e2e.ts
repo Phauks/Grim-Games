@@ -1,4 +1,4 @@
-import { paneDay } from './players.ts';
+import { paneDay, paneButton } from './players.ts';
 import { chooseExecution, startExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
@@ -45,11 +45,7 @@ async function cast(page: Page, names: string[]) {
 
 /** A Fabled or Loric put in play from the board's ⋯. */
 async function addRuleCharacter(page: Page, name: string) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name, exact: true })

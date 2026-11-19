@@ -1,19 +1,22 @@
 import { expect, test } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
+import { closePane, openPane, storytellerPane } from './players.ts';
 
-// Trevor's playtest (2026-10-26): Game info's New game moves into the board's ⋯ menu, where
-// it replaces End game once the game has ended. The sidebar keeps its own New game.
+// Trevor's playtest (2026-10-26): Game info's New game moves into the board's menu, now the
+// pane's Session (2026-11-18), where it replaces End game once the game has ended. The sidebar
+// keeps its own New game.
 
-test("New game takes End game's place in the board ⋯ menu once the game ends", async ({ page }) => {
+test("New game takes End game's place in the pane's Session once the game ends", async ({
+	page
+}) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	// While the game is in play the menu ends it, and has no New game.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	const menu = await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'New game' })).toHaveCount(0);
 	await menu.getByRole('button', { name: 'End game' }).tap();
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
@@ -24,11 +27,9 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 
 	// Ended: New game is where End game was, at the foot of Session (Trevor,
 	// 2026-10-27, 2026-10-30), and opens straight away.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'End game' })).toHaveCount(0);
-	await expect(
-		menu.getByRole('region', { name: 'Session', exact: true }).getByRole('button').last()
-	).toHaveText('New game');
+	await expect(menu.getByTestId('pane-session').getByRole('button').last()).toHaveText('New game');
 	await menu.getByRole('button', { name: 'New game' }).tap();
 	await expect(page.getByRole('alertdialog', { name: 'Start a new game?' })).toHaveCount(0);
 	await expect(
@@ -36,10 +37,10 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 	).toBeVisible();
 });
 
-// Trevor (2026-10-27): once the bag is dealt, Character selection did nothing from ⋯ (the
+// Trevor (2026-10-27): once the bag is dealt, Character selection did nothing from the menu (the
 // selection screen sends a set-up game straight back), so it is no longer offered; unavailable
 // items stay hidden rather than greyed.
-test('the board ⋯ menu offers Character selection only until the bag is dealt', async ({
+test("the pane's Session offers Character selection only until the bag is dealt", async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -48,16 +49,16 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await pickNumber(page, 'Players', 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	const menu = storytellerPane(page);
 	// Under Session with End game (Trevor, 2026-10-30: "related to pre and post game").
 	const selection = menu
-		.getByRole('region', { name: 'Session', exact: true })
+		.getByTestId('pane-session')
 		.getByRole('button', { name: 'Character selection' });
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(selection).toBeVisible();
-	await page.keyboard.press('Escape');
+	await closePane(page);
 
 	await page.goto(`${board}/setup`);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
@@ -75,14 +76,14 @@ test('the board ⋯ menu offers Character selection only until the bag is dealt'
 	// saving on a slow runner: reload until it has landed.
 	await expect(async () => {
 		await page.goto(board);
-		await page.getByRole('button', { name: 'More', exact: true }).tap();
-		await expect(menu.getByRole('button', { name: 'History' })).toBeVisible();
+		await openPane(page, 'Session');
+		await expect(menu.getByRole('button', { name: 'End game' })).toBeVisible();
 		await expect(selection).toHaveCount(0, { timeout: 1000 });
 	}).toPass();
 });
 
 // Trevor (2026-11-16): Character selection "should not be available from the end of the
-// game, that doesn't make sense". Ended before the bag is dealt, neither ⋯ nor the bank's
+// game, that doesn't make sense". Ended before the bag is dealt, neither the pane nor the bank's
 // Set up leads back to it.
 test('an ended game offers no way back to Character selection', async ({ page }) => {
 	await page.goto('/new');
@@ -92,9 +93,9 @@ test('an ended game offers no way back to Character selection', async ({ page })
 	await pickNumber(page, 'Players', 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	await page.goto(board);
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	const menu = storytellerPane(page);
 	await expect(page.getByRole('button', { name: 'Set up' })).toBeEnabled();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Character selection' })).toBeVisible();
 	await menu.getByRole('button', { name: 'End game' }).tap();
 	await page
@@ -103,10 +104,10 @@ test('an ended game offers no way back to Character selection', async ({ page })
 		.tap();
 	await expect(page.getByTestId('game-over')).toBeVisible();
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'New game' })).toBeVisible();
 	await expect(menu.getByRole('button', { name: 'Character selection' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	// The bank, with its Set up, gives way to History's strip.
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
 });

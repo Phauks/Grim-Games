@@ -191,11 +191,7 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Report an issue' })
-		.tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);
@@ -230,11 +226,7 @@ test('a report sent mid-game can carry the game, which opens as a copy to step t
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	const sentFrom = page.url();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Report an issue' })
-		.tap();
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 
 	const form = page.getByRole('dialog', { name: 'Report' });
 	await form.getByRole('textbox', { name: 'Title' }).fill(title);

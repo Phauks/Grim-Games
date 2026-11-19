@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectNothingCovered } from './occlusion.ts';
 import { pickNumber } from './number-select.ts';
 import { toBoard } from './new-game.ts';
+import { paneButton } from './players.ts';
 
 // Nothing on the key screens is drawn under anything else (Trevor, 2026-11-06: "their biggest
 // UI issues always with stuff being covered up. Can we freaking find out how to stop doing
@@ -73,11 +74,7 @@ test("the Storyteller's player view after Game over covers nothing", async ({ pa
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await paperSheets(page);
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

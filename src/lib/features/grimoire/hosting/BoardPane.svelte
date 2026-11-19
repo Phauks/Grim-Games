@@ -7,6 +7,9 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import StorytellerPane from './StorytellerPane.svelte';
+	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
+	import SoundboardPanel from '#lib/features/sound/SoundboardPanel.svelte';
+	import HistoryDialog from '#lib/features/grimoire/HistoryDialog.svelte';
 
 	/**
 	 * The board with the Storyteller's pane: the Day, the Night, Game notes and Players (the grim
@@ -28,6 +31,11 @@
 		night: Snippet;
 		/** The game is over: Players' feedback opens. */
 		ended?: boolean;
+		/** The game's mode gives the Demon bluffs, so the pane has a Bluffs view. */
+		bluffs?: boolean;
+		/** More's Seats and Session, from the board. */
+		seats: Snippet;
+		session: Snippet;
 		children: Snippet;
 	}
 
@@ -39,6 +47,9 @@
 		day,
 		night,
 		ended = false,
+		bluffs = false,
+		seats,
+		session,
 		children
 	}: Props = $props();
 
@@ -65,6 +76,17 @@
 	>
 </div>
 
+{#snippet bluffsView()}
+	<BluffsSheet
+		inline
+		game={grimoire.game}
+		characters={grimoire.open.characters}
+		dispatch={(command) => grimoire.open.run(command)}
+	/>
+{/snippet}
+{#snippet soundsView()}<SoundboardPanel />{/snippet}
+{#snippet historyView()}<HistoryDialog inline {grimoire} />{/snippet}
+
 {#snippet pane()}
 	<div class="side-pane" data-at={beside} inert={hidden}>
 		{#if !hidden}<StorytellerPane
@@ -73,6 +95,11 @@
 				{day}
 				{night}
 				{ended}
+				bluffs={bluffs ? bluffsView : undefined}
+				{seats}
+				sounds={soundsView}
+				history={historyView}
+				{session}
 			/>{/if}
 	</div>
 {/snippet}
@@ -91,6 +118,11 @@
 				{day}
 				{night}
 				{ended}
+				bluffs={bluffs ? bluffsView : undefined}
+				{seats}
+				sounds={soundsView}
+				history={historyView}
+				{session}
 			/>
 		</div>
 	</Dialog>

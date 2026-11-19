@@ -2,6 +2,8 @@ import { openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { addNote, leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
+import { openPane, closePane } from './players.ts';
 
 // Trevor's playtest notes (2026-10-26): "Hide grim guesses, eyeball feature like we use in
 // notes", and "Grim cover ... Accessible from day or grim view". Later the same day: "Cover
@@ -99,13 +101,10 @@ test('the Storyteller covers the screen from the board, beside ☰', async ({ pa
 	// Who runs the game shows too (Trevor, 2026-10-27: "Include storyteller name on grim cover").
 	await nameStoryteller(page, 'Trev');
 
-	// Never in the ⋯ menu.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(menu).toBeVisible();
+	// Never in the pane.
+	const menu = await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Cover the screen' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(menu).toBeHidden();
+	await closePane(page);
 
 	// Beside ☰ on the toolbar.
 	await page.getByTestId('cover-button').tap();
@@ -222,11 +221,7 @@ test('the cover has its own lock, and Settings sets, changes and removes the PIN
 	await expect(cover).toBeHidden();
 
 	// Settings > Storyteller > PIN and locks: the same switch, and the game's PIN.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	const back = settings.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();

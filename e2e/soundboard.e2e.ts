@@ -2,6 +2,8 @@ import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { openSoundboard } from './board-menu.ts';
 import { pickScript, toBoard } from './new-game.ts';
+import { closePane } from './players.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // The Storyteller's soundboard and sounds for actions (plans U6 and U7, Trevor 2026-10-26:
 // "bells should be useful to storyteller and initiate bell sounds upon pressing", and
@@ -9,7 +11,7 @@ import { pickScript, toBoard } from './new-game.ts';
 
 test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound', async ({
 	page
-}, testInfo) => {
+}) => {
 	const fetched: string[] = [];
 	page.on('request', (request) => {
 		const path = new URL(request.url()).pathname;
@@ -20,23 +22,19 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
-	// A full row in the ⋯ menu (Trevor, 2026-11-01: "soundboard should be something in the ...
-	// area, a full button"), no longer beside the day timer, which has Back to town.
+	// The pane's More, Sounds (Trevor, 2026-11-18), no longer beside the day timer, which has
+	// Back to town.
 	await expect(
 		page.locator('.board-timer').getByRole('button', { name: 'Soundboard' })
 	).toHaveCount(0);
-	await openSoundboard(page);
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(menu).toBeHidden();
-	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
+	const sheet = await openSoundboard(page);
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-	// Two columns (Trevor, 2026-10-27: "noise controls on one side and the noises on the
-	// other"): the pads beside the controls on a tablet, above them on a phone.
-	const padsBox = (await sheet.getByTestId('dialog-aside').boundingBox())!;
-	const controlsBox = (await sheet.getByTestId('dialog-pane').boundingBox())!;
-	if (testInfo.project.name === 'tablet') {
-		expect(padsBox.x + padsBox.width).toBeLessThanOrEqual(controlsBox.x);
-	} else expect(padsBox.y + padsBox.height).toBeLessThanOrEqual(controlsBox.y);
+	// The pads above the controls, in one scroll.
+	const padsBox = (await pads.boundingBox())!;
+	const controlsBox = (await sheet
+		.getByRole('slider', { name: 'Volume', exact: true })
+		.boundingBox())!;
+	expect(padsBox.y + padsBox.height).toBeLessThanOrEqual(controlsBox.y);
 	await expect(sheet.getByRole('slider', { name: 'Volume', exact: true })).toBeVisible();
 	// Every sound, then the dashed "+ New" pad.
 	await expect(pads.getByRole('button')).toHaveCount(13);
@@ -90,17 +88,10 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	expect(errors).toEqual([]);
 	// Day and night sound is beside it, to change mid-game.
 	await expect(sheet.getByRole('combobox', { name: 'Night sound' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
+	await closePane(page);
 
-	// Sounds for actions are off until turned on in Settings > Sound.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	// ⋯ > Settings opens all of Settings at its root.
+	// Sounds for actions are off until turned on in Settings > Sound, from the menu.
+	const settings = await openSettingsDialog(page);
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })
 		.getByRole('button', { name: 'Sound' })
@@ -148,8 +139,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await openSoundboard(page);
-	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
+	const sheet = await openSoundboard(page);
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 
 	await pads.getByRole('button', { name: 'Add to the soundboard' }).tap();

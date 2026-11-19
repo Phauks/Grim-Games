@@ -4,6 +4,7 @@ import { pickScript } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickNumber } from './number-select.ts';
 import { clippedBands } from './type-bands.ts';
+import { openPane, storytellerPane } from './players.ts';
 
 // Add late player (Trevor, 2026-10-30): someone arrives after the tiles are dealt and joins as
 // one more player instead of a Traveller. Roll suggests who changes; the Storyteller confirms.
@@ -211,11 +212,8 @@ test('Add late player is in the ⋯ menu once the draw is done, until Start game
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+(#.*)?$/);
 	await page.keyboard.press('Escape');
 
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(
-		menu.locator('section', { has: page.getByTestId('menu-late-player') })
-	).toHaveAttribute('aria-labelledby', 'board-menu-session');
+	const menu = storytellerPane(page);
+	await openPane(page, 'Session');
 	await menu.getByTestId('menu-late-player').tap();
 	const sheet = page.getByRole('dialog', { name: 'Add late player' });
 	await sheet.getByRole('combobox', { name: 'Name' }).fill('Max');
@@ -246,7 +244,7 @@ test('Add late player is in the ⋯ menu once the draw is done, until Start game
 	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 	await expect(walkThrough(page).or(ask)).toBeVisible();
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'End game' })).toBeVisible();
 	await expect(menu.getByTestId('menu-late-player')).toHaveCount(0);
 });

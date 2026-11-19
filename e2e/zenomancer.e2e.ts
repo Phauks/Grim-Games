@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { boardSeat, inHand, putReminder } from './reminder-bank.ts';
+import { paneButton } from './players.ts';
 
 /** The Goal token beside seat 2 on the board, not the bank's. */
 const placedGoal = (page: Page) =>
@@ -16,11 +17,7 @@ test('a Goal reminder keeps the goal typed on it and shows it to the player', as
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name: 'Zenomancer', exact: true })

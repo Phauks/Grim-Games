@@ -2,6 +2,7 @@ import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Players opt in or out of the Storyteller's sounds on their phone (Trevor, 2026-11-14: "make
 // it so that players can opt in or out of this feature ... have them just approve and be able
@@ -24,11 +25,7 @@ async function roomGame(page: Page): Promise<{ board: string; code: string }> {
 
 /** Turns on day and night sound for players' phones alone, in the board's Settings > Sound. */
 async function soundOnPhones(page: Page): Promise<void> {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

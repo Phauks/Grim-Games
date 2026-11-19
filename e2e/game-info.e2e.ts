@@ -1,6 +1,7 @@
 import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
 import { openGameInfo, pickScript, toBoard } from './new-game.ts';
+import { openSettingsDialog } from './shell.ts';
 
 // Game info has every line the board corner can show, so a phone whose corner has no room
 // still reads them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
@@ -103,11 +104,7 @@ test('an eye on each Game info line chooses what the board corner shows, as Sett
 
 	// The same choices in Settings > Board (⋯ > Settings opens there), and after a reload.
 	await page.reload();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Settings', exact: true })
-		.tap();
+	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings
 		.getByRole('navigation', { name: 'Settings sections' })

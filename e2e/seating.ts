@@ -1,17 +1,15 @@
 import type { Page } from '@playwright/test';
+import { openPane } from './players.ts';
 
 /**
- * Seating mode on the board (seating-mode.svelte.ts): ⋯ > Seating, unless it is open already.
+ * Seating mode on the board (seating-mode.svelte.ts): the pane's More, Seats, Seating, unless it is open already.
  * Add seat lives only in its bar (Trevor, 2026-11-01).
  */
 export async function enterSeating(page: Page): Promise<void> {
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	if (await toolbar.getByRole('button', { name: 'Add seat' }).count()) return;
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Seating', exact: true })
-		.tap();
+	const pane = await openPane(page, 'Seats');
+	await pane.getByTestId('menu-seating').tap();
 }
 
 /** Seating's Done. */

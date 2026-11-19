@@ -1,4 +1,4 @@
-import { paneDay, boardTimer } from './players.ts';
+import { paneDay, boardTimer, openPane, closePane } from './players.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -22,15 +22,14 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	browser
 }, testInfo) => {
 	const board = await startGame(page);
-	// On the day timer (Trevor, 2026-11-01), not in ⋯, and always available (2026-11-02).
+	// On the day timer (Trevor, 2026-11-01), not in the pane, and always available (2026-11-02).
 	const timer = page.locator('.board-timer').getByTestId('day-timer');
 	const call = timer.getByRole('button', { name: 'Back to town' });
 	await expect(call).toBeEnabled();
 	const before = (await timer.boundingBox())!;
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(menu.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	const session = await openPane(page, 'Session');
+	await expect(session.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
+	await closePane(page);
 
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();

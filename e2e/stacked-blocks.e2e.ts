@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { animationsSettled } from './settled.ts';
+import { openPane, closePane } from './players.ts';
 
 // Trevor (2026-10-22): pieces of information stacked one under another with nothing between
 // them (special rule toggles over their descriptions) read as one block. Where things sit is
@@ -138,15 +139,16 @@ test('no list of information runs together without a divider, a gap or a heading
 	await page.getByRole('dialog').last().waitFor();
 	// The sheet only: Character selection behind it is a game screen, not listed above.
 	seen.push(...(await undelineated(page, 'special rules', '[role="dialog"]')));
-	// The board's ⋯ menu and a seat's sheet.
+	// The pane's More views and a seat's sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeVisible();
-	seen.push(...(await undelineated(page, 'board More menu')));
-	await page.keyboard.press('Escape');
+	await openPane(page, 'Session');
+	seen.push(...(await undelineated(page, 'pane Session')));
+	await openPane(page, 'Seats');
+	seen.push(...(await undelineated(page, 'pane Seats')));
+	await closePane(page);
 	await page.getByTestId('seat').first().tap();
 	await expect(page.getByRole('dialog').last()).toBeVisible();
 	seen.push(...(await undelineated(page, 'seat sheet')));

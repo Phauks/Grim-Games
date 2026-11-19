@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { heldAction, putReminder } from './reminder-bank.ts';
+import { paneButton } from './players.ts';
 
 /**
  * The Fang Gu jumping into an Outsider (https://wiki.bloodontheclocktower.com/Fang_Gu): the
@@ -106,11 +107,7 @@ test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks
 	await expect(page.getByTestId('game-over')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Reopen game' })
-		.tap();
+	await paneButton(page, 'Session', 'Reopen game');
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
