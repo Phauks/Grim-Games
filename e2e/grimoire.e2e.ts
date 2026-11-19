@@ -725,7 +725,10 @@ test("Demon bluffs open in the pane's Game, and a seat shows its token to the pl
 	await expect(bluffs).toBeVisible();
 	// An edit left open is dropped on leaving the view: back on Bluffs, the sets show (Trevor,
 	// 2026-11-19).
-	await bluffs.getByRole('button', { name: /^Choose the/ }).first().tap();
+	await bluffs
+		.getByRole('button', { name: /^Choose the/ })
+		.first()
+		.tap();
 	await expect(bluffs.getByTestId('bluff-set')).toHaveCount(0);
 	const pane = page.getByTestId('storyteller-pane');
 	await pane.getByRole('tab', { name: 'Day', exact: true }).tap();
@@ -5637,8 +5640,8 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 });
 
 // Trevor (2026-11-18): the board's ⋯ menu became the pane, a nav with a sub-nav ("only game,
-// players, and more"); Bluffs under Game, History in More "since we don't want people
-// touching it too often", Settings and Report in the app's menu.
+// players, and more"); Bluffs under Game, Settings and Report in the app's menu. History is
+// Game's last view (Trevor, 2026-11-19: "that way we don't have to have ... in more").
 test("the pane's subjects and views hold what the board's menu did", async ({ page }) => {
 	await startGame(page);
 	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
@@ -5646,10 +5649,13 @@ test("the pane's subjects and views hold what the board's menu did", async ({ pa
 	const tabs = (rail: string) =>
 		pane.getByRole('tablist', { name: rail, exact: true }).getByRole('tab');
 	await expect(tabs('Game')).toHaveText(['Game', /^Players/, 'More']);
-	await expect(tabs('Game views')).toHaveText(['Day', 'Night', 'Bluffs']);
+	await expect(tabs('Game views')).toHaveText(['Day', 'Night', 'Bluffs', 'History']);
 	await openPane(page, 'Notes');
 	await expect(tabs('Players views')).toHaveText([/^Players/, 'Notes']);
 	await openPane(page, 'Seats');
+	// More's views fit across the pane, with no "More tabs" ⋯.
+	await expect(tabs('More views')).toHaveText(['Seats', 'Sounds', 'Session']);
+	await expect(pane.getByRole('button', { name: 'More tabs' })).toHaveCount(0);
 	// Arranging seats, Lock seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31). Travellers choose (L102) comes with Add seat.
 	await expect(pane.getByTestId('pane-seats').getByRole('button')).toHaveText([

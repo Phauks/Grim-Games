@@ -5,13 +5,14 @@
  * the grim cover.
  *
  * Three subjects, each with its own views (Trevor, 2026-11-18: "i like nav with sub-nav"; "only
- * game, players, and more"): the pane is also where the board's ⋯ menu went, so History,
- * the Soundboard and the session's start and end are views of More.
+ * game, players, and more"): the pane is also where the board's ⋯ menu went, so the
+ * Soundboard and the session's start and end are views of More. History is Game's last view
+ * (Trevor, 2026-11-19), so More fits a phone without its own ⋯.
  */
 export const PANE_VIEWS = {
-	game: ['day', 'night', 'bluffs'],
+	game: ['day', 'night', 'bluffs', 'history'],
 	players: ['players', 'notes'],
-	more: ['seats', 'sounds', 'history', 'session']
+	more: ['seats', 'sounds', 'session']
 } as const;
 
 export type PaneSubject = keyof typeof PANE_VIEWS;
