@@ -1,4 +1,5 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { openPane } from './players.ts';
 
 /**
  * Opens one band of Theme, the board's looks, which left Settings for the game (Trevor,
@@ -22,4 +23,24 @@ export async function openTheme(page: Page, band: string) {
 	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.tap();
 	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 	return theme;
+}
+
+/**
+ * Opens one band of the Storyteller's Theme, the pane's More › Theme beside the board (Trevor,
+ * 2026-11-18); returns the pane. On a phone the pane is a sheet over the board.
+ */
+export async function openBoardTheme(page: Page, band: string) {
+	const pane = await openPane(page, 'Theme');
+	const panel = pane.getByTestId('theme-panel');
+	const toggle = panel.getByRole('button', { name: band, exact: true });
+	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+	return panel;
+}
+
+/** Opens one band in a Theme that is already open; the band before it closes. */
+export async function openBand(theme: Locator, band: string) {
+	const toggle = theme.getByRole('button', { name: band, exact: true });
+	if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.tap();
+	await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 }

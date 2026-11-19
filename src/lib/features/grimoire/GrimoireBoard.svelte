@@ -253,7 +253,7 @@
 	/** How wide the corner may be now (BoardCorner). */
 	let corner = $state(0);
 	/**
-	 * Night order numbers for the tokens' leaf badges (Settings > Board and tokens, Trevor
+	 * Night order numbers for the tokens' leaf badges (Theme > Board and Character tokens, Trevor
 	 * 2026-10-17): this game's nights, counting characters only, so they match the night list.
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ThemePanel from '#lib/features/settings/ThemePanel.svelte';
 	import type { Snippet } from 'svelte';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -70,6 +71,7 @@
 		notes: t('room.pane.notes'),
 		seats: t('room.pane.seats'),
 		sounds: t('room.pane.sounds'),
+		theme: t('settings.theme.title'),
 		history: t('room.pane.history'),
 		session: t('room.pane.session')
 	};
@@ -128,6 +130,9 @@
 							<div class="phase">{@render seats()}</div>
 						{:else if view === 'sounds'}
 							<div class="phase">{@render sounds()}</div>
+						{:else if view === 'theme'}
+							<!-- The board's looks beside the board, their preview (Trevor, 2026-11-18). -->
+							<div class="notes" data-testid="pane-theme"><ThemePanel /></div>
 						{:else if view === 'history'}
 							<div class="phase">{@render history()}</div>
 						{:else}

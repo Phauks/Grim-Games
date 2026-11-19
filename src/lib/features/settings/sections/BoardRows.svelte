@@ -14,8 +14,8 @@
 	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';
 
 	/**
-	 * How the grimoire board looks and behaves, its background apart: Settings > Board and the
-	 * game pane's Theme > Board.
+	 * How the grimoire board looks and behaves, its background apart: the game pane's
+	 * Theme > Board, and the player's Theme sheet.
 	 */
 	const assistance = $derived(preferences.current.assistance);
 </script>

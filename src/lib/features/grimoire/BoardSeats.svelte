@@ -129,7 +129,7 @@
 	);
 	/**
 	 * Each seat's "Is The …" reminders sit in its pill, not beside it, unless the big token shows
-	 * reminders only (Settings › Board, Big token shows). With 'truth' the big token is who the
+	 * reminders only (Theme › Board, Big token shows). With 'truth' the big token is who the
 	 * player really is and the pill shows what they believe, marked ?; with 'believed' the big
 	 * token is the one they were given and the pill shows who they really are, marked = (Trevor,
 	 * 2026-11-03; 2026-10-31, small token Option A).

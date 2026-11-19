@@ -7,8 +7,8 @@
 	import MovingMotionRows from '#lib/features/board/moving/MovingMotionRows.svelte';
 
 	/**
-	 * The board's background and how a moving one moves: Settings > Board and the game pane's
-	 * Theme > Background. With a board open, its own background too (the board thread, Trevor
+	 * The board's background and how a moving one moves: Theme > Background, in the game
+	 * pane and the player's Theme sheet. With a board open, its own background too (the board thread, Trevor
 	 * 2026-10-18); otherwise the default for new games.
 	 */
 	const shown = $derived(boardBackground.context?.current ?? defaultBackground.current);
