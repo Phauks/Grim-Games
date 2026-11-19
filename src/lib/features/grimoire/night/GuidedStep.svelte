@@ -693,7 +693,7 @@
 			{/if}
 		{/if}
 	</div>
-	{#if steps.length > 0}<StepFoot {index} count={steps.length} {go} {onNext} {onEndNight} />{/if}
+	{#if steps.length > 0}<StepFoot {steps} {index} {go} {onNext} {onEndNight} />{/if}
 </section>
 
 <ShowToPlayer

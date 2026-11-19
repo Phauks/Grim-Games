@@ -2,17 +2,21 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
+	import { countedPlace } from './night-steps.ts';
 
 	/**
 	 * Previous and Next at the foot of the pane's night step, where a sheet's Cancel and Confirm
 	 * sit: two matching arrows, no words (Trevor, 2026-11-16). Between them, how far through the
 	 * night it is: a thin line, the count small under it (Trevor, 2026-11-17, "D Progress line"),
-	 * as plain muted text (Trevor, 2026-11-18, "A Line, plain text").
+	 * as plain muted text (Trevor, 2026-11-18, "A Line, plain text"). The count leaves out Dusk
+	 * and Dawn, the night's bookends, and shows nothing on them (Trevor, 2026-11-18).
 	 */
 	interface Props {
+		/** Tonight's steps, Dusk to Dawn. */
+		steps: readonly NightStep[];
 		/** The open step's place in the night, from 0; -1 for a step not in it. */
 		index: number;
-		count: number;
 		go: (by: -1 | 1) => void;
 		/** Tonight's Next, which ticks the step and, past the last, shows where the night ends. */
 		onNext?: () => void;
@@ -22,7 +26,10 @@
 		onEndNight?: () => void;
 	}
 
-	let { index, count, go, onNext, onEndNight }: Props = $props();
+	let { steps, index, go, onNext, onEndNight }: Props = $props();
+	const count = $derived(steps.length);
+	/** The count leaves out Dusk and Dawn (night-steps.ts `countedPlace`). */
+	const counted = $derived(countedPlace(steps, steps[index]));
 	const last = $derived(index >= 0 && index === count - 1);
 	const shown = $derived(count > 0 && index >= 0);
 </script>
@@ -41,9 +48,9 @@
 			><span class="done" style:inline-size="{shown ? ((index + 1) / count) * 100 : 0}%"
 			></span></span
 		><span class="step-of"
-			>{#if shown}<CountBadge
-					count={index + 1}
-					total={count}
+			>{#if counted.place >= 0}<CountBadge
+					count={counted.place + 1}
+					total={counted.of}
 					plain
 					testid="step-count"
 				/>{/if}</span

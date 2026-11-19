@@ -6,7 +6,7 @@ import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { type NightStep } from '#lib/core/rules/night/night-order.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { COUNCIL_OF_THE_DEAD } from '#lib/core/modes/rules/council-of-the-dead.ts';
-import { givesNumber, stepName } from './night-steps.ts';
+import { countedPlace, givesNumber, stepName } from './night-steps.ts';
 import {
 	boardNightSteps,
 	ruleNightSteps,
@@ -393,5 +393,18 @@ describe('stepWakes for a death that gives the Storyteller an ability', () => {
 			characterId: 'poisoner'
 		});
 		expect(stepWakes(given.game, stepOf(given.game), s.characters, earlier)).toBe(false);
+	});
+});
+
+describe('countedPlace', () => {
+	// Trevor, 2026-11-18: "Dawn and dusk shouldn't count as night order steps".
+	const steps = ['dusk', 'minioninfo', 'demoninfo', 'dawn'].map(marker);
+	it('counts the steps between Dusk and Dawn', () => {
+		expect(countedPlace(steps, steps[1])).toEqual({ place: 0, of: 2 });
+		expect(countedPlace(steps, steps[2])).toEqual({ place: 1, of: 2 });
+	});
+	it('gives Dusk and Dawn no place', () => {
+		expect(countedPlace(steps, steps[0]).place).toBe(-1);
+		expect(countedPlace(steps, steps[3]).place).toBe(-1);
 	});
 });
