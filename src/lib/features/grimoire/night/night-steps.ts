@@ -133,3 +133,16 @@ export function countedPlace(
 	const place = step && !bookend(step) ? counted.findIndex((s) => s.id === step.id) : -1;
 	return { place, of: counted.length };
 }
+
+/**
+ * How far the bar under a step is filled, from 0 to 1, over the counted steps (Trevor,
+ * 2026-11-19: "Bar should be at start and end on highest and lowest numbers"): empty on the
+ * first counted step and on Dusk before it, full on the last and on Dawn after it.
+ */
+export function nightProgress(steps: readonly NightStep[], index: number): number {
+	const step = steps[index];
+	if (!step) return 0;
+	const { place, of } = countedPlace(steps, step);
+	if (place >= 0) return of > 1 ? place / (of - 1) : 1;
+	return index === steps.length - 1 ? 1 : 0;
+}

@@ -3,7 +3,7 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { NightStep } from '#lib/core/rules/night/night-order.ts';
-	import { countedPlace } from './night-steps.ts';
+	import { countedPlace, nightProgress } from './night-steps.ts';
 
 	/**
 	 * Previous and Next at the foot of the pane's night step, where a sheet's Cancel and Confirm
@@ -32,6 +32,8 @@
 	const counted = $derived(countedPlace(steps, steps[index]));
 	const last = $derived(index >= 0 && index === count - 1);
 	const shown = $derived(count > 0 && index >= 0);
+	/** How far the bar is filled (night-steps.ts `nightProgress`). */
+	const fill = $derived(nightProgress(steps, index));
 </script>
 
 <footer class="foot">
@@ -45,7 +47,7 @@
 	<!-- Reserved when the step isn't in tonight's list, so the arrows never move. -->
 	<span class="progress" aria-hidden={!shown}
 		><span class="track"
-			><span class="done" style:inline-size="{shown ? ((index + 1) / count) * 100 : 0}%"
+			><span class="done" style:inline-size="{fill * 100}%" data-testid="step-progress"
 			></span></span
 		><span class="step-of"
 			>{#if counted.place >= 0}<CountBadge
