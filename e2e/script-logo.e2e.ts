@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { openSettingsDialog } from './shell.ts';
+import { openBoardTheme } from './theme.ts';
 
 // Script logos (Trevor, 2026-10-18): TPI's edition logo for the base three, the author's
 // `_meta.logo` link for other scripts, faint behind the board and beside the name in Search.
@@ -49,14 +49,8 @@ test('the board shows the script logo faintly, with its switch and opacity', asy
 	// Taps go through it to the board.
 	await expect(logo).toHaveCSS('pointer-events', 'none');
 
-	// The board's settings, over the board (also in Settings).
-	await openSettingsDialog(page);
-	const dialog = page.getByRole('dialog', { name: 'Settings' });
-	// It opens at its root (Trevor, 2026-10-27).
-	await dialog
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	// The board's looks, in the pane's Theme beside the board (Trevor, 2026-11-18).
+	const dialog = await openBoardTheme(page, 'Board');
 	const opacity = dialog.getByRole('slider', { name: 'Script logo opacity' });
 	await opacity.fill('0.6');
 	await expect(opacity).toHaveAttribute('aria-valuetext', '60%');

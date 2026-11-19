@@ -23,7 +23,7 @@
 	}
 
 	let { src, fallback, label, leaves, size = 56, name, nightNumbers }: Props = $props();
-	// Settings > Tokens: the reminder leaves (on), the night leaves (on) and the setup flower
+	// Theme > Character tokens: the reminder leaves (on), the night leaves (on) and the setup flower
 	// (off) can be switched.
 	const appearance = $derived(preferences.current.tokenAppearance);
 	const shown = $derived({
@@ -84,7 +84,7 @@
 	}
 
 	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). With
-	// the setup flower (at 45°) it stops short of the flower only when Settings > Tokens says so
+	// the setup flower (at 45°) it stops short of the flower only when Theme > Character tokens says so
 	// (off by default, Trevor 2026-10-19). The top of the rim belongs to the reminder leaves.
 	const EDGE_R = 37;
 	const EDGE_FROM = 150;
@@ -224,7 +224,7 @@
 		stroke-width: 1;
 		opacity: 0.6;
 	}
-	/* Character icon size (Settings > Tokens) scales it about the middle. */
+	/* Character icon size (Theme > Character tokens) scales it about the middle. */
 	img {
 		position: absolute;
 		left: 50%;

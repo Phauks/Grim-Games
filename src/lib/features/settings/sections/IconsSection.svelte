@@ -15,11 +15,25 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import { DEFAULT_PREFERENCES, ICON_SCALE } from '#lib/ui/preferences.ts';
 	import { intl } from '#lib/i18n/locale.svelte.ts';
+	import { BOARD_MARKS } from './board-marks.ts';
 
+	interface Props {
+		/**
+		 * The board's marks (the game pane's Theme), or every other icon (Settings > Icons): each
+		 * icon is chosen in one place.
+		 */
+		boardMarks?: boolean;
+	}
+
+	let { boardMarks = false }: Props = $props();
 	const theme = $derived(preferences.theme);
 	const setId = $derived(resolveIconSet(preferences.current, theme));
 	const weight = $derived(ICON_SETS.find((set) => set.id === setId)?.weight ?? 'regular');
-	const choosable = iconSlots.filter((slot) => ICON_SLOTS[slot].choices.length > 1);
+	const choosable = $derived(
+		iconSlots.filter(
+			(slot) => ICON_SLOTS[slot].choices.length > 1 && BOARD_MARKS.includes(slot) === boardMarks
+		)
+	);
 
 	function chooseSet(id: IconSetId) {
 		preferences.update({ iconSet: id === theme.iconSet ? null : id });
@@ -33,15 +47,15 @@
 </script>
 
 <!-- Next to the icon style and choices it scales (Trevor, 2026-10-17). -->
-<SettingSlider
-	label={t('settings.iconSize')}
-	description={t('settings.iconSizeHelp')}
-	value={preferences.current.iconScale}
-	defaultValue={DEFAULT_PREFERENCES.iconScale}
-	{...ICON_SCALE}
-	format={(scale) => intl.number(scale, { style: 'percent' })}
-	onChange={(iconScale) => preferences.update({ iconScale })}
-/>
+{#if !boardMarks}<SettingSlider
+		label={t('settings.iconSize')}
+		description={t('settings.iconSizeHelp')}
+		value={preferences.current.iconScale}
+		defaultValue={DEFAULT_PREFERENCES.iconScale}
+		{...ICON_SCALE}
+		format={(scale) => intl.number(scale, { style: 'percent' })}
+		onChange={(iconScale) => preferences.update({ iconScale })}
+	/>{/if}
 
 <SettingChoice
 	label={t('settings.iconStyle')}

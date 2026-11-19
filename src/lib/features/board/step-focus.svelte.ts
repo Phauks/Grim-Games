@@ -17,7 +17,9 @@ const KEY = 'grim.stepFocus';
 /** Reads a saved choice, keeping only valid values. */
 export function parseStepFocus(raw: unknown): StepFocus {
 	const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-	return { mode: value.mode === 'highlight' || value.mode === 'only' ? value.mode : 'front' };
+	return {
+		mode: value.mode === 'highlight' || value.mode === 'only' ? value.mode : DEFAULT_STEP_FOCUS.mode
+	};
 }
 
 function read(): StepFocus {

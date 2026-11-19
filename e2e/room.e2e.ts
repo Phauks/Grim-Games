@@ -7,7 +7,7 @@ import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
-import { menuButton, openSettingsDialog } from './shell.ts';
+import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
 import {
 	closePane,
@@ -19,6 +19,7 @@ import {
 } from './players.ts';
 import { pickNumber } from './number-select.ts';
 import { closeBin, dragToSeat, openBin } from './reminder-bank.ts';
+import { openBoardTheme } from './theme.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -1604,7 +1605,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await openPane(viewer, 'History');
 	await expect(
 		pane.getByRole('tablist', { name: 'More views', exact: true }).getByRole('tab')
-	).toHaveText(['History', 'Session']);
+	).toHaveText(['Theme', 'History', 'Session']);
 	await expect(pane.getByRole('button', { name: 'End game' })).toHaveCount(0);
 	await closePane(viewer);
 	const timer = viewer.getByTestId('day-timer');
@@ -1681,24 +1682,13 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 
 	// The board's background is the Storyteller's, not the viewer's own (Trevor, 2026-10-26).
 	await expect(viewer.getByTestId('board-background')).toHaveCount(0);
-	await openSettingsDialog(page);
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	const settings = await openBoardTheme(page, 'Background');
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
 		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// A picture of the Storyteller's own reaches it through the room too.
-	await openSettingsDialog(page);
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
 	await settings.getByLabel('Background image file').setInputFiles({
 		name: 'table.png',
 		mimeType: 'image/png',
@@ -1707,7 +1697,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 			'base64'
 		)
 	});
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute(
 		'style',
 		/\/api\/room\/\d{6}\/image\/[0-9a-f]{64}/
