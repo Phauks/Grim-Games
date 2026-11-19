@@ -68,10 +68,9 @@ test("a seated player's message marks their seat, and the mark opens them in Pla
 	await mark.tap();
 	const pane = storytellerPane(page);
 	await expect(pane).toBeVisible();
-	await expect(pane.getByRole('tab', { name: /^Players/ })).toHaveAttribute(
-		'aria-selected',
-		'true'
-	);
+	await expect(
+		pane.getByRole('tablist', { name: 'Game' }).getByRole('tab', { name: /^Players/ })
+	).toHaveAttribute('aria-selected', 'true');
 	const row = pane.getByTestId('room-player').filter({ hasText: 'Alex' });
 	await expect(row.getByRole('button')).toHaveAttribute('aria-current', 'true');
 	const item = pane.getByTestId('room-player-sheet').getByTestId('inbox-item');
