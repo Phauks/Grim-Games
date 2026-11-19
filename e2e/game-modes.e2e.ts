@@ -6,6 +6,7 @@ import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { expectTitleBesideOrUnder } from './title-row.ts';
 import { openSettingsDialog } from './shell.ts';
+import { openCogSettings } from './player-name.ts';
 import { savesSettled, trackSaves } from './saves.ts';
 import { pickNumber } from './number-select.ts';
 
@@ -2494,8 +2495,7 @@ test('the Script sheet has the players’ settings cog, opening the one Settings
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
 	// The one Settings, at its list of sections (Trevor, 2026-10-27).
-	await sheet.getByTestId('you-button').tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
+	const settings = await openCogSettings(page, sheet);
 	const sections = settings.getByRole('navigation', { name: 'Settings sections' });
 	await expect(sections).toBeVisible();
 	// No room phone here, so no name to set.
