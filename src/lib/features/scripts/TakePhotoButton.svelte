@@ -3,6 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import PhotoScriptDialog from './PhotoScriptDialog.svelte';
+	import LiveScan, { type Scanned } from './live-scan/LiveScan.svelte';
 	import { PHOTO_ACCEPT } from './photo-accept.ts';
 	import type { ScriptSource } from './saved-scripts.ts';
 
@@ -34,10 +35,32 @@
 	let library: HTMLInputElement | undefined = $state();
 	let open = $state(false);
 	let dialog: PhotoScriptDialog | undefined = $state();
+	let scanning = $state(false);
+	/** What looked wrong with the last scan's picture, each a reason to scan again. */
+	let issues = $state.raw<string[]>([]);
 
-	/** Opens the camera, or a file picker on a computer. */
+	/**
+	 * Opens the live scan (Trevor, 2026-11-18: out of its spike), which takes the picture once
+	 * the sheet is held steady; the phone's own camera where the browser has no camera to give.
+	 */
 	export function take(): void {
-		camera?.click();
+		if (!navigator.mediaDevices?.getUserMedia) return camera?.click();
+		onopen?.();
+		scanning = true;
+	}
+
+	/** The scan's picture read: reviewed like a photo, with what looked wrong above it. */
+	function scanned(scan: Scanned): void {
+		if (!dialog) return;
+		dialog.reset();
+		issues = scan.issues;
+		open = true;
+		void dialog.addLines(scan.lines, scan.picture, scan.notes);
+	}
+
+	function rescan(): void {
+		open = false;
+		scanning = true;
 	}
 
 	/** Opens the device's photos (a phone's photo picker), or a file picker on a computer. */
@@ -49,6 +72,7 @@
 	export function read(file: Blob): void {
 		if (!dialog) return;
 		onopen?.();
+		issues = [];
 		dialog.reset();
 		open = true;
 		void dialog.addPhoto(file);
@@ -91,9 +115,19 @@
 	data-testid="photo-library-input"
 	onchange={onPhoto}
 />
+<LiveScan
+	bind:open={scanning}
+	onscanned={scanned}
+	onfallback={() => {
+		scanning = false;
+		camera?.click();
+	}}
+/>
 <PhotoScriptDialog
 	bind:this={dialog}
 	bind:open
+	{issues}
+	onrescan={rescan}
 	onconfirm={(script) => onconfirm(script, { kind: 'photo' })}
 />
 
