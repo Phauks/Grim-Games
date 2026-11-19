@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { setPlayerName } from './player-name.ts';
 import { openSettingsDialog } from './shell.ts';
-import { openPane } from './players.ts';
+import { paneButton } from './players.ts';
 
 const BASE_THREE = ['Trouble Brewing', 'Bad Moon Rising', 'Sects & Violets'];
 
@@ -81,10 +81,7 @@ export async function openGameInfo(page: Page) {
 			.getByRole('dialog', { name: 'Grimoire' })
 			.getByRole('button', { name: 'Game info' })
 			.tap();
-	} else {
-		const pane = await openPane(page, 'Session');
-		await pane.getByRole('button', { name: 'Game info' }).tap();
-	}
+	} else await paneButton(page, 'Session', 'Game info');
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
 

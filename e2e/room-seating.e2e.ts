@@ -10,6 +10,7 @@ import {
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
+import { paneButton } from './players.ts';
 
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
@@ -47,11 +48,7 @@ async function nameSeat(page: Page, number: number, name: string) {
 }
 
 async function enterSeating(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Seating' })
-		.tap();
+	await paneButton(page, 'Seats', 'Seating');
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
 }
 

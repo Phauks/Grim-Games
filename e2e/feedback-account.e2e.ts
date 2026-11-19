@@ -2,6 +2,7 @@ import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { signIn } from './admin.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
+import { paneButton } from './players.ts';
 
 // Players' feedback is kept on the Storyteller's account (Trevor, 2026-11-16: "Server should
 // save because it can tie to an account or accounts"): the room writes each game's feedback
@@ -56,11 +57,7 @@ test("a player's feedback reaches the Storyteller's account and their other devi
 	await expectInRoom(phone);
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

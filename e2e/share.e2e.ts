@@ -1,6 +1,7 @@
 import { openNotes, tabNames } from './tabs.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { paneButton } from './players.ts';
 
 // Every Share opens the one share screen, with what fits where it is (Trevor, 2026-10-23: "make
 // sure they are all the same ... the QR code, the join code, etc"). The board's toolbar Share
@@ -81,11 +82,7 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
 	const board = (await page.locator('.board').boundingBox())!;
 	const from = (await seat.boundingBox())!;
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Seating' })
-		.tap();
+	await paneButton(page, 'Seats', 'Seating');
 	// Seat 1 goes to the middle, a third of the way down, clear of the centre's buttons.
 	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };
 	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);

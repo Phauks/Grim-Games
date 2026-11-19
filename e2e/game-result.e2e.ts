@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickScript } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
+import { paneButton } from './players.ts';
 
 // The game result (Trevor, 2026-11-12, plan R4 option A): once a game played in a room ends,
 // a seated phone's Game over sheet says "You won as" or "You lost as" its character, and Share
@@ -55,11 +56,7 @@ test('after End game a seated phone shares its result, and the page names nobody
 	await expect(phone.getByTestId('your-character')).toBeVisible();
 
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'End game' })
-		.tap();
+	await paneButton(page, 'Session', 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();

@@ -1,4 +1,4 @@
-import { paneDay, closePane } from './players.ts';
+import { paneDay, closePane, paneButton } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -28,11 +28,7 @@ async function choose(page: Page, number: number, name: string) {
 }
 
 async function addFabled(page: Page, name: string) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
 	await adding.getByRole('button', { name, exact: true }).tap();
 	await expect(adding).toBeHidden();

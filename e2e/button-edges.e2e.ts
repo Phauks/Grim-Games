@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { openPane, closePane } from './players.ts';
 
 // Trevor (2026-10-22): a button whose fill is the colour of the surface around it has no
 // edge, "a source of ui pain i have had to address". A static lint can't know what a button
@@ -119,16 +120,15 @@ test('no filled button blends into the surface behind it', async ({ page }) => {
 		seen.push(...(await check(page, route)));
 	}
 
-	// The board, its More menu and a seat's sheet.
+	// The board, the pane's Session and a seat's sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	seen.push(...(await check(page, 'board')));
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeVisible();
-	seen.push(...(await check(page, 'board More menu')));
-	await page.keyboard.press('Escape');
+	await openPane(page, 'Session');
+	seen.push(...(await check(page, 'pane Session')));
+	await closePane(page);
 	await page.getByTestId('seat').first().tap();
 	await expect(page.getByRole('dialog').last()).toBeVisible();
 	seen.push(...(await check(page, 'seat sheet')));

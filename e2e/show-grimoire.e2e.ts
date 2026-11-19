@@ -73,7 +73,7 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	await toolbar.getByRole('button', { name: 'Close' }).tap();
 	await expect(nightStep(page, 'Spy')).toBeVisible();
 	// The bar has its controls back, under the step (which hides them from the accessibility tree).
-	await expect(page.locator('[role="toolbar"] button[aria-label="More"]')).toBeAttached();
+	await expect(page.locator('[role="toolbar"] button[aria-label="Info tokens"]')).toBeAttached();
 });
 
 test('a step whose player does not see the Grimoire does not offer it', async ({ page }) => {

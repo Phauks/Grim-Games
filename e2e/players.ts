@@ -26,12 +26,22 @@ const SUBJECTS = {
 } as const;
 export type PaneTab = keyof typeof SUBJECTS;
 
-/** Taps a tab in one of the pane's rails, unless it is chosen already. */
+/**
+ * Taps a tab in one of the pane's rails, unless it is chosen already; from the rail's own
+ * "More tabs" when the pane is too narrow for it.
+ */
 async function choose(pane: Locator, rail: string, name: string) {
-	const trigger = pane
-		.getByRole('tablist', { name: rail, exact: true })
-		.getByRole('tab', { name: new RegExp(`^${name}`) });
-	if ((await trigger.getAttribute('aria-selected')) !== 'true') await trigger.tap();
+	const list = pane.getByRole('tablist', { name: rail, exact: true });
+	const trigger = list.getByRole('tab', { name: new RegExp(`^${name}`) });
+	await expect(list).toBeVisible();
+	if (!(await trigger.count())) {
+		await list.locator('..').getByRole('button', { name: 'More tabs' }).tap();
+		await pane
+			.page()
+			.getByRole('dialog', { name: 'More tabs' })
+			.getByRole('button', { name })
+			.tap();
+	} else if ((await trigger.getAttribute('aria-selected')) !== 'true') await trigger.tap();
 	await expect(trigger).toHaveAttribute('aria-selected', 'true');
 }
 
@@ -125,4 +135,10 @@ export async function boardTimer(page: Page): Promise<Locator> {
 export async function closeStep(page: Page, step: Locator) {
 	await closePane(page);
 	if (await paneIsSheet(page)) await expect(step).toBeHidden();
+}
+
+/** Taps a button in one of the pane's views, where the board's ⋯ items went (Trevor, 2026-11-18). */
+export async function paneButton(page: Page, view: PaneTab, name: string | RegExp) {
+	const pane = await openPane(page, view);
+	await pane.getByRole('button', { name, exact: typeof name === 'string' }).tap();
 }

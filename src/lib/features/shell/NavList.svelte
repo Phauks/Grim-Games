@@ -55,6 +55,8 @@
 		label: string;
 		icon: IconSlot;
 		title?: string;
+		/** A switch's state, for Full screen. */
+		pressed?: boolean;
 		run: () => void;
 	}
 
@@ -70,6 +72,7 @@
 						id: 'full-screen',
 						label: t('shell.fullScreen'),
 						icon: (appFullScreen.on ? 'exitFullScreen' : 'fullScreen') as IconSlot,
+						pressed: appFullScreen.on,
 						run: () => appFullScreen.toggle()
 					}
 				]
@@ -174,6 +177,7 @@
 				icon={action.icon}
 				align="start"
 				title={action.title}
+				aria-pressed={action.pressed}
 				data-testid="nav-action-{action.id}"
 				onclick={() => {
 					onChoose?.();

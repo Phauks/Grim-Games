@@ -72,13 +72,12 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(cover).toBeHidden();
 
 	// On a phone the pane's button counts it, in the accent colour for a consult (plan M86);
-	// beside the board the Players tab does. More has no count any more.
+	// beside the board the Players tab does.
 	if (await paneIsSheet(page)) {
 		const paneButton = page.getByTestId('game-pane-button');
 		await expect(paneButton).toHaveAccessibleName('Game, 1 new message');
 		await expect(page.locator('.pane-slot [data-warn]')).toHaveText('1');
 	}
-	await expect(page.getByRole('button', { name: 'More', exact: true })).toBeVisible();
 	// Players shows who has sent something (Trevor, 2026-10-29: Messages folded into Players);
 	// a consult makes the count stand out, on the tab and on the player's line.
 	const players = await openPlayers(page);

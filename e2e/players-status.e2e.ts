@@ -2,7 +2,8 @@ import {
 	closePane,
 	boardTimer as openBoardTimer,
 	paneIsSheet,
-	storytellerPane
+	storytellerPane,
+	paneButton
 } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { expectInRoom } from './player-status.ts';
@@ -61,11 +62,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	);
 	await page.keyboard.press('Escape');
 	await expect(timerSheet).toBeHidden();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Game settings' })
-		.tap();
+	await paneButton(page, 'Session', 'Game settings');
 	const gameSettings = page.getByRole('dialog', { name: 'Game settings' });
 	await gameSettings.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
 	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
@@ -230,11 +227,7 @@ test('the candles beside Setup open who is connected, on phones and in character
 
 	// In character selection's setup area, the same candles and the same list. Opened from the
 	// menu, as the Storyteller does, so the room keeps sending the game to phones.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Character selection' })
-		.tap();
+	await paneButton(page, 'Session', 'Character selection');
 	await expect(page).toHaveURL(`${board}/setup`);
 	const candles = page.getByTestId('setup-candles');
 	await expect(candles.locator('.candle')).toHaveCount(seatCount);

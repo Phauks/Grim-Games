@@ -20,11 +20,18 @@ import {
 	openPlayers,
 	openPlayerSheet,
 	storytellerPane,
-	paneDay
+	paneDay,
+	paneButton
 } from './players.ts';
-import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
+import {
+	chooseRulesOnSetup,
+	openGameInfo,
+	pickScript,
+	nameStoryteller,
+	toBoard
+} from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
-import { openMenu } from './shell.ts';
+import { openMenu, openSettingsDialog, theMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
 import {
 	bankHandle,
@@ -84,13 +91,15 @@ async function dismissToasts(page: Page) {
 const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
-/** Runs an action from the toolbar's More menu. */
+/**
+ * Runs what the board's ⋯ menu ran: Settings from the app's menu, the rest in the pane's views
+ * (Trevor, 2026-11-18). History and the Demon bluffs open as views.
+ */
 async function menu(page: Page, action: string) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: action, exact: true })
-		.tap();
+	if (action === 'Settings') await openSettingsDialog(page);
+	else if (action === 'History') await openPane(page, 'History');
+	else if (action === 'Demon bluffs') await openPane(page, 'Bluffs');
+	else await paneButton(page, action === 'End game' ? 'Session' : 'Seats', action);
 }
 
 /** Runs an action from Game over's menu, in the day timer's place once the game ends. */
@@ -99,7 +108,7 @@ async function gameOver(page: Page, action: string) {
 	await page.getByRole('menuitem', { name: action, exact: true }).tap();
 }
 
-/** ⋯ > Settings, which opens all of Settings at its root, then the section asked for. */
+/** Settings from the app's menu, at its root, then the section asked for. */
 async function boardSettings(page: Page, section: string) {
 	await menu(page, 'Settings');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -108,20 +117,6 @@ async function boardSettings(page: Page, section: string) {
 		.getByRole('button', { name: section, exact: true })
 		.tap();
 	await expect(settings.getByRole('heading', { name: section, level: 2 })).toBeVisible();
-}
-
-/**
- * Opens Game info: from the corner script name, or from ⋯ while the corner name is hidden
- * (a phone before setup), the only time ⋯ has it.
- */
-async function openGameInfo(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) return entry.tap();
-	await page.keyboard.press('Escape');
-	await expect(more).toBeHidden();
-	await page.getByTestId('mode-menu').tap();
 }
 
 async function closeSheet(page: Page) {
@@ -598,7 +593,7 @@ test('history, add seat and remove', async ({ page }) => {
 
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
-	const history = page.getByRole('dialog', { name: 'History' });
+	const history = page.getByTestId('history');
 	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
 	const numbers = history.getByTestId('history-number');
 	await expect(numbers.last()).toHaveText('1');
@@ -719,13 +714,13 @@ test('Travellers join as a new seat, and Fabled sit in the corner', async ({ pag
 	await expect(fabled).toBeHidden();
 });
 
-test('Demon bluffs open from the toolbar, and a seat shows its token to the player', async ({
+test("Demon bluffs open in the pane's Game, and a seat shows its token to the player", async ({
 	page
 }) => {
 	await startGame(page);
 	await menu(page, 'Demon bluffs');
-	await expect(page.getByRole('heading', { name: 'Demon bluffs' })).toBeVisible();
-	await page.keyboard.press('Escape');
+	await expect(page.getByTestId('pane-bluffs')).toBeVisible();
+	await closePane(page);
 
 	const sheet = await openSeat(page, 1);
 	// The eye beside ⋯ shows the token (Trevor, 2026-10-16); it is no longer in the ⋯ menu.
@@ -870,7 +865,6 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, distribu
 	await menu(page, 'Seating');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Seating');
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 
 	// Drag seat 1 inside the circle (clear of the centre buttons); the others stay put.
 	const from = await centre(1);
@@ -1012,12 +1006,10 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	);
 	await menu(page, 'History');
 	// The entry says where the token came from as well as where it went.
-	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
-		/Drunk moved from\s+Sailor.* to Seat 3/
-	);
+	await expect(page.getByTestId('history')).toContainText(/Drunk moved from\s+Sailor.* to Seat 3/);
 	// Filtered by player (Trevor, 2026-10-19): only entries naming Seat 1, the Sailor's seat;
 	// the Drunk reminder's own character is no filter.
-	const history = page.getByRole('dialog', { name: 'History' });
+	const history = page.getByTestId('history');
 	const filter = history.getByRole('group', { name: 'Show changes for' });
 	await expect(filter.getByRole('button', { name: 'Sailor' })).toHaveCount(0);
 	await expect(filter.getByRole('button', { name: 'Seat 3' })).toBeVisible();
@@ -1149,13 +1141,8 @@ test('the night order is walked through from the bank, and End night starts the 
 		.tap();
 	await closeSheet(page);
 
-	// The night order left the board's menu (Trevor, 2026-10-18): the bank runs it, and the
-	// Script screen lists it.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(
-		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Night order' })
-	).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	// The night order is no menu item (Trevor, 2026-10-18): the bank runs it, and the Script
+	// screen lists it.
 	const strip = await walkTo(page, 'Empath');
 	await expect(strip).toContainText('Sam');
 
@@ -1750,34 +1737,20 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 	expect(await dialog.getByTestId('preview-bank').evaluate(look)).toEqual(board);
 });
 
-// Trevor (2026-10-23): full screen on the board, for those who don't know how; in ⋯ since
-// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰; an
-// icon beside the menu's X since 2026-10-31, not one of its items.
-test("the board can go full screen from beside its ⋯ menu's X, and back", async ({ page }) => {
+// Trevor (2026-10-23): full screen on the board, for those who don't know how; in the app's
+// menu since the board's ⋯ menu went into its pane (Trevor, 2026-11-18).
+test('the board can go full screen from the app menu, and back', async ({ page }) => {
 	await startGame(page);
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
-	const item = () =>
-		page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByTestId('dialog-head-actions')
-			.getByRole('button', { name: 'Full screen', exact: true });
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(item()).toHaveAttribute('aria-pressed', 'false');
-	// Right beside X.
-	const close = page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Close' });
-	const [icon, x] = [(await item().boundingBox())!, (await close.boundingBox())!];
-	expect(Math.abs(icon.y - x.y)).toBeLessThan(2);
-	expect(icon.x).toBeLessThan(x.x);
-	await item().tap();
-	// The menu stays open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen").
+	const item = async () =>
+		(await theMenu(page)).getByRole('button', { name: 'Full screen', exact: true });
+	await expect(await item()).toHaveAttribute('aria-pressed', 'false');
+	await (await item()).tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await expect(item()).toHaveAttribute('aria-pressed', 'true');
-	await item().tap();
+	await expect(await item()).toHaveAttribute('aria-pressed', 'true');
+	await (await item()).tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
-	await expect(item()).toHaveAttribute('aria-pressed', 'false');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -2222,7 +2195,7 @@ test('players rotate one seat, or swap places when one is dropped on another', a
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 
 	await menu(page, 'History');
-	const history = page.getByRole('dialog', { name: 'History' });
+	const history = page.getByTestId('history');
 	await expect(history).toContainText('Swapped Ana and Seat 4');
 	await expect(history).toContainText('Rotated the seats clockwise');
 	await page.keyboard.press('Escape');
@@ -2230,16 +2203,15 @@ test('players rotate one seat, or swap places when one is dropped on another', a
 	await expect(page.getByRole('heading', { name: 'Ana' })).toBeVisible();
 });
 
-test("every button in the More menu has an edge, and End game is red with the buttons' text", async ({
+test("every button in the pane's Session has an edge, and End game is red with the buttons' text", async ({
 	page
 }) => {
 	// Trevor, 2026-10-22: End game's red text was hard to read, and buttons matched the
 	// surface behind them. Edges reach 3:1 (WCAG 1.4.11); the label keeps the buttons' colour.
 	await startGame(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
+	const grimoireMenu = await openPane(page, 'Session');
 	const end = grimoireMenu.getByRole('button', { name: 'End game' });
-	const other = grimoireMenu.getByRole('button', { name: 'Settings', exact: true });
+	const other = grimoireMenu.getByRole('button', { name: 'Game settings', exact: true });
 	await expect(end).toBeVisible();
 	const look = (button: Locator) =>
 		button.evaluate((el) => {
@@ -2256,7 +2228,7 @@ test("every button in the More menu has an edge, and End game is red with the bu
 				return (hi + 0.05) / (lo + 0.05);
 			};
 			const style = getComputedStyle(el);
-			// The dialog panel behind the button.
+			// The panel behind the button.
 			let panel = el.parentElement;
 			while (panel && getComputedStyle(panel).backgroundColor === 'rgba(0, 0, 0, 0)')
 				panel = panel.parentElement;
@@ -2293,12 +2265,11 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 }) => {
 	await startGame(page);
 	const board = page.url();
-	// Exit game is gone from More: leaving is through the app's menu (Trevor, 2026-10-16).
-	await page.getByRole('button', { name: 'More' }).tap();
-	const grimoireMenu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(grimoireMenu.getByRole('button', { name: 'Exit game' })).toHaveCount(0);
-	await expect(grimoireMenu.getByRole('button', { name: 'End game' })).toBeVisible();
-	await page.keyboard.press('Escape');
+	// No Exit game beside End game: leaving is through the app's menu (Trevor, 2026-10-16).
+	const session = await openPane(page, 'Session');
+	await expect(session.getByRole('button', { name: 'Exit game' })).toHaveCount(0);
+	await expect(session.getByRole('button', { name: 'End game' })).toBeVisible();
+	await closePane(page);
 
 	// Settings open over the board, so the game is never left.
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
@@ -3523,7 +3494,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
 	// History only shows the board at an earlier point; the saved game stays as it ended.
 	await menu(page, 'History');
-	const history = page.getByRole('dialog', { name: 'History' });
+	const history = page.getByTestId('history');
 	await history.getByRole('button', { name: 'Show' }).last().tap();
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
@@ -3562,11 +3533,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(page.getByRole('menuitem', { name: /Reopen game|New game/ })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	// Reopening from ⋯ puts it back in Join game.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Reopen game' })
-		.tap();
+	await paneButton(page, 'Session', 'Reopen game');
 	const reopen = page.getByRole('alertdialog', { name: 'Reopen game?' });
 	await expect(reopen).toContainText(
 		/Now\s*Game over: Evil won\s*Becomes\s*(Setup|Night \d+|Day \d+)/
@@ -3822,11 +3789,8 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	// Seating (arranging seats) moved into More to make room.
-	await page.getByRole('button', { name: 'More' }).tap();
-	await expect(
-		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Seating' })
-	).toBeVisible();
+	// Seating (arranging seats) is in the pane's More, Seats.
+	await expect((await openPane(page, 'Seats')).getByTestId('menu-seating')).toBeVisible();
 });
 
 // Trevor, 2026-10-19: a Traveller in play shows on the script with its player, as the town
@@ -3936,18 +3900,21 @@ test('game notes and Players have a button beside the grim cover, styled like it
 	// Trevor (2026-11-01): "place the notes button next to the grim cover button? style it that
 	// way?", in every game. It shows and hides the pane of Game notes and Players (plan M86,
 	// 2026-11-15: "move the players button out of ... and into the header"), so it is on every
-	// screen; on a phone narrower than the toolbar's eight buttons (a 390-wide iPhone), Info
-	// tokens moves into More instead (Trevor's pick), and Share never does.
+	// screen. With ⋯ gone into the pane (Trevor, 2026-11-18), Info tokens and Share stay on the
+	// toolbar on every phone.
 	test.setTimeout(60_000);
 	await startGame(page);
 	const cover = page.getByTestId('cover-button');
 	// One Game button on a phone (2026-11-16); beside the board the pane always shows instead.
 	const button = page.getByTestId('game-pane-button');
 	const sheet = await paneIsSheet(page);
-	const narrow = page.viewportSize()!.width < 412;
 	// Nothing on the toolbar runs off the screen.
-	const more = (await page.getByRole('button', { name: 'More', exact: true }).boundingBox())!;
-	expect(more.x + more.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+	const last = (await page
+		.getByRole('toolbar', { name: 'Grimoire' })
+		.getByRole('button')
+		.last()
+		.boundingBox())!;
+	expect(last.x + last.width).toBeLessThanOrEqual(page.viewportSize()!.width);
 	if (sheet) {
 		await expect(button).toBeVisible();
 		await expect(button).toHaveAccessibleName('Game');
@@ -3961,18 +3928,8 @@ test('game notes and Players have a button beside the grim cover, styled like it
 		await expect(button).toHaveCSS('border-top-style', coverEdge);
 	} else await expect(button).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Share', exact: true })).toBeVisible();
-	const info = page.getByRole('button', { name: 'Info tokens', exact: true });
-	if (narrow) await expect(info).toBeHidden();
-	else await expect(info).toBeVisible();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Players and Game notes are no longer in More.
-	await expect(menu.getByTestId('menu-players')).toHaveCount(0);
-	await expect(menu.getByTestId('menu-game-notes')).toHaveCount(0);
-	if (narrow) await expect(menu.getByTestId('menu-info-tokens')).toBeVisible();
-	else await expect(menu.getByTestId('menu-info-tokens')).toBeHidden();
-	await page.keyboard.press('Escape');
-	await expect(menu).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Info tokens', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
 	// No token in the corner any more.
 	await expect(page.getByTestId('game-notes-token')).toHaveCount(0);
 
@@ -4009,14 +3966,6 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	await expect(seat.getByRole('button', { name: /^Notes/ })).toHaveCount(0);
 	await closeSheet(page);
 
-	// ⋯ has no Notes of its own (Trevor, 2026-10-29).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await expect(
-		page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByRole('button', { name: 'Notes', exact: true })
-	).toHaveCount(0);
-	await page.keyboard.press('Escape');
 	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
 	// title, starting as a "+ New note" with a dashed edge; behind their own button beside
 	// the grim cover (Trevor, 2026-11-01);
@@ -4134,7 +4083,7 @@ test('the Storyteller keeps game notes on their button and player notes on Playe
 	await page.reload();
 	await expect(page.getByTestId('note-mark')).toHaveCount(1);
 	await menu(page, 'History');
-	const history = page.getByRole('dialog', { name: 'History' });
+	const history = page.getByTestId('history');
 	await expect(history).toContainText('Note on Ana: Word');
 	await expect(history).toContainText('Deleted a note on Ana');
 	await expect(history).toContainText('Game note: Fang Gu');
@@ -5348,12 +5297,11 @@ test('a mode without Demon bluffs offers none to choose', async ({ page }) => {
 	);
 	await expect(demonInfo.getByRole('button', { name: 'Choose bluffs' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	// The pane's Game has no Bluffs view.
+	const pane = await openPane(page, 'Day');
 	await expect(
-		page
-			.getByRole('dialog', { name: 'Grimoire' })
-			.getByRole('button', { name: 'Demon bluffs', exact: true })
-	).toBeDisabled();
+		pane.getByRole('tablist', { name: 'Game views' }).getByRole('tab', { name: 'Bluffs' })
+	).toHaveCount(0);
 });
 
 test('an information step suggests every valid number, and the roles it could show', async ({
@@ -5705,65 +5653,36 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await expect(details).toBeVisible();
 });
 
-test('the board menu names its groups, in two columns beside a phone', async ({ page }) => {
+// Trevor (2026-11-18): the board's ⋯ menu became the pane, a nav with a sub-nav ("only game,
+// players, and more"); Bluffs under Game, History in More "since we don't want people
+// touching it too often", Settings and Report in the app's menu.
+test("the pane's subjects and views hold what the board's menu did", async ({ page }) => {
 	await startGame(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Trevor (2026-10-27): named groups ("the delineation is nice"), and all of Settings from
-	// one item. Character selection and End game sit under Session (2026-10-30), last, below App (2026-11-03).
-	const group = (name: string) => menu.getByRole('region', { name, exact: true });
-	const names = (name: string) =>
-		group(name)
-			.getByRole('button')
-			.evaluateAll((els) =>
-				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
-			);
-	// Players and Game notes are in the pane by the grim cover (plan M86); Info tokens is here
-	// only on a phone too narrow for its toolbar button (Trevor, 2026-11-15).
-	expect((await names('Game')).join(' ')).toMatch(
-		/^(Info tokens )?History Demon bluffs Soundboard( Game info)? Game settings$/
-	);
-	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
-	const session = (await group('Session').boundingBox())!;
+	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
+	const pane = await openPane(page);
+	const tabs = (rail: string) =>
+		pane.getByRole('tablist', { name: rail, exact: true }).getByRole('tab');
+	await expect(tabs('Game')).toHaveText(['Game', /^Players/, 'More']);
+	await expect(tabs('Game views')).toHaveText(['Day', 'Night', 'Bluffs']);
+	await openPane(page, 'Notes');
+	await expect(tabs('Players views')).toHaveText([/^Players/, 'Notes']);
+	await openPane(page, 'Seats');
 	// Arranging seats, Lock seating (plan J38) and Count off (J40) are one Seating mode
-	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
-	// with Add seat, not as its own button (Trevor, 2026-11-01).
-	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
-	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
-	expect(await names('App')).toEqual(['Settings']);
-	// Beside a phone, the game and its seats on the left and the rest on the right.
-	const game = (await group('Game').boundingBox())!;
-	const seats = (await group('Seats').boundingBox())!;
-	const app = (await group('App').boundingBox())!;
-	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		// Seats under Game on the left (Trevor, 2026-11-03: "seats should go below game"); App
-		// then Session on the right ("games, seats, app, session").
-		expect(Math.abs(seats.x - game.x)).toBeLessThan(2);
-		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
-		expect(app.x).toBeGreaterThan(game.x + game.width - 1);
-		expect(Math.abs(app.y - game.y)).toBeLessThan(2);
-		expect(Math.abs(session.x - app.x)).toBeLessThan(2);
-		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
-	} else {
-		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
-		expect(app.y).toBeGreaterThan(seats.y + seats.height - 1);
-		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
-	}
-	// Settings opens all of it, at its root.
-	await menu.getByRole('button', { name: 'Settings', exact: true }).tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await expect(settings.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(settings).toBeHidden();
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	// Report an issue is an icon beside Close, not a row (Trevor, 2026-11-16), and opens the
-	// one Report form over the board (Trevor, 2026-10-20).
-	await menu
-		.getByTestId('dialog-head-actions')
-		.getByRole('button', { name: 'Report an issue' })
-		.tap();
+	// (Trevor, 2026-10-31). Travellers choose (L102) comes with Add seat.
+	await expect(pane.getByTestId('pane-seats').getByRole('button')).toHaveText([
+		'Add Fabled or Loric',
+		'Seating'
+	]);
+	await openPane(page, 'Session');
+	// Game info only while the board hides the corner's script name.
+	const session = await pane.getByTestId('pane-session').getByRole('button').allTextContents();
+	expect(session.map((name) => name.trim()).join(' ')).toMatch(
+		/^Game settings (Game info )?End game$/
+	);
+	await closePane(page);
+	// Report an issue opens the one Report form over the board (Trevor, 2026-10-20).
+	await (await theMenu(page)).getByRole('button', { name: 'Report an issue' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
-	await expect(menu).toBeHidden();
 });
 
 test('a Demon bluff in play can still be chosen, after a confirm', async ({ page }) => {
@@ -6647,7 +6566,6 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	await menu(page, 'Seating');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar).toContainText('Seating');
-	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	// Under load the first press can land before the seats take drags: drag until it moves.
 	await expect(async () => {
 		await page.mouse.move(from.x, from.y);

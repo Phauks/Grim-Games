@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
+import { paneButton } from './players.ts';
 
 // Count off (plan J40; Trevor, 2026-10-30: "a count off, ppl select, and call it a day if it
 // seems accurate"; names show with the numbers, and players without a phone count too).
@@ -52,11 +53,7 @@ async function lockFirst(page: Page, name: string) {
 }
 
 async function startCountOff(page: Page) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Seating' })
-		.tap();
+	await paneButton(page, 'Seats', 'Seating');
 	await page
 		.getByRole('toolbar', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Count off' })

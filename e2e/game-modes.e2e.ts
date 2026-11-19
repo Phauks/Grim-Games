@@ -2,7 +2,7 @@ import { paneDay } from './players.ts';
 import { expectInRoom } from './player-status.ts';
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
+import { chooseRulesOnSetup, openGameInfo, pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { expectTitleBesideOrUnder } from './title-row.ts';
 import { openSettingsDialog } from './shell.ts';
@@ -1536,17 +1536,9 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	const code = (await shareCode.textContent())!.replace(/\s/g, '');
 
 	// Specters opens over the board from Game info (Trevor, 2026-10-18: the grimoire stays in
-	// reach). Where the corner has no room for the name before setup, ⋯ has Game info instead.
+	// reach). Where the corner has no room for the name before setup, the pane's Session has it.
 	await page.goto(`/grimoire/${gameId}`);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
+	await openGameInfo(page);
 	await page
 		.getByRole('dialog', { name: 'Game info', exact: true })
 		.getByRole('button', { name: 'Specters vote and ability' })
@@ -1716,15 +1708,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
+	await openGameInfo(page);
 	const info = page.getByTestId('game-info');
 	await expect(info.getByRole('link', { name: 'Many Versions' })).toHaveAttribute(
 		'href',
@@ -1755,15 +1739,7 @@ test('Game info opens a special rule in full when tapped, and a base script shar
 	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await chooseRulesOnSetup(page, 'Stowed Away');
 	await toBoard(page);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	const entry = more.getByRole('button', { name: 'Game info' });
-	if (await entry.count()) await entry.tap();
-	else {
-		await page.keyboard.press('Escape');
-		await expect(more).toBeHidden();
-		await page.getByTestId('mode-menu').tap();
-	}
+	await openGameInfo(page);
 	const info = page.getByTestId('game-info');
 	// Standard is no mode to open; the rule's name opens its About, parts and rule file.
 	await expect(info.locator('[data-field="mode"] td:last-child button')).toHaveCount(0);

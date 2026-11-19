@@ -1,5 +1,5 @@
 import { tapStartGame } from './start-game.ts';
-import { paneDay, closePane, boardTimer, paneIsSheet } from './players.ts';
+import { paneDay, closePane, boardTimer, paneIsSheet, paneButton, openPane } from './players.ts';
 import { walkThrough } from './night-step.ts';
 import { chooseExecution, pickExecuted, startExecution, toDayOne } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
@@ -822,12 +822,8 @@ test("Executed in a seat's status during the day asks as Execution does; a Sailo
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(walkThrough(page)).toBeVisible();
 	await expect(boardSeat(page, 'Seat 3')).not.toHaveAccessibleName(/dead/);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'History' })
-		.tap();
-	await expect(page.getByRole('dialog', { name: 'History' })).toContainText(
+	const pane = await openPane(page, 'History');
+	await expect(pane.getByTestId('history')).toContainText(
 		'Seat 3 has been executed and does not die'
 	);
 });
@@ -1194,11 +1190,7 @@ test('with the Buddhist in play the day timer counts down the veterans’ quiet'
 }) => {
 	await page.clock.install();
 	await startGame(page);
-	await page.getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
-		.tap();
+	await paneButton(page, 'Seats', 'Add Fabled or Loric');
 	await page
 		.getByRole('dialog', { name: 'Add Fabled or Loric' })
 		.getByRole('button', { name: 'Buddhist', exact: true })

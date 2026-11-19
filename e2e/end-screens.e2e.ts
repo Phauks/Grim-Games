@@ -1,4 +1,4 @@
-import { paneDay } from './players.ts';
+import { paneDay, paneButton } from './players.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -50,11 +50,7 @@ async function markDead(page: Page, number: number) {
 }
 
 async function menu(page: Page, action: string) {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: action, exact: true })
-		.tap();
+	await paneButton(page, action === 'End game' ? 'Session' : 'Seats', action);
 }
 
 test('the fiddle contest runs in its own dialog and opens End game with its result', async ({
