@@ -165,14 +165,17 @@
 			.map((c) => ({ value: c.id as string, label: c.name }))
 	]);
 
-	/** Adds lines another reader read (a live scan's picture) to what was read. */
+	/** Adds lines read by the live scan (Take a Photo) to what was read. */
 	export async function addLines(
 		read: readonly PhotoLine[],
 		/** The picture they were read from, shown with each line marked. */
-		picture?: HTMLCanvasElement
+		picture?: HTMLCanvasElement,
+		/** How the picture was taken, for the read log. */
+		notes: readonly string[] = []
 	): Promise<void> {
-		if (lines.length === 0) importLog.start(`Live scan: ${read.length} lines read`);
-		else importLog.add(`Another live scan: ${read.length} lines read`);
+		if (lines.length === 0) importLog.start(`Scan: ${read.length} lines read`);
+		else importLog.add(`Another scan: ${read.length} lines read`);
+		for (const note of notes) importLog.add(note);
 		data ??= await loadOfficialData();
 		if (picture) await keepPicture(picture, read.length);
 		lines = [...lines, ...read];
