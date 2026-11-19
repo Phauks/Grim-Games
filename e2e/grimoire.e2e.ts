@@ -721,7 +721,16 @@ test("Demon bluffs open in the pane's Game, and a seat shows its token to the pl
 }) => {
 	await startGame(page);
 	await menu(page, 'Demon bluffs');
-	await expect(page.getByTestId('pane-bluffs')).toBeVisible();
+	const bluffs = page.getByTestId('pane-bluffs');
+	await expect(bluffs).toBeVisible();
+	// An edit left open is dropped on leaving the view: back on Bluffs, the sets show (Trevor,
+	// 2026-11-19).
+	await bluffs.getByRole('button', { name: /^Choose the/ }).first().tap();
+	await expect(bluffs.getByTestId('bluff-set')).toHaveCount(0);
+	const pane = page.getByTestId('storyteller-pane');
+	await pane.getByRole('tab', { name: 'Day', exact: true }).tap();
+	await pane.getByRole('tab', { name: 'Bluffs', exact: true }).tap();
+	await expect(bluffs.getByTestId('bluff-set').first()).toBeVisible();
 	await closePane(page);
 
 	const sheet = await openSeat(page, 1);

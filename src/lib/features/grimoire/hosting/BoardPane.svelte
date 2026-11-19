@@ -79,8 +79,11 @@
 </div>
 
 {#snippet bluffsView()}
+	<!-- Shown again, it starts on the sets: leaving the view drops an edit left open (Trevor,
+	     2026-11-19). -->
 	<BluffsSheet
 		inline
+		open={sidePane.view === 'bluffs' && (!!beside || sidePane.open)}
 		game={grimoire.game}
 		characters={grimoire.open.characters}
 		dispatch={(command) => grimoire.open.run(command)}
