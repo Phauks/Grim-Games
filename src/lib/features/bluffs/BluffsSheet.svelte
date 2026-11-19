@@ -408,7 +408,6 @@
 				/>{/snippet}</Sentence
 		>
 	</p>
-	<p class="confirm hint">{t('bluffs.undoHint')}</p>
 </ConfirmDialog>
 
 <style>
@@ -433,10 +432,6 @@
 	}
 	.confirm {
 		margin: 0;
-	}
-	.confirm.hint {
-		margin-top: var(--space-2);
-		opacity: 0.8;
 	}
 	.sets {
 		display: grid;
