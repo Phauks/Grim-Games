@@ -81,7 +81,11 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	// Players shows who has sent something (Trevor, 2026-10-29: Messages folded into Players);
 	// a consult makes the count stand out, on the tab and on the player's line.
 	const players = await openPlayers(page);
-	await expect(players.getByRole('tab', { name: /^Players/ })).toContainText('1');
+	await expect(
+		players
+			.getByRole('tablist', { name: 'Game', exact: true })
+			.getByRole('tab', { name: /^Players/ })
+	).toContainText('1');
 	const row = players.getByTestId('room-player').filter({ hasText: 'Alex' });
 	await expect(row.getByTestId('room-player-waiting')).toHaveText('1');
 	await expect(row.getByTestId('room-player-waiting')).toHaveAttribute('data-warn', '');

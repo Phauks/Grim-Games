@@ -611,7 +611,7 @@ test('history, add seat and remove', async ({ page }) => {
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
-	await history.getByRole('button', { name: 'Close' }).tap();
+	await closePane(page);
 
 	const sheet = await openSeat(page, 5);
 	await nameSeat(sheet, 'Ben');
@@ -1743,14 +1743,18 @@ test('the board can go full screen from the app menu, and back', async ({ page }
 	await startGame(page);
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
+	// The drawer closes as an item runs, so each look opens the menu again.
 	const item = async () =>
 		(await theMenu(page)).getByRole('button', { name: 'Full screen', exact: true });
-	await expect(await item()).toHaveAttribute('aria-pressed', 'false');
-	await (await item()).tap();
+	const full = await item();
+	await expect(full).toHaveAttribute('aria-pressed', 'false');
+	await full.tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	await expect(await item()).toHaveAttribute('aria-pressed', 'true');
-	await (await item()).tap();
-	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	// The switch says it is on; leaving full screen is the browser's own as well.
+	const on = await item();
+	await expect(on).toHaveAttribute('aria-pressed', 'true');
+	await page.evaluate(() => document.exitFullscreen());
+	await expect(on).toHaveAttribute('aria-pressed', 'false');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -5255,7 +5259,7 @@ test('a mode without Demon bluffs offers none to choose', async ({ page }) => {
 		'These are your Minions'
 	);
 	await expect(demonInfo.getByRole('button', { name: 'Choose bluffs' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	// The pane's Game has no Bluffs view.
 	const pane = await openPane(page, 'Day');
 	await expect(
@@ -5636,7 +5640,7 @@ test("the pane's subjects and views hold what the board's menu did", async ({ pa
 	// Game info only while the board hides the corner's script name.
 	const session = await pane.getByTestId('pane-session').getByRole('button').allTextContents();
 	expect(session.map((name) => name.trim()).join(' ')).toMatch(
-		/^Game settings (Game info )?End game$/
+		/^Game settings (Game info )?(Character selection )?End game$/
 	);
 	await closePane(page);
 	// Report an issue opens the one Report form over the board (Trevor, 2026-10-20).

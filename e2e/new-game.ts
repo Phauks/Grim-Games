@@ -74,6 +74,8 @@ export async function toBoard(page: Page): Promise<void> {
  */
 export async function openGameInfo(page: Page) {
 	const corner = page.getByTestId('mode-menu');
+	// Once the board is up, so a corner still on its way isn't taken for a hidden one.
+	await expect(page.getByTestId('cover-button')).toBeVisible();
 	if (await corner.isVisible()) await corner.tap();
 	else if (await page.getByRole('button', { name: 'More', exact: true }).isVisible()) {
 		await page.getByRole('button', { name: 'More', exact: true }).tap();

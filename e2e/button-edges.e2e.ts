@@ -70,7 +70,10 @@ async function blending(page: Page, screen: string): Promise<string[]> {
 			const box = el.getBoundingClientRect();
 			if (box.width < 1 || box.height < 1) return false;
 			const style = getComputedStyle(el);
-			return style.visibility !== 'hidden' && style.display !== 'none';
+			if (style.visibility === 'hidden' || style.display === 'none') return false;
+			// Not under a sheet: what covers its middle is the button or something inside it.
+			const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+			return !top || el.contains(top);
 		};
 		const name = (el: Element) =>
 			(el.getAttribute('aria-label') ?? el.textContent ?? '')

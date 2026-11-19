@@ -12,6 +12,12 @@ export function storytellerPane(page: Page): Locator {
 		.or(page.getByRole('dialog', { name, exact: true }));
 }
 
+/** A tap on a touch screen, a click where the page has only a mouse. */
+async function press(target: Locator) {
+	if (await target.page().evaluate(() => navigator.maxTouchPoints > 0)) await target.tap();
+	else await target.click();
+}
+
 /** The pane's views, each under its subject (Trevor, 2026-11-18: nav with a sub-nav). */
 const SUBJECTS = {
 	Day: 'Game',
@@ -35,13 +41,11 @@ async function choose(pane: Locator, rail: string, name: string) {
 	const trigger = list.getByRole('tab', { name: new RegExp(`^${name}`) });
 	await expect(list).toBeVisible();
 	if (!(await trigger.count())) {
-		await list.locator('..').getByRole('button', { name: 'More tabs' }).tap();
-		await pane
-			.page()
-			.getByRole('dialog', { name: 'More tabs' })
-			.getByRole('button', { name })
-			.tap();
-	} else if ((await trigger.getAttribute('aria-selected')) !== 'true') await trigger.tap();
+		await press(list.locator('..').getByRole('button', { name: 'More tabs' }));
+		await press(
+			pane.page().getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name })
+		);
+	} else if ((await trigger.getAttribute('aria-selected')) !== 'true') await press(trigger);
 	await expect(trigger).toHaveAttribute('aria-selected', 'true');
 }
 
@@ -54,7 +58,7 @@ export async function openPane(page: Page, tab?: PaneTab) {
 	const button = page.getByTestId('game-pane-button');
 	// Beside the board the pane shows, on a phone its button: whichever, once the board is up.
 	await expect(pane.or(button).first()).toBeVisible();
-	if (!(await pane.isVisible())) await button.tap();
+	if (!(await pane.isVisible())) await press(button);
 	await expect(pane).toBeVisible();
 	if (tab) {
 		const subject = SUBJECTS[tab];
@@ -137,8 +141,19 @@ export async function closeStep(page: Page, step: Locator) {
 	if (await paneIsSheet(page)) await expect(step).toBeHidden();
 }
 
-/** Taps a button in one of the pane's views, where the board's ⋯ items went (Trevor, 2026-11-18). */
+/**
+ * Taps a button in one of the pane's views, where the board's ⋯ items went (Trevor,
+ * 2026-11-18). Seats' and Session's buttons all close a phone's sheet.
+ */
 export async function paneButton(page: Page, view: PaneTab, name: string | RegExp) {
+	const sheet = await paneIsSheet(page);
 	const pane = await openPane(page, view);
-	await pane.getByRole('button', { name, exact: typeof name === 'string' }).tap();
+	await press(pane.getByRole('button', { name, exact: typeof name === 'string' }));
+	// Each of these closes a phone's sheet first; the board takes taps once it has gone.
+	if (sheet) {
+		await expect(page.getByRole('dialog', { name: 'Game', exact: true })).toBeHidden();
+		await expect(
+			page.locator('[data-scope="dialog"][data-part="backdrop"][data-state="closed"]')
+		).toHaveCount(0);
+	}
 }
