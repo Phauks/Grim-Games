@@ -124,6 +124,7 @@ export function boardNightSteps(
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	const sources = ruleSources(game, characters, rules);
+	const known = [...data.byId.values(), ...characters.values()];
 	return duskToDawn([
 		...ruleNightSteps(sources, number),
 		// Under a rule that delays information (One Day More), a player wakes to receive last
@@ -139,8 +140,9 @@ export function boardNightSteps(
 					sheetWithOwnPlaces(
 						data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'],
 						night,
-						[...data.byId.values(), ...characters.values()]
-					)
+						known
+					),
+					sheetWithOwnPlaces(data.nightSheet.firstNight, 'first', known)
 				),
 				game,
 				characters
