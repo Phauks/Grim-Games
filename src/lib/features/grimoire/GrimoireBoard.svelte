@@ -817,6 +817,7 @@
 				onMore={watching ? () => (menuOpen = true) : undefined}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26); a spectator's too. -->
+				{#snippet timer()}{@render toolbarTimer()}{/snippet}
 				{#snippet lead()}
 					<CoverButton
 						gameId={game.gameId}
@@ -946,33 +947,6 @@
 			></BoardCorner>
 			<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 			{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-			<!-- The day timer (2026-10-17), Back to town at its front, not in Export (2026-11-01). -->
-			<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
-				<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
-				<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
-					<DayTimer
-						{...timerFacts(game, characters)}
-						variant="compact"
-						readOnly={watching || !showTimer}
-						shown={watchedTimer}
-						{town}
-						beforeStart={askStartDay}
-					/>
-				</div>
-				<!-- Game over takes the timer's place (Trevor, 2026-11-15), over its kept room. -->
-				{#if ended}
-					<div class="game-over-slot">
-						<GameOverMenu
-							winner={ended.winner}
-							text={endedText}
-							{watching}
-							onExport={() => (exportOpen = true)}
-							onFeedback={watching ? undefined : () => (feedbackOpen = true)}
-							{shareGrim}
-						/>
-					</div>
-				{/if}
-			</div>
 		</div>
 	</div>
 {/snippet}
@@ -1176,6 +1150,36 @@
 	{/if}
 {/snippet}
 
+<!-- The day timer, the toolbar's last button (Trevor, 2026-11-18: "i like it in the very top"),
+     Back to town at its front. Game over takes its place once the game ends (2026-11-15). -->
+{#snippet toolbarTimer()}
+	<span class="toolbar-timer">
+		<!-- Once the game ends the timer keeps its room, unseen, under Game over. -->
+		<span class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
+			<DayTimer
+				{...timerFacts(game, characters)}
+				variant="compact"
+				readOnly={watching || !showTimer}
+				shown={watchedTimer}
+				{town}
+				beforeStart={askStartDay}
+			/>
+		</span>
+		{#if ended}
+			<span class="game-over-slot">
+				<GameOverMenu
+					winner={ended.winner}
+					text={endedText}
+					{watching}
+					onExport={() => (exportOpen = true)}
+					onFeedback={watching ? undefined : () => (feedbackOpen = true)}
+					{shareGrim}
+				/>
+			</span>
+		{/if}
+	</span>
+{/snippet}
+
 {#snippet coverActions()}<GrimCoverActions view={playerView} />{/snippet}
 
 {#snippet coverTimer()}
@@ -1261,31 +1265,24 @@
 		pointer-events: none;
 	}
 	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
-	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
-	.board.showing .board-timer {
+	.board.showing :global(:is([data-tray], [data-testid='night-strip'])) {
 		visibility: hidden;
 	}
-	/* The day timer in the board's top right corner, clear of the seats' ring. */
-	.board-timer {
-		position: absolute;
-		top: var(--space-1);
-		right: var(--space-1);
-		z-index: var(--z-above-2);
-		display: flex;
+	/* The timer and, once the game ends, Game over in one cell, right-aligned: the cell is as
+	   wide as the wider, so the timer's hidden room holds Game over without covering Share. */
+	.toolbar-timer {
+		display: inline-grid;
+		flex: none;
+		justify-items: end;
 		align-items: center;
-		gap: var(--space-1);
 	}
-	.timer-slot {
+	.timer-slot,
+	.game-over-slot {
+		grid-area: 1 / 1;
 		display: flex;
 	}
 	.timer-slot.gone {
 		visibility: hidden;
-	}
-	/* Over the hidden timer, right-aligned, so the board's sizes don't change. */
-	.game-over-slot {
-		position: absolute;
-		top: 0;
-		right: 0;
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {

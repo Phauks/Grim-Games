@@ -1,4 +1,11 @@
-import { paneDay, boardTimer, openPane, closePane } from './players.ts';
+import {
+	paneDay,
+	boardTimer,
+	openPane,
+	closePane,
+	closeTimerSheet,
+	timerControls
+} from './players.ts';
 import { expectInRoom } from './player-status.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
@@ -23,10 +30,12 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 }, testInfo) => {
 	const board = await startGame(page);
 	// On the day timer (Trevor, 2026-11-01), not in the pane, and always available (2026-11-02).
-	const timer = page.locator('.board-timer').getByTestId('day-timer');
-	const call = timer.getByRole('button', { name: 'Back to town' });
-	await expect(call).toBeEnabled();
+	const timer = page.locator('.toolbar-timer').getByTestId('day-timer');
 	const before = (await timer.boundingBox())!;
+	await expect(
+		(await timerControls(page)).getByRole('button', { name: 'Back to town' })
+	).toBeEnabled();
+	await closeTimerSheet(page);
 	const session = await openPane(page, 'Session');
 	await expect(session.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
 	await closePane(page);
@@ -55,8 +64,9 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
-	await expect(call).toBeEnabled();
 	expect((await timer.boundingBox())!.width).toBe(before.width);
+	const call = (await timerControls(page)).getByRole('button', { name: 'Back to town' });
+	await expect(call).toBeEnabled();
 	// A Cancel/Confirm sheet first (Trevor, 2026-10-27): Cancel calls nobody.
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
 	await call.tap();
@@ -77,6 +87,7 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 
 	// From the grim cover too, which stays up (Trevor, 2026-10-27). The room takes one call
 	// at a time, so the call above is the one the phone hears.
+	await closeTimerSheet(page);
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
 	await cover.getByRole('button', { name: 'Back to town' }).tap();
@@ -92,7 +103,7 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 test('Back to town can be called before the time is up, and stops the timer', async ({ page }) => {
 	await page.clock.install();
 	await startGame(page);
-	const timer = page.locator('.board-timer').getByTestId('day-timer');
+	const timer = await timerControls(page);
 	const call = timer.getByRole('button', { name: 'Back to town' });
 	await timer.getByRole('button', { name: 'Start timer' }).tap();
 	await page.clock.runFor(10_000);
@@ -152,7 +163,7 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 		);
 
 	await page
-		.locator('.board-timer')
+		.locator('.toolbar-timer')
 		.getByRole('button', { name: /^Day timer, .*; open its controls$/ })
 		.tap();
 	const sheet = page.getByTestId('timer-sheet');
@@ -169,9 +180,9 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
-	// The grim cover's timer is the board's timer, Back to town at its front (Trevor,
+	// The grim cover's timer is the toolbar's timer, Back to town at its front (Trevor,
 	// 2026-11-03), with no Back to town of its own beside it.
-	const boardButtons = await buttons(page.locator('.board-timer').getByTestId('day-timer'));
+	const boardButtons = await buttons(page.locator('.toolbar-timer').getByTestId('day-timer'));
 	expect(boardButtons[0]).toBe('Back to town');
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
@@ -214,9 +225,8 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
-	const call = page.locator('.board-timer').getByRole('button', { name: 'Back to town' });
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
-	await call.tap();
+	await (await timerControls(page)).getByRole('button', { name: 'Back to town' }).tap();
 	const sound = confirm.getByRole('combobox', { name: 'Sound' });
 	// The clock tower until the Storyteller picks another; no choice left to each phone.
 	await expect(sound).toContainText('Clock tower chimes');
@@ -244,7 +254,7 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 
 	// Kept for the next call, on this device.
 	await page.reload();
-	await call.tap();
+	await (await timerControls(page)).getByRole('button', { name: 'Back to town' }).tap();
 	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('None');
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
 	await phoneContext.close();
@@ -275,7 +285,7 @@ test('the day timer reaching 0:00 calls Back to town, even by taking time off', 
 
 	await page.goto(board);
 	await page
-		.locator('.board-timer')
+		.locator('.toolbar-timer')
 		.getByRole('button', { name: /^Day timer, .*; open its controls$/ })
 		.tap();
 	const timer = page.getByTestId('timer-sheet').getByTestId('day-timer');
