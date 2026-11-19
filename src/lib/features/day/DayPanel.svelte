@@ -14,7 +14,6 @@
 	import {
 		dayReminders,
 		dayStateFromGame,
-		isOnceOnlyDayAbility,
 		daySentence,
 		type DayReminder
 	} from '#lib/core/rules/day/day-reminders.ts';
@@ -248,11 +247,13 @@
 	const spentOf = (characterId: CharacterId) =>
 		dayUseOf(game.game, characterId, game.characters)?.spentToken ?? NO_ABILITY;
 	/**
-	 * Used, for a once-per-game day ability or one whose use is about a player (`dayUse`: the
-	 * Psychopath's daily kill, the Klutz's choice once dead; Trevor, 2026-10-30).
+	 * Used, for a day ability whose use is about a player (`dayUse`: the Slayer's shot, the
+	 * Psychopath's daily kill, the Klutz's choice once dead; Trevor, 2026-10-30). One that only
+	 * places its No Ability token (the Artist, Fisherman, Fool) has none: its reminder row places
+	 * it (Trevor, 2026-11-18: "considering all of the used or not use the tokens of the character,
+	 * I don't think we need the button", option A).
 	 */
 	const usedButton = (characterId: CharacterId) =>
-		isOnceOnlyDayAbility(characterId, game.characters) ||
 		dayUseOf(game.game, characterId, game.characters) !== undefined;
 
 	function hasNote(target: NoteTarget): boolean {

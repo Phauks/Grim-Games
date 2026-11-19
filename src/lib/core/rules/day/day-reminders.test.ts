@@ -4,7 +4,7 @@
  * they encode.
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -20,7 +20,6 @@ import {
 	dayReminders,
 	daySentence,
 	dayStateFromGame,
-	isOnceOnlyDayAbility,
 	type ReminderSegment,
 	type DaySeat,
 	type DayState
@@ -184,7 +183,7 @@ describe('state-based reminders', () => {
 			const rules = OFFICIAL_RULES.get(id);
 			const spent = rules?.dayUse?.spentToken ?? 'No Ability';
 			const hasUsed =
-				rules?.dayUse !== undefined || isOnceOnlyDayAbility(id, committedCharacters());
+				rules?.dayUse !== undefined || reminders.some((r) => r.when?.noReminder === 'No Ability');
 			return reminders.some((r) => hasUsed && r.when?.noReminder === spent && r.used === undefined)
 				? [id]
 				: [];
@@ -518,19 +517,6 @@ describe('homebrew', () => {
 			'rules.dayReminders.reminders[0].when.reminder',
 			'rules.dayReminders.none'
 		]);
-	});
-});
-
-describe('isOnceOnlyDayAbility', () => {
-	it('is true for once-per-game day abilities marked with "No Ability"', () => {
-		// https://wiki.bloodontheclocktower.com/Slayer, /Artist, /Virgin
-		for (const id of ['slayer', 'artist', 'virgin', 'fisherman']) {
-			expect(isOnceOnlyDayAbility(id, committedCharacters()), id).toBe(true);
-		}
-		// https://wiki.bloodontheclocktower.com/Gossip: every day.
-		for (const id of ['gossip', 'savant', 'juggler', 'imp']) {
-			expect(isOnceOnlyDayAbility(id, committedCharacters()), id).toBe(false);
-		}
 	});
 });
 
