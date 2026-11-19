@@ -407,6 +407,8 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	page,
 	browser
 }, testInfo) => {
+	// Two devices through a whole game and its end: CI's runners take near 30 seconds.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -507,6 +509,8 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	page,
 	browser
 }, testInfo) => {
+	// Two devices through a whole game and its end: CI's runners take near 30 seconds.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
