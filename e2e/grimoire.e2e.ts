@@ -2297,22 +2297,12 @@ test('copies of a reminder are in the bank one by one, or stacked with a count',
 	await closeBin(page);
 
 	// With "Stack duplicate reminders" on, they show as one token with how many.
-	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await page
-		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('button', { name: 'Settings' })
-		.tap();
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Board', exact: true })
-		.tap();
+	const settings = await openBoardTheme(page, 'Board');
 	await settings.getByText('Stack duplicate reminders', { exact: true }).tap();
 	await expect(
 		settings.getByRole('checkbox', { name: 'Stack duplicate reminders', includeHidden: true })
 	).toBeChecked();
-	await page.keyboard.press('Escape');
-	await expect(settings).toBeHidden();
+	await closePane(page);
 	await openBin(page);
 	await expect(dead).toHaveCount(1);
 	await expect(bin.getByLabel('2 copies')).toBeVisible();
