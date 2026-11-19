@@ -38,6 +38,9 @@ const INWARD = 80;
 /** A group with no room close by may turn any way and go this far out (token widths), whole. */
 const SPILL_TURN = 180;
 const SPILL = 5;
+/** A shingle's rows: how far down each row sits (shares of a reminder), and how far across. */
+const SHINGLE_ROW = 0.55;
+const SHINGLE_SHIFT = 0.5;
 const ANYWHERE = 130;
 const TURN_STEP = 5;
 const OUT_STEP = 3;
@@ -94,6 +97,28 @@ function spillShapes(n: number, pitch: number): Point[][] {
 }
 
 /**
+ * A staggered shingle of `n` places, upright on the screen: rows of two (three past six), each
+ * row a little lower than the last and shifted half a place across, so every label shows below
+ * the row in front of it. Upper rows come last, so they are drawn over the rows below.
+ */
+function shingleShape(n: number, k: number): Point[] {
+	const cols = n <= 6 ? 2 : 3;
+	const rows = Math.ceil(n / cols);
+	const pitch = k + GAP;
+	const out: Point[] = [];
+	for (let row = rows - 1; row >= 0; row--) {
+		const inRow = row === rows - 1 ? n - cols * (rows - 1) : cols;
+		const shift = row % 2 ? SHINGLE_SHIFT * pitch : 0;
+		for (let col = 0; col < inRow; col++)
+			out.push({
+				x: (col - (cols - 1) / 2) * pitch + shift,
+				y: (row - (rows - 1) / 2) * SHINGLE_ROW * k
+			});
+	}
+	return out;
+}
+
+/**
  * Every seat's reminders on the board, kept clear of `blocked` (the corner, the timer) and
  * inside `board`. Seats with the most reminders are placed first, so a big group isn't
  * squeezed out by a small one; no group covers another's. `fits` is false when some group had
@@ -138,13 +163,15 @@ export function fitReminders(
 		 * it reaches into the middle and how close it comes to other players. `loose`: may sit
 		 * nearer another seat (1), or over other groups too (2). `strict`: every reminder, not
 		 * just the group's middle, nearer its own seat than any other seat with reminders.
+		 * `upright`: the shape keeps to the screen, not turned with the direction it goes out.
 		 */
 		const place = (
 			shape: Point[],
 			loose: number,
 			turn: number,
 			farthest: number,
-			strict = false
+			strict = false,
+			upright = false
 		) => {
 			// Only what the group could reach is checked, so a crowded board stays quick.
 			const extent = Math.max(...shape.map((o) => Math.hypot(o.x, o.y + farthest))) + k;
@@ -166,10 +193,12 @@ export function fitReminders(
 				const a = facing + (deg * Math.PI) / 180;
 				const [ax, ay] = [Math.cos(a), Math.sin(a)];
 				for (let d = s.size / 2 + k / 2 + EDGE; d <= farthest; d += OUT_STEP) {
-					const points = shape.map((o) => ({
-						x: s.seat.x + ax * (d + o.y) - ay * o.x,
-						y: s.seat.y + ay * (d + o.y) + ax * o.x
-					}));
+					const points = upright
+						? shape.map((o) => ({ x: s.seat.x + ax * d + o.x, y: s.seat.y + ay * d + o.y }))
+						: shape.map((o) => ({
+								x: s.seat.x + ax * (d + o.y) - ay * o.x,
+								y: s.seat.y + ay * (d + o.y) + ax * o.x
+							}));
 					if (!points.every(clear)) continue;
 					// Strict: every reminder, not just the group's middle, nearer its own seat.
 					if (strict && points.some((p) => nearerOther(p, i))) continue;
@@ -210,6 +239,14 @@ export function fitReminders(
 				points = place(spilled, 0, SPILL_TURN, s.size * SPILL, true);
 				if (points) break;
 			}
+		}
+		// Still no room: a staggered shingle, full size with every label showing, close by and
+		// then anywhere a spill may go, before any squeezing (Trevor, 2026-11-19, "add 5").
+		if (!points) {
+			const shingle = shingleShape(s.count, k);
+			points =
+				place(shingle, 0, INWARD, s.size * CLOSE * 1.6, true, true) ??
+				place(shingle, 0, SPILL_TURN, s.size * SPILL, true, true);
 		}
 		const tries: [number, boolean][] = [
 			[SQUEEZES[1], true],
