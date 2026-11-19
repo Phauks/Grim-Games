@@ -127,6 +127,20 @@ describe('NightWalk', () => {
 		stop();
 	});
 
+	it('puts a held reminder down when its row is tapped again, the step left open (Trevor, 2026-11-19)', () => {
+		const hand = new ReminderHand();
+		const { walk, stop } = setup({}, {}, hand);
+		const at = { reminderId: 'r1', seatId: 's1' };
+		walk.placeOnBoard({ characterId: 'imp', label: 'Dead' }, at);
+		flushSync();
+		walk.guideOpen = true;
+		expect(walk.placeOnBoard({ characterId: 'imp', label: 'Dead' }, at)).toBe(true);
+		flushSync();
+		expect(hand.held).toBeUndefined();
+		expect(walk.guideOpen).toBe(true);
+		stop();
+	});
+
 	it('keeps the step open when the bank has no such token, for the list of players', () => {
 		const { walk, stop } = setup({ bank: { hold: () => false } });
 		walk.guideOpen = true;
