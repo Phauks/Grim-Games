@@ -154,7 +154,8 @@
 		const item = itemFor(reminder);
 		if (!item) return false;
 		gestures.open = false;
-		hand.hold({ kind: 'bank', item });
+		// Already in hand: tapped again, it goes back down (Trevor, 2026-11-19).
+		hand.toggle({ kind: 'bank', item });
 		return true;
 	}
 	/** Marks the seats for the token in hand, as for one dragged; a board token's are the board's. */

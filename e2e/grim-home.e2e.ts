@@ -240,3 +240,34 @@ test.describe('on a wide screen', () => {
 		expect(await overflow('beside-pane')).toBeLessThanOrEqual(1);
 	});
 });
+
+// Trevor (2026-11-19): a token in the pane's choices, tapped again while it is in hand, is put
+// down.
+test('a pane reminder tapped again is put down', async ({ page }) => {
+	await newGame(page);
+	const seatSheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await page.locator('[data-testid="seat"][aria-label^="Seat 2:"]').tap();
+	await seatSheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: /^Virgin(, Recommended)?$/ })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(seatSheet).toBeHidden();
+
+	const inHand = page.getByTestId('reminder-in-hand');
+	const pane = await openPane(page, 'Day');
+	const row = pane.locator('li[data-character="virgin"]').getByTestId('day-tokens');
+	const place = row.getByRole('button', { name: 'Place', exact: true });
+	await place.tap();
+	await expect(inHand).toBeVisible();
+	// A phone's sheet closes so a seat can be tapped; beside the board the row stays.
+	if (await paneIsSheet(page)) return;
+	await place.tap();
+	await expect(inHand).toBeHidden();
+	const token = row.getByRole('button', { name: 'No Ability token' });
+	await token.tap();
+	await expect(inHand).toBeVisible();
+	await token.tap();
+	await expect(inHand).toBeHidden();
+});
