@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import AddRow from '#lib/ui/primitives/AddRow.svelte';
@@ -22,9 +23,19 @@
 		onDelete: (noteId: string) => void;
 		/** Each note has the eye that hides its text (NoteRow); off for the Storyteller's. */
 		hideable?: boolean;
+		/**
+		 * Whose each note is, on its title's line (the Storyteller's: the game or a player); a new
+		 * one comes with an empty `noteId`.
+		 */
+		owner?: Snippet<[TitledNote]>;
+		/**
+		 * A ⋯ menu in place of each note's trash; its second argument asks to delete the note,
+		 * with the same question the trash asks.
+		 */
+		menu?: Snippet<[TitledNote, () => void]>;
 	}
 
-	let { notes, readonly = false, onSave, onDelete, hideable = true }: Props = $props();
+	let { notes, readonly = false, onSave, onDelete, hideable = true, owner, menu }: Props = $props();
 
 	const NEW: TitledNote = { noteId: '', title: '', text: '', hidden: false };
 	/**
@@ -41,21 +52,29 @@
 {#if notes.length || !readonly}
 	<ul class="notes">
 		{#each notes as note (note.noteId)}
+			{@const askDelete = () => {
+				deleting = note;
+				confirming = true;
+			}}
+			{#snippet noteOwner()}{@render owner?.(note)}{/snippet}
+			{#snippet noteMenu()}{@render menu?.(note, askDelete)}{/snippet}
 			<NoteRow
 				{hideable}
 				{note}
 				{readonly}
+				owner={owner ? noteOwner : undefined}
+				menu={menu ? noteMenu : undefined}
 				onSave={(n) => onSave(n)}
-				onDelete={(n) => {
-					deleting = n;
-					confirming = true;
-				}}
+				onDelete={askDelete}
 			/>
 		{/each}
 		{#if adding && !readonly}
+			{#snippet newOwner()}{@render owner?.(NEW)}{/snippet}
+			<!-- A new note says whose it will be; its ⋯ comes once it is kept. -->
 			<NoteRow
 				{hideable}
 				note={NEW}
+				owner={owner ? newOwner : undefined}
 				onSave={({ title, text, hidden }) => {
 					adding = false;
 					onSave({ title, text, hidden });

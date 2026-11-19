@@ -26,7 +26,6 @@ export const bluffs = {
 	'bluffs.inPlayConfirm': 'Save bluffs that are in play?',
 	'bluffs.inPlaySummary': 'In play: {names}',
 	'bluffs.deleteSummary': '{set}: {names}',
-	'bluffs.undoHint': 'You can undo it from History.',
 	'bluffs.notDone': 'Not done',
 	'bluffs.note': 'Note',
 	'bluffs.demo': 'Demon bluffs',

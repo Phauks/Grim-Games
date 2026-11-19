@@ -389,15 +389,35 @@ function carriers(state: DayState, source: CharacterId, label: string): DaySeat[
 	);
 }
 
+/** "6 players alive", "1 player alive": an `alive` segment's words. */
+export function aliveWords(count: number): string {
+	return `${count} ${count === 1 ? 'player' : 'players'} alive`;
+}
+
+/** Living players, leaving out Travellers when `when.notTravellers` says they don't count. */
+function aliveFor(state: DayState, when: DayCondition | undefined): number {
+	return state.seats.filter(
+		(s) =>
+			!s.dead &&
+			!(
+				when?.notTravellers &&
+				s.characterId &&
+				state.character(s.characterId)?.type === 'traveller'
+			)
+	).length;
+}
+
 function fill(
 	spec: DayReminderSpec,
 	selfRef: CharacterRef,
 	targetSeat: DaySeat | undefined,
-	values: Readonly<Record<string, string>> = {},
+	state: DayState,
 	nomineeSeat?: DaySeat
 ): ReminderSegment[] {
+	const values = state.prepValues ?? {};
 	return spec.template.map((part): ReminderSegment => {
 		if ('text' in part) return { kind: 'text', text: part.text };
+		if ('alive' in part) return { kind: 'text', text: aliveWords(aliveFor(state, spec.when)) };
 		if ('self' in part) return { kind: 'character', ref: selfRef };
 		if ('nominee' in part)
 			return { kind: 'character', ref: refFor(nomineeSeat, nomineeSeat?.characterId ?? '') };
@@ -433,14 +453,13 @@ function causeMatches(
 function conditionHolds(
 	when: DayCondition,
 	seat: DaySeat | undefined,
-	state: DayState,
-	alive: number
+	state: DayState
 ): boolean | 'unknown' {
 	const self = when.self ?? 'alive';
 	const dead = seat?.dead ?? false;
 	if (self === 'alive' && dead && !seat?.keepsAbility) return false;
 	if (self === 'dead' && !dead) return false;
-	if (when.minAlive !== undefined && alive < when.minAlive) return false;
+	if (when.minAlive !== undefined && aliveFor(state, when) < when.minAlive) return false;
 	if (when.day !== undefined && state.days !== undefined && state.days !== when.day) return false;
 	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);
 	return true;
@@ -449,8 +468,7 @@ function conditionHolds(
 function curated(
 	entry: DayReminderEntry,
 	seat: DaySeat | undefined,
-	state: DayState,
-	alive: number
+	state: DayState
 ): DayReminder[] {
 	const out: DayReminder[] = [];
 	const selfRef = refFor(seat, entry.id);
@@ -460,7 +478,7 @@ function curated(
 		const when = spec.when ?? {};
 		// The impaired line replaces the lines about the living character's ability.
 		if (impaired.length > 0 && (when.self ?? 'alive') === 'alive') return;
-		const holds = conditionHolds(when, seat, state, alive);
+		const holds = conditionHolds(when, seat, state);
 		if (holds === false) return;
 		const spent = when.noReminder && placed(state, entry.id, when.noReminder);
 		// Used today: the row stays and says so (no reflow), if its rules word it.
@@ -485,7 +503,7 @@ function curated(
 					...base,
 					key: `${key}>${choice.nominee}>${choice.chosen}`,
 					target: choice.chosen,
-					segments: fill(spec, selfRef, target, state.prepValues, seatOf(choice.nominee))
+					segments: fill(spec, selfRef, target, state, seatOf(choice.nominee))
 				});
 			}
 		} else if (when.reminder) {
@@ -499,17 +517,17 @@ function curated(
 						...base,
 						key: `${key}>${target.seatId}`,
 						target: target.seatId,
-						segments: fill(spec, selfRef, target, state.prepValues)
+						segments: fill(spec, selfRef, target, state)
 					});
 				}
 			} else if (targets.length > 0) {
-				out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
+				out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state) });
 			}
 		} else if (usedNow) {
 			const head = spec.template[0] && 'self' in spec.template[0] ? [spec.template[0]] : [];
 			const words = { ...spec, template: [...head, { text: spec.used! }] };
-			out.push({ ...base, key, segments: fill(words, selfRef, undefined, state.prepValues) });
-		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state.prepValues) });
+			out.push({ ...base, key, segments: fill(words, selfRef, undefined, state) });
+		} else out.push({ ...base, key, segments: fill(spec, selfRef, undefined, state) });
 	});
 	if (impaired.length > 0 && seat) {
 		out.push(
@@ -662,7 +680,6 @@ function interactions(state: DayState): DayReminder[] {
 
 /** Reminders for the coming day, grouped in `DAY_GROUPS` order; empty groups left out. */
 export function dayReminders(state: DayState): DayReminders {
-	const alive = state.seats.filter((s) => !s.dead).length;
 	const all: DayReminder[] = [];
 	const visit = (characterId: CharacterId, seat: DaySeat | undefined) => {
 		const character = state.character(characterId);
@@ -677,7 +694,7 @@ export function dayReminders(state: DayState): DayReminders {
 				return;
 			}
 		}
-		if (entry) all.push(...curated(entry, seat, state, alive));
+		if (entry) all.push(...curated(entry, seat, state));
 		else if (character && rules?.none === undefined && !seat?.dead) {
 			all.push(...detectDayReminders(character, refFor(seat, characterId)));
 		}

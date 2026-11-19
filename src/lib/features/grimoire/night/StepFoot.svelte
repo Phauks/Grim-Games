@@ -31,7 +31,9 @@
 	/** The count leaves out Dusk and Dawn (night-steps.ts `countedPlace`). */
 	const counted = $derived(countedPlace(steps, steps[index]));
 	const last = $derived(index >= 0 && index === count - 1);
-	const shown = $derived(count > 0 && index >= 0);
+	/** A counted step: Dusk and Dawn, the bookends, have no bar (Trevor, 2026-11-19: "there should
+	 *  be no progress bar when on dusk or dawn"). */
+	const shown = $derived(counted.place >= 0);
 	/** How far the bar is filled (night-steps.ts `nightProgress`). */
 	const fill = $derived(nightProgress(steps, index));
 </script>
@@ -44,13 +46,12 @@
 		disabled={index <= 0}
 		onclick={() => go(-1)}
 	/>
-	<!-- Reserved when the step isn't in tonight's list, so the arrows never move. -->
-	<span class="progress" aria-hidden={!shown}
-		><span class="track"
-			><span class="done" style:inline-size="{fill * 100}%" data-testid="step-progress"
-			></span></span
+	<!-- Reserved when not shown, so the arrows never move. -->
+	<span class="progress" aria-hidden={!shown} data-hidden={!shown || undefined}
+		><span class="track" data-testid="step-progress"
+			><span class="done" style:inline-size="{fill * 100}%"></span></span
 		><span class="step-of"
-			>{#if counted.place >= 0}<CountBadge
+			>{#if shown}<CountBadge
 					count={counted.place + 1}
 					total={counted.of}
 					plain
@@ -88,6 +89,9 @@
 		gap: var(--space-1);
 		min-width: 0;
 		padding-inline: var(--space-2);
+	}
+	.progress[data-hidden] {
+		visibility: hidden;
 	}
 	.track {
 		position: relative;

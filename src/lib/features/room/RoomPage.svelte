@@ -8,6 +8,7 @@
 	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { prepareRoom } from './host.svelte.ts';
+	import PlayerFeedbackSection from './PlayerFeedbackSection.svelte';
 	import PlayersPanel from './PlayersPanel.svelte';
 	import RoomPanel from './RoomPanel.svelte';
 	import { endedGames } from '#lib/features/board/device-notes.ts';
@@ -44,9 +45,10 @@
 	<WithSavedGame {gameId} area="grimoire">
 		{#snippet children(game: OpenGame)}
 			{@render head()}
-			{#if players}<PlayersPanel {game} ended={!!endedGames.read()[gameId]} />{:else}<RoomPanel
-					{game}
-				/>{/if}
+			{#if players}<PlayersPanel {game} />{#if endedGames.read()[gameId]}<PlayerFeedbackSection
+						{game}
+						ended
+					/>{/if}{:else}<RoomPanel {game} />{/if}
 		{/snippet}
 		{#snippet fallback({ kind, message })}
 			{@render head()}

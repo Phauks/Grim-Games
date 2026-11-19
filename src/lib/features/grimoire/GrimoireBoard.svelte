@@ -56,6 +56,7 @@
 	import SoundboardLink from '#lib/features/sound/SoundboardLink.svelte';
 	import PaneSeats from './hosting/PaneSeats.svelte';
 	import PaneSession from './hosting/PaneSession.svelte';
+	import PlayerFeedbackSection from '#lib/features/room/PlayerFeedbackSection.svelte';
 	import SessionDialogs from './hosting/SessionDialogs.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -374,21 +375,27 @@
 		rules?.details(character);
 	}
 
-	// ── Notes: the game's and every player's, on Players (Trevor, 2026-10-29) ──
+	// ── Notes: the game's and every player's, on Notes (Trevor, 2026-11-19) ──
 	/**
-	 * A seat's note mark opens that player's sheet on Players, with their notes and messages.
+	 * A seat's mark opens Notes at that player's notes, or, while they have sent messages not yet
+	 * read, their row on Players with the messages. The seat's ⋯ Notes always opens Notes.
 	 * After the tap's click, so it doesn't land in the field.
 	 */
-	function editNote(seatId: SeatId) {
+	function editNote(seatId: SeatId, fromMark = false) {
 		// Beside the board, the pane is under no sheet: the seat's sheet steps aside for it.
 		if (paneAt) sheetOpen = false;
-		setTimeout(() => playersDialog.showSeat(seatId));
+		const host = roomHost();
+		const member = host.code ? host.members.find((m) => m.seatId === seatId) : undefined;
+		const messages = fromMark && !!member && host.inbox.waitingFrom(member.memberId).count > 0;
+		setTimeout(() =>
+			messages ? playersDialog.showPlayer(seatId) : playersDialog.showSeat(seatId)
+		);
 	}
 	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
 	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
 		if (part === 'avatar') openProfile(seatId);
 		else if (watching) readCharacter(game.seats[seatId]?.characterId);
-		else if (part === 'note') editNote(seatId);
+		else if (part === 'note') editNote(seatId, true);
 		else if (part === 'nominate') askNomination(seatId);
 		else openSeat(seatId);
 	}
@@ -779,8 +786,7 @@
 		night={watching ? undefined : nightPane}
 		bluffs={gameHasDemonBluffs(game.gameId)}
 		seats={watching ? undefined : seatsView}
-		session={sessionView}
-		ended={!!ended}>{@render boardBody()}</BoardPane
+		session={sessionView}>{@render boardBody()}</BoardPane
 	>{/if}
 {#snippet boardBody()}
 	<div class="grimoire" class:fill={!toolbar} bind:this={grimoireEl}>
@@ -970,6 +976,7 @@
 {#snippet seatsView()}
 	<PaneSeats onAddRule={() => rules?.add()} onArrange={() => enterSeating(seatArr)} />
 {/snippet}
+{#snippet playerFeedback()}<PlayerFeedbackSection game={grimoire.open} ended />{/snippet}
 {#snippet sessionView()}
 	<PaneSession
 		{watching}
@@ -985,6 +992,7 @@
 		onReopen={() => (reopenOpen = true)}
 		newGame={newGameSheet}
 		onEnd={() => (endOpen = true)}
+		feedback={ended && !watching ? playerFeedback : undefined}
 	/>
 {/snippet}
 {#if !watching}<NewGameSheet

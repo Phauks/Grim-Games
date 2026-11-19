@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
-import { closePane, openPlayers, paneButton } from './players.ts';
+import { closePane, openPane, openPlayers, paneButton } from './players.ts';
 
 // Players is one column of pill sections (Trevor, 2026-11-17, "A"): Players with Show's eye on
-// its pill, Spectators, then Player feedback, kept in place but closed until the game is over
-// (Trevor, 2026-11-16: "not available until after the game. keeps review separate from the
-// game"; 2026-11-18, "B own section"). Each player's row opens to their notes beneath it
-// (Trevor, 2026-11-18).
+// its pill, then Spectators. Each player's row opens to their controls and messages beneath it
+// (Trevor, 2026-11-19: "Turn player players into just messages"). Player feedback is in
+// Session once the game is over, unseen during it (Trevor, 2026-11-19: "We shouldn't even see
+// player feedback section during the game").
 
-test('Player feedback sits under Spectators and opens once the game is over', async ({ page }) => {
+test('Player feedback is in Session once the game is over, never on Players', async ({ page }) => {
 	await page.goto('/new');
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
@@ -20,7 +20,7 @@ test('Player feedback sits under Spectators and opens once the game is over', as
 
 	let players = await openPlayers(page);
 	const sections = players.getByTestId('players-room').getByRole('heading', { level: 2 });
-	const names = [/^Players/, /^Spectators/, /^Player feedback/];
+	const names = [/^Players/, /^Spectators/];
 	await expect(sections).toHaveCount(names.length);
 	for (const [n, name] of names.entries())
 		await expect(sections.nth(n).getByRole('button').first()).toHaveAccessibleName(name);
@@ -32,15 +32,17 @@ test('Player feedback sits under Spectators and opens once the game is over', as
 	const words = players.getByRole('button', { name: /^Players/ }).first();
 	const colour = await words.evaluate((el) => getComputedStyle(el).color);
 	await expect(show).toHaveCSS('color', colour);
-	// A player's row opens to their notes beneath it, with no other player's showing.
+	// A player's row opens beneath it, with no other player's showing, and no notes in it.
 	await expect(players.getByTestId('room-player-sheet')).toHaveCount(0);
 	const row = players.getByTestId('room-player').first();
 	await row.getByRole('button').first().tap();
 	await expect(row.getByTestId('room-player-sheet')).toBeVisible();
-	await expect(row.getByRole('button', { name: /^Notes/ })).toBeVisible();
+	await expect(row.getByRole('button', { name: /^Notes/ })).toHaveCount(0);
 	await expect(players.getByTestId('room-player-sheet')).toHaveCount(1);
-	const feedback = players.getByRole('button', { name: /^Player feedback/ });
-	await expect(feedback).toBeDisabled();
+	await expect(page.getByRole('button', { name: /^Player feedback/ })).toHaveCount(0);
+	// Nor in Session while the game goes on.
+	const session = await openPane(page, 'Session');
+	await expect(session.getByRole('button', { name: /^Player feedback/ })).toHaveCount(0);
 	await closePane(page);
 
 	// A player's feedback came back with the game; then the game ends.
@@ -69,7 +71,10 @@ test('Player feedback sits under Spectators and opens once the game is over', as
 	await expect(page.getByTestId('game-over')).toBeVisible();
 
 	players = await openPlayers(page);
+	await expect(players.getByRole('button', { name: /^Player feedback/ })).toHaveCount(0);
+	const after = await openPane(page, 'Session');
+	const feedback = after.getByRole('button', { name: /^Player feedback/ });
 	await expect(feedback).toBeEnabled();
-	await expect(players.getByTestId('feedback-average')).toHaveText('4 of 5 from 1 rated');
-	await expect(players.getByTestId('feedback-entry')).toContainText('Ana');
+	await expect(after.getByTestId('feedback-average')).toHaveText('4 of 5 from 1 rated');
+	await expect(after.getByTestId('feedback-entry')).toContainText('Ana');
 });

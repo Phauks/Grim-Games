@@ -14,8 +14,7 @@ export const modes = {
 	'modes.info.storyteller': 'Storyteller',
 	'modes.info.players': 'Players',
 	'modes.newGame.ask': 'Start a new game?',
-	'modes.newGame.askText':
-		'This game moves to History when the new one starts. The room and players stay.',
+	'modes.newGame.askText': 'The room and players stay.',
 	'modes.info.watchers': 'Watching',
 	'modes.info.phase': 'Game phase',
 	'modes.info.onBoard': '{line} on the board',

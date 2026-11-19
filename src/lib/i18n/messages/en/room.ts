@@ -55,6 +55,8 @@ export const room = {
 	'room.pane.history': 'History',
 	'room.pane.session': 'Session',
 	'room.pane.views': '{subject} views',
+	'room.notes.owner': 'Whose note',
+	'room.notes.game': 'Game',
 	'room.players.notesHeading': 'Notes',
 	'room.players.hasNotes': 'Has notes',
 	'room.players.notes': {

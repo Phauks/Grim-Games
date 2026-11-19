@@ -67,6 +67,7 @@ export const reference = {
 	'reference.playerWith': 'player with',
 	'reference.nomineeChose': 'the player the nominee chose',
 	'reference.nominee': 'the nominee',
+	'reference.aliveCount': '(number) players alive',
 	'reference.target.game': 'Not on a player',
 	'reference.target.self': 'Self',
 	'reference.target.anyPlayer': 'Any player',

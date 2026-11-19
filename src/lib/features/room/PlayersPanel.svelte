@@ -7,7 +7,6 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
@@ -16,39 +15,35 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { removeFromRoom } from './host-seating.ts';
+	import { playersDialog } from './players-dialog.svelte.ts';
 	import PlayerDisc, { type Phone } from './PlayerDisc.svelte';
 	import PlayerInbox from './PlayerInbox.svelte';
-	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import GiveSeatDialog from './GiveSeatDialog.svelte';
 	import GrimViewSwitch from './GrimViewSwitch.svelte';
-	import PlayerFeedbackSection from './PlayerFeedbackSection.svelte';
-	import SeatNotes from './SeatNotes.svelte';
 	import { tablePlayers, tableSpectators, type TableEntry } from './table-entries.ts';
 	import ShowRolesButton from './ShowRolesButton.svelte';
 
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
 	 * phone or not, then the phones with no seat. One line each (Trevor, 2026-11-01, "D"): the
-	 * seat and phone in one disc, name and character, how many notes, and what waits from them.
-	 * One column of pill sections, as the rest of the pane (Trevor, 2026-11-17, "A"): Players,
-	 * with Show's eye on its pill; Spectators; and Player feedback, which opens once the game is
-	 * over (Trevor, 2026-11-18, "B own section"). Each player's row opens beneath it to their
-	 * messages, then their notes (Trevor, 2026-11-01: "place messages on top of notes") and
-	 * Block (Trevor, 2026-11-18). Share is shown to players, so nothing here is on it.
+	 * seat and phone in one disc, name and character, and what waits from them. One column of
+	 * pill sections, as the rest of the pane (Trevor, 2026-11-17, "A"): Players, with Show's eye
+	 * on its pill, and Spectators. Each player's row opens beneath it to their controls and
+	 * messages (Trevor, 2026-11-19: "Turn player players into just messages"); their notes are
+	 * on Notes and Player feedback in Session once the game is over. Share is shown to players,
+	 * so nothing here is on it.
 	 */
 	interface Props {
 		game: OpenGame;
 		/** How a note is saved: the board's, with its toasts, or the game's own. */
 		run?: (command: Command) => boolean;
-		/** The game is over, so players' feedback can be read. */
-		ended?: boolean;
 	}
 
-	let { game, run = (command) => game.run(command).ok, ended = false }: Props = $props();
+	let { game, run = (command) => game.run(command).ok }: Props = $props();
 
 	const host = roomHost();
 	$effect(() => host.attach(game));
@@ -87,15 +82,15 @@
 	const pictureOf = (m: RoomMember) =>
 		m.picture && host.code ? roomImagePath(host.code, m.picture) : undefined;
 
-	// ── A player opened from the board: a seat's pen mark or its ⋯ Notes opens their row. ──
+	// ── A player opened from the board: their seat's mark, while messages wait, opens their row. ──
 	let openedKey = $state<string>();
 	/** The list, to bring an opened player's row into view. */
 	let list = $state<HTMLElement>();
 	// Two frames on, once Players is laid out and the row has opened.
 	$effect(() => {
-		const seatId = playersDialog.seat;
+		const seatId = playersDialog.player;
 		if (seatId === undefined) return;
-		playersDialog.seat = undefined;
+		playersDialog.player = undefined;
 		openedKey = seatId;
 		requestAnimationFrame(() =>
 			requestAnimationFrame(() =>
@@ -117,10 +112,7 @@
 		removeFromRoom(host, game, removing.memberId);
 	}
 
-	// ── Each player's notes, the same notes as before ──
 	const viewOnly = $derived(game.viewOnly);
-	const seatNotes = (seatId: SeatId | undefined) =>
-		(seatId && game.game.seats[seatId]?.notes) || [];
 </script>
 
 {#snippet nameAndCharacter(entry: Entry)}
@@ -145,11 +137,10 @@
 	/>
 {/snippet}
 
-<!-- One row a player, which opens to their messages and notes beneath it (Trevor, 2026-11-18:
-     "make the notes and messages appear beneath the individual as a collapsible list"). -->
+<!-- One row a player, which opens beneath it (Trevor, 2026-11-18: "appear beneath the
+     individual as a collapsible list"). -->
 {#snippet row(entry: Entry)}
 	{@const wait = entry.inboxId ? waiting(entry.inboxId) : { count: 0, urgent: false }}
-	{@const notes = seatNotes(entry.seatId).length}
 	<li data-testid="room-player" data-seat={entry.seatId}>
 		<Collapsible
 			title={titleOf(entry)}
@@ -164,13 +155,7 @@
 						{@render nameAndCharacter(entry)}
 						{#if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
 					</span>
-					<!-- Two fixed slots, so rows line up and never shift as notes and messages come and go. -->
-					<span class="slot notes" data-testid="room-player-notes"
-						>{#if notes}<Icon
-								name="notes"
-								label={t('room.players.notes', { count: notes })}
-							/><small aria-hidden="true">{notes}</small>{/if}</span
-					>
+					<!-- A fixed slot, so rows line up and never shift as messages come and go. -->
 					<span class="slot waiting">
 						{#if wait.count}<CountBadge
 								count={wait.count}
@@ -224,11 +209,10 @@
 			{/if}
 		</div>
 	</Collapsible>
-	<PlayerFeedbackSection {game} {ended} />
 	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
-<!-- Inside a player's row: where they are, then their messages and notes. -->
+<!-- Inside a player's row: where they are, their controls, then their messages. -->
 {#snippet details(entry: Entry)}
 	<div class="details" data-testid="room-player-sheet" data-seat={entry.seatId}>
 		<header class="head">
@@ -280,19 +264,6 @@
 				countOpen
 			>
 				<PlayerInbox memberId={entry.inboxId} name={entry.name} />
-			</Collapsible>
-		{/if}
-		{#if entry.seatId}
-			{@const seatId = entry.seatId}
-			<Collapsible
-				title={t('room.players.notesHeading')}
-				level={4}
-				storageKey="players-notes"
-				pinned={false}
-				count={seatNotes(seatId).length}
-				countOpen
-			>
-				<SeatNotes {game} {seatId} {run} />
 			</Collapsible>
 		{/if}
 	</div>
@@ -354,7 +325,7 @@
 	.list > li {
 		border-bottom: 1px solid var(--border);
 	}
-	/* A row's header: disc, name and character, then the notes and messages slots. */
+	/* A row's header: disc, name and character, then what waits from them. */
 	.line {
 		display: flex;
 		flex: 1;
@@ -377,9 +348,6 @@
 		flex: none;
 		width: 1.9em;
 		color: var(--on-surface-muted);
-	}
-	.slot small {
-		font-size: 0.8rem;
 	}
 	/* Indented under the row's caret, so it reads as that player's. */
 	.details {

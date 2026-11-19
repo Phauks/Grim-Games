@@ -26,11 +26,15 @@
 						"self": true
 					},
 					{
-						"text": "is alive"
+						"text": "is alive,"
+					},
+					{
+						"alive": true
 					}
 				],
 				"when": {
-					"minAlive": 5
+					"minAlive": 5,
+					"notTravellers": true
 				}
 			}
 		]

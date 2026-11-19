@@ -47,14 +47,15 @@
 		/></span
 	>
 	<!-- The seat and its character (Trevor, 2026-10-18), whole: tapping it places or moves the
-	     token. -->
+	     token, never opens the character (Trevor, 2026-11-19: it got in the way). -->
 	<button
 		type="button"
 		class="where"
 		aria-label={at ? 'Move' : 'Place'}
 		title={at ? 'Move' : 'Place'}
 		onclick={onchoose}
-		>{#if at}<SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</button
+		>{#if at}<SeatBadge {game} {characters} seatId={at.seatId} interactive={false} />{:else}Not
+			placed{/if}</button
 	>
 	<!-- Off the board and back to the reminder bank, from the step (Trevor, 2026-10-17);
 	     there but unusable while not placed. -->

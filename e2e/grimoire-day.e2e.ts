@@ -319,6 +319,10 @@ test("the day's sections fold with their caret and their headers stick at the to
 	await expect(
 		day.locator('li[data-character="slayer"]').getByRole('button', { name: /^Used: Slayer/ })
 	).toBeVisible();
+	// The Scarlet Woman's line counts the living: twelve seats, four dead.
+	await expect(day.locator('li[data-character="scarletwoman"]')).toContainText(
+		/Is alive,\s*8 players alive\./
+	);
 
 	// Each section folds away with its caret, its count shown while closed.
 	for (let i = 0; i < (await sections.count()); i++) {

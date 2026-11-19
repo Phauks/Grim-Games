@@ -417,9 +417,10 @@ describe('nightProgress', () => {
 		expect(nightProgress(steps, 2)).toBe(0.5);
 		expect(nightProgress(steps, 3)).toBe(1);
 	});
-	it('is empty on Dusk and full on Dawn', () => {
+	it('has no fill on Dusk or Dawn, which have no bar', () => {
+		// Trevor, 2026-11-19: "there should be no progress bar when on dusk or dawn".
 		expect(nightProgress(steps, 0)).toBe(0);
-		expect(nightProgress(steps, 4)).toBe(1);
+		expect(nightProgress(steps, 4)).toBe(0);
 	});
 	it('is full with one counted step, and empty off the list', () => {
 		const one = ['dusk', 'minioninfo', 'dawn'].map(marker);

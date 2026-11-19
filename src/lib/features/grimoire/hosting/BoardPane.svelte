@@ -31,8 +31,6 @@
 		day: Snippet;
 		/** The Night tab's contents; none for a spectator. */
 		night?: Snippet;
-		/** The game is over: Players' feedback opens. */
-		ended?: boolean;
 		/** The game's mode gives the Demon bluffs, so the pane has a Bluffs view. */
 		bluffs?: boolean;
 		/** More's Seats and Session, from the board; a spectator has no Seats. */
@@ -48,7 +46,6 @@
 		beside = $bindable(),
 		day,
 		night,
-		ended = false,
 		bluffs = false,
 		seats,
 		session,
@@ -97,7 +94,6 @@
 		run={(command) => grimoire.run(command)}
 		{day}
 		{night}
-		{ended}
 		{watching}
 		bluffs={bluffs ? bluffsView : undefined}
 		{seats}

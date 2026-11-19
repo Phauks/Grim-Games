@@ -35,6 +35,9 @@ const FAR = 3.2;
 const SQUEEZES = [1, 0.72, 0.55];
 /** Turns from straight at the middle a group tries first, then when nothing fits (degrees). */
 const INWARD = 80;
+/** A group with no room close by may turn any way and go this far out (token widths), whole. */
+const SPILL_TURN = 180;
+const SPILL = 5;
 const ANYWHERE = 130;
 const TURN_STEP = 5;
 const OUT_STEP = 3;
@@ -75,6 +78,19 @@ function groupShape(n: number, pitch: number): Point[] {
 	}
 	const across = mean(out).x;
 	return out.map((p) => ({ x: p.x - across, y: p.y }));
+}
+
+/**
+ * The shapes a whole group may take where it spills: its usual cluster, then one line across
+ * (a row along a gap), then one line deep (a row out along the seat's own line).
+ */
+function spillShapes(n: number, pitch: number): Point[][] {
+	const line = Array.from({ length: n }, (_, j) => (j - (n - 1) / 2) * pitch);
+	return [
+		groupShape(n, pitch),
+		line.map((x) => ({ x, y: 0 })),
+		line.map((y, j) => ({ x: 0, y: j * pitch }))
+	];
 }
 
 /**
@@ -183,18 +199,26 @@ export function fitReminders(
 		let shape = groupShape(s.count, k + GAP);
 		// Each reminder nearer its own seat than any other seat with reminders, at a spacing that
 		// still leaves each one's middle free to take; then only the group's middle, at each.
+		points = place(shape, 0, INWARD, s.size * CLOSE, true);
+		// No room close by: whole and full size wherever the board is free, any way round,
+		// before any squeezing (Trevor, 2026-11-19, "Spill to free space"). Every reminder still
+		// nearer its own seat than any other, so none is taken for a neighbour's (Trevor,
+		// 2026-11-19).
+		if (!points) {
+			fits = false;
+			for (const spilled of spillShapes(s.count, k + GAP)) {
+				points = place(spilled, 0, SPILL_TURN, s.size * SPILL, true);
+				if (points) break;
+			}
+		}
 		const tries: [number, boolean][] = [
-			[1, true],
 			[SQUEEZES[1], true],
 			...SQUEEZES.map((squeeze): [number, boolean] => [squeeze, false])
 		];
 		for (const [squeeze, strict] of tries) {
+			if (points) break;
 			shape = groupShape(s.count, squeeze === 1 ? k + GAP : k * squeeze);
 			points = place(shape, 0, INWARD, s.size * CLOSE, strict);
-			if (points) {
-				if (squeeze !== 1) fits = false;
-				break;
-			}
 		}
 		for (const loose of [0, 1, 2]) {
 			if (points) break;

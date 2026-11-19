@@ -7,6 +7,7 @@ import {
 } from '#lib/core/model/index.ts';
 import { neighbourFollows } from '#lib/core/rules/reminders/reminder-movement.ts';
 import type { EngineContext } from '../context.ts';
+import type { NoteOwner } from '../commands.ts';
 import type { GameEvent } from '../events.ts';
 import { applyEvents } from '../reducer.ts';
 import {
@@ -20,6 +21,11 @@ import {
 	type Warn
 } from './shared.ts';
 import { rulesFor } from '#lib/core/rules/rules-for.ts';
+
+/** The next free `n<number>` id in a list of notes. */
+function nextNoteId(notes: readonly GameNote[]): string {
+	return `n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
+}
 
 /**
  * The note a `SetGameNote` or `SetSeatNote` writes into `notes`, trimmed, or undefined when
@@ -50,9 +56,7 @@ function writtenNote(
 		warn('no-change', 'the note is unchanged');
 		return undefined;
 	}
-	const noteId =
-		before?.noteId ??
-		`n${notes.reduce((max, n) => Math.max(max, Number(n.noteId.slice(1)) || 0), 0) + 1}`;
+	const noteId = before?.noteId ?? nextNoteId(notes);
 	return { noteId, title, text, hidden: command.hidden };
 }
 
@@ -120,6 +124,7 @@ export const SEATS_DECIDERS: Deciders<
 	| 'SetSeatLook'
 	| 'SetGameNote'
 	| 'DeleteGameNote'
+	| 'MoveNote'
 	| 'SwapSeats'
 	| 'RotateSeats'
 	| 'MoveSeat'
@@ -258,6 +263,28 @@ export const SEATS_DECIDERS: Deciders<
 		if (!game.notes?.some((n) => n.noteId === command.noteId))
 			refuse('unknown-note', `no note ${command.noteId}`);
 		return [{ type: 'GameNoteDeleted', noteId: command.noteId }];
+	},
+
+	MoveNote(game, command, ctx, warn) {
+		const notesOf = (owner: NoteOwner) =>
+			owner === 'game' ? (game.notes ?? []) : (seatOf(game, owner).notes ?? []);
+		const note =
+			notesOf(command.from).find((n) => n.noteId === command.noteId) ??
+			refuse('unknown-note', `no note ${command.noteId}`);
+		const to = notesOf(command.to);
+		if (command.from === command.to) {
+			warn('no-change', 'the note is already there');
+			return [];
+		}
+		const moved = { ...note, noteId: nextNoteId(to) };
+		return [
+			command.from === 'game'
+				? { type: 'GameNoteDeleted', noteId: note.noteId }
+				: { type: 'SeatNoteDeleted', seatId: command.from, noteId: note.noteId },
+			command.to === 'game'
+				? { type: 'GameNoteSet', note: moved }
+				: { type: 'SeatNoteSaved', seatId: command.to, note: moved }
+		];
 	},
 
 	SwapSeats(game, command, ctx, warn) {
