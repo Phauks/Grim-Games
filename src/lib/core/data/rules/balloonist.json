@@ -10,7 +10,11 @@
 		"Know": {
 			"seat": "any",
 			"note": "The player shown tonight; after the first night their character type must differ from the previous night's pick.",
-			"differsFromLastNight": "type"
+			"differsFrom": {
+				"by": "type",
+				"from": "previous"
+			},
+			"info": true
 		}
 	},
 	"setupPrep": {

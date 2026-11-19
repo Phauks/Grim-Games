@@ -225,7 +225,7 @@
 			game,
 			{ characterId: id, label: choosing.label },
 			characters,
-			grimoire.atDawn
+			grimoire.pastPicks
 		);
 	});
 	function choose(label: string, at?: { reminderId: string; seatId: SeatId }) {

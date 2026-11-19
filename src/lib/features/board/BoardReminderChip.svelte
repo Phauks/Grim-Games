@@ -7,6 +7,7 @@
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import BoardReminder from '#lib/features/board/BoardReminder.svelte';
+	import ReminderCount from '#lib/features/board/ReminderCount.svelte';
 
 	interface Props {
 		/** How it looks: `placedLook` on the board, `playerLook` on a player's grim. */
@@ -23,6 +24,8 @@
 		/** Whose own copy it is, when they borrow its character's ability (M68). */
 		holder?: Character;
 		size: number;
+		/** How many reminders it stands for, stacked (board-stacks.ts): a ×count on it. */
+		count?: number;
 		disabled: boolean;
 		/** The seat it is on (1 is the first), for tests and the held-seat dimming. */
 		seatNumber?: number;
@@ -52,6 +55,7 @@
 		alignment,
 		holder,
 		size,
+		count = 1,
 		disabled,
 		seatNumber,
 		onHeldSeat = false,
@@ -86,6 +90,7 @@
 	aria-hidden={ghost ? 'true' : undefined}
 >
 	<BoardReminder {...look} {alignment} {holder} {size} {disabled} {onTap} {onDrag} {onCancel} />
+	{#if count > 1}<ReminderCount {count} />{/if}
 </div>
 
 <style>
