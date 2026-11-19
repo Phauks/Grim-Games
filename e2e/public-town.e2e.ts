@@ -450,8 +450,7 @@ test('the soundboard plays on the Public Town tablet unless Play on leaves it ou
 	// The tablet has been tapped, as a table's would be, so it may play sound.
 	await tablet.getByTestId('public-town').tap();
 
-	await openSoundboard(page);
-	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
+	const sheet = await openSoundboard(page);
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	const playOn = sheet.getByRole('combobox', { name: 'Play on' });
 	// The town and phones, the default; there is no choice for this device.

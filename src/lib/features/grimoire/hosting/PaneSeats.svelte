@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import { sidePane } from '#lib/features/room/side-pane.svelte.ts';
 
 	/**
 	 * More's Seats (moved from the board's ⋯ menu into the pane, Trevor 2026-11-18): a Fabled or
@@ -13,11 +14,17 @@
 	}
 
 	let { onAddRule, onArrange }: Props = $props();
+
+	/** A phone's sheet closes first, so what the item opens or starts is on the board. */
+	function act(action: () => void) {
+		sidePane.hide();
+		action();
+	}
 </script>
 
 <div class="items" data-testid="pane-seats">
-	<Button variant="quiet" icon="fabled" onclick={onAddRule}>Add Fabled or Loric</Button>
-	<Button variant="quiet" icon="arrange" data-testid="menu-seating" onclick={onArrange}>
+	<Button variant="quiet" icon="fabled" onclick={() => act(onAddRule)}>Add Fabled or Loric</Button>
+	<Button variant="quiet" icon="arrange" data-testid="menu-seating" onclick={() => act(onArrange)}>
 		{t('room.seating.title')}
 	</Button>
 </div>

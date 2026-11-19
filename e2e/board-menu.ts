@@ -1,10 +1,10 @@
-import type { Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { openPane } from './players.ts';
 
-/** Opens the Soundboard from the board's ⋯ menu, where it is a full row (Trevor, 2026-11-01). */
-export async function openSoundboard(page: Page): Promise<void> {
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Soundboard', exact: true })
-		.tap();
+/** Opens the Soundboard: the pane's More, Sounds (Trevor, 2026-11-18), and returns it. */
+export async function openSoundboard(page: Page): Promise<Locator> {
+	const pane = await openPane(page, 'Sounds');
+	const sounds = pane.getByTestId('pane-sounds');
+	await expect(sounds).toBeVisible();
+	return sounds;
 }

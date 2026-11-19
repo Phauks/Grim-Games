@@ -56,6 +56,7 @@
 	import SoundboardLink from '#lib/features/sound/SoundboardLink.svelte';
 	import PaneSeats from './hosting/PaneSeats.svelte';
 	import PaneSession from './hosting/PaneSession.svelte';
+	import SessionDialogs from './hosting/SessionDialogs.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -986,10 +987,10 @@
 		}}
 	/>
 	<SoundboardLink />
+	<SessionDialogs />
 {/if}
 
-<!-- The ⋯ menu is a spectator's only: the Storyteller's is the pane's More (Trevor, 2026-11-18). -->
-{#if watching}<BoardMenu
+{#if watching}<!-- Spectators only: the Storyteller's ⋯ is the pane's More (Trevor, 2026-11-18). --><BoardMenu
 		bind:open={menuOpen}
 		{grimoire}
 		gameInfo={cornerHidden}
@@ -1012,7 +1013,6 @@
 			: undefined}
 		onReopen={() => (reopenOpen = true)}
 		newGame={newGameSheet}
-		onCloseRoom={roomHost().code ? () => roomHost().close() : undefined}
 		onEnd={() => (endOpen = true)}
 	/>
 {/snippet}

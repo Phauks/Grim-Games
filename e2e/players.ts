@@ -12,9 +12,33 @@ export function storytellerPane(page: Page): Locator {
 		.or(page.getByRole('dialog', { name, exact: true }));
 }
 
-export type PaneTab = 'Day' | 'Night' | 'Notes' | 'Players';
+/** The pane's views, each under its subject (Trevor, 2026-11-18: nav with a sub-nav). */
+const SUBJECTS = {
+	Day: 'Game',
+	Night: 'Game',
+	Bluffs: 'Game',
+	Players: 'Players',
+	Notes: 'Players',
+	Seats: 'More',
+	Sounds: 'More',
+	History: 'More',
+	Session: 'More'
+} as const;
+export type PaneTab = keyof typeof SUBJECTS;
 
-/** Opens the pane at a tab: its button on a phone; beside the board it always shows. */
+/** Taps a tab in one of the pane's rails, unless it is chosen already. */
+async function choose(pane: Locator, rail: string, name: string) {
+	const trigger = pane
+		.getByRole('tablist', { name: rail, exact: true })
+		.getByRole('tab', { name: new RegExp(`^${name}`) });
+	if ((await trigger.getAttribute('aria-selected')) !== 'true') await trigger.tap();
+	await expect(trigger).toHaveAttribute('aria-selected', 'true');
+}
+
+/**
+ * Opens the pane at a view: its subject in the top rail, then the view in the subject's own
+ * rail. Its button on a phone; beside the board it always shows.
+ */
 export async function openPane(page: Page, tab?: PaneTab) {
 	const pane = storytellerPane(page);
 	const button = page.getByTestId('game-pane-button');
@@ -23,9 +47,9 @@ export async function openPane(page: Page, tab?: PaneTab) {
 	if (!(await pane.isVisible())) await button.tap();
 	await expect(pane).toBeVisible();
 	if (tab) {
-		const trigger = pane.getByRole('tab', { name: new RegExp(`^${tab}`) });
-		await trigger.tap();
-		await expect(trigger).toHaveAttribute('aria-selected', 'true');
+		const subject = SUBJECTS[tab];
+		await choose(pane, 'Game', subject);
+		await choose(pane, `${subject} views`, tab);
 	}
 	return pane;
 }

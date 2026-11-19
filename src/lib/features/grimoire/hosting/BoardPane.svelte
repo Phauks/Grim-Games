@@ -8,7 +8,7 @@
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import StorytellerPane from './StorytellerPane.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
-	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
+	import SoundboardPanel from '#lib/features/sound/SoundboardPanel.svelte';
 	import HistoryDialog from '#lib/features/grimoire/HistoryDialog.svelte';
 
 	/**
@@ -84,7 +84,7 @@
 		dispatch={(command) => grimoire.open.run(command)}
 	/>
 {/snippet}
-{#snippet soundsView()}<SoundboardDialog inline />{/snippet}
+{#snippet soundsView()}<SoundboardPanel />{/snippet}
 {#snippet historyView()}<HistoryDialog inline {grimoire} />{/snippet}
 
 {#snippet pane()}

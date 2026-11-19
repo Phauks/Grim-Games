@@ -3,7 +3,6 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { hold } from '#lib/ui/hold.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -15,22 +14,13 @@
 	/**
 	 * The Storyteller's soundboard (plan U6, Trevor 2026-10-26): a tap plays a bell or another
 	 * sound at once, and a second tap stops it. Day and night sound is beside it, so the
-	 * recording can change mid-game. Pause in the header holds both where they are (Trevor,
+	 * recording can change mid-game. Pause, above the pads, holds both where they are (Trevor,
 	 * 2026-10-27); it stays in place, disabled, while nothing plays. The mixer is below the
 	 * pads; holding a pad picks it there. The pads are the sounds and mixes the Storyteller
 	 * placed (Trevor, 2026-10-27: "hot spots"); "+ New" and Edit open SoundPadsDialog.
-	 * A two-pane modal (Trevor, 2026-10-27: "noise controls on one side and the noises on the
-	 * other"): the pads on the left, or held on top on a phone, and the controls beside them.
+	 * In the Storyteller's pane, under More (Trevor, 2026-11-18): its two buttons on a row, then
+	 * the pads, then the controls, in one scroll.
 	 */
-	interface Props {
-		open?: boolean;
-		/**
-		 * In the Storyteller's pane, under More (Trevor, 2026-11-18): its two buttons on a row,
-		 * then the pads, then the controls, in one scroll.
-		 */
-		inline?: boolean;
-	}
-	let { open = $bindable(false), inline = false }: Props = $props();
 
 	let padsOpen = $state(false);
 
@@ -41,16 +31,16 @@
 	);
 </script>
 
-{#snippet actions()}
-	<IconButton icon="edit" label={t('settings.soundPads')} onclick={() => (padsOpen = true)} />
-	<IconButton
-		icon={soundboard.paused ? 'soundResume' : 'soundPause'}
-		label={soundboard.paused ? t('settings.soundResume') : t('settings.soundPause')}
-		disabled={!pausable}
-		onclick={() => (soundboard.paused ? soundboard.resume() : soundboard.pause())}
-	/>
-{/snippet}
-{#snippet pads()}
+<div class="soundboard" data-testid="pane-sounds">
+	<div class="actions">
+		<IconButton icon="edit" label={t('settings.soundPads')} onclick={() => (padsOpen = true)} />
+		<IconButton
+			icon={soundboard.paused ? 'soundResume' : 'soundPause'}
+			label={soundboard.paused ? t('settings.soundResume') : t('settings.soundPause')}
+			disabled={!pausable}
+			onclick={() => (soundboard.paused ? soundboard.resume() : soundboard.pause())}
+		/>
+	</div>
 	<div class="pads" role="group" aria-label={t('settings.soundboard')}>
 		{#each preferences.current.soundPads as pad (padId(pad))}
 			<Chip
@@ -65,27 +55,13 @@
 			<Icon name="add" />{t('settings.soundPadNew')}
 		</Chip>
 	</div>
-{/snippet}
-
-{#if inline}
-	<div class="inline" data-testid="pane-sounds">
-		<div class="actions">{@render actions()}</div>
-		{@render pads()}
-		<SoundboardSettings master />
-		<AmbienceSettings />
-	</div>
-{:else}
-	<Dialog bind:open title={t('settings.soundboard')}>
-		{#snippet headActions()}{@render actions()}{/snippet}
-		{#snippet aside()}{@render pads()}{/snippet}
-		<SoundboardSettings master />
-		<AmbienceSettings />
-	</Dialog>
-{/if}
+	<SoundboardSettings master />
+	<AmbienceSettings />
+</div>
 <SoundPadsDialog bind:open={padsOpen} />
 
 <style>
-	.inline {
+	.soundboard {
 		display: grid;
 		align-content: start;
 		gap: var(--space-3);
@@ -106,14 +82,6 @@
 		flex-wrap: wrap;
 		align-content: flex-start;
 		gap: var(--space-2);
-	}
-	/* Held on top on a phone: many pads scroll in their own part, so the controls stay in view. */
-	@container dialog-panes (max-width: 36rem) {
-		.pads {
-			max-height: 35dvh;
-			overflow-y: auto;
-			overscroll-behavior: contain;
-		}
 	}
 	/* The "+ New" pad: a dashed outline, like every new-item card. */
 	.pads :global(.new) {
