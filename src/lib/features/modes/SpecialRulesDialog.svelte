@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import {
 		combineRules,
@@ -213,7 +214,7 @@
 						</div>
 					</li>
 				{:else}
-					<li class="muted">{t('common.none')}</li>
+					<NoneState as="li" />
 				{/each}
 			</ul>
 		</section>
@@ -247,7 +248,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<p class="muted" data-testid="rule-conflicts">{t('common.none')}</p>
+				<NoneState testid="rule-conflicts" />
 			{/if}
 		</section>
 		<section aria-labelledby="rule-list-title">
@@ -258,7 +259,7 @@
 						{@render ruleRow(rule, false, true)}
 					</li>
 				{:else}
-					<li class="muted">{t('common.none')}</li>
+					<NoneState as="li" />
 				{/each}
 			</ul>
 		</section>
@@ -275,7 +276,7 @@
 						{@render ruleRow(rule, true, true)}
 					</li>
 				{:else}
-					<li class="muted">{t('common.none')}</li>
+					<NoneState as="li" />
 				{/each}
 			</ul>
 		</section>
@@ -383,9 +384,5 @@
 	}
 	.mode-name {
 		font-family: var(--font-control);
-	}
-	.muted {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

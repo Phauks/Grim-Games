@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -31,7 +32,7 @@
 	{#snippet control(labelId)}
 		<span class="value">
 			<span class="name" data-testid="player-name"
-				>{#if me}<PlayerBadge name={me} />{:else}{t('common.none')}{/if}</span
+				>{#if me}<PlayerBadge name={me} />{:else}<NoneState inline />{/if}</span
 			>
 			<IconButton
 				icon="edit"

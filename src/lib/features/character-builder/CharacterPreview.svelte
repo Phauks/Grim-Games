@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -32,9 +33,9 @@
 	<div class="token"><CharacterToken character={preview} /></div>
 	<!-- As it will read on a script: the standard row (Trevor, 2026-11-02). -->
 	<CharacterPiece template="row" character={preview}
-		>{#snippet abilityText()}{#if preview.ability}<AbilityText text={preview.ability} />{:else}{t(
-					'common.none'
-				)}{/if}{/snippet}</CharacterPiece
+		>{#snippet abilityText()}{#if preview.ability}<AbilityText
+					text={preview.ability}
+				/>{:else}<NoneState inline />{/if}{/snippet}</CharacterPiece
 	>
 	<!-- Always there, a token high, so typing a reminder never moves the preview; the tokens
 	     themselves, as on the board (Trevor, 2026-10-30). -->
@@ -42,7 +43,7 @@
 		<ReminderTokenRow inline>
 			{#each [...preview.reminders, ...preview.remindersGlobal] as label, i (i)}
 				<BoardReminder {label} character={preview} />
-			{:else}{t('common.none')}{/each}
+			{:else}<NoneState inline />{/each}
 		</ReminderTokenRow>
 	</p>
 </section>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { SeatIssue } from '#lib/features/grimoire/board.ts';
@@ -35,7 +36,7 @@
 				>
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 </Dialog>
@@ -59,9 +60,6 @@
 		flex: 1;
 		min-width: 0;
 		overflow-wrap: anywhere;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 	/* The seat's own mark (SeatToken's .issues), so the two read as one. */
 	.kind {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { MARKER_TEXT } from '#lib/core/rules/night/night-order.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -46,7 +47,7 @@
 											text={entry.text}
 											character={c}
 											night={n.night}
-										/>{:else}{t('common.none')}{/if}{/snippet}
+										/>{:else}<NoneState inline />{/if}{/snippet}
 							</StepPiece>
 						{/if}
 					</li>

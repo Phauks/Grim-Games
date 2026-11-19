@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -79,7 +80,7 @@
 				>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 </Collapsible>
@@ -107,7 +108,7 @@
 				/>
 			</li>
 		{:else}
-			<li class="none">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 	<NewLabel {kind} label={t('library.newTag')} />
@@ -201,9 +202,6 @@
 		border-color: var(--accent);
 		background: var(--accent);
 		color: var(--on-accent);
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 	.error {
 		margin: var(--space-1) 0 0;

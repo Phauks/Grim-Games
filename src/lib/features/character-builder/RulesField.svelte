@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import { ruleRows, withRule, type RuleRow } from '#lib/core/rules/character-builder-rules.ts';
@@ -67,7 +68,7 @@
 				/>
 			</li>
 		{:else}
-			<li class="muted">{t('common.none')}</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 </PageSection>
@@ -109,8 +110,5 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

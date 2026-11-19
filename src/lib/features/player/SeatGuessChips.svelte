@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -33,7 +34,7 @@
 			>
 		</li>
 	{:else}
-		<li class="none">{t('common.none')}</li>
+		<NoneState as="li" />
 	{/each}
 </ul>
 
@@ -71,8 +72,5 @@
 	}
 	.chip > :global(*) {
 		max-width: 100%;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

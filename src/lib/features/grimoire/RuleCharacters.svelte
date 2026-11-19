@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -181,7 +182,7 @@
 				</li>
 			{/if}
 		{/each}
-		{#if rulesGroup.length === 0}<li class="none">None</li>{/if}
+		{#if rulesGroup.length === 0}<NoneState as="li" />{/if}
 	</ul>
 </Dialog>
 
@@ -233,7 +234,7 @@
 				/>
 			</dd>
 			<dt>Becomes</dt>
-			<dd>None</dd>
+			<dd><NoneState inline /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>

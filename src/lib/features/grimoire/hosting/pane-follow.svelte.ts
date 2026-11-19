@@ -6,8 +6,9 @@ import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.t
  * Keeps the Storyteller's pane on the game (Trevor, 2026-11-16: the grim as the home screen).
  * The Night tab is the walk-through's step: opening the step shows it, and on a phone closing
  * it (placing a token, Show the Grimoire) puts the board back. The pane turns to the Night tab
- * as a night starts and to the Day tab at dawn, unless another view is open. Call it while
- * a component starts, as its effects belong to that component.
+ * as a night starts and to the Day tab at dawn, unless Players is open: More's tools (Session's
+ * Start, Seats, History) give way to the step. Call it while a component starts, as its
+ * effects belong to that component.
  */
 export function followGame(walk: NightWalk, isNight: () => boolean): void {
 	$effect(() => {
@@ -20,13 +21,13 @@ export function followGame(walk: NightWalk, isNight: () => boolean): void {
 	// The tab is set before the pane draws, so a reload at night opens on the Night tab: the
 	// tabs drew the Day's panel under a Night tab set once they were up.
 	let shown: 'night' | 'day' = untrack(isNight) ? 'night' : 'day';
-	if (sidePane.view === 'day' || sidePane.view === 'night') sidePane.turnTo(shown);
+	if (sidePane.subject !== 'players') sidePane.turnTo(shown);
 	$effect(() => {
 		const now = isNight() ? 'night' : 'day';
 		if (now === shown) return;
 		shown = now;
 		untrack(() => {
-			if (sidePane.view === 'day' || sidePane.view === 'night') sidePane.turnTo(now);
+			if (sidePane.subject !== 'players') sidePane.turnTo(now);
 		});
 	});
 }

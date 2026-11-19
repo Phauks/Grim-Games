@@ -4,6 +4,7 @@
 	without a token (the Boffin's, on the Demon).
 -->
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { charactersInPlay, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
@@ -235,7 +236,7 @@
 		</p>
 		<h3>Removed</h3>
 		{#if dropped.length === 0}
-			<p class="none">None</p>
+			<NoneState />
 		{:else}
 			<ul class="dropped" data-testid="dropped-reminders">
 				{#each dropped as { seatId: on, reminder } (reminder.reminderId)}
@@ -319,10 +320,6 @@
 		margin: var(--space-2) 0 0;
 		font-size: 0.95rem;
 		color: inherit;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.dropped,
 	.dropped li {

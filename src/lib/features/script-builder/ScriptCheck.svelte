@@ -4,6 +4,7 @@
 	the homebrew characters with their creators.
 -->
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { ScriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -62,7 +63,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}<p>{t('common.none')}</p>{/if}
+		{:else}<NoneState />{/if}
 	</Collapsible>
 	<Collapsible
 		title={t('script-builder.setupChanges')}
@@ -84,7 +85,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}<p>{t('common.none')}</p>{/if}
+		{:else}<NoneState />{/if}
 	</Collapsible>
 	<Collapsible
 		title={t('script-builder.needs')}
@@ -110,7 +111,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}<p>{t('common.none')}</p>{/if}
+		{:else}<NoneState />{/if}
 	</Collapsible>
 	<Collapsible
 		title={t('script-builder.homebrew')}
@@ -150,7 +151,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}<p>{t('common.none')}</p>{/if}
+		{:else}<NoneState />{/if}
 	</Collapsible>
 </section>
 
@@ -184,7 +185,6 @@
 		background: var(--surface-raised);
 		font-size: 0.9rem;
 	}
-	.check p,
 	.check ul {
 		margin: 0;
 	}

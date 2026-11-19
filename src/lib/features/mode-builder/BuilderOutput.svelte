@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import {
 		jsonChunks,
@@ -93,7 +94,7 @@
 					</button>
 				</li>
 			{:else}
-				<li class="muted">{t('common.none')}</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 	</section>
@@ -213,9 +214,6 @@
 		color: var(--on-surface-muted);
 		font-size: 0.85em;
 		overflow-wrap: anywhere;
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 	.json {
 		max-height: 60dvh;

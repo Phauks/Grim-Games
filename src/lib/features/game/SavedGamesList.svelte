@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	/**
 	 * Join game's As Storyteller: the games still being played, newest first. With `view="previous"`, the
@@ -107,7 +108,7 @@
 <!-- Join game's As Storyteller heading is SavedGamesSection's; History keeps its own "Games" heading. -->
 {#if view === 'active'}<section aria-label="Saved games">
 		{#if loaded && games.length === 0 && unreadable.length === 0}
-			<p class="none">None</p>
+			<NoneState />
 		{/if}
 		<ul class="games">
 			{#each games as game (game.gameId)}
@@ -151,7 +152,7 @@
 {:else}<section aria-labelledby="past-games">
 		<h2 id="past-games">Games</h2>
 		{#if loaded && past.length === 0}
-			<p class="none">None</p>
+			<NoneState />
 		{/if}
 		<ul class="games">
 			{#each past as game (game.gameId)}
@@ -195,10 +196,6 @@
 	h2 {
 		margin: 0;
 		font-size: 1.3rem;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.games {
 		display: grid;

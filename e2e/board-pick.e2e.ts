@@ -50,6 +50,8 @@ test("the Fortune Teller's players are picked by tapping their seats", async ({ 
 	for (let i = 0; i < 20 && (await walkName(page).textContent()) !== 'Fortune Teller'; i++)
 		await walkNext(page).tap();
 	await expect(walkName(page)).toHaveText('Fortune Teller');
+	// Counted among the night's steps, which leave out Dusk and Dawn (Trevor, 2026-11-18).
+	await expect(storytellerPane(page).getByTestId('step-count')).toHaveText(/^\d+ of \d+$/);
 
 	// The first pick waits on the board: the seats it may be marked, the Fortune Teller's
 	// own ringed, a seat with no player faded, and the pill shows what is picked.

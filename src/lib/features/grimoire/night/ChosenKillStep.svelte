@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { SEATED_TYPES, type CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import {
@@ -95,7 +96,7 @@
 		{#if named}
 			<CharacterPiece template="badge" characterId={named} character={characters.get(named)} />
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/if}
 		<Button variant="quiet" onclick={() => (pickerOpen = true)}>Choose</Button>
 	</div>
@@ -167,7 +168,7 @@
 				<span class="result">{result(seatId)}</span>
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 	<Button variant="quiet" disabled={!changes} onclick={apply}>Apply</Button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { registersAsDead, type SeatId } from '#lib/core/model/index.ts';
 	import { tokenGiverInfo } from '#lib/core/rules/day/vote-weights.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -86,7 +87,7 @@
 			{#each tell as alignment, i (alignment)}{#if i > 0}or{/if}<AlignmentPill
 					{alignment}
 					text={alignment === 'good' ? 'Good' : 'Evil'}
-				/>{:else}None{/each}
+				/>{:else}<NoneState inline />{/each}
 		</span>
 	</div>
 </ConfirmDialog>

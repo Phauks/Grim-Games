@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { nightKiller } from '#lib/core/rules/night/night-killers.ts';
 	import { noAttackState } from '#lib/core/rules/night/demon-attack.ts';
 	import { type NightStep } from '#lib/core/rules/night/night-order.ts';
@@ -59,7 +60,7 @@
 				<span class="where">On <SeatBadge {game} {seatId} />, comes off</span>
 			</li>
 		{:else}
-			<li class="none">None</li>
+			<NoneState as="li" />
 		{/each}
 	</ul>
 	<Button variant="quiet" disabled={pending.length === 0} onclick={noAttack}>No attack</Button>
@@ -84,8 +85,5 @@
 	}
 	.rows li + li {
 		border-top: var(--card-border);
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

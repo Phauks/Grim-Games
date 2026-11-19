@@ -219,11 +219,14 @@ export interface BankOptions {
  * Each run of counting reminders (`counter` in a character's rules: the Leviathan's Day 1 to
  * Day 5) stacked as one token, its next one still off the board on top, with the rest of the run
  * under it as its count (plan M53, Trevor 2026-11-04: "bundle incrementing reminder tokens
- * together in the bank"; 2026-11-06: stacked on each other in the bin too).
+ * together in the bank"; 2026-11-06: stacked on each other in the bin too). A countdown's run
+ * stacks the same way (`countdown`: the Courtier's Drunk 1, 2, 3; Trevor, 2026-11-19: "Courtier
+ * drunkenness does not stack?").
  */
 export function bundledCounters(items: BankItem[], characters: CharacterLookup): BankItem[] {
 	const run = (item: BankItem) => {
-		const tokens = rulesOf(item.characterId, characters)?.counter?.tokens;
+		const rules = rulesOf(item.characterId, characters);
+		const tokens = rules?.counter?.tokens ?? rules?.countdown?.tokens;
 		return tokens?.includes(item.label) ? tokens : undefined;
 	};
 	// The run's earliest token still in the bank, and how many of the run are left, by character.

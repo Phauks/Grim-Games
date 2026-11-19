@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends string">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
 	import { Portal } from '@ark-ui/svelte/portal';
@@ -193,7 +194,7 @@
 							{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
 						{/if}
 					{/each}
-					{#if matching.length === 0}<p class="empty">{empty}</p>{/if}
+					{#if matching.length === 0}<NoneState text={empty} />{/if}
 				</Combobox.Content>
 			</Combobox.Positioner></Portal
 		>{/if}
@@ -251,10 +252,5 @@
 	}
 	:global([data-scope='combobox'][data-part='trigger'][data-state='open']) {
 		rotate: -90deg;
-	}
-	.empty {
-		margin: 0;
-		padding: var(--space-2) var(--space-3);
-		color: var(--on-surface-muted);
 	}
 </style>

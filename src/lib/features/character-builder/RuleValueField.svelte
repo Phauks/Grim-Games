@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import {
@@ -338,7 +339,7 @@
 				/>
 			</div>
 		{:else}
-			<span class="muted">{t('common.none')}</span>
+			<NoneState inline />
 		{/each}
 		<div class="add">
 			<Button variant="quiet" icon="add" onclick={() => pick({})}
@@ -441,7 +442,7 @@
 		{#if typeof value === 'string' && value}
 			<CharacterPiece template="badge" characterId={value} character={characterOf(value)} />
 		{:else}
-			<span class="muted">{t('common.none')}</span>
+			<NoneState inline />
 		{/if}
 	</div>
 {:else if spec.kind === 'byCharacter'}
@@ -550,8 +551,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	.muted {
-		color: var(--on-surface-muted);
 	}
 </style>

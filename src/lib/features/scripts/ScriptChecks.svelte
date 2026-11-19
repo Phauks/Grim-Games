@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptFacts } from '#lib/core/rules/setup/script-facts.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -50,8 +51,7 @@
 					</li>
 				{/each}
 			</ul>
-		{:else}
-			{t('common.none')}
+		{:else}<NoneState inline />
 		{/if}
 	</dd>
 	{#if missing.length}

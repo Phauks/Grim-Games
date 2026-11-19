@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -372,16 +373,16 @@
 			>{/if}
 		{#if row.seats}
 			<span class="badges who"
-				>{#each row.seats as seatId (seatId)}{@render player(seatId)}{:else}{t(
-						'common.none'
-					)}{/each}</span
+				>{#each row.seats as seatId (seatId)}{@render player(seatId)}{:else}<NoneState
+						inline
+					/>{/each}</span
 			>
 			{#if row.chose}
 				<span class="badges who"
 					><span class="chose">{t('show.evil.chose')}</span
 					>{#each row.chose as seatId (seatId)}<PlayerBadge
 							name={seatName(game, seatId)}
-						/>{:else}{t('common.none')}{/each}</span
+						/>{:else}<NoneState inline />{/each}</span
 				>
 			{/if}
 		{/if}
@@ -394,7 +395,7 @@
 						character={characters.get(id)}
 						interactive={false}
 					/>
-				{:else}{t('common.none')}{/each}
+				{:else}<NoneState inline />{/each}
 			</span>
 		{/if}
 		{#if row.adds?.length}

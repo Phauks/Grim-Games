@@ -1,4 +1,5 @@
 <script lang="ts" generics="T">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import SheetHandle from '#lib/ui/primitives/SheetHandle.svelte';
 	import ReminderGroups from './ReminderGroups.svelte';
@@ -354,7 +355,7 @@
 					{@render item(entry.item, true)}
 				</li>
 			{:else}
-				<li class="none">None</li>
+				<NoneState as="li" />
 			{/each}
 		</ul>
 	{/if}
@@ -605,8 +606,5 @@
 		align-self: stretch;
 		padding: 0;
 		border-inline-start: 1px solid var(--on-surface-muted);
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { untrack } from 'svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -206,7 +207,7 @@
 					{#if extra}
 						<CharacterPiece template="badge" characterId={extra.id} character={extra} />
 					{:else}
-						<span class="muted">{t('common.none')}</span>
+						<NoneState inline />
 					{/if}
 				</span>
 				<span class="tools">

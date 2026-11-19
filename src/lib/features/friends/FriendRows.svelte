@@ -1,7 +1,7 @@
 <script lang="ts" generics="T">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { Snippet } from 'svelte';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * A list of rows about accounts (plan F1, F9, F10): the Friends page's lists, Send to a
@@ -22,7 +22,7 @@
 </script>
 
 {#if items.length === 0}
-	<p class="muted" data-testid="{testid}-none">{t('common.none')}</p>
+	<NoneState testid="{testid}-none" />
 {:else}
 	<ul class="rows" data-testid={testid}>
 		{#each items as item (key(item))}
@@ -36,10 +36,6 @@
 {/if}
 
 <style>
-	.muted {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.rows {
 		margin: 0;
 		padding: 0;

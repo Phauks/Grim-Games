@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		loadScript,
@@ -165,14 +166,17 @@
 			.map((c) => ({ value: c.id as string, label: c.name }))
 	]);
 
-	/** Adds lines another reader read (a live scan's picture) to what was read. */
+	/** Adds lines read by the live scan (Take a Photo) to what was read. */
 	export async function addLines(
 		read: readonly PhotoLine[],
 		/** The picture they were read from, shown with each line marked. */
-		picture?: HTMLCanvasElement
+		picture?: HTMLCanvasElement,
+		/** How the picture was taken, for the read log. */
+		notes: readonly string[] = []
 	): Promise<void> {
-		if (lines.length === 0) importLog.start(`Live scan: ${read.length} lines read`);
-		else importLog.add(`Another live scan: ${read.length} lines read`);
+		if (lines.length === 0) importLog.start(`Scan: ${read.length} lines read`);
+		else importLog.add(`Another scan: ${read.length} lines read`);
+		for (const note of notes) importLog.add(note);
 		data ??= await loadOfficialData();
 		if (picture) await keepPicture(picture, read.length);
 		lines = [...lines, ...read];
@@ -447,7 +451,7 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="none">{t('common.none')}</p>
+			<NoneState />
 		{/if}
 	</section>
 	{#snippet actions()}
@@ -534,9 +538,5 @@
 	.issues ul {
 		margin: 0 0 var(--space-2);
 		padding-inline-start: var(--space-4);
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 </style>

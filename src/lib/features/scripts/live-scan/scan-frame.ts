@@ -1,6 +1,6 @@
 /**
- * Drawing and straightening for the live scan spike (Trevor, 2026-11-10): the frozen frame's
- * sheet straightened into a page, where glare lies, and the marks' colours and outlines.
+ * Drawing and straightening for Take a Photo's live scan (Trevor, 2026-11-10): the picture
+ * taken's sheet straightened into a page, where glare lies, and the sheet's outline.
  */
 import {
 	grayOf,
@@ -67,20 +67,7 @@ export function onSheet(glare: Rect[], toView: number, corners?: Point[]): boole
 	return glare.some((g) => g.x0 < x1 && g.x1 > x0 && g.y0 < y1 && g.y1 > y0);
 }
 
-/** The colour of each kind of mark, from the theme. */
-export function palette() {
-	const css = getComputedStyle(document.documentElement);
-	const token = (name: string) => css.getPropertyValue(name).trim();
-	return {
-		character: token('--good'),
-		ability: token('--good'),
-		title: token('--accent'),
-		unknown: token('--evil'),
-		glare: token('--accent'),
-		sheet: token('--on-surface')
-	};
-}
-
+/** Traces a closed outline through the points, to stroke. */
 export function outline(ctx: CanvasRenderingContext2D, points: Point[]) {
 	ctx.beginPath();
 	points.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));

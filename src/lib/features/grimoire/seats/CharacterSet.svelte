@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { AnswerValue } from '#lib/core/rules/night/info/reliability.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -26,4 +27,4 @@
 	/>{/each}{#if value.more}{value.value.length > 0 ? ', ' : ''}+<CountBadge
 		count={value.more.count}
 	/>
-	{TYPE_LABELS[value.more.type]}{:else if value.value.length === 0}None{/if}
+	{TYPE_LABELS[value.more.type]}{:else if value.value.length === 0}<NoneState inline />{/if}

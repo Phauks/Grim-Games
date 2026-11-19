@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { CharacterId, SeatedType } from '#lib/core/data/index.ts';
 	import type { GivenInstead } from '#lib/core/data/jinx-rules.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -201,7 +202,7 @@
 				character={characters.get(instead.characterId)}
 			/>
 		{:else}
-			<span class="none">None</span>
+			<NoneState inline />
 		{/if}
 		<Button variant="quiet" onclick={() => (pickerOpen = true)}>
 			{held || instead ? 'Change' : 'Choose'}
@@ -234,7 +235,7 @@
 					<ShowToPlayerButton onclick={() => onShow?.(change.characterId)} />
 				{/if}
 			{:else}
-				<span class="none">None</span>
+				<NoneState inline />
 			{/each}
 			{#if more}
 				<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
@@ -286,10 +287,6 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin-bottom: var(--space-2);
-	}
-	.none {
-		flex: 1;
-		color: var(--on-surface-muted);
 	}
 	.warn {
 		margin: 0 0 var(--space-2);

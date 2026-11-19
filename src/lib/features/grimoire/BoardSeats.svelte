@@ -63,6 +63,8 @@
 		heldSeat: SeatId | undefined;
 		/** A Fabled or Loric's reminder, while it is dragged. */
 		heldDrag: ReminderInstance | undefined;
+		/** The board token in hand, drawn over the tokens beside it. */
+		heldReminder?: ReminderId;
 		/** `pending`: the names already placed at that spot and not added yet (late players). */
 		placeSpots: readonly {
 			position: number;
@@ -98,6 +100,7 @@
 		nominations,
 		heldSeat,
 		heldDrag,
+		heldReminder,
 		placeSpots,
 		onPlace,
 		onSeat,
@@ -293,6 +296,7 @@
 				seatNumber={i + 1}
 				onHeldSeat={heldSeat === seat.seatId}
 				dragging={dragged}
+				inHand={heldReminder === reminder.reminderId}
 				extra={hints.extras.has(reminder.reminderId)}
 				now={nw.isStepReminder(reminder)}
 				onTap={() => onReminder(seat.seatId, reminder.reminderId)}
@@ -342,6 +346,7 @@
 		disabled={seatArr.arranging}
 		loose
 		dragging={dragged}
+		inHand={heldReminder === reminder.reminderId}
 		extra={hints.extras.has(reminder.reminderId)}
 		unassigned
 		now={nw.isStepReminder(reminder)}

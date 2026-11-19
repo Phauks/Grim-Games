@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { CHARACTER_TYPES } from '#lib/core/data/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AddCharactersDialog from '#lib/features/setup/AddCharactersDialog.svelte';
@@ -33,9 +34,10 @@
 				onclick={() => void session.stepCore(-1)}
 			/>
 			<span class="testing" data-testid="lab-core">
-				{#if session.core}<CharacterPiece template="badge" characterId={session.core} />{:else}{t(
-						'common.none'
-					)}{/if}
+				{#if session.core}<CharacterPiece
+						template="badge"
+						characterId={session.core}
+					/>{:else}<NoneState inline />{/if}
 			</span>
 			<IconButton
 				icon="forward"

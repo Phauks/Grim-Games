@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { tick } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { wikiUrl, type Alignment, type Character } from '#lib/core/data/index.ts';
@@ -214,7 +215,7 @@
 						<p class="jinx-text"><GlossaryText text={jinx.reason} /></p>
 					</CharacterPiece>
 				{:else}
-					<p>{t('common.none')}</p>
+					<NoneState />
 				{/each}
 			</section>
 		{:else if shown}

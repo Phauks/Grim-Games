@@ -29,6 +29,8 @@
 		/** Its seat is held: it stays lit while the rest of the board darkens. */
 		onHeldSeat?: boolean;
 		dragging?: boolean;
+		/** Tapped and held (in hand): over the tokens beside it, so it is seen whole. */
+		inHand?: boolean;
 		/** A copy beyond what the game gives. */
 		extra?: boolean;
 		/** Put down on the board, belonging to no seat. */
@@ -54,6 +56,7 @@
 		seatNumber,
 		onHeldSeat = false,
 		dragging = false,
+		inHand = false,
 		extra = false,
 		loose = false,
 		unassigned = false,
@@ -71,6 +74,8 @@
 	data-loose={loose ? '' : undefined}
 	class:on-held-seat={onHeldSeat}
 	class:dragging
+	class:in-hand={inHand}
+	data-in-hand={inHand ? '' : undefined}
 	class:extra
 	data-extra={extra ? '' : undefined}
 	class:unassigned
@@ -108,6 +113,10 @@
 		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
 		filter: var(--reminder-lit-glow, none);
+	}
+	/* Held (Trevor, 2026-11-19): over the tokens round it, as it shows selected. */
+	.chip-slot.in-hand {
+		z-index: var(--z-above-2);
 	}
 	.chip-slot.dragging {
 		z-index: var(--z-above-3);

@@ -448,7 +448,7 @@ test("the Vizier's jinxes with the Fearmonger and the Courtier show at their nig
 	await choose(page, 2, 'Fearmonger');
 	await choose(page, 3, 'Courtier');
 	await choose(page, 4, 'Chef');
-	await putReminder(page, 'Drunk 3', 1);
+	await putRunReminder(page, 'Drunk 3', 1);
 	await closeBin(page);
 
 	const courtier = await openStep(page, 'Courtier');

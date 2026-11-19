@@ -1,4 +1,5 @@
 <script lang="ts">
+	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
@@ -102,7 +103,7 @@
 {/snippet}
 
 {#if shown.length === 0}
-	<p class="none">{t('common.none')}</p>
+	<NoneState />
 {:else}
 	<ul class="items" data-testid="inbox" aria-label={t('room.inbox.title')}>
 		{#each shown as item (key(item))}
@@ -184,10 +185,6 @@
 </Dialog>
 
 <style>
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
-	}
 	.items {
 		display: grid;
 		list-style: none;
