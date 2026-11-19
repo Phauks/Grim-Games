@@ -65,11 +65,13 @@ export function referenceText(
 					? `[${name(s.characterId)}]`
 					: s.kind === 'value'
 						? `(${s.placeholder})`
-						: s.kind === 'nomination'
-							? s.who === 'chosen'
-								? '[the player the nominee chose]'
-								: '[the nominee]'
-							: `[player with “${s.token}”]`
+						: s.kind === 'alive'
+							? '(number) players alive'
+							: s.kind === 'nomination'
+								? s.who === 'chosen'
+									? '[the player the nominee chose]'
+									: '[the nominee]'
+								: `[player with “${s.token}”]`
 		)
 		.join(' ');
 }
