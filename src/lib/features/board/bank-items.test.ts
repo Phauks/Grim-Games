@@ -13,7 +13,7 @@ import {
 	playerBankItems,
 	type BankOptions
 } from './bank-items.ts';
-import { extraReminders, hasUnlimitedReminders } from './reminders.ts';
+import { extraReminders, hasUnlimitedReminders, reminderCopies, tokenRows } from './reminders.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -314,6 +314,18 @@ describe('tokens that never run out', () => {
 		const generic = items.filter((i) => i.group === 'generic').map((i) => i.key);
 		expect(generic[0]).toBe('bank:bootlegger:?');
 		expect(generic[1]).toBe('generic');
+	});
+
+	// Trevor (2026-11-19): "Amnesiac night order shows three night tokens, when none have been
+	// created yet."
+	it('lists the placed copies and one row to place, not the listed count', () => {
+		const bootlegger = characters.get('bootlegger' as never)!;
+		const rows = (placed: number) => {
+			const g = withBootlegger(placed);
+			return tokenRows(g, bootlegger, reminderCopies(g, characters)).map((r) => !!r.at);
+		};
+		expect(rows(0)).toEqual([false]);
+		expect(rows(3)).toEqual([true, true, true, false]);
 	});
 
 	it('never marks a placed copy as an extra', () => {
