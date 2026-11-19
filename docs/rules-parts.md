@@ -116,7 +116,7 @@ Every key a character's rules block may have, 101 in all. Each is one file in
 **Countdown.** Its token counts down one step a night.
 
 - Part: `src/lib/core/data/parts/countdown.ts`
-- Read by: `core/rules/reminders/countdown.ts`, `features/grimoire/night/CountdownStep.svelte`
+- Read by: `core/rules/reminders/countdown.ts`, `features/board/bank-items.ts`, `features/grimoire/night/CountdownStep.svelte`
 
 ### counter
 
