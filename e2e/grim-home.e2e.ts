@@ -192,6 +192,37 @@ test("a day row lists its character's reminder tokens to place, move or drag, as
 	await expect(seat(3)).toHaveAttribute('aria-label', /1 reminder/);
 });
 
+// Trevor, 2026-11-19: "once i start scrolling, background changes". A heading pinned in the
+// pane beside the board is filled with the pane's own colour, not the page's darker backdrop.
+test("a heading pinned as the pane scrolls keeps the pane's own background", async ({ page }) => {
+	await newGame(page);
+	test.skip(await paneIsSheet(page), 'A phone shows the pane as a sheet, filled as a sheet is.');
+	// A short landscape screen, so the pane is beside the board and its Night tab scrolls.
+	await page.setViewportSize({ width: 1280, height: 520 });
+	const pane = await openPane(page, 'Night');
+	const heading = pane.locator('.collapsible > .head').filter({ hasText: 'First night' });
+	await heading.evaluate((head) => {
+		for (let box = head.parentElement; box; box = box.parentElement) {
+			if (box.scrollHeight > box.clientHeight + 1 && getComputedStyle(box).overflowY === 'auto') {
+				box.scrollTop = box.scrollHeight;
+				return;
+			}
+		}
+	});
+	await expect(heading).toHaveAttribute('data-stuck', '');
+	// The colour of the box the heading sits on.
+	const paneColour = await heading.evaluate((head) => {
+		for (let box = head.parentElement; box; box = box.parentElement) {
+			const colour = getComputedStyle(box).backgroundColor;
+			if (colour !== 'rgba(0, 0, 0, 0)') return colour;
+		}
+		return '';
+	});
+	expect(paneColour).not.toBe('');
+	await expect(heading).toHaveCSS('background-color', paneColour);
+	await expect(heading).toHaveCSS('background-image', 'none');
+});
+
 test.describe('on a wide screen', () => {
 	test.use({ viewport: { width: 1440, height: 900 } });
 
