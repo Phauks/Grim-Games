@@ -21,7 +21,9 @@ import {
 	openPlayerSheet,
 	storytellerPane,
 	paneDay,
-	paneButton
+	paneButton,
+	closeTimerSheet,
+	timerControls
 } from './players.ts';
 import {
 	chooseRulesOnSetup,
@@ -1155,7 +1157,11 @@ test('the night order is walked through from the bank, and End night starts the 
 	await expect(page.getByTestId('pane-day')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(boardTimer).toBeVisible();
-	await expect(boardTimer.getByRole('button', { name: 'Start timer' })).toBeVisible();
+	// Start is in the top bar, or a phone's timer sheet from its clock.
+	await expect(
+		(await timerControls(page)).getByRole('button', { name: 'Start timer' })
+	).toBeVisible();
+	await closeTimerSheet(page);
 	// Day has come: the button can't start another day; Execution, in place of End day,
 	// starts the next night (Trevor, 2026-10-19; 2026-10-22).
 	await expect(bankNight(page, 'End night')).toHaveCount(0);

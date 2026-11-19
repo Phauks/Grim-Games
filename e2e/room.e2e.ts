@@ -9,7 +9,14 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton, openSettingsDialog } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
-import { closePane, openPlayerSheet, paneButton, openPane } from './players.ts';
+import {
+	closePane,
+	closeTimerSheet,
+	openPlayerSheet,
+	paneButton,
+	openPane,
+	timerControls
+} from './players.ts';
 import { pickNumber } from './number-select.ts';
 import { closeBin, dragToSeat, openBin } from './reminder-bank.ts';
 
@@ -1655,16 +1662,17 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(sheet).toHaveCount(0);
 	const watched = viewer.getByTestId('day-timer');
 	await expect(watched).not.toHaveAttribute('data-running');
-	await page.getByTestId('day-timer').getByRole('button', { name: 'Start timer' }).tap();
+	// The Storyteller's Start and Pause: in the top bar, or a phone's timer sheet.
+	const controls = await timerControls(page);
+	await controls.getByRole('button', { name: 'Start timer' }).tap();
 	await expect(watched).toHaveAttribute('data-running', '');
 	const clock = watched.getByRole('timer');
 	const first = await clock.textContent();
 	await expect(clock).not.toHaveText(first ?? '');
-	await page.getByTestId('day-timer').getByRole('button', { name: 'Pause timer' }).tap();
+	await controls.getByRole('button', { name: 'Pause timer' }).tap();
 	await expect(watched).not.toHaveAttribute('data-running');
-	await expect(clock).toHaveText(
-		(await page.getByTestId('day-timer').getByRole('timer').textContent()) ?? ''
-	);
+	await expect(clock).toHaveText((await controls.getByRole('timer').textContent()) ?? '');
+	await closeTimerSheet(page);
 
 	// A reminder the Storyteller puts down can be tapped to read it (Trevor, 2026-11-15), in
 	// the Storyteller's own reminder dialog with nothing to change.
