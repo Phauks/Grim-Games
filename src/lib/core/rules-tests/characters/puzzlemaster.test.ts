@@ -24,7 +24,7 @@ import {
 import { dayUseAnswer, dayUseOf } from '#lib/core/rules/day/day-claims.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
-import { setupPrep } from '#lib/core/rules/setup/setup-reminders.ts';
+import { setupPrep, setupReminders } from '#lib/core/rules/setup/setup-reminders.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import {
@@ -178,6 +178,45 @@ describe('Puzzlemaster', () => {
 			expect(abilityState(marked.game, marked.seat('poisoner'), marked.characters)).toMatchObject({
 				works: false,
 				impairments: [expect.objectContaining({ reason: 'drunk' })]
+			});
+		});
+
+		it('lets the information of the player it makes drunk be false: any player fits its token', () => {
+			// Wiki: "Alex is the Demon. Sarah is the Empath who has been made drunk by the
+			// Puzzlemaster and is getting false information."
+			const s = scenario(['puzzlemaster', 'grandmother', 'noble', 'imp', 'poisoner', 'chef']);
+			const grandchild = { characterId: 'grandmother', label: 'Grandchild' };
+			const know = { characterId: 'noble', label: 'Know' };
+			// Sober, the Grandmother's Grandchild is good and the Noble learns one evil player only.
+			expect(reminderTargetMisses(s.game, grandchild, s.seat('imp'), s.characters)).toEqual([
+				'alignment'
+			]);
+			const oneEvil = s.reminder('imp', 'noble', 'Know');
+			expect(
+				reminderTargetMisses(oneEvil.game, know, oneEvil.seat('poisoner'), oneEvil.characters)
+			).toEqual(['alignment']);
+			// Drunk, either may be shown anyone.
+			const drunk = s
+				.reminder('grandmother', 'puzzlemaster', 'Drunk')
+				.reminder('noble', 'puzzlemaster', 'Drunk')
+				.reminder('imp', 'noble', 'Know');
+			for (const seat of ['imp', 'poisoner'] as const)
+				expect(
+					reminderTargetMisses(drunk.game, grandchild, drunk.seat(seat), drunk.characters)
+				).toEqual([]);
+			expect(
+				reminderTargetMisses(drunk.game, know, drunk.seat('poisoner'), drunk.characters)
+			).toEqual([]);
+		});
+
+		it('lists its Drunk first among the setup reminders, as the Drunk is', () => {
+			// Wiki: "While preparing the first night, mark any player with the Puzzlemaster’s DRUNK
+			// reminder. This player is drunk."
+			const s = scenario(['puzzlemaster', 'imp', 'empath', 'poisoner', 'washerwoman']);
+			expect(setupReminders(s.game, s.characters)[0]).toMatchObject({
+				characterId: 'puzzlemaster',
+				label: 'Drunk',
+				first: true
 			});
 		});
 

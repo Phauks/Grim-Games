@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-	difference,
 	glareRects,
 	grayOf,
 	homography,
@@ -82,21 +81,6 @@ describe('frame checks', () => {
 			x >= 30 && x < 54 && y >= 12 && y < 30 ? [255, 255, 252] : [225, 215, 195]
 		);
 		expect(glareRects(rgba, 120, 90)).toEqual([{ x0: 30, y0: 12, x1: 54, y1: 30 }]);
-	});
-
-	it('measures movement between frames', () => {
-		const a = grayOf(
-			frame(8, 8, () => [100, 100, 100]),
-			8,
-			8
-		);
-		const b = grayOf(
-			frame(8, 8, () => [110, 110, 110]),
-			8,
-			8
-		);
-		expect(difference(a, a)).toBe(0);
-		expect(difference(a, b)).toBeCloseTo(10, 0);
 	});
 });
 
