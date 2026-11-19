@@ -5,6 +5,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -129,7 +130,8 @@
 						onclick={() => choose(item)}>Show</Button
 					>
 				{:else if item.cursor > 1}
-					<Button variant="quiet" onclick={() => choose(item)}>Restore</Button>
+					<!-- The restore-history symbol, not the word (Trevor, 2026-11-19). -->
+					<IconButton icon="restore" label="Restore" onclick={() => choose(item)} />
 				{/if}
 			</li>
 		{:else}

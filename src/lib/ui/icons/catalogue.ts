@@ -164,6 +164,11 @@ export const ICON_SLOTS = {
 	arrange: { label: 'Seating', choices: ['ph:arrows-out-cardinal', 'ph:hand-grabbing'] },
 	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
+	/** A History line's Restore: the history symbol, not a word (Trevor, 2026-11-19). */
+	restore: {
+		label: 'Restore',
+		choices: ['ph:clock-counter-clockwise', 'ph:arrow-counter-clockwise']
+	},
 	join: { label: 'Join game', choices: ['ph:sign-in', 'ph:door-open'] },
 	/** Share grim, once the game is over: not Share, which is the room's join link (Trevor, 2026-11-15). */
 	shareGrim: { label: 'Share grim', choices: ['ph:paper-plane-tilt', 'ph:book-open'] },
