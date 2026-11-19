@@ -452,7 +452,8 @@ function describeEntry(
 	// A note given to the game or a player (Trevor, 2026-11-19) is one line: whose it is now.
 	if (entry.command === 'MoveNote') {
 		const kept = entry.events[1];
-		const title = kept && 'note' in kept ? kept.note.title : '';
+		const title =
+			kept?.type === 'SeatNoteSaved' || kept?.type === 'GameNoteSet' ? kept.note.title : '';
 		const named = title ? `: ${title}` : '';
 		if (kept?.type === 'SeatNoteSaved')
 			return [text('Note given to '), seatPart(before, kept.seatId), text(named)];
