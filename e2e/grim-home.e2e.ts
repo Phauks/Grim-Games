@@ -123,13 +123,13 @@ test("tonight's step is the pane's Night tab, with the strip's Next", async ({ p
 		const step = storytellerPane(page).getByRole('region', { name: 'First night' });
 		await expect(walkName(page)).toHaveText('Dawn');
 		await expect(step.getByTestId('step-count')).toHaveCount(0);
-		// The bar is full on Dawn and empty on Dusk (Trevor, 2026-11-19: "Bar should be at start
-		// and end on highest and lowest numbers").
-		await expect(step.getByTestId('step-progress')).toHaveAttribute('style', /inline-size: 100%/);
+		// No bar on Dawn or Dusk (Trevor, 2026-11-19: "there should be no progress bar when on
+		// dusk or dawn").
+		await expect(step.getByTestId('step-progress')).toBeHidden();
 		await step.getByRole('button', { name: 'Previous step', exact: true }).tap();
 		await expect(walkName(page)).toHaveText('Dusk');
 		await expect(step.getByTestId('step-count')).toHaveCount(0);
-		await expect(step.getByTestId('step-progress')).toHaveAttribute('style', /inline-size: 0%/);
+		await expect(step.getByTestId('step-progress')).toBeHidden();
 	}
 });
 
