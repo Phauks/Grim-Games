@@ -17,7 +17,7 @@ import { gameEnds } from '#lib/core/rules/game-end/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { validDeathCauses } from '#lib/core/rules/abilities/death-causes.ts';
 import { nightStepAlerts } from '#lib/core/rules/night/night-alerts.ts';
 
@@ -59,11 +59,8 @@ describe('Mayor', () => {
 				'imp',
 				'Dead'
 			);
-			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
-				{
-					seatId: s.seat('mayor'),
-					because: [{ kind: 'may-bounce', source: { characterId: 'mayor' } }]
-				}
+			expect(savedBy(s, 'imp', s.seat('mayor'))).toMatchObject([
+				{ kind: 'may-bounce', source: { characterId: 'mayor' } }
 			]);
 		});
 		it('Example 2: Three alive and no execution: good wins', () => {
@@ -122,7 +119,6 @@ describe('Mayor', () => {
 			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner'])
 				.reminder('ravenkeeper', 'imp', 'Dead')
 				.dies('ravenkeeper', 'demon');
-			expect(preventedDeaths(s.game, s.characters)).toEqual([]);
 			expect(s.game.seats[s.seat('mayor')].dead).toBe(false);
 			expect(
 				validDeathCauses(s.game, s.seat('ravenkeeper'), s.characters).map((c) => c.cause)

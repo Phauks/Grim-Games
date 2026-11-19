@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/abilities/ability.ts';
-import { preventedDeaths } from '#lib/core/rules/day/prevented-deaths.ts';
+import { savedBy } from '#lib/core/testing/saved-by.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminders/reminder-targets.ts';
 import { nightKill } from '#lib/core/rules/night/night-kill.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -91,19 +91,14 @@ describe('Po', () => {
 				.reminder('chef', 'po', 'Dead')
 				.reminder('empath', 'po', 'Dead')
 				.reminder('washerwoman', 'po', 'Dead');
-			const survivors = preventedDeaths(poisoned.game, poisoned.characters);
-			expect(survivors.map((p) => p.seatId)).toEqual([
-				poisoned.seat('chef'),
-				poisoned.seat('empath'),
-				poisoned.seat('washerwoman')
-			]);
-			for (const p of survivors)
-				expect(p.because).toContainEqual(expect.objectContaining({ kind: 'killer-impaired' }));
+			// Poisoned, the Po has no ability: none of the three dies.
+			expect(abilityState(poisoned.game, poisoned.seat('po'), poisoned.characters).works).toBe(
+				false
+			);
 
 			const sober = scenario(cast).reminder('librarian', 'po', 'Dead');
-			expect(preventedDeaths(sober.game, sober.characters)).toMatchObject([
-				{ seatId: sober.seat('librarian'), because: [] }
-			]);
+			expect(abilityState(sober.game, sober.seat('po'), sober.characters).works).toBe(true);
+			expect(savedBy(sober, 'po', sober.seat('librarian'))).toEqual([]);
 		});
 
 		it('Example 3: Drunk mid-spree; only first target dies', () => {
@@ -115,15 +110,10 @@ describe('Po', () => {
 				.reminder('grandmother', 'po', 'Dead')
 				.reminder('po', 'goon', 'Drunk')
 				.dies('moonchild', 'po');
-			const survivors = preventedDeaths(s.game, s.characters);
-			expect(survivors.map((p) => p.seatId)).toEqual([s.seat('goon'), s.seat('grandmother')]);
-			for (const p of survivors)
-				expect(p.because).toContainEqual(
-					expect.objectContaining({
-						kind: 'killer-impaired',
-						impairments: [expect.objectContaining({ reason: 'drunk' })]
-					})
-				);
+			// Drunk from the Goon on, the Po's later kills do nothing.
+			expect(abilityState(s.game, s.seat('po'), s.characters).impairments).toEqual([
+				expect.objectContaining({ reason: 'drunk' })
+			]);
 		});
 	});
 

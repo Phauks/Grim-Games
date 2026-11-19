@@ -15,6 +15,7 @@
 	import ReminderCount from '#lib/features/board/ReminderCount.svelte';
 	import { stepFocus } from '#lib/features/board/step-focus.svelte.ts';
 	import { lineShown } from '#lib/features/board/reminder-lines.ts';
+	import TetherLine from '#lib/features/board/TetherLine.svelte';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -241,8 +242,7 @@
 				{#if i === 0 && tether}<svg
 						class="preview-tether"
 						aria-hidden="true"
-						data-testid="preview-tether"
-						><line x1={tether.from.x} y1={tether.from.y} x2={tether.to.x} y2={tether.to.y} /></svg
+						data-testid="preview-tether"><TetherLine from={tether.from} to={tether.to} /></svg
 					>{/if}
 				{#if i === 0}<span class="seat-reminder" data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
@@ -347,11 +347,6 @@
 		height: 100%;
 		overflow: visible;
 		pointer-events: none;
-	}
-	.preview-tether line {
-		stroke: var(--on-surface);
-		stroke-opacity: 0.35;
-		stroke-width: 1.5;
 	}
 	.preview-rules-edge {
 		position: absolute;

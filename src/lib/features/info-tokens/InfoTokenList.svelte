@@ -140,8 +140,11 @@
 	/** A card for once: shown, then gone, never saved (Trevor, 2026-10-18). */
 	let quickOpen = $state(false);
 	let quickText = $state('');
+	/** Its words wrap to fill the card, or keep each typed line whole (Trevor, 2026-11-18). */
+	let quickWrap = $state(true);
 	export function openQuick() {
 		quickText = '';
+		quickWrap = true;
 		quickOpen = true;
 	}
 	/**
@@ -155,7 +158,12 @@
 	function useQuick(add: boolean) {
 		if (!plainText(quickText).trim()) return;
 		quickOpen = false;
-		const card: InfoToken = { id: QUICK_CARD_ID, text: quickText, source: 'custom' };
+		const card: InfoToken = {
+			id: QUICK_CARD_ID,
+			text: quickText,
+			source: 'custom',
+			...(quickWrap ? {} : { nowrap: true as const })
+		};
 		if (add) onadd?.(card);
 		else onchoose(card);
 	}
@@ -500,9 +508,13 @@
 </Dialog>
 
 <Dialog bind:open={quickOpen} size="full" title={t('info-tokens.quick')}>
-	<CardEditorLayout title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}>
+	<CardEditorLayout
+		title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}
+		nowrap={!quickWrap}
+	>
 		<RichTextField
 			bind:value={quickText}
+			bind:wrapLines={quickWrap}
 			label={t('info-tokens.text')}
 			maxlength={MAX_CUSTOM_TEXT}
 			multiline

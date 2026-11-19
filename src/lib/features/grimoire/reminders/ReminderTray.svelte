@@ -405,7 +405,10 @@
 		   run button. */
 		height: auto;
 		max-height: calc(var(--tray-h) + var(--reach));
-		background: var(--surface-raised);
+		/* Its own see-through colour as in its row, with the board behind it blurred, rather than
+		   a solid panel (Trevor, 2026-11-18: "background shouldn't change, it should just blur"). */
+		-webkit-backdrop-filter: blur(var(--u));
+		backdrop-filter: blur(var(--u));
 		box-shadow: var(--shadow);
 	}
 	/* Searching with the on-screen keyboard up: it rises clear of the keyboard, so the tokens

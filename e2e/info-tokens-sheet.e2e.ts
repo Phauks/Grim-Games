@@ -315,6 +315,42 @@ test('a quick card can hold a typed list, shown on its lines', async ({ page }) 
 		.toBe('You learn:\n1. Ana is good\n2. Ben is evil');
 });
 
+test("a quick card's wrap tool keeps each typed line whole", async ({ page }) => {
+	// Trevor (2026-11-18, picked A): a wrap tool in the text tools row, on at first.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	const wrap = page.getByRole('button', { name: 'Wrap lines' });
+	await expect(wrap).toHaveAttribute('aria-pressed', 'true');
+	const text = page.getByRole('textbox', { name: 'Text' });
+	await text.tap();
+	await page.keyboard.type('You learn:');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Ana is the Washerwoman');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Ben is the Imp');
+	await wrap.tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'false');
+	// Rendered lines, from the heading's height and its line height.
+	const lines = (heading: import('@playwright/test').Locator) =>
+		heading.evaluate((el) => {
+			const style = getComputedStyle(el);
+			return Math.round(el.getBoundingClientRect().height / parseFloat(style.lineHeight));
+		});
+	// The preview and the shown card both keep the three typed lines, every word in sight.
+	const preview = page.getByRole('figure', { name: 'Preview' }).getByRole('heading');
+	await expect.poll(() => lines(preview)).toBe(3);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const heading = shown(page).getByRole('heading');
+	await expect.poll(() => lines(heading)).toBe(3);
+	expect(await heading.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+	// Closing goes back to the card, still unwrapped; the next quick card wraps again.
+	await shown(page).getByRole('button', { name: 'Close' }).tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'false');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await expect(wrap).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('a quick card can be added to the cards to show with others', async ({ page }) => {
 	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
 	await openSheet(page);

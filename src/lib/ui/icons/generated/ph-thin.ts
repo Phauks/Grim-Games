@@ -12,6 +12,7 @@ import ph_arrow_down_thin from '~icons/ph/arrow-down-thin';
 import ph_arrow_left_thin from '~icons/ph/arrow-left-thin';
 import ph_arrow_right_thin from '~icons/ph/arrow-right-thin';
 import ph_arrow_square_out_thin from '~icons/ph/arrow-square-out-thin';
+import ph_arrow_u_down_left_thin from '~icons/ph/arrow-u-down-left-thin';
 import ph_arrow_u_up_left_thin from '~icons/ph/arrow-u-up-left-thin';
 import ph_arrow_u_up_right_thin from '~icons/ph/arrow-u-up-right-thin';
 import ph_arrow_up_thin from '~icons/ph/arrow-up-thin';
@@ -223,6 +224,7 @@ import ph_swap_thin from '~icons/ph/swap-thin';
 import ph_tag_thin from '~icons/ph/tag-thin';
 import ph_tag_simple_thin from '~icons/ph/tag-simple-thin';
 import ph_text_aa_thin from '~icons/ph/text-aa-thin';
+import ph_text_align_left_thin from '~icons/ph/text-align-left-thin';
 import ph_text_t_thin from '~icons/ph/text-t-thin';
 import ph_textbox_thin from '~icons/ph/textbox-thin';
 import ph_timer_thin from '~icons/ph/timer-thin';
@@ -265,6 +267,7 @@ const icons: IconMap = {
 	'ph:arrow-left-thin': ph_arrow_left_thin,
 	'ph:arrow-right-thin': ph_arrow_right_thin,
 	'ph:arrow-square-out-thin': ph_arrow_square_out_thin,
+	'ph:arrow-u-down-left-thin': ph_arrow_u_down_left_thin,
 	'ph:arrow-u-up-left-thin': ph_arrow_u_up_left_thin,
 	'ph:arrow-u-up-right-thin': ph_arrow_u_up_right_thin,
 	'ph:arrow-up-thin': ph_arrow_up_thin,
@@ -476,6 +479,7 @@ const icons: IconMap = {
 	'ph:tag-thin': ph_tag_thin,
 	'ph:tag-simple-thin': ph_tag_simple_thin,
 	'ph:text-aa-thin': ph_text_aa_thin,
+	'ph:text-align-left-thin': ph_text_align_left_thin,
 	'ph:text-t-thin': ph_text_t_thin,
 	'ph:textbox-thin': ph_textbox_thin,
 	'ph:timer-thin': ph_timer_thin,
