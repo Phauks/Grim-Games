@@ -20,6 +20,7 @@ const KNOWN_KEYS = new Set([
 	'noReminder',
 	'cause',
 	'minAlive',
+	'notTravellers',
 	'targetAlive',
 	'nomineeChose',
 	'noWish',
@@ -95,7 +96,10 @@ export function describeWhen(
 	if (when.noReminder) parts.push(`no player has ${n}’s “${when.noReminder}” reminder`);
 	if (when.noWish) parts.push(`no wish of ${n}’s player has been granted`);
 	if (when.day !== undefined) parts.push(`it is day ${when.day}`);
-	if (when.minAlive !== undefined) parts.push(`at least ${when.minAlive} players are alive`);
+	if (when.minAlive !== undefined)
+		parts.push(
+			`at least ${when.minAlive} players are alive${when.notTravellers ? ', not counting Travellers' : ''}`
+		);
 	for (const [key, value] of Object.entries(when)) {
 		if (!KNOWN_KEYS.has(key)) parts.push(`${key}: ${JSON.stringify(value)}`);
 	}

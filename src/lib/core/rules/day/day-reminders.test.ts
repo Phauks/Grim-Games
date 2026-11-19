@@ -17,6 +17,7 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { impairmentOfLabel } from '#lib/core/rules/abilities/ability.ts';
 import {
+	aliveWords,
 	dayReminders,
 	daySentence,
 	dayStateFromGame,
@@ -212,7 +213,19 @@ describe('state-based reminders', () => {
 	it('respects alive-player counts', () => {
 		const seats = [seat('scarletwoman'), seat('imp'), seat('chef'), seat('empath')];
 		expect(texts({ seats })).toEqual([]);
-		expect(texts({ seats: [...seats, seat('monk')] })).toEqual(['[Scarlet Woman] is alive']);
+		expect(texts({ seats: [...seats, seat('monk')] })).toEqual([
+			'[Scarlet Woman] is alive, 5 players alive'
+		]);
+		const six = [...seats, seat('monk'), seat('librarian')];
+		expect(texts({ seats: six })).toEqual(['[Scarlet Woman] is alive, 6 players alive']);
+		// The count follows deaths.
+		const oneDead = six.map((s) => (s.characterId === 'librarian' ? { ...s, dead: true } : s));
+		expect(texts({ seats: oneDead })).toEqual(['[Scarlet Woman] is alive, 5 players alive']);
+	});
+
+	it('words one player alive in the singular', () => {
+		expect(aliveWords(1)).toBe('1 player alive');
+		expect(aliveWords(7)).toBe('7 players alive');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Klutz
