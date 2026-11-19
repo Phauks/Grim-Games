@@ -93,6 +93,44 @@ describe('yesNoAnswers', () => {
 		]);
 	});
 
+	// Trevor (2026-11-19): an evil Fortune Teller who is neither drunk nor poisoned still gets
+	// true information. https://wiki.bloodontheclocktower.com/Glossary
+	it('gives only the true answer to a sober, healthy evil Fortune Teller', () => {
+		// Wiki: "If a player changes alignment, their character stays the same."
+		// Wiki: "The Storyteller may give false information when a character registers as a different character or alignment, or when a player is drunk or poisoned."
+		const { game, seats, picker } = pickerFor(
+			['fortuneteller', 'chef', 'imp', 'monk', 'poisoner'],
+			'fortuneteller',
+			(s) => ({ type: 'SetAlignment', seatId: s[0], alignment: 'evil' })
+		);
+		expect(yesNoAnswers(game, picker, [seats[1], seats[3]])).toEqual([
+			{ yes: false, reason: 'true' }
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Fibbin: the Fibbin's may-be-false covers good
+	// players only.
+	it('leaves an evil Fortune Teller out of the Fibbin', () => {
+		// Wiki: "Once per game, 1 good player might get incorrect information."
+		const evil = pickerFor(
+			['fortuneteller', 'chef', 'imp', 'monk', 'poisoner'],
+			'fortuneteller',
+			{ type: 'AddRuleCharacter', characterId: 'fibbin' },
+			(s) => ({ type: 'SetAlignment', seatId: s[0], alignment: 'evil' })
+		);
+		expect(yesNoAnswers(evil.game, evil.picker, [evil.seats[1], evil.seats[3]])).toEqual([
+			{ yes: false, reason: 'true' }
+		]);
+		const good = pickerFor(['fortuneteller', 'chef', 'imp', 'monk', 'poisoner'], 'fortuneteller', {
+			type: 'AddRuleCharacter',
+			characterId: 'fibbin'
+		});
+		expect(yesNoAnswers(good.game, good.picker, [good.seats[1], good.seats[3]])).toEqual([
+			{ yes: false, reason: 'true' },
+			{ yes: true, reason: 'unreliable' }
+		]);
+	});
+
 	it('waits until both players are chosen', () => {
 		const { game, seats, picker } = pickerFor(['seamstress', 'chef', 'imp'], 'seamstress');
 		expect(yesNoAnswers(game, picker, [seats[1]])).toEqual([]);
