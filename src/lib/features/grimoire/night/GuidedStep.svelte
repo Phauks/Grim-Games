@@ -236,17 +236,15 @@
 	}
 	function put(seatId: SeatId) {
 		chooserOpen = false;
-		const picked = choosing;
+		if (choosing) putOn(choosing.label, choosing.at, seatId);
 		choosing = undefined;
+	}
+	/** One copy of `label` onto `seatId`: moved there if on the board, else placed. */
+	function putOn(label: string, at: { reminderId: string } | undefined, seatId: SeatId) {
 		const id = tokensOf?.id;
-		if (!picked || !id) return;
-		if (picked.at) moveConfirm?.request(picked.at.reminderId, seatId);
-		else
-			grimoire.run({
-				type: 'AddReminder',
-				seatId,
-				reminder: { characterId: id, label: picked.label }
-			});
+		if (!id) return;
+		if (at) moveConfirm?.request(at.reminderId, seatId);
+		else grimoire.run({ type: 'AddReminder', seatId, reminder: { characterId: id, label } });
 	}
 
 	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
@@ -377,12 +375,15 @@
 {/snippet}
 
 <!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
-{#snippet reminderRow({ label, at }: (typeof rows)[number])}<StepReminderRow
+{#snippet reminderRow({ label, at, copy }: (typeof rows)[number])}<StepReminderRow
 		{game}
 		{characters}
 		character={tokensOf}
 		{label}
 		{at}
+		log={grimoire.open.session.log}
+		{copy}
+		onagain={(seatId) => putOn(label, at, seatId)}
 		onchoose={() => choose(label, at)}
 		onreturn={(id) => moveConfirm?.requestReturn(id)}
 		ondrag={onDrag &&
