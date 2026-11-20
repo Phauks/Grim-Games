@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { listedAdmin, signIn } from './admin.ts';
 import { toBoard } from './new-game.ts';
 import { theMenu } from './shell.ts';
-import { paneButton } from './players.ts';
+import { openPane, paneButton } from './players.ts';
 
 // Live games (plan J31, Trevor 2026-10-26): "admin should have new area that allows admin to view
 // all active games ... the admin would be invisible to the storyteller and players. they cannot
@@ -85,14 +85,13 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(entry.getByRole('button', { name: 'Remove from the game' })).toBeDisabled();
 	await admin.keyboard.press('Escape');
 
-	// History, read-only (Trevor, 2026-10-27: "Admin should have access to history"); the
-	// Storyteller's own items are left out (Trevor, 2026-11-15).
-	await admin.getByRole('button', { name: 'More', exact: true }).tap();
-	const adminMenu = admin.getByRole('dialog', { name: 'Grimoire' });
-	await expect(adminMenu.getByRole('button', { name: 'Add Fabled or Loric' })).toHaveCount(0);
-	await expect(adminMenu.getByRole('button', { name: 'End game' })).toHaveCount(0);
-	await adminMenu.getByRole('button', { name: 'History', exact: true }).tap();
-	const history = admin.getByRole('dialog', { name: 'History' });
+	// History, read-only (Trevor, 2026-10-27: "Admin should have access to history"), in the
+	// pane's More as the Storyteller's is (Trevor, 2026-11-18); the Storyteller's own parts are
+	// left out (Trevor, 2026-11-15).
+	const pane = await openPane(admin, 'History');
+	await expect(pane.getByRole('tab', { name: 'Seats', exact: true })).toHaveCount(0);
+	await expect(pane.getByRole('button', { name: 'End game' })).toHaveCount(0);
+	const history = pane.getByTestId('history');
 	await expect(history.getByRole('listitem').filter({ hasText: 'Spirit of Ivory' })).toBeVisible();
 	await expect(history.getByRole('button', { name: 'Restore' })).toHaveCount(0);
 	await expect(history.getByRole('button', { name: 'Show' }).first()).toBeVisible();

@@ -1156,7 +1156,7 @@ test('the night order is walked through from the bank, and End night starts the 
 	await expect(boardTimer).toBeVisible();
 	await endNight(page);
 	await expect(page.getByTestId('pane-day')).toBeVisible();
-	await page.keyboard.press('Escape');
+	await closePane(page);
 	await expect(boardTimer).toBeVisible();
 	// Start is in the top bar, or a phone's timer sheet from its clock.
 	await expect(
@@ -1505,7 +1505,7 @@ test('the Evil Twin step shows each twin the other', async ({ page }) => {
 	await expect(rows.first()).toContainText('Clockmaker');
 	await expect(rows.first()).toContainText('Seat 2');
 	const shownTo = step.getByTestId('night-shown-to');
-	await expect(shownTo).toContainText(/Seat 2\s*is shown\s*Evil Twin/);
+	await expect(shownTo).toContainText(/Seat 2\s*is shown\s*This character is in play\s*Evil Twin/);
 	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Evil Twin token/ })).toBeVisible();
@@ -1732,17 +1732,26 @@ test('the board can go full screen from the app menu, and back', async ({ page }
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
 	// The drawer closes as an item runs, so each look opens the menu again.
+	const drawer = page.getByRole('dialog', { name: 'Grimbinder' });
 	const item = async () =>
-		(await theMenu(page)).getByRole('button', { name: 'Full screen', exact: true });
+		((await drawer.isVisible()) ? drawer : await theMenu(page)).getByRole('button', {
+			name: 'Full screen',
+			exact: true
+		});
 	const full = await item();
 	await expect(full).toHaveAttribute('aria-pressed', 'false');
 	await full.tap();
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
-	// The switch says it is on; leaving full screen is the browser's own as well.
-	const on = await item();
-	await expect(on).toHaveAttribute('aria-pressed', 'true');
+	// The switch says it is on; leaving full screen is the browser's own as well. The screen
+	// changing size may close the drawer, so each look opens it again until it shows.
+	const pressed = (value: string) =>
+		expect(async () => {
+			await expect(await item()).toHaveAttribute('aria-pressed', value, { timeout: 1000 });
+		}).toPass();
+	await pressed('true');
 	await page.evaluate(() => document.exitFullscreen());
-	await expect(on).toHaveAttribute('aria-pressed', 'false');
+	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+	await pressed('false');
 });
 
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
@@ -4869,10 +4878,13 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 
 	const minionInfo = await openStep(page, 'Minion info');
 	const damsel = minionInfo.locator('[data-testid="evil-info-card"][data-row="shown-damsel"]');
-	await expect(damsel).toContainText('Damsel');
-	await minionInfo.getByRole('button', { name: 'Show to player: Damsel' }).tap();
+	// On the "This character is in play" card (Trevor, 2026-11-19).
+	await expect(damsel).toContainText(/This character is in play\s*Damsel/);
+	await minionInfo
+		.getByRole('button', { name: 'Show to player: This character is in play · Damsel' })
+		.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await expect(shown).toContainText('Damsel');
+	await expect(shown).toContainText(/This character is in play[\s\S]*Damsel/);
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// On through the night, step by step, to the Widow's.
 	const widow = nightStep(page, 'Widow');
@@ -4881,9 +4893,9 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 		await page.waitForTimeout(300);
 	}
 	const shownTo = widow.getByTestId('night-shown-to');
-	await expect(shownTo).toContainText(/Seat 4\s*is shown\s*Widow/);
+	await expect(shownTo).toContainText(/Seat 4\s*is shown\s*This character is in play\s*Widow/);
 	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
-	await expect(shown).toContainText('Widow');
+	await expect(shown).toContainText(/This character is in play[\s\S]*Widow/);
 });
 
 // https://wiki.bloodontheclocktower.com/Storm_Catcher (M10e): each evil player learns who is

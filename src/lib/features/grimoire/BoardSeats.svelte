@@ -19,6 +19,8 @@
 	import { reminderPlacing, seatIssues } from './board.ts';
 	import { placedLook } from '#lib/features/board/reminders.ts';
 	import ReminderTethers from '#lib/features/board/ReminderTethers.svelte';
+	import { reminderStacks } from '#lib/features/board/board-stacks.ts';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { boardLooks } from '#lib/features/board/board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { NightWalk } from '#lib/features/grimoire/night/night-walk.svelte.ts';
@@ -155,7 +157,21 @@
 		issuesSeat ? (issuesSeat.playerName ?? t('common.seat', { number: (issuesOf ?? 0) + 1 })) : ''
 	);
 	const truthsInPill = $derived(bigToken !== 'reminders');
-	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, bigToken)));
+	/**
+	 * Each seat's reminders as stacks (board-stacks.ts): a run's tokens, and with "Stack
+	 * duplicate reminders" the same reminder twice, are one token with a count. `beside` is each
+	 * stack's top, the one a tap or drag takes.
+	 */
+	const stacks = $derived(
+		seats.map((seat) =>
+			reminderStacks(
+				remindersBeside(seat, characters, bigToken),
+				(id) => characters.get(id),
+				preferences.current.assistance.stackReminders
+			)
+		)
+	);
+	const beside = $derived(stacks.map((row) => row.map((stack) => stack.at(-1)!)));
 	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
 	const pretends = $derived(
 		new Map(pretendTeam(game, characters).map((p) => [p.seatId, characters.get(p.characterId)]))
@@ -289,6 +305,7 @@
 			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			<BoardReminderChip
 				look={placedLook(reminder, characters)}
+				count={stacks[i][k].length}
 				at={dragged ? remDrag.drag!.at : at[k]}
 				{...reminderPlacing(game, reminder, characters)}
 				size={chip}

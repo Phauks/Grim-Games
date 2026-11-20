@@ -36,6 +36,17 @@ const NEIGHBOUR = obj({
 });
 export type NeighbourRule = SpecValue<typeof NEIGHBOUR>;
 
+/**
+ * A pick that must differ from earlier ones: `by` the `player`, or by the player's character
+ * `type` at the time; `from` `last-night` (the picks made last night), `previous` (the latest
+ * pick, however many nights back) or `every` (every earlier pick).
+ */
+const DIFFERS_FROM = obj({
+	by: oneOf(['player', 'type']),
+	from: oneOf(['last-night', 'previous', 'every'])
+});
+export type DiffersFrom = SpecValue<typeof DIFFERS_FROM>;
+
 const TARGET = optObj({
 	seat: oneOf(['self', 'other', 'any']),
 	types: TYPES,
@@ -51,7 +62,7 @@ const TARGET = optObj({
 	notWithLabel: TOKEN,
 	global: B,
 	minOwners: NUM,
-	differsFromLastNight: oneOf(['player', 'type']),
+	differsFrom: DIFFERS_FROM,
 	info: B,
 	note: ownWords(STR),
 	ambiguous: ownWords(STR)
@@ -92,9 +103,12 @@ export type TargetRule = SpecValue<typeof TARGET>;
  * - `withLabel` / `notWithLabel`: must share, or must not share, a seat with another of
  *   the character's tokens (the Washerwoman's Wrong is never on her Townsfolk);
  * - `global`: the token marks the game, never a player (a Fabled's or Loric's own tokens);
- * - `differsFromLastNight`: the ability says "different to last night": `player`, never the
- *   player who carried the token at the latest dawn (the Devil's Advocate, Exorcist);
- *   `type`, never a player of that player's character type (the Balloonist);
+ * - `differsFrom`: the pick must differ from earlier picks of the same token, read in the
+ *   order the game's log made them (M90): `by: player`, never an earlier pick's player;
+ *   `by: type`, never a player of an earlier pick's character type as it was then.
+ *   `from: last-night`, last night's picks (the Devil's Advocate, Exorcist); `previous`,
+ *   the latest pick however long ago (the Balloonist); `every`, all of them (the Bounty
+ *   Hunter);
  * - `minOwners`: the token exists only while this many seats hold the character (the
  *   Village Idiot's Drunk, with 2 or more Village Idiots);
  * - `info`: the token marks what the character's information showed. While the character
@@ -196,11 +210,22 @@ export const reminderTargets = partWords(
 		'*.minOwners': {
 			label: 'Only with this many players of it'
 		},
-		'*.differsFromLastNight': {
-			label: 'Different from last night',
+		'*.differsFrom': {
+			label: 'Different from earlier picks'
+		},
+		'*.differsFrom.by': {
+			label: 'Different',
 			names: {
 				player: 'Another player',
 				type: 'Another character type'
+			}
+		},
+		'*.differsFrom.from': {
+			label: 'From',
+			names: {
+				'last-night': "Last night's pick",
+				previous: 'The previous pick',
+				every: 'Every earlier pick'
 			}
 		},
 		'*.info': {

@@ -407,6 +407,8 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 	page,
 	browser
 }, testInfo) => {
+	// Two devices through a whole game and its end: CI's runners take near 30 seconds.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -507,6 +509,8 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	page,
 	browser
 }, testInfo) => {
+	// Two devices through a whole game and its end: CI's runners take near 30 seconds.
+	test.setTimeout(60_000);
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -1566,14 +1570,17 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await expect(viewer.getByRole('dialog', { name: 'Do Not Share With Players' })).toBeVisible();
 	await viewer.keyboard.press('Escape');
 	await expect(viewer.getByTestId('fair-play-full')).toBeHidden();
-	// What only reads opens (Trevor, 2026-11-15): the grim cover, Day, Script, Share and More.
-	// No View-Only label and no Info tokens, which only the Storyteller shows.
+	// What only reads opens (Trevor, 2026-11-15): the grim cover, the pane, Script and Share.
+	// No View-Only label and no Info tokens, which only the Storyteller shows; the Day and ⋯ are
+	// the pane's, as the Storyteller's are (Trevor, 2026-11-18).
 	const toolbar = viewer.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByTestId('view-only')).toHaveCount(0);
 	await expect(toolbar.getByRole('button', { name: 'Info tokens', exact: true })).toHaveCount(0);
 	await expect(toolbar.getByTestId('cover-button')).toBeVisible();
-	for (const name of ['Day', 'Script', 'Share', 'More'])
+	for (const name of ['Script', 'Share'])
 		await expect(toolbar.getByRole('button', { name, exact: true })).toBeEnabled();
+	for (const name of ['Day', 'More'])
+		await expect(toolbar.getByRole('button', { name, exact: true })).toHaveCount(0);
 	// Script is the players' own view, as the Storyteller's Script opens it.
 	await toolbar.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheetTabs = viewer.getByRole('tablist', { name: 'Player view' });
@@ -1585,21 +1592,26 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	await toolbar.getByRole('button', { name: 'Share', exact: true }).tap();
 	await expect(viewer.getByRole('dialog').getByTestId('share-code')).toBeVisible();
 	await viewer.keyboard.press('Escape');
-	// ⋯ reads the Demon's bluffs (Trevor, 2026-11-15: "see lunatic bluffs"), with nothing to
-	// change, and leaves out the Storyteller's own items.
-	await toolbar.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = viewer.getByRole('dialog', { name: 'Grimoire' });
-	await expect(more.getByTestId('menu-players')).toHaveCount(0);
-	await expect(more.getByTestId('menu-seating')).toHaveCount(0);
-	await expect(more.getByRole('button', { name: 'End game' })).toHaveCount(0);
-	await more.getByTestId('menu-bluffs').tap();
-	const bluffs = viewer.getByRole('dialog', { name: 'Demon bluffs' });
+	// The pane reads the Demon's bluffs (Trevor, 2026-11-15: "see lunatic bluffs"), with nothing
+	// to change, and leaves out the Storyteller's own parts: no Players, Night, Seats or Sounds.
+	const pane = await openPane(viewer, 'Bluffs');
+	await expect(
+		pane.getByRole('tablist', { name: 'Game', exact: true }).getByRole('tab')
+	).toHaveText(['Game', 'More']);
+	await expect(
+		pane.getByRole('tablist', { name: 'Game views', exact: true }).getByRole('tab')
+	).toHaveText(['Day', 'Bluffs']);
+	const bluffs = pane.getByTestId('pane-bluffs');
 	await expect(bluffs.getByTestId('bluff-set').first()).toBeVisible();
 	await expect(bluffs.getByRole('button', { name: /^Choose|^Show|^Clear|^Add a set/ })).toHaveCount(
 		0
 	);
-	await viewer.keyboard.press('Escape');
-	await expect(bluffs).toBeHidden();
+	await openPane(viewer, 'History');
+	await expect(
+		pane.getByRole('tablist', { name: 'More views', exact: true }).getByRole('tab')
+	).toHaveText(['Theme', 'History', 'Session']);
+	await expect(pane.getByRole('button', { name: 'End game' })).toHaveCount(0);
+	await closePane(viewer);
 	const timer = viewer.getByTestId('day-timer');
 	await expect(timer).toBeVisible();
 	for (const button of await timer.getByRole('button').all()) await expect(button).toBeDisabled();

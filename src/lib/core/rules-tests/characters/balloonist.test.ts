@@ -109,6 +109,59 @@ describe('Balloonist', () => {
 		});
 	});
 
+	describe('Summary (https://wiki.bloodontheclocktower.com/Balloonist#Summary)', () => {
+		const know = { characterId: 'balloonist', label: 'Know' };
+		const cast = ['balloonist', 'chef', 'empath', 'butler', 'saint', 'poisoner', 'imp'];
+		const misses = (s: Scenario, seat: string) =>
+			reminderTargetMisses(s.game, know, s.seat(seat), s.characters, s.pastPicks());
+
+		it('compares with the previously shown player, not every Know on the board', () => {
+			// Wiki: "Each time the Balloonist learns a player, the player must have a different character
+			// type to the previously shown player."
+			// Night 1 shows the Chef; night 2 a second Know goes on the Butler, the Chef's left on.
+			const s = scenario(cast)
+				.reminder('chef', 'balloonist', 'Know')
+				.newDay()
+				.dusk()
+				.reminder('butler', 'balloonist', 'Know')
+				.newDay()
+				.dusk();
+			expect(misses(s, 'empath')).toEqual([]);
+			expect(misses(s, 'saint')).toEqual(['previous-pick']);
+		});
+
+		it('remembers the previous pick across a night with none', () => {
+			// Wiki: "Each time the Balloonist learns a player, the player must have a different character
+			// type to the previously shown player."
+			// Night 1 shows the Butler; nobody is shown on night 2.
+			const s = scenario(cast)
+				.reminder('butler', 'balloonist', 'Know')
+				.newDay()
+				.dusk()
+				.newDay()
+				.dusk();
+			expect(misses(s, 'saint')).toEqual(['previous-pick']);
+			expect(misses(s, 'chef')).toEqual([]);
+		});
+
+		it('may repeat the type while drunk or poisoned, then differs from that pick', () => {
+			// Wiki: "If the Balloonist is drunk or poisoned, they may learn a character of the same type as
+			// the previously shown player. When the Balloonist becomes sober and healthy, they must learn a
+			// player of a different character type to the previously shown player."
+			const night2 = scenario(cast)
+				.reminder('chef', 'balloonist', 'Know')
+				.newDay()
+				.dusk()
+				.poisoned('balloonist');
+			expect(misses(night2, 'empath')).toEqual([]);
+			// Poisoned, the Balloonist is shown the Empath, another Townsfolk; the poison ends at dusk.
+			const night3 = night2.moves('balloonist', 'Know', 'empath').newDay().dusk();
+			expect(night3.game.seats[night3.seat('balloonist')].reminders).toEqual([]);
+			expect(misses(night3, 'chef')).toEqual(['previous-pick']);
+			expect(misses(night3, 'saint')).toEqual([]);
+		});
+	});
+
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Balloonist#How_to_Run)', () => {
 		const know = { characterId: 'balloonist', label: 'Know' };
 
@@ -138,8 +191,8 @@ describe('Balloonist', () => {
 				.reminder('chef', 'balloonist', 'Know')
 				.newDay();
 			const misses = (seat: string) =>
-				reminderTargetMisses(s.game, know, s.seat(seat), s.characters, s.game);
-			expect(misses('empath')).toEqual(['last-night']);
+				reminderTargetMisses(s.game, know, s.seat(seat), s.characters, s.pastPicks());
+			expect(misses('empath')).toEqual(['previous-pick']);
 			expect(misses('poisoner')).toEqual([]);
 			expect(misses('butler')).toEqual([]);
 		});

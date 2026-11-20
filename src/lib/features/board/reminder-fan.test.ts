@@ -82,6 +82,36 @@ describe('fitReminders', () => {
 		}
 	});
 
+	it('with no room to spill whole, lays a group out as a staggered shingle, full size, before squeezing it (Trevor, 2026-11-19, "add 5")', () => {
+		// A pocket below the seat, too shallow for the group or a line, deep enough for a shingle.
+		const blocked = [
+			{ x: 125, y: 300, w: 250, h: 600 },
+			{ x: 475, y: 300, w: 250, h: 600 },
+			{ x: 300, y: 375, w: 100, h: 450 }
+		];
+		const { at } = fitReminders([{ seat, middle, count: 4, size, chip }], blocked, {
+			width: 600,
+			height: 600
+		});
+		const rows = [...new Set(at[0].map((p) => Math.round(p.y * 10) / 10))].sort((a, b) => a - b);
+		// Two rows, the lower a little more than half a reminder below the upper.
+		expect(rows).toHaveLength(2);
+		expect(rows[1] - rows[0]).toBeCloseTo(chip * 0.55, 1);
+		const row = (y: number) =>
+			at[0].filter((p) => Math.abs(p.y - y) < 0.1).sort((a, b) => a.x - b.x);
+		const [upper, lower] = rows.map(row);
+		// Full size: side by side in a row, never over each other.
+		for (const r of [upper, lower]) expect(apart(r[0], r[1])).toBe(true);
+		// Staggered: each row half a place across from the other.
+		expect(Math.abs(upper[0].x - lower[0].x)).toBeCloseTo((chip + 3) / 2, 1);
+		// In the pocket.
+		for (const p of at[0]) {
+			expect(p.x - chip / 2).toBeGreaterThanOrEqual(250);
+			expect(p.x + chip / 2).toBeLessThanOrEqual(350);
+			expect(p.y + chip / 2).toBeLessThanOrEqual(150);
+		}
+	});
+
 	const box = (p: { x: number; y: number }, w: number) => ({ ...p, w, h: w });
 
 	it("keeps one seat's reminders off a crowded neighbour's (Trevor, 2026-10-16)", () => {

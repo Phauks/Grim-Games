@@ -98,6 +98,25 @@ describe('Bounty Hunter', () => {
 		});
 	});
 
+	describe('Summary (https://wiki.bloodontheclocktower.com/Bounty_Hunter#Summary)', () => {
+		it('never learns the same evil player twice', () => {
+			// Wiki: "The Bounty Hunter cannot learn the same evil player twice."
+			const know = { characterId: 'bountyhunter', label: 'Know' };
+			const s = scenario(['bountyhunter', 'harpy', 'imp', 'chef', 'poisoner'])
+				.reminder('harpy', 'bountyhunter', 'Know')
+				.newDay()
+				.dusk()
+				.moves('bountyhunter', 'Know', 'poisoner')
+				.newDay()
+				.dusk();
+			const misses = (seat: string) =>
+				reminderTargetMisses(s.game, know, s.seat(seat), s.characters, s.pastPicks());
+			expect(misses('harpy')).toEqual(['earlier-pick']);
+			expect(misses('poisoner')).toEqual(['earlier-pick']);
+			expect(misses('imp')).toEqual([]);
+		});
+	});
+
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Bounty_Hunter#How_to_Run)', () => {
 		const cast = ['bountyhunter', 'harpy', 'imp', 'chef', 'monk'];
 

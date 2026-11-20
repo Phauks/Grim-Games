@@ -56,7 +56,7 @@ export class SeatHints {
 	/** The marks for the reminder in hand (hand-marks.ts, shared with a player's grim). */
 	readonly #marks = $derived.by(() => {
 		const { grimoire, game, characters } = this.#context();
-		if (this.#hand) return handMarks(game, this.#hand, characters, grimoire.atDawn);
+		if (this.#hand) return handMarks(game, this.#hand, characters, grimoire.pastPicks);
 		// A player to pick for a night step looks the same (board-pick.svelte.ts).
 		if (boardPick.current) return pickMarks(game, boardPick.current);
 		// So does a day count tapped beside the board: the seats adding to it (count-highlight).

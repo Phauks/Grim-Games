@@ -311,6 +311,16 @@ select:focus-visible {
  * A row already marked or shown (a night step's Valid information row its reminders mark):
  * a gold edge down its start on the selected surface (Trevor, 2026-11-06, option A).
  */
+/*
+ * A night step's Valid Information rows (NightSuggested, NightYesNo): each row's Show to player
+ * eye at the row's end, so every eye in the step is in one column at its right edge (Trevor,
+ * 2026-11-17, "R Right, outlined"; 2026-11-19).
+ */
+[data-eye-rows] > li > .icon-button[data-outlined] {
+	flex: none;
+	margin-inline-start: auto;
+}
+
 [data-marked-row] {
 	padding-inline-start: var(--space-3);
 	border-radius: var(--radius-sm);

@@ -1,6 +1,6 @@
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import type { WatchedTable } from '#lib/core/sync/watched-table.ts';
-import { dawnGames, type Command } from '#lib/core/engine/index.ts';
+import { dawnGames, pickHistory, type Command } from '#lib/core/engine/index.ts';
 import { becomesOffer, followedAlignmentOffer } from '#lib/core/rules/abilities/becomes.ts';
 import { reincarnatedBy } from '#lib/core/rules/abilities/reincarnation.ts';
 import { survivesFirstDeath, deathReminder } from '#lib/core/rules/abilities/first-death.ts';
@@ -336,10 +336,16 @@ export class Grimoire {
 	}
 
 	/**
-	 * The game as it stood at the latest "New day", so a token whose ability says "different
-	 * to last night" is not suggested on last night's player; undefined before the first day.
+	 * The game as it stood at the latest "New day", for countdown tokens that move on each
+	 * night; undefined before the first day.
 	 */
 	readonly atDawn = $derived.by(() => dawnGames(this.open.session.log).at(-1));
+
+	/**
+	 * Each reminder token's picks before tonight, in the order made (M90), so a token whose
+	 * pick must differ from earlier ones is not suggested on them.
+	 */
+	readonly pastPicks = $derived.by(() => pickHistory(this.open.session.log));
 
 	/**
 	 * Whether it is day on this device: a day has begun and tonight's night has not (a death
@@ -539,11 +545,11 @@ export class Grimoire {
 		const game = this.open.game;
 		const characters = this.open.characters;
 		if (command.type === 'AddReminder')
-			return reminderFitWarning(game, command.reminder, command.seatId, characters, this.atDawn);
+			return reminderFitWarning(game, command.reminder, command.seatId, characters, this.pastPicks);
 		if (command.type === 'MoveReminder') {
 			for (const seatId of game.seating) {
 				const r = game.seats[seatId].reminders.find((x) => x.reminderId === command.reminderId);
-				if (r) return reminderFitWarning(game, r, command.toSeatId, characters, this.atDawn);
+				if (r) return reminderFitWarning(game, r, command.toSeatId, characters, this.pastPicks);
 			}
 		}
 		return undefined;
