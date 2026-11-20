@@ -20,7 +20,6 @@ import {
 	paneIsSheet,
 	openPane,
 	openPlayers,
-	openPlayerSheet,
 	storytellerPane,
 	paneDay,
 	paneButton,
@@ -3601,9 +3600,10 @@ async function endWithNote(page: Page) {
 		.getByRole('button', { name: 'Imp', exact: true })
 		.tap();
 	await closeSheet(page);
-	// A player's notes are on their sheet in Players (Trevor, 2026-10-29).
-	const player = await openPlayerSheet(page, 'Seat 1');
-	await addNote(page, player, { text: 'Secret word: lantern' });
+	// A player's note: written in Notes, then given to them (Trevor, 2026-11-19).
+	const notes = (await openPane(page, 'Notes')).getByTestId('game-notes');
+	await addNote(page, notes, { text: 'Secret word: lantern' });
+	await assignNote(page, noteRows(notes).first(), 'Seat 1');
 	await closePane(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });

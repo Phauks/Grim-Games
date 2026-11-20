@@ -474,7 +474,10 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 
 	// The Storyteller reads it from the ended game's menu; it is saved with the game on this
 	// device, so it is still there after a reload (Trevor, 2026-10-25).
-	const feedback = page.getByTestId('game-feedback');
+	// The dialog's: beside the board, More's Session shows the same feedback.
+	const feedback = page
+		.getByRole('dialog', { name: 'Player feedback' })
+		.getByTestId('game-feedback');
 	async function openFeedback() {
 		await page.getByTestId('game-over').tap();
 		await page.getByRole('menuitem', { name: 'Player feedback' }).tap();
