@@ -104,9 +104,10 @@
 {/snippet}
 {#snippet historyView()}<HistoryDialog inline {grimoire} />{/snippet}
 
-<!-- On a phone the Day's counts sit small in the sheet's header, so the Day gains a row (Trevor,
-     2026-11-19, "B Header, compact"), in the title's place, from the left ("You can remove "game"
-     in header and only have the pills, left aligned"). The title is still read out. -->
+<!-- On a phone the day's counts sit small in the sheet's header, so the views gain a row
+     (Trevor, 2026-11-19, "B Header, compact"), on every view, in the title's place, from the left
+     (2026-11-20: "they should be on every screen on the top"; "Remove "Game" From header"). The
+     title is still read out. -->
 {#snippet dayCounts()}<DayCounts game={new LiveDay(grimoire.open)} compact />{/snippet}
 
 {#snippet pane()}
@@ -120,8 +121,8 @@
 	title={t('room.players.pane')}
 	size="full"
 	scroll={false}
-	headActions={sidePane.view === 'day' ? dayCounts : undefined}
-	titleHidden={sidePane.view === 'day'}
+	headActions={dayCounts}
+	titleHidden
 >
 	<div class="sheet-pane">
 		{@render paneBody()}
