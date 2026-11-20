@@ -119,6 +119,10 @@
 </script>
 
 <div class="storyteller-pane" data-testid="storyteller-pane">
+	<!-- The day's counts head the pane on every view (Trevor, 2026-11-20: "they should be on every
+	     screen on the top"); which day it is, game info already says. On a phone they are in the
+	     sheet's header instead (BoardPane). -->
+	{#if sidePane.beside}<div class="game-line"><DayCounts game={live} onBoard /></div>{/if}
 	<Tabs
 		bind:value={() => subject, (value) => (sidePane.subject = value)}
 		tabs={subjects}
@@ -137,13 +141,7 @@
 				>
 					{#snippet panel(view)}
 						{#if view === 'day'}
-							<!-- The day's counts head the Day only (Trevor, 2026-11-18: "the pills should just
-							     be in day view"); which day it is, game info already says. -->
 							<div class="phase" data-testid="pane-day">
-								<!-- On a phone they are in the sheet's header instead (BoardPane). -->
-								{#if sidePane.beside}<div class="game-line">
-										<DayCounts game={live} onBoard />
-									</div>{/if}
 								{@render day()}
 							</div>
 						{:else if view === 'night'}
@@ -191,6 +189,7 @@
 		min-height: 0;
 	}
 	.game-line {
+		flex: none;
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);

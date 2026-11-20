@@ -78,8 +78,9 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 	// Before the first night, the Day tab is open, with no second timer (the board's is the one).
 	await expect(pane.getByTestId('pane-day')).toBeVisible();
 	await expect(pane.getByTestId('day-timer')).toHaveCount(0);
-	// The Day's counts: above it beside the board; on a phone small in the sheet's header,
-	// between Game and Close, so the Day gains a row (Trevor, 2026-11-19, "B Header, compact").
+	// The day's counts head the pane on every view (Trevor, 2026-11-20: "they should be on every
+	// screen on the top"): above the tabs beside the board; on a phone small in the sheet's
+	// header (Trevor, 2026-11-19, "B Header, compact").
 	const counts = page.getByTestId('day-counts');
 	const subjects = pane.getByRole('tablist', { name: 'Game', exact: true });
 	await expect(counts).toBeVisible();
@@ -87,25 +88,38 @@ test('the Day, the Night, Notes and Players are one pane: beside the board, or G
 		await expect(pane.getByTestId('pane-day').getByTestId('day-counts')).toHaveCount(0);
 		await expect(page.getByTestId('dialog-head-actions').getByTestId('day-counts')).toBeVisible();
 		// In the title's place, from the left (Trevor, 2026-11-19: "You can remove "game" in
-		// header and only have the pills, left aligned"); the sheet is still named Game.
+		// header and only have the pills, left aligned"; 2026-11-20: "Remove "Game" From
+		// header"); the sheet is still named Game.
 		const dialog = page.getByRole('dialog', { name: 'Game', exact: true });
 		const heading = (await dialog.getByRole('heading', { name: 'Game' }).boundingBox())!;
 		expect(heading.width).toBeLessThan(2);
 		const box = (await counts.boundingBox())!;
 		const tabs = (await subjects.boundingBox())!;
 		expect(Math.abs(box.x - tabs.x)).toBeLessThan(24);
-	} else await expect(pane.getByTestId('pane-day').getByTestId('day-counts')).toBeVisible();
+	} else {
+		await expect(pane.getByTestId('pane-day').getByTestId('day-counts')).toHaveCount(0);
+		// Above the tabs.
+		expect((await counts.boundingBox())!.y).toBeLessThan((await subjects.boundingBox())!.y);
+	}
 
-	// The Night tab lists the nights' steps, each night closing from its header. The tabs stay
-	// put as the counts go (no reflow).
+	// The Night tab lists the nights' steps, each night closing from its header. The counts and
+	// the tabs stay put.
 	const tabsAt = (await subjects.boundingBox())!.y;
 	await pane.getByRole('tab', { name: /^Night/ }).tap();
 	expect((await subjects.boundingBox())!.y).toBeCloseTo(tabsAt, 0);
 	const night = pane.getByTestId('pane-night');
 	await expect(night.getByRole('button', { name: /^First night/ })).toBeVisible();
 	await expect(night.getByRole('button', { name: /^Other nights/ })).toBeVisible();
-	// The counts are the Day's only (Trevor, 2026-11-18).
-	await expect(page.getByTestId('day-counts')).toBeHidden();
+	await expect(counts).toBeVisible();
+	if (sheet) {
+		const dialog = page.getByRole('dialog', { name: 'Game', exact: true });
+		const heading = (await dialog.getByRole('heading', { name: 'Game' }).boundingBox())!;
+		expect(heading.width).toBeLessThan(2);
+	}
+	// And on another subject's view.
+	await pane.getByRole('tab', { name: /^More/ }).tap();
+	await expect(counts).toBeVisible();
+	expect((await subjects.boundingBox())!.y).toBeCloseTo(tabsAt, 0);
 });
 
 test("tonight's step is the pane's Night tab, with the strip's Next", async ({ page }) => {
