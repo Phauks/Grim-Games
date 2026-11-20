@@ -4,7 +4,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import NoteList from '#lib/ui/notes/NoteList.svelte';
+	import StorytellerNotes from '#lib/features/room/StorytellerNotes.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import PlayersPanel from '#lib/features/room/PlayersPanel.svelte';
@@ -36,8 +36,6 @@
 		day: Snippet;
 		/** The Night's contents, from the board; a spectator's pane has none. */
 		night?: Snippet;
-		/** The game is over: Players' feedback opens. */
-		ended?: boolean;
 		/** The Demon's bluffs; none in a mode without them (Sushi Buffet, Whale Buffet). */
 		bluffs?: Snippet;
 		/** More's views, from the board; a spectator's pane has no Seats or Sounds. */
@@ -54,7 +52,6 @@
 		run = (command) => game.run(command).ok,
 		day,
 		night,
-		ended = false,
 		bluffs,
 		seats,
 		sounds,
@@ -65,8 +62,6 @@
 	const live = $derived(new LiveDay(game));
 
 	const host = roomHost();
-	const notes = $derived(game.game.notes ?? []);
-	const viewOnly = $derived(game.viewOnly);
 	const unread = $derived(host.code ? host.inbox.unread : 0);
 
 	const labels: Record<PaneView, string> = {
@@ -149,18 +144,10 @@
 						{:else if view === 'bluffs'}
 							<div class="phase">{@render bluffs?.()}</div>
 						{:else if view === 'players'}
-							<div class="players"><PlayersPanel {game} {run} {ended} /></div>
+							<div class="players"><PlayersPanel {game} {run} /></div>
 						{:else if view === 'notes'}
 							<!-- Each written where it sits (Trevor, 2026-11-02). -->
-							<div class="notes" data-testid="game-notes">
-								<NoteList
-									{notes}
-									readonly={viewOnly}
-									onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
-									onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
-									hideable={false}
-								/>
-							</div>
+							<div class="notes" data-testid="game-notes"><StorytellerNotes {game} {run} /></div>
 						{:else if view === 'seats'}
 							<div class="phase">{@render seats?.()}</div>
 						{:else if view === 'sounds'}

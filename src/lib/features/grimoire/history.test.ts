@@ -88,6 +88,23 @@ describe('historyItems', () => {
 		expect(items[3].parts).toEqual([{ kind: 'text', text: 'New game: Trouble Brewing, 5 seats' }]);
 	});
 
+	it('words a note given to a player, or back to the game, as one line', () => {
+		// Trevor, 2026-11-19: "assign a note to a player or generally to the game".
+		const session = play(
+			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),
+			() => ({ type: 'SetGameNote', title: 'Word', text: 'lantern', hidden: false }),
+			(s) => ({ type: 'MoveNote', noteId: 'n1', from: 'game', to: first(s) }),
+			(s) => ({ type: 'MoveNote', noteId: 'n1', from: first(s), to: 'game' })
+		);
+		const items = historyItems(session.log.entries, session.log.cursor, characters);
+		expect(items[1].parts).toEqual([
+			{ kind: 'text', text: 'Note given to ' },
+			{ kind: 'seat', seatId: first(session), name: 'Ana' },
+			{ kind: 'text', text: ': Word' }
+		]);
+		expect(items[0].parts).toEqual([{ kind: 'text', text: 'Note given to the game: Word' }]);
+	});
+
 	it('marks undone changes, which stay until a new change', () => {
 		const session = undo(
 			play((s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }))

@@ -53,3 +53,24 @@ export function noteSummaries(scope: Scope): () => Promise<string[]> {
 export async function expectNotes(scope: Scope, expected: string[]): Promise<void> {
 	await expect.poll(noteSummaries(scope)).toEqual(expected);
 }
+
+/**
+ * Gives one of the Storyteller's notes to the game or a player from its ⋯ (Trevor, 2026-11-19),
+ * where each player shows as their character and name: `to` is "Game" or the player's name.
+ */
+export async function assignNote(page: Page, row: Locator, to: string): Promise<void> {
+	await row.getByRole('combobox', { name: 'Whose note' }).tap();
+	await page
+		.getByRole('option', { name: to === 'Game' ? 'Game' : new RegExp(to), exact: to === 'Game' })
+		.tap();
+}
+
+/** Deletes one of the Storyteller's notes from its ⋯, after asking. */
+export async function deleteNoteFromMenu(page: Page, row: Locator): Promise<void> {
+	await row.getByRole('combobox', { name: 'Whose note' }).tap();
+	await page.getByRole('option', { name: 'Delete note' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete this note?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+}

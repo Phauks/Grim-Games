@@ -6,8 +6,10 @@ import { sidePane } from './side-pane.svelte.ts';
  * dialogs Players opens.
  */
 class PlayersDialog {
-	/** A seat whose sheet should open, from its note mark. */
+	/** A seat whose notes should come into view on Notes, from its note mark. */
 	seat = $state<SeatId>();
+	/** A seat whose row should open on Players, from its mark while messages wait. */
+	player = $state<SeatId>();
 	/** Count off (plan J40), from the board's ⋯. */
 	countOff = $state(false);
 	/** Travellers choose on their phones, from an arriving or choosing seat's sheet. */
@@ -31,9 +33,18 @@ class PlayersDialog {
 		this.travellers = true;
 	}
 
-	/** Opens Players on one player's sheet, with their notes (Trevor, 2026-10-29). */
+	/**
+	 * Opens Notes at one player's notes, from their seat's note mark (notes are all on Notes
+	 * since Trevor, 2026-11-19).
+	 */
 	showSeat(seatId: SeatId): void {
 		this.seat = seatId;
+		sidePane.show('notes');
+	}
+
+	/** Opens Players on one player's row, with their messages (Trevor, 2026-10-29). */
+	showPlayer(seatId: SeatId): void {
+		this.player = seatId;
 		sidePane.show('players');
 	}
 }
