@@ -211,10 +211,16 @@
 			// Other Minions only when there is more than one.
 			if (minions.length > 1)
 				out.push({ key: 'minions', title: text('these-are-your-minions'), seats: minions });
-			// A token every Minion is shown, with no words (the Damsel: "All Minions know a Damsel
-			// is in play", https://wiki.bloodontheclocktower.com/Damsel).
+			// A token every Minion is shown, on the "This character is in play" card (the Damsel:
+			// "All Minions know a Damsel is in play", https://wiki.bloodontheclocktower.com/Damsel;
+			// Trevor, 2026-11-19).
 			for (const id of shownAtMinionInfo(game, characters))
-				out.push({ key: `shown-${id}`, title: '', characterIds: [id], showCharacters: [id] });
+				out.push({
+					key: `shown-${id}`,
+					title: text('in-play'),
+					characterIds: [id],
+					showCharacters: [id]
+				});
 		} else {
 			// A jinx keeps a neighbour's Minion from the Demon (the Magician with the Marionette,
 			// https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
@@ -291,11 +297,15 @@
 	const onLine = (line: number) => allRows.filter((row) => lineOf(row) === line);
 	const offLine = $derived(allRows.filter((row) => lineOf(row) === undefined));
 
-	/** The card's accessible name: its words, or the tokens of a card with none (the Damsel). */
+	/**
+	 * The card's accessible name: its words, with its bluff set, or with the character a token
+	 * card shows (the Damsel's "This character is in play"), so two such cards differ.
+	 */
 	function cardName(row: Row): string {
-		if (!row.title)
-			return (row.characterIds ?? []).map((id) => characters.get(id)?.name ?? id).join(', ');
-		return row.set ? `${row.title} · ${row.set}` : row.title;
+		const shownIds = row.key.startsWith('shown-') ? (row.characterIds ?? []) : [];
+		const after =
+			row.set ?? (shownIds.map((id) => characters.get(id)?.name ?? id).join(', ') || undefined);
+		return after ? `${row.title} · ${after}` : row.title;
 	}
 	function card(row: Row): ShownInfoCard {
 		return {

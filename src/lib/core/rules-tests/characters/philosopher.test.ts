@@ -32,6 +32,7 @@ import {
 	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { boardNightSteps } from '#lib/core/rules/night/board-steps.ts';
 
 describe('Philosopher', () => {
 	const character = committedCharacter('philosopher');
@@ -263,6 +264,61 @@ describe('Philosopher', () => {
 					held.characters
 				)
 			).toEqual({ dropHeld: 'dreamer', dropReminders: [drunk] });
+		});
+	});
+
+	describe('waking at the gained ability\'s place (Trevor, 2026-11-19: "Not end")', () => {
+		/** Tonight's step ids on the board, after the Philosopher chose `ability`. */
+		const ids = (s: Scenario, night: Night) =>
+			boardNightSteps(s.game, s.characters, night, committedGameData()).map((step) =>
+				step.gained ? `gained:${step.gained.characterId}` : step.id
+			);
+		const chose = (s: Scenario, ability: string) =>
+			s.do({
+				type: 'GiveAbility',
+				seatId: s.seat('philosopher'),
+				ability: { characterId: ability, via: 'philosopher' }
+			});
+		const base = () => scenario(['philosopher', 'chef', 'empath', 'witch', 'nodashii', 'artist']);
+		/** Whether `a` comes straight before `b` among tonight's steps. */
+		const before = (list: string[], a: string, b: string) =>
+			list.indexOf(a) + 1 === list.indexOf(b);
+
+		it('acts when the chosen character normally acts, not at the end of the night', () => {
+			// Wiki: "The Philosopher chooses to gain the Dreamer ability. From now on, they act when the
+			// Dreamer normally acts."
+			const monk = chose(base(), 'monk').newDay();
+			// TPI's other nights: Monk before the Witch and the No Dashii.
+			expect(before(ids(monk, 'other'), 'philosopher', 'gained:monk')).toBe(true);
+			expect(before(ids(monk, 'other'), 'gained:monk', 'witch')).toBe(true);
+			const snake = chose(base(), 'snakecharmer');
+			expect(before(ids(snake, 'first'), 'gained:snakecharmer', 'witch')).toBe(true);
+		});
+
+		it('a first-night ability gained later wakes at its first-night place, not before Dawn', () => {
+			// Wiki: "During the third night, the Philosopher chooses to gain the Clockmaker ability.
+			// That night, they learn the distance from the Demon to the nearest Minion."
+			const s = chose(base().newDay().newDay(), 'washerwoman');
+			const list = ids(s, 'other');
+			// The first night's sheet puts the Washerwoman before the Empath.
+			expect(before(list, 'gained:washerwoman', 'empath')).toBe(true);
+			expect(list.at(-2)).not.toBe('gained:washerwoman');
+		});
+
+		it('still wakes at that place when drunk or poisoned', () => {
+			// Wiki: "A poisoned player has no ability but thinks they do, and the Storyteller acts like
+			// they do. If their ability would give them information, the Storyteller may give them false
+			// information."
+			const poisoned = chose(base(), 'monk').reminder('philosopher', 'witch', 'Poisoned').newDay();
+			const list = ids(poisoned, 'other');
+			expect(before(list, 'gained:monk', 'witch')).toBe(true);
+			const step = boardNightSteps(
+				poisoned.game,
+				poisoned.characters,
+				'other',
+				committedGameData()
+			).find((x) => x.gained?.characterId === 'monk');
+			expect(step?.impaired?.[0]?.impairments[0]?.reason).toBe('poisoned');
 		});
 	});
 });

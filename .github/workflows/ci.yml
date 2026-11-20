@@ -71,8 +71,36 @@ jobs:
       - run: npm run check:parity
       - run: npm run build
 
+  # Which e2e areas (e2e/areas.ts) this run needs. A PR runs the areas its changed files belong
+  # to, and every area once it touches anything outside them (core, ui, routes, the Worker,
+  # e2e helpers, config). Pushes to beta and main run every area (Trevor, 2026-11-19).
+  e2e-plan:
+    name: E2E plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      # A PR's checkout is its merge commit, whose first parent is the base branch.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            node scripts/e2e-area.ts --plan $(git diff --name-only --no-renames HEAD^1 HEAD)
+          else
+            node scripts/e2e-area.ts --plan
+          fi
+
   e2e:
-    name: Touch e2e (phone + tablet, shard ${{ matrix.shard }}/8)
+    name: E2E · ${{ matrix.label }}
+    needs: e2e-plan
     runs-on: ubuntu-latest
     # Playwright's own image has Chromium and its system libraries installed, so no job spends
     # time on `playwright install --with-deps` (which took 10 minutes on about one run in ten).
@@ -81,16 +109,14 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       # The runner's own DejaVu, read-only, so the font needs no download (see Prepare container).
       options: --ipc=host -v /usr/share/fonts/truetype/dejavu:/opt/runner-dejavu:ro
-    # Each shard runs an eighth of the tests (fullyParallel spreads single tests, not files). With
-    # three shards, a shard took 25 to 32 minutes on 2026-10-27 and runners never queued, so six
-    # halved the wait. By 2026-11-16 six shards took 19 to 40 minutes and one hit this limit with
-    # every test passed, so eight keep each well under it. Branch rules require "E2E done", not
-    # the shards, so the count can change.
+    # One job per area of e2e/areas.ts that the plan picked (a slow area over several), so a red
+    # check names what broke. Eight numbered shards took 12 to 31 minutes on 2026-11-19; the
+    # areas are sized to about 20 each. Branch rules require "E2E done", not these jobs, so
+    # the list can change.
     timeout-minutes: 40
     strategy:
       fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+      matrix: ${{ fromJSON(needs.e2e-plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v6
       # The container runs as root over a checkout owned by the runner user, so git refuses
@@ -118,7 +144,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8
+      - run: node scripts/e2e-area.ts --run ${{ matrix.area }} ${{ matrix.part }}/${{ matrix.of }}
       - name: List flaky tests
         id: flaky
         if: always()
@@ -128,21 +154,22 @@ jobs:
       - if: failure() || fromJSON(steps.flaky.outputs.flaky || '0') > 0
         uses: actions/upload-artifact@v6
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-report-${{ matrix.area }}-${{ matrix.part }}
           path: playwright-report
           retention-days: 7
 
-  # The one e2e check the branch rules require, so adding or removing shards needs no ruleset
-  # change. It fails unless every shard passed (a skipped or cancelled shard fails it too).
+  # The one e2e check the branch rules require, so adding or removing area jobs needs no ruleset
+  # change. It fails unless the plan ran and every area job it picked passed (a skipped or
+  # cancelled job fails it too). Areas the plan left out are not jobs at all.
   e2e-done:
     name: E2E done
-    needs: e2e
+    needs: [e2e-plan, e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - if: needs.e2e.result != 'success'
+      - if: needs.e2e-plan.result != 'success' || needs.e2e.result != 'success'
         run: |
-          echo "E2E shards finished with: ${{ needs.e2e.result }}"
+          echo "E2E plan finished with: ${{ needs.e2e-plan.result }}; area jobs with: ${{ needs.e2e.result }}"
           exit 1
-      - run: echo "Every e2e shard passed."
+      - run: echo "Every e2e area passed."

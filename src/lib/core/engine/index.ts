@@ -9,5 +9,6 @@ export * from './persistence.ts';
 export * from './shared-save.ts';
 export * from './changed-characters.ts';
 export * from './dawns.ts';
+export * from './pick-history.ts';
 export * from './recent-deaths.ts';
 export * from './surplus-seats.ts';
