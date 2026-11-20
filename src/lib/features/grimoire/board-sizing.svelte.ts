@@ -10,6 +10,7 @@ import { heldAbilitiesOf } from '#lib/core/rules/abilities/gained-abilities.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import {
+	clearOfCorner,
 	keepInside,
 	reminderTokenSize,
 	seatPoints,
@@ -65,6 +66,9 @@ export class BoardSizing {
 	height = $state(0);
 	/** The walk-through strip's share of the board's height. */
 	stripReserve = $state(0);
+	/** The day timer's row, top right: seats and reminders keep clear of it. */
+	timerW = $state(0);
+	timerH = $state(0);
 	/** The Fabled and Loric in the top left corner. */
 	edgeW = $state(0);
 	edgeH = $state(0);
@@ -106,14 +110,22 @@ export class BoardSizing {
 		reminderTokenSize(this.size, preferences.current.tokenAppearance.reminderScale)
 	);
 
-	/** The seats' places; the board's top right is free since the day timer went into the toolbar. */
+	/**
+	 * The ring comes down just far enough to keep every seat clear of the day timer and the
+	 * buttons beside it (Trevor, 2026-10-27: Soundboard beside the timer), tappable on a phone.
+	 */
 	readonly points = $derived.by(() => {
 		const { game, layout, spacedFor } = this.#context();
 		const board = this.board;
-		return keepInside(
-			seatPoints(game.seating, layout, board, spacedFor),
+		const onBoard = (l: SeatLayout) =>
+			keepInside(seatPoints(game.seating, l, board, spacedFor), board, this.size / 2 + UNIT);
+		return clearOfCorner(
+			onBoard(layout),
+			game.seating.map((id) => !layout.placed[id]),
+			onBoard({ ...layout, placed: {} }),
 			board,
-			this.size / 2 + UNIT
+			{ w: this.timerW + 12, h: this.timerH + 12 },
+			this.size / 2
 		);
 	});
 
@@ -199,9 +211,11 @@ export class BoardSizing {
 				chip: Math.max(this.chip, this.tapPx),
 				avoid: this.#avoidFor(i)
 			})),
-			// The Fabled and Loric in the corner and the script's name stay clear and tappable.
+			// The Fabled and Loric in the corner, the day timer and the script's name stay clear
+			// and tappable.
 			keepClear({
 				edge: { w: this.edgeW, h: this.edgeH },
+				timer: { w: this.timerW, h: this.timerH },
 				title: { w: this.titleW, h: this.titleH },
 				board
 			}),

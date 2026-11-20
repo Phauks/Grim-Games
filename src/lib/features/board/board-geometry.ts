@@ -156,6 +156,8 @@ export interface Measured {
 export interface KeepClearInput {
 	/** The Fabled and Loric, top left. */
 	edge: Measured;
+	/** The day timer, top right; undefined when it isn't shown. */
+	timer: Measured | undefined;
 	/** The script's name, lower left. */
 	title: Measured;
 	board: BoardSize;
@@ -163,9 +165,11 @@ export interface KeepClearInput {
 
 /** What every reminder keeps clear of, so those stay clear and tappable; 12px of margin. */
 export function keepClear(input: KeepClearInput): Box[] {
-	const { edge, title, board } = input;
+	const { edge, timer, title, board } = input;
 	const out: Box[] = [];
 	if (edge.w > 0) out.push({ x: edge.w / 2, y: edge.h / 2, w: edge.w + 12, h: edge.h + 12 });
+	if (timer && timer.w > 0)
+		out.push({ x: board.width - timer.w / 2, y: timer.h / 2, w: timer.w + 12, h: timer.h + 12 });
 	if (title.w > 0)
 		out.push({ x: title.w / 2, y: board.height - title.h / 2, w: title.w + 12, h: title.h + 12 });
 	return out;

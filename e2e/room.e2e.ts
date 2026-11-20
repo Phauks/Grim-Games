@@ -1603,16 +1603,18 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	).toHaveText(['Game', 'More']);
 	await expect(
 		pane.getByRole('tablist', { name: 'Game views', exact: true }).getByRole('tab')
-	).toHaveText(['Day', 'Bluffs']);
+	).toHaveText(['Day', 'Bluffs', 'History']);
 	const bluffs = pane.getByTestId('pane-bluffs');
 	await expect(bluffs.getByTestId('bluff-set').first()).toBeVisible();
 	await expect(bluffs.getByRole('button', { name: /^Choose|^Show|^Clear|^Add a set/ })).toHaveCount(
 		0
 	);
 	await openPane(viewer, 'History');
+	await expect(pane.getByTestId('history')).toBeVisible();
+	await openPane(viewer, 'Session');
 	await expect(
 		pane.getByRole('tablist', { name: 'More views', exact: true }).getByRole('tab')
-	).toHaveText(['Theme', 'History', 'Session']);
+	).toHaveText(['Theme', 'Session']);
 	await expect(pane.getByRole('button', { name: 'End game' })).toHaveCount(0);
 	await closePane(viewer);
 	const timer = viewer.getByTestId('day-timer');

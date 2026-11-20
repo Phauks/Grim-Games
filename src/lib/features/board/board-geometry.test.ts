@@ -116,11 +116,13 @@ describe('keepClear', () => {
 	it('keeps the measured parts clear with a margin', () => {
 		const boxes = keepClear({
 			edge: { w: 60, h: 30 },
+			timer: { w: 50, h: 20 },
 			title: { w: 80, h: 24 },
 			board
 		});
 		expect(boxes).toEqual([
 			{ x: 30, y: 15, w: 72, h: 42 },
+			{ x: 375, y: 10, w: 62, h: 32 },
 			{ x: 40, y: 188, w: 92, h: 36 }
 		]);
 	});
@@ -129,6 +131,7 @@ describe('keepClear', () => {
 		expect(
 			keepClear({
 				edge: { w: 0, h: 0 },
+				timer: undefined,
 				title: { w: 0, h: 0 },
 				board
 			})

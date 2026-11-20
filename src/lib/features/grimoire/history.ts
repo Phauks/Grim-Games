@@ -12,6 +12,7 @@ import { describeEntry as describeDayEntry } from '#lib/features/day/day-port.ts
 import { slot, splitSlots } from '#lib/features/characters/slots.ts';
 import { causeCharacter, causeLabel } from './board.ts';
 import { appliedEntries } from '#lib/core/engine/applied-entries.ts';
+import type { GamePhase } from '#lib/core/rules/game-phase.ts';
 
 export type HistoryPart =
 	/** Words; `seats` are the seats they name (History's filter, Trevor 2026-10-19). */
@@ -40,6 +41,28 @@ export interface HistoryItem {
 	parts: HistoryPart[];
 	/** Undone: after the cursor, kept until a new change replaces it. */
 	undone: boolean;
+	/** The days begun once it was made (`pastDays`), for its stage (historyStage). */
+	days: number;
+}
+
+/** When this device saw the game start (Night 1) and each later night begin, by number. */
+export interface StageStarts {
+	game?: number;
+	nights: Record<number, number>;
+}
+
+/**
+ * The stage of the game an entry was made in, Setup, a night or a day (Trevor, 2026-11-19:
+ * History by stage): its day from the log, its night from when this device saw the night
+ * begin. Without those times a night's entries are in the day before it.
+ */
+export function historyStage(
+	item: Pick<HistoryItem, 'at' | 'days'>,
+	starts: StageStarts
+): GamePhase {
+	const begun = item.days === 0 ? starts.game : starts.nights[item.days + 1];
+	if (begun !== undefined && item.at >= begun) return { kind: 'night', number: item.days + 1 };
+	return item.days === 0 ? { kind: 'setup' } : { kind: 'day', number: item.days };
 }
 
 const text = (t: string): HistoryPart => ({ kind: 'text', text: t });
@@ -535,7 +558,8 @@ export function historyItems(
 			number: items.length + 1,
 			at: entry.at,
 			parts: describeEntry(entry, before, game, characters),
-			undone: i + 1 > cursor
+			undone: i + 1 > cursor,
+			days: game.pastDays.length
 		});
 	});
 	return items.reverse();

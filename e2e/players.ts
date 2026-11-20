@@ -28,7 +28,7 @@ const SUBJECTS = {
 	Seats: 'More',
 	Sounds: 'More',
 	Theme: 'More',
-	History: 'More',
+	History: 'Game',
 	Session: 'More'
 } as const;
 export type PaneTab = keyof typeof SUBJECTS;

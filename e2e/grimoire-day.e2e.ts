@@ -824,6 +824,11 @@ test("Executed in a seat's status during the day asks as Execution does; a Sailo
 	await expect(pane.getByTestId('history')).toContainText(
 		'Seat 3 has been executed and does not die'
 	);
+	// History by stage, newest first (Trevor, 2026-11-19): the execution is Day 1's, the
+	// Sailor chosen in Setup.
+	const bands = pane.getByTestId('history').getByRole('button', { name: /^(Setup|Night|Day)/ });
+	await expect(bands.first()).toHaveAccessibleName(/^Day 1/);
+	await expect(bands.last()).toHaveAccessibleName(/^Setup/);
 });
 
 test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({ page }) => {

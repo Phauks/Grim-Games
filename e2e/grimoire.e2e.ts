@@ -54,7 +54,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
-import { addSeat } from './seating.ts';
+import { addSeat, seatingTools } from './seating.ts';
 import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 import { openInfoTokens } from './toolbar.ts';
 import { openBoardTheme } from './theme.ts';
@@ -598,6 +598,9 @@ test('history, add seat and remove', async ({ page }) => {
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByTestId('history');
+	// By stage, each a gold band with its count (Trevor, 2026-11-19): all of this is Setup.
+	await expect(history.getByRole('button', { name: /^Setup/ })).toHaveCount(1);
+	await expect(history.getByRole('button', { name: /^(Night|Day) \d/ })).toHaveCount(0);
 	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
 	const numbers = history.getByTestId('history-number');
 	await expect(numbers.last()).toHaveText('1');
@@ -723,7 +726,23 @@ test("Demon bluffs open in the pane's Game, and a seat shows its token to the pl
 }) => {
 	await startGame(page);
 	await menu(page, 'Demon bluffs');
-	await expect(page.getByTestId('pane-bluffs')).toBeVisible();
+	const bluffs = page.getByTestId('pane-bluffs');
+	await expect(bluffs).toBeVisible();
+	// An edit left open is dropped on leaving the view: back on Bluffs, the sets show (Trevor,
+	// 2026-11-19).
+	await bluffs
+		.getByRole('button', { name: /^Choose the/ })
+		.first()
+		.tap();
+	await expect(bluffs.getByTestId('bluff-set')).toHaveCount(0);
+	// Cancel and Confirm in the pane's footer, under the list that scrolls (Trevor, 2026-11-19).
+	await expect(
+		bluffs.getByTestId('pane-footer').getByRole('button', { name: 'Confirm' })
+	).toBeVisible();
+	const pane = page.getByTestId('storyteller-pane');
+	await pane.getByRole('tab', { name: 'Day', exact: true }).tap();
+	await pane.getByRole('tab', { name: 'Bluffs', exact: true }).tap();
+	await expect(bluffs.getByTestId('bluff-set').first()).toBeVisible();
 	await closePane(page);
 
 	const sheet = await openSeat(page, 1);
@@ -775,7 +794,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await menu(page, 'Seating');
 	await expect(bankNight(page, 'Set up')).toBeDisabled();
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await seatingTools(page).getByRole('button', { name: 'Done' }).tap();
 	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
@@ -866,9 +885,18 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, distribu
 	const board = (await page.locator('.board').boundingBox())!;
 	const seat2 = await centre(2);
 
+	const beside = !(await paneIsSheet(page));
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await expect(toolbar).toContainText('Seating');
+	// Beside the board Seating is in the pane's Seats, Rotate and Done in its footer, and the top
+	// bar keeps its own buttons (Trevor, 2026-11-19); a phone's bar swaps in Seating's.
+	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(bar.getByRole('button', { name: 'Script' })).toHaveCount(beside ? 1 : 0);
+	if (beside)
+		await expect(
+			toolbar.getByTestId('pane-footer').getByRole('button', { name: 'Done' })
+		).toBeVisible();
 
 	// Drag seat 1 inside the circle (clear of the centre buttons); the others stay put.
 	const from = await centre(1);
@@ -1014,18 +1042,22 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	// Filtered by player (Trevor, 2026-10-19): only entries naming Seat 1, the Sailor's seat;
 	// the Drunk reminder's own character is no filter.
 	const history = page.getByTestId('history');
-	const filter = history.getByRole('group', { name: 'Show changes for' });
-	await expect(filter.getByRole('button', { name: 'Sailor' })).toHaveCount(0);
-	await expect(filter.getByRole('button', { name: 'Seat 3' })).toBeVisible();
-	await filter.getByRole('button', { name: 'Seat 1', exact: true }).tap();
-	await expect(filter.getByRole('button', { name: 'All' })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
-	await expect(history.locator('.history > li')).not.toHaveCount(0);
-	for (const text of await history.locator('.history > li .text').allTextContents())
+	// One drop-down, each player shown as their character and name (Trevor, 2026-11-20: A).
+	const filter = history.getByRole('combobox', { name: 'Show changes for' });
+	await expect(filter).toContainText('All players');
+	await filter.tap();
+	const seatOne = page.getByRole('option', { name: /Seat 1\b/ });
+	await expect(page.getByRole('option', { name: /Seat 3\b/ })).toBeVisible();
+	await expect(page.getByRole('option', { name: /Drunk/ })).toHaveCount(0);
+	await seatOne.tap();
+	await expect(seatOne).toHaveAttribute('aria-selected', 'true');
+	await expect(history.locator('.history li')).not.toHaveCount(0);
+	for (const text of await history.locator('.history li .text').allTextContents())
 		expect(text).toMatch(/Sailor/);
-	await filter.getByRole('button', { name: 'All' }).tap();
+	await seatOne.tap();
+	await expect(filter).toContainText('All players');
+	await page.keyboard.press('Escape');
+	await expect(seatOne).toBeHidden();
 	await expect(history).toContainText('New game:');
 	await page.keyboard.press('Escape');
 
@@ -2167,7 +2199,7 @@ test('players rotate one seat, or swap places when one is dropped on another', a
 
 	// Rotating is part of arranging: one tap, one place, no confirm.
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
 	// Every name moves with its player, a seat number too (Trevor, 2026-10-22).
@@ -5623,8 +5655,8 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 });
 
 // Trevor (2026-11-18): the board's ⋯ menu became the pane, a nav with a sub-nav ("only game,
-// players, and more"); Bluffs under Game, History in More "since we don't want people
-// touching it too often", Settings and Report in the app's menu.
+// players, and more"); Bluffs under Game, Settings and Report in the app's menu. History is
+// Game's last view (Trevor, 2026-11-19: "that way we don't have to have ... in more").
 test("the pane's subjects and views hold what the board's menu did", async ({ page }) => {
 	await startGame(page);
 	await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
@@ -5632,10 +5664,13 @@ test("the pane's subjects and views hold what the board's menu did", async ({ pa
 	const tabs = (rail: string) =>
 		pane.getByRole('tablist', { name: rail, exact: true }).getByRole('tab');
 	await expect(tabs('Game')).toHaveText(['Game', /^Players/, 'More']);
-	await expect(tabs('Game views')).toHaveText(['Day', 'Night', 'Bluffs']);
+	await expect(tabs('Game views')).toHaveText(['Day', 'Night', 'Bluffs', 'History']);
 	await openPane(page, 'Notes');
 	await expect(tabs('Players views')).toHaveText([/^Players/, 'Notes']);
 	await openPane(page, 'Seats');
+	// More's views fit across the pane, with no "More tabs" ⋯.
+	await expect(tabs('More views')).toHaveText(['Seats', 'Sounds', 'Theme', 'Session']);
+	await expect(pane.getByRole('button', { name: 'More tabs' })).toHaveCount(0);
 	// Arranging seats, Lock seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31). Travellers choose (L102) comes with Add seat.
 	await expect(pane.getByTestId('pane-seats').getByRole('button')).toHaveText([
@@ -6533,7 +6568,7 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
 	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await expect(toolbar).toContainText('Seating');
 	// Under load the first press can land before the seats take drags: drag until it moves.
 	await expect(async () => {

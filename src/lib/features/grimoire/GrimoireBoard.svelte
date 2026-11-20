@@ -387,9 +387,7 @@
 		const host = roomHost();
 		const member = host.code ? host.members.find((m) => m.seatId === seatId) : undefined;
 		const messages = fromMark && !!member && host.inbox.waitingFrom(member.memberId).count > 0;
-		setTimeout(() =>
-			messages ? playersDialog.showPlayer(seatId) : playersDialog.showSeat(seatId)
-		);
+		setTimeout(() => playersDialog[messages ? 'showPlayer' : 'showSeat'](seatId));
 	}
 	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
 	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
@@ -590,9 +588,11 @@
 	let exportOpen = $state(false);
 	/** Players' feedback on the finished game, saved on this device (Trevor, 2026-10-25). */
 	let feedbackOpen = $state(false);
-	/** Export's picture: the board and its game info only (Trevor, 2026-10-26, 2026-11-01). */
 	/** Where Game notes and Players show beside the board (plan M86), if they can. */
 	let paneAt = $state<BesidePlacement>();
+	$effect(() => void (paneAt && (sizing.timerW = sizing.timerH = 0))); // The toolbar's, beside.
+	const keepTimer = () => !ended || !sizing.timerW; // Game over takes its room: no seat moves.
+	/** Export's picture: the board and its game info only (Trevor, 2026-10-26, 2026-11-01). */
 	let grimoireEl = $state<HTMLElement>();
 	const capture = (type?: 'image/png' | 'image/jpeg') => {
 		if (!grimoireEl || !board) throw new Error('the board is not shown');
@@ -818,7 +818,7 @@
 				onShare={() => (phonesOpen = true)}
 			>
 				<!-- The grim cover beside ☰, never in a menu (Trevor, 2026-10-26); a spectator's too. -->
-				{#snippet timer()}{@render toolbarTimer()}{/snippet}
+				{#snippet timer()}{#if paneAt}{@render toolbarTimer()}{/if}{/snippet}
 				{#snippet lead()}
 					<CoverButton
 						gameId={game.gameId}
@@ -946,6 +946,13 @@
 			></BoardCorner>
 			<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 			{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
+			<!-- A phone's timer in the board's corner (Trevor, 2026-11-19: "closest to A"). -->{#if toolbar && !paneAt}<div
+					class="board-timer"
+					bind:clientWidth={() => sizing.timerW, (w) => keepTimer() && (sizing.timerW = w)}
+					bind:clientHeight={() => sizing.timerH, (h) => keepTimer() && (sizing.timerH = h)}
+				>
+					{@render toolbarTimer()}
+				</div>{/if}
 		</div>
 	</div>
 {/snippet}
@@ -964,7 +971,7 @@
 {/if}
 
 {#snippet seatsView()}
-	<PaneSeats onAddRule={() => rules?.add()} onArrange={() => enterSeating(seatArr)} />
+	<PaneSeats {grimoire} {seatArr} {onAddSeat} onAddRule={() => rules?.add()} />
 {/snippet}
 {#snippet playerFeedback()}<PlayerFeedbackSection game={grimoire.open} ended />{/snippet}
 {#snippet sessionView()}
@@ -1254,9 +1261,12 @@
 		height: var(--tap-target);
 		pointer-events: none;
 	}
-	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
-	.board.showing :global(:is([data-tray], [data-testid='night-strip'])) {
-		visibility: hidden;
+	.board-timer {
+		position: absolute;
+		top: var(--space-1);
+		right: var(--space-1);
+		z-index: var(--z-above-2);
+		display: flex;
 	}
 	/* The timer and, once the game ends, Game over in one cell, right-aligned: the cell is as
 	   wide as the wider, so the timer's hidden room holds Game over without covering Share. */
@@ -1271,6 +1281,9 @@
 		grid-area: 1 / 1;
 		display: flex;
 	}
+	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
+	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
+	.board.showing .board-timer,
 	.timer-slot.gone {
 		visibility: hidden;
 	}

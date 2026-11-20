@@ -1,3 +1,4 @@
+import { seatingTools } from './seating.ts';
 import { expectInRoom } from './player-status.ts';
 import {
 	expect,
@@ -49,11 +50,11 @@ async function nameSeat(page: Page, number: number, name: string) {
 
 async function enterSeating(page: Page) {
 	await paneButton(page, 'Seats', 'Seating');
-	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
+	await expect(seatingTools(page)).toContainText('Seating');
 }
 
 async function leaveSeating(page: Page) {
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(toolbar.getByRole('button', { name: /^(Lock|Unlock) seating$/ })).toHaveCount(0);
 }
@@ -91,7 +92,7 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	// Every Seating control in the top bar, alike (Trevor, 2026-11-01). While phones may move
 	// their seats it offers Lock seating; an open padlock shows the state, never a colour
 	// (Trevor, 2026-11-06).
-	const tools = page.getByRole('toolbar', { name: 'Grimoire' });
+	const tools = seatingTools(page);
 	const lock = tools.getByRole('button', { name: 'Lock seating' });
 	const unlock = tools.getByRole('button', { name: 'Unlock seating' });
 	await expect(lock).toBeVisible();
@@ -114,7 +115,7 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
 	// Words beside the icons on a tablet, icons only on a phone (Trevor, 2026-11-01), and
 	// all seven tools fit across the bar either way.
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	const words = toolbar.getByText('Lock seating', { exact: true });
 	if (testInfo.project.name === 'tablet') await expect(words).toBeVisible();
 	else await expect(words).toBeHidden();
@@ -229,8 +230,8 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	await expect(page).toHaveURL(/\/setup$/);
 	const setup = page.url();
 	await page.getByRole('button', { name: 'Seating' }).tap();
-	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
-	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(seatingTools(page)).toContainText('Seating');
+	const bar = seatingTools(page);
 	// No room open yet, so seating starts locked.
 	await expect(bar.getByRole('button', { name: 'Unlock seating' })).toBeVisible();
 	// Add seat is there too: it places a seat, then comes back to Seating (Trevor, 2026-11-01).
@@ -305,7 +306,7 @@ test('the bag draw opens Seating as Character selection does, and Done comes bac
 	await seating.tap();
 	// Arranging seats is not leaving the draw, so it doesn't ask.
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
-	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
+	await expect(seatingTools(page)).toContainText('Seating');
 	await leaveSeating(page);
 	await expect(page).toHaveURL(draw);
 	await expect(page.getByRole('button', { name: /^Tile \d+$/ })).toHaveCount(5);

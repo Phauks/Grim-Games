@@ -16,6 +16,7 @@ import type { ClientMessage } from '#lib/core/sync/room.ts';
 import { finishCountOff } from '#lib/features/room/count-off.ts';
 import { roomHost } from '#lib/features/room/host.svelte.ts';
 import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
+import { sidePane } from '#lib/features/room/side-pane.svelte.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 
@@ -70,9 +71,19 @@ export function countOff(): void {
 	playersDialog.countOff = true;
 }
 
+/**
+ * Whether Seating's controls are in the pane's Seats, beside the board, rather than in the top
+ * bar (Trevor, 2026-11-19: "lets just move those into the right side near the other controls").
+ * A phone, or a pane turned to another view, keeps them in the bar.
+ */
+export function seatingInPane(): boolean {
+	return sidePane.beside && sidePane.view === 'seats';
+}
+
 /** Enters Seating; with a room open, phones may move their seats straight away. */
 export function enterSeating(seatArr: SeatArranging): void {
 	seatArr.start();
+	if (sidePane.beside) sidePane.turnTo('seats');
 	if (roomHost().code && !roomHost().seatingOpen) letPhonesMove(true);
 }
 

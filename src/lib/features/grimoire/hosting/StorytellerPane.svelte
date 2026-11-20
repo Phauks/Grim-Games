@@ -22,11 +22,11 @@
 	 * the board where there is room and in a full-screen sheet on a phone. Three subjects, each
 	 * with a smaller rail of its own views under it (Trevor, 2026-11-18: "i like nav with
 	 * sub-nav"; "only game, players, and more"): Game, the day and night; Players, them and the
-	 * notes; More, what the board's ⋯ menu held. History is in More, as it shouldn't be touched
-	 * often (Trevor, 2026-11-18). Players counts what waits from them.
+	 * notes; More, what the board's ⋯ menu held. History is Game's last view, so More fits a
+	 * phone without its own ⋯ (Trevor, 2026-11-19). Players counts what waits from them.
 	 *
-	 * A spectator gets the same pane, to read (Trevor, 2026-11-18): Game's Day and Bluffs, and
-	 * More's History and Session, without the night's steps, the players, the seats or sounds.
+	 * A spectator gets the same pane, to read (Trevor, 2026-11-18): Game's Day, Bluffs and
+	 * History, and More's Session, without the night's steps, the players, the seats or sounds.
 	 */
 	interface Props {
 		game: OpenGame;

@@ -8,11 +8,13 @@
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ViewerShare from './ViewerShare.svelte';
+	import RotateSeats from './seats/RotateSeats.svelte';
 	import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import {
 		countOff,
 		leaveSeating,
-		letPhonesMove
+		letPhonesMove,
+		seatingInPane
 	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 
 	/**
@@ -40,8 +42,8 @@
 		/** Beside ☰: the grim cover, in the same place on the board and the day (Trevor). */
 		lead?: Snippet;
 		/**
-		 * The day timer, last on the bar (Trevor, 2026-11-18); a phone shows its clock only,
-		 * which opens the Timer sheet with Back to town and Start.
+		 * The day timer, last on the bar (Trevor, 2026-11-18), beside the pane; a phone has its
+		 * whole timer in the board's corner instead (Trevor, 2026-11-19).
 		 */
 		timer?: Snippet;
 	}
@@ -65,12 +67,14 @@
 	const host = roomHost();
 	const count = $derived(host.countOff);
 	const seatingAction = $derived(t(host.seatingOpen ? 'room.seating.lock' : 'room.seating.unlock'));
+	/** Seating's controls in this bar: on a phone, or while the pane shows another view. */
+	const arranging = $derived(seatArr.arranging && !seatingInPane());
 </script>
 
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
 <div
 	class="toolbar"
-	class:seating={seatArr.arranging && !placing}
+	class:seating={arranging && !placing}
 	role="toolbar"
 	aria-label="Grimoire"
 	data-screenshot="skip"
@@ -79,7 +83,7 @@
 		<!-- Before Seating's controls, so Add seat from Seating comes back to them. -->
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
-	{:else if seatArr.arranging}
+	{:else if arranging}
 		<!-- Every Seating control here, alike (Trevor, 2026-11-01): icons on phones, their
 		     words beside them where there is room, as the board's own tools. -->
 		<span class="title arranging-title">{t('room.seating.title')}</span>
@@ -110,18 +114,7 @@
 		>
 		<!-- The two rotations as one box split down the middle, beside Done, so the tools with
 		     words sit together (Trevor, 2026-11-01), with the same edge as the buttons beside it. -->
-		<span class="rotate" role="group" aria-label="Rotate players">
-			<IconButton
-				icon="rotateAnticlockwise"
-				label="Rotate players anticlockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			/>
-			<IconButton
-				icon="rotateClockwise"
-				label="Rotate players clockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			/>
-		</span>
+		<RotateSeats {grimoire} />
 		<Button
 			variant="accent"
 			icon="check"
@@ -224,30 +217,6 @@
 			visibility: hidden;
 		}
 	}
-	.rotate {
-		position: relative;
-		display: flex;
-		flex: none;
-		overflow: hidden;
-		border-radius: var(--button-radius);
-		background: var(--surface);
-	}
-	/* The quiet Button's edge, drawn over the two halves: on a background their backing covered
-	   an edge drawn under them (Trevor, 2026-11-06: "missing outside border"). */
-	.rotate::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		box-shadow: var(--button-ring);
-		pointer-events: none;
-	}
-	.rotate :global(.icon-button) {
-		border-radius: 0;
-	}
-	.rotate :global(.icon-button + .icon-button) {
-		border-left: var(--control-border);
-	}
 	/* Seating's tools keep their size, all the same square on a phone. */
 	.seating :global(.button),
 	.seating :global(.icon-button) {
@@ -286,33 +255,6 @@
 	@container beside (min-width: 720px) {
 		.toolbar :global(.tool-label) {
 			display: inline;
-		}
-	}
-	/* The day timer's clock only on a phone: tapping it opens the Timer sheet, which has Back
-	   to town and Start (Trevor, 2026-11-18). */
-	@container beside (max-width: 719.98px) {
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] > :not(.open)) {
-			display: none;
-		}
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] .clock) {
-			padding-inline: var(--space-1);
-		}
-	}
-	/* Seven tap targets fill a 360px phone: there the gaps narrow, as the menu's do on the
-	   smallest phones, and the clock's numbers are a little smaller. */
-	@container beside (max-width: 399.98px) {
-		.toolbar {
-			--menu-gap: min(var(--space-1), 1vw);
-		}
-		.toolbar > :global(.toolbar-timer [data-testid='day-timer'] .clock) {
-			font-size: 0.85em;
-		}
-	}
-	/* Narrower still (a 320px phone) it doesn't fit beside them: the timer is on the grim
-	   cover, from the button beside ☰. */
-	@container beside (max-width: 344.98px) {
-		.toolbar > :global(.toolbar-timer .timer-slot) {
-			display: none;
 		}
 	}
 	/* Seating's tools have their words from a tablet up, icons only on a phone (Trevor,

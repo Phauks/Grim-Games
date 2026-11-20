@@ -10,7 +10,7 @@ import {
 } from '#lib/core/engine/index.ts';
 import { characterLookup } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { historyItems, itemSeats, seatChanges } from './history.ts';
+import { historyItems, historyStage, itemSeats, seatChanges } from './history.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -223,5 +223,21 @@ describe('seatChanges', () => {
 		expect(seatChanges(session.log.entries, session.log.cursor, second(session))).toEqual([]);
 		// Undone changes are not shown.
 		expect(seatChanges(session.log.entries, session.log.cursor - 2, seatId)).toEqual([]);
+	});
+});
+
+describe('historyStage', () => {
+	it('puts each entry in Setup, a night or a day (Trevor, 2026-11-19)', () => {
+		const starts = { game: 100, nights: { 2: 300 } };
+		expect(historyStage({ at: 50, days: 0 }, starts)).toEqual({ kind: 'setup' });
+		expect(historyStage({ at: 150, days: 0 }, starts)).toEqual({ kind: 'night', number: 1 });
+		expect(historyStage({ at: 200, days: 1 }, starts)).toEqual({ kind: 'day', number: 1 });
+		expect(historyStage({ at: 350, days: 1 }, starts)).toEqual({ kind: 'night', number: 2 });
+		expect(historyStage({ at: 400, days: 2 }, starts)).toEqual({ kind: 'day', number: 2 });
+	});
+
+	it("keeps a night this device didn't see begin in the day before it", () => {
+		expect(historyStage({ at: 999, days: 1 }, { nights: {} })).toEqual({ kind: 'day', number: 1 });
+		expect(historyStage({ at: 999, days: 0 }, { nights: {} })).toEqual({ kind: 'setup' });
 	});
 });

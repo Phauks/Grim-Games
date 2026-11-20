@@ -246,6 +246,43 @@ export const gameStarts = {
 	}
 };
 
+const NIGHT_STARTS_KEY = (gameId: GameId) => `grim-games:night-starts:v1:${gameId}`;
+
+/**
+ * When each night after the first began on this device, by its number (Night 2 on), for
+ * History's stages (Trevor, 2026-11-19); Night 1 begins at `gameStarts`. Set once per night.
+ */
+export const nightStarts = {
+	read(gameId: GameId): Record<number, number> {
+		try {
+			const raw: unknown = JSON.parse(
+				globalThis.localStorage?.getItem(NIGHT_STARTS_KEY(gameId)) ?? '{}'
+			);
+			if (!raw || typeof raw !== 'object') return {};
+			return Object.fromEntries(
+				Object.entries(raw).filter(
+					([night, at]) => Number(night) > 1 && typeof at === 'number' && at > 0
+				)
+			);
+		} catch {
+			return {};
+		}
+	},
+	/** Records now as night `night`'s start, unless it has one. */
+	start(gameId: GameId, night: number, now = Date.now()): void {
+		const starts = nightStarts.read(gameId);
+		if (night < 2 || starts[night] !== undefined) return;
+		try {
+			globalThis.localStorage?.setItem(
+				NIGHT_STARTS_KEY(gameId),
+				JSON.stringify({ ...starts, [night]: now })
+			);
+		} catch {
+			// Storage blocked: History shows that night within its day.
+		}
+	}
+};
+
 const NIGHT_KEY = (gameId: GameId) => `grim-games:night:v1:${gameId}`;
 
 /**
