@@ -16,14 +16,14 @@
 	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 
 	/**
-	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
-	 * Script, Share and More. Players and their messages are in the pane by the grim cover (plan
-	 * M86). Arranging seats or placing one swaps in their own controls, at the same
+	 * The bar over the board: the app's navigation, the grim cover and the pane's button, then
+	 * Info tokens, Script, Share and the day timer. Everything else is in the pane (plan M86;
+	 * Trevor, 2026-11-18). Arranging seats or placing one swaps in their own controls, at the same
 	 * height, so the board never moves.
 	 */
 	interface Props {
 		grimoire: Grimoire;
-		/** A spectator: no Info tokens, and Share and More open their own read-only parts. */
+		/** A spectator: no Info tokens, and Share opens their own read-only part. */
 		watching: boolean;
 		seatArr: SeatArranging;
 		/** A new seat waits for its place on the board. */
@@ -34,13 +34,9 @@
 		/** The Grimoire is shown to a player: nothing over it but the X that ends it. */
 		showing?: boolean;
 		onStopShowing?: () => void;
-		/** A spectator's Day, to look at; the Storyteller's is in the pane beside the board. */
-		onDay?: () => void;
 		onInfo: () => void;
 		onScript: () => void;
 		onShare: () => void;
-		/** A spectator's ⋯ menu; the Storyteller's items are in the pane (Trevor, 2026-11-18). */
-		onMore?: () => void;
 		/** Beside ☰: the grim cover, in the same place on the board and the day (Trevor). */
 		lead?: Snippet;
 		/**
@@ -59,11 +55,9 @@
 		onAddSeat,
 		showing = false,
 		onStopShowing,
-		onDay,
 		onInfo,
 		onScript,
 		onShare,
-		onMore,
 		lead,
 		timer
 	}: Props = $props();
@@ -146,12 +140,9 @@
 		<!-- Icons on phones; with their words on wider screens, where there is room. No
 		     "View-Only" label on a spectator's board (Trevor, 2026-11-15). -->
 		<span class="spacer"></span>
-		<!-- A spectator opens the Day to look at, Script and Share as players do; Info tokens,
-		     the cards the Storyteller shows, isn't theirs (Trevor, 2026-11-15). The Storyteller's
-		     Day is a tab of the pane (Trevor, 2026-11-16). -->
-		{#if watching && onDay}<Button variant="quiet" icon="day" aria-label="Day" onclick={onDay}
-				><span class="tool-label">Day</span></Button
-			>{/if}
+		<!-- A spectator opens Script and Share as players do, and reads the Day in the pane, as
+		     the Storyteller does (Trevor, 2026-11-18); Info tokens, the cards the Storyteller
+		     shows, isn't theirs (Trevor, 2026-11-15). -->
 		<!-- Info tokens on every phone, in the room More left (Trevor, 2026-11-18). Not a
 		     spectator's. -->
 		{#if !watching}<Button
@@ -180,9 +171,6 @@
 		>
 		<!-- A spectator's own share screen, as players have (Trevor, 2026-11-15). -->
 		{#if watching}<ViewerShare bind:open={viewerShareOpen} {grimoire} />{/if}
-		{#if onMore}<Button variant="quiet" icon="more" aria-label="More" onclick={onMore}
-				><span class="tool-label">More</span></Button
-			>{/if}
 		{@render timer?.()}
 	{/if}
 </div>
