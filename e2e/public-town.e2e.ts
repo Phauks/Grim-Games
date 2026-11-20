@@ -1,6 +1,6 @@
 import { walkThrough } from './night-step.ts';
 import { expect, test, type Page } from '@playwright/test';
-import { openSoundboard } from './board-menu.ts';
+import { openSoundSettings, playSound } from './board-menu.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { toBoard } from './new-game.ts';
 import { closePane, paneButton } from './players.ts';
@@ -423,25 +423,31 @@ test('the soundboard plays on the Public Town tablet unless Play on leaves it ou
 	// The tablet has been tapped, as a table's would be, so it may play sound.
 	await tablet.getByTestId('public-town').tap();
 
-	const sheet = await openSoundboard(page);
-	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-	const playOn = sheet.getByRole('combobox', { name: 'Play on' });
-	// The town and phones, the default; there is no choice for this device.
-	await expect(playOn).toContainText('Town Square and players’ phones');
-	await playOn.tap();
-	await expect(page.getByRole('option')).toHaveText([
-		'Town Square and players’ phones',
-		'Players’ phones',
-		'Town Square'
-	]);
-	await page.getByRole('option', { name: 'Players’ phones', exact: true }).tap();
-	await pads.getByRole('button', { name: 'Hand bell' }).tap();
+	// Play on is in Settings > Sound (Trevor, 2026-11-19: set once, not in the pane).
+	const setPlayOn = async (choice: string) => {
+		const settings = await openSoundSettings(page);
+		const playOn = settings.getByRole('combobox', { name: 'Play on' });
+		await playOn.tap();
+		if (choice === 'Players’ phones')
+			// The town and phones, the default; there is no choice for this device.
+			await expect(page.getByRole('option')).toHaveText([
+				'Town Square and players’ phones',
+				'Players’ phones',
+				'Town Square'
+			]);
+		await page.getByRole('option', { name: choice, exact: true }).tap();
+		await expect(playOn).toContainText(choice);
+		await settings.getByRole('button', { name: 'Close' }).tap();
+		await expect(settings).toBeHidden();
+	};
+	await setPlayOn('Players’ phones');
+	await playSound(page, 'Hand bell');
 	await page.waitForTimeout(500);
 	expect(heard).toEqual([]);
+	await closePane(page);
 
-	await playOn.tap();
-	await page.getByRole('option', { name: 'Town Square', exact: true }).tap();
-	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
+	await setPlayOn('Town Square');
+	await playSound(page, 'Gallows trap');
 	await expect.poll(() => heard).toContain('/sounds/board/gallows.mp3');
 	await tabletContext.close();
 });

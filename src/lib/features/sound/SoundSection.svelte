@@ -1,36 +1,33 @@
 <script lang="ts">
+	import { SOUND_MOMENTS, SOUND_OUTPUTS } from '#lib/core/sound/soundboard.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { SOUND_VOLUME, TIMER_END_SOUNDS } from '#lib/ui/preferences.ts';
+	import { DEFAULT_PREFERENCES, SOUND_VOLUME } from '#lib/ui/preferences.ts';
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
-	import ActionSoundSettings from './ActionSoundSettings.svelte';
-	import SoundboardSettings from './SoundboardSettings.svelte';
-	import SpeakerSetting from './SpeakerSetting.svelte';
-	import AmbienceSettings from './AmbienceSettings.svelte';
-	import { playSound } from './sound.ts';
-	import VibrateToggle from './VibrateToggle.svelte';
-	import TimerSoundToggle from './TimerSoundToggle.svelte';
 	import CallTownPushToggle from '#lib/features/room/CallTownPushToggle.svelte';
+	import AmbienceSettings from './AmbienceSettings.svelte';
+	import MomentSoundSelect from './MomentSoundSelect.svelte';
+	import { previewSound } from './soundboard.svelte.ts';
+	import SpeakerSetting from './SpeakerSetting.svelte';
 	import StorytellerSoundsToggle from './StorytellerSoundsToggle.svelte';
+	import VibrateToggle from './VibrateToggle.svelte';
 
 	/**
-	 * Plays the timer sound once the volume slider rests, so a drag doesn't restart it every
+	 * Plays the timer's sound once the volume slider rests, so a drag doesn't restart it every
 	 * frame and the new level can be heard.
 	 */
-	let hearTimer: ReturnType<typeof setTimeout> | undefined;
+	let hearVolume: ReturnType<typeof setTimeout> | undefined;
 	function setVolume(soundVolume: number) {
 		preferences.update({ soundVolume });
-		clearTimeout(hearTimer);
-		hearTimer = setTimeout(() => {
-			playSound(preferences.current.timerSound);
-		}, 300);
+		clearTimeout(hearVolume);
+		hearVolume = setTimeout(() => previewSound('bell'), 300);
 	}
 </script>
 
-<!-- Every sound in one place (plan U1, Trevor 2026-10-26). The timer's choices are also on the
-     timer, where they are used. -->
+<!-- Every sound in one place (plan U1; the full sound flow, Trevor 2026-11-19): where and how
+     loud they play, then what each moment of a game plays, then day and night sound. -->
 <SettingSlider
 	label={t('settings.soundVolume')}
 	value={preferences.current.soundVolume}
@@ -44,33 +41,31 @@
 <StorytellerSoundsToggle />
 <!-- Which speaker every sound plays on (plan U11); Chrome and Edge on a computer only. -->
 <SpeakerSetting />
+<!-- Which devices in the room play every Storyteller sound (plan U10): never this one (Trevor,
+     2026-10-30), so nothing gives away where the Storyteller sits. -->
+<SettingSelect
+	label={t('settings.soundOutput')}
+	value={preferences.current.soundOutput}
+	options={SOUND_OUTPUTS.map((output) => ({
+		value: output,
+		label: t(`settings.soundOutput.${output}`)
+	}))}
+	defaultValue={DEFAULT_PREFERENCES.soundOutput}
+	onChange={(soundOutput) => preferences.update({ soundOutput })}
+/>
 <!-- One switch for every alert: the timer running out and a Back to town call. -->
 <VibrateToggle />
 
-<SettingHeading title={t('day.timer')} />
-<TimerSoundToggle />
-<!-- Each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
-<SettingSelect
-	label={t('day.timerSoundTitle')}
-	value={preferences.current.timerSound}
-	options={TIMER_END_SOUNDS.map((sound) => ({
-		value: sound,
-		label: t(`day.timerSound.${sound}`)
-	}))}
-	defaultValue="bell"
-	disabled={preferences.current.timerMode === 'up' || !preferences.current.timerSoundOn}
-	onChange={(timerSound) => {
-		preferences.update({ timerSound });
-		playSound(timerSound);
-	}}
-/>
-
-<!-- Back to town (plan U2): the Storyteller picks its sound for every phone (Trevor,
-     2026-11-06), so a phone only chooses whether it alerts while locked. -->
+<!-- Back to town on a player's phone while it is locked or closed (plan U12). -->
 <SettingHeading title={t('room.callTown')} />
 <CallTownPushToggle />
 
-<AmbienceSettings />
+<SettingHeading title={t('settings.moments')} />
+{#each SOUND_MOMENTS as moment (moment)}
+	<MomentSoundSelect
+		{moment}
+		disabled={moment === 'timeUp' && preferences.current.timerMode === 'up'}
+	/>
+{/each}
 
-<SoundboardSettings />
-<ActionSoundSettings />
+<AmbienceSettings />

@@ -2,32 +2,22 @@ import { ambienceMix } from '#lib/core/sound/ambience.ts';
 import { parseSoundOutput, type SoundOutput } from '#lib/core/sound/soundboard.ts';
 
 /**
- * The soundboard played on the Public Town tablet (plan U10, Trevor 2026-10-27: "Soundboard
- * should have options for output (eg device speakers, external speakers, town square,
- * multiple)"). The Storyteller's device sends what to play; the room passes it to every
- * Public Town display there now and keeps nothing, and the tablet plays its own copy of the
- * sounds. Older apps ignore it.
+ * The Storyteller's sounds played in the room (plan U10, Trevor 2026-10-27: "Soundboard should
+ * have options for output (eg device speakers, external speakers, town square, multiple)"):
+ * the moments' sounds and those played from the pane's Sounds. The Storyteller's device sends
+ * what to play; the room passes it to the Public Town and phones there now and keeps nothing,
+ * and each plays its own copy of the sound.
  */
 
-/** One soundboard sound for the town to play, at the Storyteller's mix. */
-export interface TownSoundPlay {
-	id: string;
-	/** 0 to 1, under the tablet's own volume. */
-	volume: number;
-	loop: boolean;
-}
-
 export type TownSoundCommand =
-	/** Plays these sounds together; `cut` stops the ones already playing first. */
-	| { command: 'play'; sounds: TownSoundPlay[]; cut: boolean }
-	/** Stops these sounds, or every sound when none are named. */
-	| { command: 'stop'; ids?: string[] }
+	/** Plays this sound, cutting off the one playing. */
+	| { command: 'play'; id: string }
+	/** Stops whatever plays. */
+	| { command: 'stop' }
 	| { command: 'pause' }
 	| { command: 'resume' };
 
-/** The most sounds one command plays, so a bad message can't flood the tablet. */
-export const TOWN_SOUND_MAX = 24;
-/** The longest sound id kept. */
+/** The longest sound id kept; the device playing it knows the ids. */
 const ID_MAX = 64;
 
 function soundId(value: unknown): value is string {
@@ -39,29 +29,9 @@ export function parseTownSound(raw: unknown): TownSoundCommand | null {
 	if (!raw || typeof raw !== 'object') return null;
 	const message = raw as Record<string, unknown>;
 	switch (message.command) {
-		case 'play': {
-			if (!Array.isArray(message.sounds)) return null;
-			const sounds: TownSoundPlay[] = [];
-			for (const item of message.sounds.slice(0, TOWN_SOUND_MAX)) {
-				if (!item || typeof item !== 'object') continue;
-				const { id, volume, loop } = item as Record<string, unknown>;
-				if (!soundId(id)) continue;
-				sounds.push({
-					id,
-					volume:
-						typeof volume === 'number' && Number.isFinite(volume)
-							? Math.min(1, Math.max(0, volume))
-							: 1,
-					loop: loop === true
-				});
-			}
-			return sounds.length ? { command: 'play', sounds, cut: message.cut === true } : null;
-		}
-		case 'stop': {
-			if (message.ids === undefined) return { command: 'stop' };
-			if (!Array.isArray(message.ids)) return null;
-			return { command: 'stop', ids: message.ids.filter(soundId).slice(0, TOWN_SOUND_MAX) };
-		}
+		case 'play':
+			return soundId(message.id) ? { command: 'play', id: message.id } : null;
+		case 'stop':
 		case 'pause':
 		case 'resume':
 			return { command: message.command };
@@ -84,9 +54,6 @@ export interface PublicSound {
 	timerSound?: string;
 }
 
-/** The longest timer sound name kept; the device playing it knows the names. */
-const TIMER_SOUND_MAX = 32;
-
 /** The sounds in a public table as anyone sent them; undefined when missing or malformed. */
 export function parsePublicSound(raw: unknown): PublicSound | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
@@ -104,12 +71,7 @@ export function parsePublicSound(raw: unknown): PublicSound | undefined {
 		)
 			sound.ambience = { id, level: Math.min(1, Math.max(0, level)) };
 	}
-	if (
-		typeof timerSound === 'string' &&
-		timerSound.length > 0 &&
-		timerSound.length <= TIMER_SOUND_MAX
-	)
-		sound.timerSound = timerSound;
+	if (soundId(timerSound)) sound.timerSound = timerSound;
 	return sound;
 }
 

@@ -1,5 +1,5 @@
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
+import type { MadeSound } from '#lib/core/sound/soundboard.ts';
 
 /**
  * Every sound the app makes, in one place (plan U1, Trevor 2026-10-26: "consolidation of
@@ -81,7 +81,7 @@ export function unlockSound(): void {
 let playing: { output: GainNode; voices: OscillatorNode[] } | undefined;
 
 /** Stops the sound now playing, so two never overlap (Trevor, 2026-10-17). */
-function stopSound(): void {
+export function stopSound(): void {
 	if (!playing) return;
 	const { output, voices } = playing;
 	playing = undefined;
@@ -153,9 +153,9 @@ const WESTMINSTER_HOUR: number[][] = [
 ];
 
 /** Plays a sound at the device's volume, cutting off any still playing. */
-export function playSound(sound: TimerSound, volume = preferences.current.soundVolume): void {
+export function playSound(sound: MadeSound, volume = preferences.current.soundVolume): void {
 	stopSound();
-	if (sound === 'none' || volume <= 0) return;
+	if (volume <= 0) return;
 	const ctx = audio();
 	if (!ctx) return;
 	claimSpeaker();
@@ -196,16 +196,6 @@ export function playSound(sound: TimerSound, volume = preferences.current.soundV
 			for (const at of [0, 0.5, 1]) note(ctx, 220, at, 0.4, 'square', 0.15);
 			return;
 	}
-}
-
-/**
- * The Storyteller called everyone back to town (plan U2): this phone vibrates, as its settings
- * say, and plays the sound the Storyteller picked (Trevor, 2026-11-06: phones have no choice of
- * their own), or the clock tower when an older app sent none or one this app doesn't know.
- */
-export function hearCallTown(sound?: unknown): void {
-	if (preferences.current.timerVibrate) vibrate();
-	playSound(TIMER_SOUNDS.find((name) => name === sound) ?? 'clocktower');
 }
 
 /**

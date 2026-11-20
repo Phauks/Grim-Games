@@ -2,8 +2,10 @@ import { readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
 	BOARD_SOUNDS,
-	DEFAULT_ACTION_SOUNDS,
-	SOUND_ACTIONS,
+	DEFAULT_MOMENT_SOUNDS,
+	GAME_SOUNDS,
+	MADE_SOUNDS,
+	SOUND_MOMENTS,
 	SOUND_OUTPUTS,
 	hearsAmbience,
 	parseStorytellerSounds,
@@ -12,15 +14,10 @@ import {
 	actionTaken,
 	boardSound,
 	boardSoundUrl,
-	parseActionSounds,
-	padId,
-	padName,
-	padSounds,
-	parsePads,
-	parseSoundMixes,
-	soundMix,
-	type ActionState,
-	type SoundPad
+	isGameSound,
+	parseMomentSounds,
+	soundLoops,
+	type ActionState
 } from './soundboard.ts';
 
 describe('the soundboard sounds', () => {
@@ -40,23 +37,44 @@ describe('the soundboard sounds', () => {
 		expect(boardSoundUrl(boardSound('gallows')!)).toBe('/sounds/board/gallows.mp3');
 	});
 
-	it('give every action a default that exists', () => {
-		for (const action of SOUND_ACTIONS)
-			expect(boardSound(DEFAULT_ACTION_SOUNDS[action])).toBeDefined();
+	it('are one list with the made sounds, each id once', () => {
+		expect(GAME_SOUNDS.slice(0, MADE_SOUNDS.length)).toEqual([...MADE_SOUNDS]);
+		expect(new Set(GAME_SOUNDS).size).toBe(GAME_SOUNDS.length);
+		for (const id of GAME_SOUNDS) expect(isGameSound(id)).toBe(true);
+		expect(isGameSound('gone')).toBe(false);
+		expect(isGameSound('none')).toBe(false);
+	});
+
+	it('loop only the heartbeats', () => {
+		expect(GAME_SOUNDS.filter(soundLoops)).toEqual(['heartbeat', 'fast-heartbeat']);
+	});
+
+	// Trevor, 2026-11-19: game moments are on by default.
+	it('give every moment a default sound that exists', () => {
+		for (const moment of SOUND_MOMENTS)
+			expect(isGameSound(DEFAULT_MOMENT_SOUNDS[moment])).toBe(true);
 	});
 });
 
-describe('parseActionSounds', () => {
-	it('keeps known sounds and none, and defaults anything else', () => {
+describe('parseMomentSounds', () => {
+	it('keeps known sounds, made or recorded, and none, and defaults anything else', () => {
 		expect(
-			parseActionSounds({ dusk: 'none', dawn: 'hand-bell', execution: 'gone', gameEnd: 3 })
+			parseMomentSounds({
+				dusk: 'none',
+				dawn: 'hand-bell',
+				execution: 'gone',
+				timeUp: 'buzzer',
+				townCall: 3
+			})
 		).toEqual({
 			dusk: 'none',
 			dawn: 'hand-bell',
-			execution: DEFAULT_ACTION_SOUNDS.execution,
-			gameEnd: DEFAULT_ACTION_SOUNDS.gameEnd
+			execution: DEFAULT_MOMENT_SOUNDS.execution,
+			timeUp: 'buzzer',
+			townCall: DEFAULT_MOMENT_SOUNDS.townCall,
+			gameEnd: DEFAULT_MOMENT_SOUNDS.gameEnd
 		});
-		expect(parseActionSounds(undefined)).toEqual(DEFAULT_ACTION_SOUNDS);
+		expect(parseMomentSounds(undefined)).toEqual(DEFAULT_MOMENT_SOUNDS);
 	});
 });
 
@@ -88,69 +106,6 @@ describe('actionTaken', () => {
 	it('plays nothing when nothing changed, or for going back to Setup', () => {
 		expect(actionTaken(at(), at())).toBeUndefined();
 		expect(actionTaken(at({ phase: 'night' }), at({ phase: 'setup' }))).toBeUndefined();
-	});
-});
-
-describe('parseSoundMixes', () => {
-	it("keeps a known sound's changed volume and loop", () => {
-		expect(parseSoundMixes({ 'hand-bell': { volume: 0.4, loop: true } })).toEqual({
-			'hand-bell': { volume: 0.4, loop: true }
-		});
-	});
-
-	it('clamps the volume and drops unknown sounds, defaults and junk', () => {
-		expect(
-			parseSoundMixes({
-				'hand-bell': { volume: 3 },
-				gone: { volume: 0.5 },
-				heartbeat: { volume: 1, loop: false },
-				gallows: 'loud'
-			})
-		).toEqual({});
-		expect(parseSoundMixes({ heartbeat: { volume: -1, loop: true } })).toEqual({
-			heartbeat: { volume: 0, loop: true }
-		});
-		expect(parseSoundMixes(null)).toEqual({});
-	});
-
-	it('gives a sound never changed the default mix', () => {
-		expect(soundMix({}, 'gallows')).toEqual({ volume: 1, loop: false });
-	});
-});
-
-describe('parsePads', () => {
-	it('gives a device that never chose every sound, in order', () => {
-		expect(parsePads(undefined).map(padId)).toEqual(BOARD_SOUNDS.map((sound) => sound.id));
-	});
-
-	it('keeps the sounds and mixes placed, in their order', () => {
-		const pads = [
-			{ mix: 'mix-1', name: 'Stormy night', sounds: ['heartbeat', 'village-bell'] },
-			{ sound: 'gallows' }
-		];
-		expect(parsePads(pads)).toEqual(pads);
-		expect(padName(pads[0] as SoundPad)).toBe('Stormy night');
-		expect(padName({ sound: 'gallows' })).toBe('Gallows trap');
-		expect(padSounds({ sound: 'gallows' })).toEqual(['gallows']);
-	});
-
-	it('drops unknown sounds, repeats, empty mixes and junk', () => {
-		expect(
-			parsePads([
-				{ sound: 'gone' },
-				{ sound: 'gallows' },
-				{ sound: 'gallows' },
-				{ mix: 'mix-1', name: '  ', sounds: ['gallows'] },
-				{ mix: 'mix-2', name: 'Nothing', sounds: ['gone'] },
-				{ mix: 'mix-3', name: 'Twice', sounds: ['heartbeat', 'heartbeat', 4] },
-				'bell',
-				null
-			])
-		).toEqual([{ sound: 'gallows' }, { mix: 'mix-3', name: 'Twice', sounds: ['heartbeat'] }]);
-	});
-
-	it('keeps an empty soundboard empty', () => {
-		expect(parsePads([])).toEqual([]);
 	});
 });
 

@@ -29,7 +29,7 @@ import { putRoomImage } from './room-images.ts';
 import { callTownPush } from './call-town-push.svelte.ts';
 import { dealtSeats } from '#lib/features/modes/players-line.ts';
 import { RoomSounds } from '#lib/features/sound/room-sounds.svelte.ts';
-import { hearCallTown } from '#lib/features/sound/sound.ts';
+import { hearGameSound } from '#lib/features/sound/soundboard.svelte.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 
@@ -259,7 +259,7 @@ export class RoomPlayer {
 				} else if (m.type === 'unreveal') {
 					if (this.revealed?.gameId === m.gameId) this.revealed = undefined;
 				} else if (m.type === 'call-town') {
-					hearCallTown(m.sound);
+					hearGameSound(m.sound, { buzz: true });
 					toast(t('room.callTownHeard'));
 				} else if (m.type === 'town-sound') {
 					const command = parseTownSound(m);

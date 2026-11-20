@@ -27,17 +27,12 @@ import {
 import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 import {
-	DEFAULT_ACTION_SOUNDS,
-	parseActionSounds,
-	parsePads,
-	parseSoundMixes,
-	DEFAULT_PADS,
+	DEFAULT_MOMENT_SOUNDS,
+	parseMomentSounds,
 	parseSoundOutput,
-	type ActionSound,
-	type SoundOutput,
-	type BoardSoundMix,
-	type SoundPad,
-	type SoundAction
+	type MomentSound,
+	type SoundMoment,
+	type SoundOutput
 } from '#lib/core/sound/soundboard.ts';
 
 /**
@@ -101,13 +96,6 @@ export interface Preferences {
 	ownWording: boolean;
 	/** How loud every app sound plays on this device, 0 (silent) to 1 (plan U1). */
 	soundVolume: number;
-	/** The sound when the day timer runs out (Trevor, 2026-10-17). */
-	timerSound: TimerEndSound;
-	/**
-	 * Whether the day timer makes its sound when time is up (Trevor, 2026-11-15: "don't always
-	 * make noise"). Off keeps the chosen sound for when it is turned back on.
-	 */
-	timerSoundOn: boolean;
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
 	/**
@@ -130,11 +118,6 @@ export interface Preferences {
 	 * a Back to town call (plan U2).
 	 */
 	timerVibrate: boolean;
-	/**
-	 * The sound every phone plays when the Storyteller calls Back to town, picked in its confirm
-	 * sheet and kept for the next call (Trevor, 2026-11-06); phones have no choice of their own.
-	 */
-	townCallSound: TimerSound;
 	/** Day and night sound plays in the room while a game runs (plan U3). */
 	ambienceOn: boolean;
 	/** How loud day and night sound plays, under the device's volume (plan U3). */
@@ -143,16 +126,11 @@ export interface Preferences {
 	nightAmbience: string;
 	/** The recording that plays in the day, by id (plan U3). */
 	dayAmbience: string;
-	/** A sound plays in the room when the Storyteller takes an action (plan U7). */
-	actionSoundsOn: boolean;
-	/** The sound each action plays, by soundboard sound id (plan U7). */
-	actionSounds: Record<SoundAction, ActionSound>;
-	/** How loud the soundboard plays, under the device's volume (Trevor, 2026-10-27). */
-	soundboardLevel: number;
-	/** Soundboard sounds play over each other instead of cutting each other off. */
-	soundboardOverlap: boolean;
-	/** Each soundboard sound's own volume and loop, by sound id; only those changed. */
-	soundMixes: Record<string, BoardSoundMix>;
+	/**
+	 * The sound each moment of a game plays in the room by itself, or none (Trevor,
+	 * 2026-11-19): Dusk, Dawn, an execution, time up, Back to town and the game's end.
+	 */
+	momentSounds: Record<SoundMoment, MomentSound>;
 	/**
 	 * Which devices in the room play the Storyteller's sounds (plan U10): the Public Town
 	 * tablet, the players' phones, or both. Never the Storyteller's own device (Trevor,
@@ -161,8 +139,6 @@ export interface Preferences {
 	soundOutput: SoundOutput;
 	/** The speaker every sound plays on, by device id; empty for the device's default (U11). */
 	speaker: string;
-	/** The sounds and mixes placed on the soundboard, in order (Trevor, 2026-10-27). */
-	soundPads: SoundPad[];
 	/** The screen stays on while the day timer runs (Trevor, 2026-10-19). */
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
@@ -213,18 +189,6 @@ export const REMINDER_REMOVALS = ['off', 'ask', 'auto'] as const;
 export type ReminderRemoval = (typeof REMINDER_REMOVALS)[number];
 export const COUNTING_REMINDERS = ['off', 'ask', 'auto'] as const;
 export type CountingReminders = (typeof COUNTING_REMINDERS)[number];
-
-/** The day timer's finishing sounds, made on the device (no audio files); or none. */
-export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
-export type TimerSound = (typeof TIMER_SOUNDS)[number];
-/**
- * The sounds the day timer can end on. Silence is its own on/off switch (`timerSoundOn`,
- * Trevor 2026-11-15), so None is only Back to town's.
- */
-export const TIMER_END_SOUNDS = TIMER_SOUNDS.filter(
-	(sound): sound is Exclude<TimerSound, 'none'> => sound !== 'none'
-);
-export type TimerEndSound = (typeof TIMER_END_SOUNDS)[number];
 
 /**
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
@@ -299,25 +263,17 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	tileOrderRandom: false,
 	ownWording: false,
 	soundVolume: 1,
-	timerSound: 'bell',
-	timerSoundOn: true,
 	timerMode: 'down',
 	reminderRemoval: 'off',
 	countingReminders: 'off',
 	timerVibrate: true,
-	townCallSound: 'clocktower',
 	ambienceOn: false,
 	ambienceLevel: 0.6,
 	nightAmbience: DEFAULT_AMBIENCE.night,
 	dayAmbience: DEFAULT_AMBIENCE.day,
-	actionSoundsOn: false,
-	actionSounds: { ...DEFAULT_ACTION_SOUNDS },
-	soundboardLevel: 1,
-	soundboardOverlap: false,
-	soundMixes: {},
+	momentSounds: { ...DEFAULT_MOMENT_SOUNDS },
 	soundOutput: 'all',
 	speaker: '',
-	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	setupForPlayers: 'candles',
@@ -399,9 +355,6 @@ export function parsePreferences(raw: unknown): Preferences {
 		qrModules: oneOf(QR_MODULES, input.qrModules, 'square'),
 		qrFinders: oneOf(QR_FINDERS, input.qrFinders, 'square'),
 		soundVolume: parseScale(input.soundVolume, SOUND_VOLUME, DEFAULT_PREFERENCES.soundVolume),
-		timerSound: oneOf(TIMER_END_SOUNDS, input.timerSound, DEFAULT_PREFERENCES.timerSound),
-		timerSoundOn: input.timerSoundOn !== false,
-		townCallSound: oneOf(TIMER_SOUNDS, input.townCallSound, DEFAULT_PREFERENCES.townCallSound),
 		ambienceOn: input.ambienceOn === true,
 		ambienceLevel: parseScale(
 			input.ambienceLevel,
@@ -410,18 +363,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		),
 		nightAmbience: parseAmbience('night', input.nightAmbience),
 		dayAmbience: parseAmbience('day', input.dayAmbience),
-		actionSoundsOn: input.actionSoundsOn === true,
-		actionSounds: parseActionSounds(input.actionSounds),
-		soundboardLevel: parseScale(
-			input.soundboardLevel,
-			SOUND_VOLUME,
-			DEFAULT_PREFERENCES.soundboardLevel
-		),
-		soundboardOverlap: input.soundboardOverlap === true,
-		soundMixes: parseSoundMixes(input.soundMixes),
+		momentSounds: parseMomentSounds(input.momentSounds),
 		soundOutput: parseSoundOutput(input.soundOutput) ?? DEFAULT_PREFERENCES.soundOutput,
 		speaker: typeof input.speaker === 'string' && input.speaker.length <= 256 ? input.speaker : '',
-		soundPads: parsePads(input.soundPads),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,

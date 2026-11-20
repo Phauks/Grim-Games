@@ -4,12 +4,13 @@ import { roomHost } from './host.svelte.ts';
 
 /**
  * Back to town (plan U2): stops the day timer (Trevor, 2026-11-02: always available) and calls
- * every player's phone with the Storyteller's sound (`townCallSound`). False when no room's
- * phones could be reached.
+ * every player's phone with its moment's sound, set in Settings > Sound (Trevor, 2026-11-19),
+ * or none. False when no room's phones could be reached.
  */
 export function callTown(): boolean {
 	if (liveDayTimer.running) liveDayTimer.toggle();
-	return roomHost().callTown(preferences.current.townCallSound);
+	const sound = preferences.current.momentSounds.townCall;
+	return roomHost().callTown(sound === 'none' ? undefined : sound);
 }
 
 // The day timer reaching 0:00 calls the town itself, with no confirm and, without a room,

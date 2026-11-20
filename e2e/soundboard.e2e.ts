@@ -1,106 +1,66 @@
 import { walkThrough } from './night-step.ts';
 import { expect, test } from '@playwright/test';
-import { openSoundboard } from './board-menu.ts';
+import { openSoundSettings, playSound } from './board-menu.ts';
 import { pickScript, toBoard } from './new-game.ts';
 import { closePane } from './players.ts';
-import { openSettingsDialog } from './shell.ts';
 
-// The Storyteller's soundboard and sounds for actions (plans U6 and U7, Trevor 2026-10-26:
-// "bells should be useful to storyteller and initiate bell sounds upon pressing", and
-// "connect certain sounds to their actions (such as an execution sound)").
+// The game's sounds (Trevor, 2026-11-19: "lets identify the full sound flow and what it should
+// do"): each moment of a game plays its own sound, on by default and set in Settings > Sound,
+// and the pane's More, Sounds plays one sound now (option D: "i don't think we need all these
+// sounds in this manner").
 
-test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound', async ({
-	page
-}) => {
+test('the pane plays one picked sound, and Start game plays the Dusk sound', async ({ page }) => {
 	const fetched: string[] = [];
 	page.on('request', (request) => {
 		const path = new URL(request.url()).pathname;
 		if (path.startsWith('/sounds/board/')) fetched.push(path);
 	});
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
-	// The pane's More, Sounds (Trevor, 2026-11-18), no longer beside the day timer, which has
-	// Back to town.
+	// Not beside the day timer, which has Back to town.
 	await expect(
 		page.locator('.toolbar-timer').getByRole('button', { name: 'Soundboard' })
 	).toHaveCount(0);
-	const sheet = await openSoundboard(page);
-	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-	// The pads above the controls, in one scroll.
-	const padsBox = (await pads.boundingBox())!;
-	const controlsBox = (await sheet
-		.getByRole('slider', { name: 'Volume', exact: true })
-		.boundingBox())!;
-	expect(padsBox.y + padsBox.height).toBeLessThanOrEqual(controlsBox.y);
-	await expect(sheet.getByRole('slider', { name: 'Volume', exact: true })).toBeVisible();
-	// Every sound, then the dashed "+ New" pad.
-	await expect(pads.getByRole('button')).toHaveCount(13);
 	// Nothing is fetched until a sound is played.
 	expect(fetched).toEqual([]);
-	// Pause waits, disabled, until something plays.
-	const pause = sheet.getByRole('button', { name: 'Pause', exact: true });
-	await expect(pause).toBeDisabled();
-	await pads.getByRole('button', { name: 'Hand bell' }).tap();
-	await expect.poll(() => fetched).toContain('/sounds/board/hand-bell.mp3');
+	const sounds = await playSound(page, 'Heartbeat');
+	await expect.poll(() => fetched).toContain('/sounds/board/heartbeat.mp3');
+	// Playing, Play becomes Stop; a heartbeat loops until stopped.
+	const stop = sounds.getByRole('button', { name: 'Stop', exact: true });
+	await expect(stop).toBeVisible();
+	await page.waitForTimeout(1500);
+	await expect(stop).toBeVisible();
 	// Pause holds it (Trevor, 2026-10-27), and Resume carries on.
-	await pause.tap();
-	const resume = sheet.getByRole('button', { name: 'Resume', exact: true });
-	await resume.tap();
-	await expect(pause).toBeVisible();
-
-	// The mixer (Trevor, 2026-10-27: "more mixing controls"): holding a pad picks it, and with
-	// overlap on two sounds play at once.
-	const errors: string[] = [];
-	page.on('pageerror', (error) => errors.push(error.message));
-	await sheet.getByText('Let sounds overlap', { exact: true }).tap();
-	const heartbeat = pads.getByRole('button', { name: 'Heartbeat', exact: true });
-	const box = await heartbeat.boundingBox();
-	if (!box) throw new Error('Heartbeat pad has no box');
-	await heartbeat.dispatchEvent('pointerdown', {
-		button: 0,
-		clientX: box.x + box.width / 2,
-		clientY: box.y + box.height / 2
+	await sounds.getByRole('button', { name: 'Pause', exact: true }).tap();
+	await expect(sounds.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
+	await sounds.getByRole('button', { name: 'Resume', exact: true }).tap();
+	await stop.tap();
+	await expect(sounds.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
+	// Pause waits, disabled, until something plays.
+	await expect(sounds.getByRole('button', { name: 'Pause', exact: true })).toBeDisabled();
+	// Day and night sound is beside it, to cut mid-game.
+	const ambience = sounds.getByRole('checkbox', {
+		name: 'Day and night sound',
+		includeHidden: true
 	});
-	await expect(sheet.getByRole('combobox', { name: 'Sound', exact: true })).toContainText(
-		'Heartbeat'
-	);
-	await heartbeat.dispatchEvent('pointerup');
-	await sheet.getByText('Loop until stopped', { exact: true }).tap();
-	await heartbeat.tap();
-	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
-	await expect(heartbeat).toHaveAttribute('aria-pressed', 'true');
-	await expect(pads.getByRole('button', { name: 'Gallows trap' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
-	// Heartbeat loops, so it is still playing after the gallows trap ends.
-	await expect(pads.getByRole('button', { name: 'Gallows trap' })).toHaveAttribute(
-		'aria-pressed',
-		'false',
-		{ timeout: 10_000 }
-	);
-	await expect(heartbeat).toHaveAttribute('aria-pressed', 'true');
-	await heartbeat.tap();
-	await expect(heartbeat).toHaveAttribute('aria-pressed', 'false');
+	await expect(ambience).not.toBeChecked();
+	// No mixer, mixes or list of sounds to edit any more.
+	await expect(sounds.getByRole('slider')).toHaveCount(0);
+	await expect(sounds.getByRole('button', { name: 'Edit soundboard' })).toHaveCount(0);
 	expect(errors).toEqual([]);
-	// Day and night sound is beside it, to change mid-game.
-	await expect(sheet.getByRole('combobox', { name: 'Night sound' })).toBeVisible();
 	await closePane(page);
 
-	// Sounds for actions are off until turned on in Settings > Sound, from the menu.
-	const settings = await openSettingsDialog(page);
-	await settings
-		.getByRole('navigation', { name: 'Settings sections' })
-		.getByRole('button', { name: 'Sound' })
-		.tap();
-	const dusk = settings.getByRole('combobox', { name: 'Dusk' });
-	await expect(dusk).toContainText('Temple bell');
-	await expect(dusk).toBeDisabled();
-	await settings.getByText('Play when I act', { exact: true }).tap();
-	await expect(dusk).toBeEnabled();
+	// Every moment has its sound in Settings > Sound, on by default.
+	const settings = await openSoundSettings(page);
+	await expect(settings.getByRole('combobox', { name: 'Dusk' })).toContainText('Temple bell');
+	await expect(settings.getByRole('combobox', { name: 'Dusk' })).toBeEnabled();
+	for (const moment of ['Dawn', 'Execution', 'Timer sound', 'Back to town', 'Game end'])
+		await expect(settings.getByRole('combobox', { name: moment })).toBeVisible();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 
@@ -125,59 +85,4 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 
 	// The first night begins: Dusk's sound plays.
 	await expect.poll(() => fetched).toContain('/sounds/board/temple-bell.mp3');
-});
-
-// Hot spots (Trevor, 2026-10-27: "perhaps a storyteller only wants access to some. We could
-// have some hot spots where storytellers could place sounds and mixes").
-test('the soundboard shows only the sounds and mixes placed on it', async ({ page }) => {
-	const fetched: string[] = [];
-	page.on('request', (request) => {
-		const path = new URL(request.url()).pathname;
-		if (path.startsWith('/sounds/board/')) fetched.push(path);
-	});
-	await page.goto('/new');
-	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Create game' }).tap();
-	await toBoard(page);
-	const sheet = await openSoundboard(page);
-	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-
-	await pads.getByRole('button', { name: 'Add to the soundboard' }).tap();
-	const editor = page.getByRole('dialog', { name: 'Edit soundboard' });
-	await editor.getByRole('button', { name: 'Remove Hand bell' }).tap();
-	await expect(
-		editor.getByRole('list', { name: 'Add a sound' }).getByText('Hand bell')
-	).toBeVisible();
-	await editor.getByRole('button', { name: 'Move Gallows trap up' }).tap();
-	await editor.getByRole('textbox', { name: 'Name' }).fill('Doom');
-	const sounds = editor.getByRole('group', { name: 'Sounds in the mix' });
-	await sounds.getByRole('button', { name: 'Heartbeat', exact: true }).tap();
-	await sounds.getByRole('button', { name: 'Horrified crowd' }).tap();
-	await editor.getByRole('button', { name: 'Add mix' }).tap();
-	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(editor).toBeHidden();
-
-	// Hand bell is gone, and the mix is last, before "+ New".
-	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
-	await expect(pads.getByRole('button').nth(-2)).toHaveText('Doom');
-	// A mix plays its sounds together.
-	const doom = pads.getByRole('button', { name: 'Doom' });
-	await doom.tap();
-	await expect
-		.poll(() => fetched)
-		.toEqual(
-			expect.arrayContaining(['/sounds/board/heartbeat.mp3', '/sounds/board/horrified-crowd.mp3'])
-		);
-	await expect(doom).toHaveAttribute('aria-pressed', 'true');
-	await doom.tap();
-	await expect(doom).toHaveAttribute('aria-pressed', 'false');
-
-	// Kept on the device, for the next game too.
-	await page.goto('/new');
-	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Create game' }).tap();
-	await toBoard(page);
-	await openSoundboard(page);
-	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();
-	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
 });

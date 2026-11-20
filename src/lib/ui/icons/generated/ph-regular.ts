@@ -121,6 +121,7 @@ import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
 import ph_stamp from '~icons/ph/stamp';
 import ph_star_half from '~icons/ph/star-half';
+import ph_stop_circle from '~icons/ph/stop-circle';
 import ph_sun from '~icons/ph/sun';
 import ph_swap from '~icons/ph/swap';
 import ph_tag from '~icons/ph/tag';
@@ -262,6 +263,7 @@ const icons: IconMap = {
 	'ph:speaker-high': ph_speaker_high,
 	'ph:stamp': ph_stamp,
 	'ph:star-half': ph_star_half,
+	'ph:stop-circle': ph_stop_circle,
 	'ph:sun': ph_sun,
 	'ph:swap': ph_swap,
 	'ph:tag': ph_tag,
