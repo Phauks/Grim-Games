@@ -19,6 +19,7 @@
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import PaneFooter from '#lib/ui/layout/PaneFooter.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -322,7 +323,8 @@
 						</form>
 					{/if}{/snippet}
 			</CharacterPicker>
-			<ModalActions onCancel={done} onConfirm={() => save()} />
+			<!-- In the pane, the pane's footer holds them (below). -->
+			{#if !inline}<ModalActions onCancel={done} onConfirm={() => save()} />{/if}
 		{/if}
 	</ErrorBoundary>
 	<!--
@@ -337,10 +339,15 @@
 {/snippet}
 
 {#if inline}
-	<div class="inline" data-testid="pane-bluffs">
-		<!-- The picker names its set and count, as the sheet's title does. -->
-		{#if editing !== undefined}<h3 class="pick-title">{pickTitle(editing)}</h3>{/if}
-		{@render body()}
+	<div class="in-pane" data-testid="pane-bluffs">
+		<div class="inline">
+			<!-- The picker names its set and count, as the sheet's title does. -->
+			{#if editing !== undefined}<h3 class="pick-title">{pickTitle(editing)}</h3>{/if}
+			{@render body()}
+		</div>
+		{#if editing !== undefined}<PaneFooter
+				><ModalActions onCancel={done} onConfirm={() => save()} /></PaneFooter
+			>{/if}
 	</div>
 {:else}
 	<BottomSheet
@@ -411,6 +418,12 @@
 </ConfirmDialog>
 
 <style>
+	.in-pane {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+	}
 	.inline {
 		flex: 1;
 		min-height: 0;

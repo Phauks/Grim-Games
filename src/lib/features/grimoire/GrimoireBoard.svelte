@@ -971,7 +971,7 @@
 {/if}
 
 {#snippet seatsView()}
-	<PaneSeats onAddRule={() => rules?.add()} onArrange={() => enterSeating(seatArr)} />
+	<PaneSeats {grimoire} {seatArr} {onAddSeat} onAddRule={() => rules?.add()} />
 {/snippet}
 {#snippet playerFeedback()}<PlayerFeedbackSection game={grimoire.open} ended />{/snippet}
 {#snippet sessionView()}

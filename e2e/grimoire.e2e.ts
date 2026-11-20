@@ -54,7 +54,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
-import { addSeat } from './seating.ts';
+import { addSeat, seatingTools } from './seating.ts';
 import { nightStep, walkThrough, openWalkStep } from './night-step.ts';
 import { openInfoTokens } from './toolbar.ts';
 import { openBoardTheme } from './theme.ts';
@@ -735,6 +735,10 @@ test("Demon bluffs open in the pane's Game, and a seat shows its token to the pl
 		.first()
 		.tap();
 	await expect(bluffs.getByTestId('bluff-set')).toHaveCount(0);
+	// Cancel and Confirm in the pane's footer, under the list that scrolls (Trevor, 2026-11-19).
+	await expect(
+		bluffs.getByTestId('pane-footer').getByRole('button', { name: 'Confirm' })
+	).toBeVisible();
 	const pane = page.getByTestId('storyteller-pane');
 	await pane.getByRole('tab', { name: 'Day', exact: true }).tap();
 	await pane.getByRole('tab', { name: 'Bluffs', exact: true }).tap();
@@ -790,7 +794,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await menu(page, 'Seating');
 	await expect(bankNight(page, 'Set up')).toBeDisabled();
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await seatingTools(page).getByRole('button', { name: 'Done' }).tap();
 	await bankNight(page, 'Set up').tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	// The last setup step opens the board, whose bank starts with the setup reminders.
@@ -881,9 +885,18 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, distribu
 	const board = (await page.locator('.board').boundingBox())!;
 	const seat2 = await centre(2);
 
+	const beside = !(await paneIsSheet(page));
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await expect(toolbar).toContainText('Seating');
+	// Beside the board Seating is in the pane's Seats, Rotate and Done in its footer, and the top
+	// bar keeps its own buttons (Trevor, 2026-11-19); a phone's bar swaps in Seating's.
+	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(bar.getByRole('button', { name: 'Script' })).toHaveCount(beside ? 1 : 0);
+	if (beside)
+		await expect(
+			toolbar.getByTestId('pane-footer').getByRole('button', { name: 'Done' })
+		).toBeVisible();
 
 	// Drag seat 1 inside the circle (clear of the centre buttons); the others stay put.
 	const from = await centre(1);
@@ -2186,7 +2199,7 @@ test('players rotate one seat, or swap places when one is dropped on another', a
 
 	// Rotating is part of arranging: one tap, one place, no confirm.
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
 	// Every name moves with its player, a seat number too (Trevor, 2026-10-22).
@@ -6555,7 +6568,7 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
 	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
 	await menu(page, 'Seating');
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await expect(toolbar).toContainText('Seating');
 	// Under load the first press can land before the seats take drags: drag until it moves.
 	await expect(async () => {

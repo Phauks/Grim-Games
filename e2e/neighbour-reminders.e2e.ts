@@ -1,3 +1,4 @@
+import { seatingTools } from './seating.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
@@ -55,7 +56,7 @@ test("the Tea Lady's Cannot Die moves to her new neighbour when players move", a
 		await page.mouse.up();
 		await expect(seatLabelled(page, 'Seat 2: Seat 4')).toBeAttached({ timeout: 1000 });
 	}).toPass();
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await seatingTools(page).getByRole('button', { name: 'Done' }).tap();
 
 	await expect(
 		page.getByText('Tea Lady’s Cannot Die moved from Seat 2 to Seat 4, the new neighbour.')

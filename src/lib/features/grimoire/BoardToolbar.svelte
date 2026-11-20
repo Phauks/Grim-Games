@@ -8,11 +8,13 @@
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import ViewerShare from './ViewerShare.svelte';
+	import RotateSeats from './seats/RotateSeats.svelte';
 	import type { SeatArranging } from '#lib/features/board/seat-arranging.svelte.ts';
 	import {
 		countOff,
 		leaveSeating,
-		letPhonesMove
+		letPhonesMove,
+		seatingInPane
 	} from '#lib/features/grimoire/seats/seating-mode.svelte.ts';
 
 	/**
@@ -65,12 +67,14 @@
 	const host = roomHost();
 	const count = $derived(host.countOff);
 	const seatingAction = $derived(t(host.seatingOpen ? 'room.seating.lock' : 'room.seating.unlock'));
+	/** Seating's controls in this bar: on a phone, or while the pane shows another view. */
+	const arranging = $derived(seatArr.arranging && !seatingInPane());
 </script>
 
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
 <div
 	class="toolbar"
-	class:seating={seatArr.arranging && !placing}
+	class:seating={arranging && !placing}
 	role="toolbar"
 	aria-label="Grimoire"
 	data-screenshot="skip"
@@ -79,7 +83,7 @@
 		<!-- Before Seating's controls, so Add seat from Seating comes back to them. -->
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
-	{:else if seatArr.arranging}
+	{:else if arranging}
 		<!-- Every Seating control here, alike (Trevor, 2026-11-01): icons on phones, their
 		     words beside them where there is room, as the board's own tools. -->
 		<span class="title arranging-title">{t('room.seating.title')}</span>
@@ -110,18 +114,7 @@
 		>
 		<!-- The two rotations as one box split down the middle, beside Done, so the tools with
 		     words sit together (Trevor, 2026-11-01), with the same edge as the buttons beside it. -->
-		<span class="rotate" role="group" aria-label="Rotate players">
-			<IconButton
-				icon="rotateAnticlockwise"
-				label="Rotate players anticlockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			/>
-			<IconButton
-				icon="rotateClockwise"
-				label="Rotate players clockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			/>
-		</span>
+		<RotateSeats {grimoire} />
 		<Button
 			variant="accent"
 			icon="check"
@@ -223,30 +216,6 @@
 		.arranging-title {
 			visibility: hidden;
 		}
-	}
-	.rotate {
-		position: relative;
-		display: flex;
-		flex: none;
-		overflow: hidden;
-		border-radius: var(--button-radius);
-		background: var(--surface);
-	}
-	/* The quiet Button's edge, drawn over the two halves: on a background their backing covered
-	   an edge drawn under them (Trevor, 2026-11-06: "missing outside border"). */
-	.rotate::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		box-shadow: var(--button-ring);
-		pointer-events: none;
-	}
-	.rotate :global(.icon-button) {
-		border-radius: 0;
-	}
-	.rotate :global(.icon-button + .icon-button) {
-		border-left: var(--control-border);
 	}
 	/* Seating's tools keep their size, all the same square on a phone. */
 	.seating :global(.button),

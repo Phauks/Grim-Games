@@ -1,3 +1,4 @@
+import { seatingTools } from './seating.ts';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
@@ -54,10 +55,7 @@ async function lockFirst(page: Page, name: string) {
 
 async function startCountOff(page: Page) {
 	await paneButton(page, 'Seats', 'Seating');
-	await page
-		.getByRole('toolbar', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Count off' })
-		.tap();
+	await seatingTools(page).getByRole('button', { name: 'Count off' }).tap();
 	return page.getByTestId('count-off-host');
 }
 
@@ -111,7 +109,7 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	await expect(sheet).toBeHidden();
 	await expect(ana.getByTestId('player-status-row')).toHaveAttribute('data-seat', '3');
 	// Seating's own Done leaves the mode, and its controls with it.
-	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const toolbar = seatingTools(page);
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
 	await expect(toolbar.getByRole('button', { name: 'Count off' })).toHaveCount(0);
 

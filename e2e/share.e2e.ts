@@ -1,4 +1,5 @@
 import { openNotes, tabNames } from './tabs.ts';
+import { seatingTools } from './seating.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { paneButton } from './players.ts';
@@ -90,7 +91,7 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 	await page.mouse.move(to.x, (from.y + to.y) / 2, { steps: 4 });
 	await page.mouse.move(to.x, to.y, { steps: 4 });
 	await page.mouse.up();
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await seatingTools(page).getByRole('button', { name: 'Done' }).tap();
 
 	const sheet = await openScript(page);
 	await sheet.getByRole('tab', { name: 'Grim' }).tap();
