@@ -1029,18 +1029,22 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	// Filtered by player (Trevor, 2026-10-19): only entries naming Seat 1, the Sailor's seat;
 	// the Drunk reminder's own character is no filter.
 	const history = page.getByTestId('history');
-	const filter = history.getByRole('group', { name: 'Show changes for' });
-	await expect(filter.getByRole('button', { name: 'Sailor' })).toHaveCount(0);
-	await expect(filter.getByRole('button', { name: 'Seat 3' })).toBeVisible();
-	await filter.getByRole('button', { name: 'Seat 1', exact: true }).tap();
-	await expect(filter.getByRole('button', { name: 'All' })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
+	// One drop-down, each player shown as their character and name (Trevor, 2026-11-20: A).
+	const filter = history.getByRole('combobox', { name: 'Show changes for' });
+	await expect(filter).toContainText('All players');
+	await filter.tap();
+	const seatOne = page.getByRole('option', { name: /Seat 1\b/ });
+	await expect(page.getByRole('option', { name: /Seat 3\b/ })).toBeVisible();
+	await expect(page.getByRole('option', { name: /Drunk/ })).toHaveCount(0);
+	await seatOne.tap();
+	await expect(seatOne).toHaveAttribute('aria-selected', 'true');
 	await expect(history.locator('.history li')).not.toHaveCount(0);
 	for (const text of await history.locator('.history li .text').allTextContents())
 		expect(text).toMatch(/Sailor/);
-	await filter.getByRole('button', { name: 'All' }).tap();
+	await seatOne.tap();
+	await expect(filter).toContainText('All players');
+	await page.keyboard.press('Escape');
+	await expect(seatOne).toBeHidden();
 	await expect(history).toContainText('New game:');
 	await page.keyboard.press('Escape');
 

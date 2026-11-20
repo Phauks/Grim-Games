@@ -1,7 +1,8 @@
 <script lang="ts">
 	import NoneState from '#lib/ui/primitives/NoneState.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -39,7 +40,7 @@
 		visible ? historyItems(grimoire.open.session.log.entries, cursor, characters) : []
 	);
 	// ── Filter by player (Trevor, 2026-10-19; by character before, 2026-10-16): any of those
-	// chosen, in a fixed row. A seat stays one player when its character changes, and two
+	// chosen, from one drop-down. A seat stays one player when its character changes, and two
 	// seats with the same character stay two. ──
 	let chosenSeats = $state<SeatId[]>([]);
 	$effect(() => {
@@ -66,11 +67,6 @@
 			? items
 			: items.filter((item) => itemSeats(item).some((id) => chosenSeats.includes(id)))
 	);
-	function toggleFilter(id: SeatId) {
-		chosenSeats = chosenSeats.includes(id)
-			? chosenSeats.filter((c) => c !== id)
-			: [...chosenSeats, id];
-	}
 	/** The shown lines by the stage they were made in, newest stage first (historyStage). */
 	const stages = $derived.by(() => {
 		const gameId = grimoire.game.gameId;
@@ -107,21 +103,23 @@
 </script>
 
 {#snippet body()}
-	<div class="filter" role="group" aria-label="Show changes for">
-		<button
-			type="button"
-			class="all"
-			aria-pressed={chosenSeats.length === 0}
-			onclick={() => (chosenSeats = [])}>All</button
+	<!-- One drop-down, each player their character and name (Trevor, 2026-11-20: picked A). -->
+	<div class="filter">
+		<Select
+			label="Show changes for"
+			hideLabel
+			multiple
+			values={chosenSeats}
+			onValuesChange={(v) => (chosenSeats = v)}
+			placeholder="All players"
+			options={named.map((id) => ({ value: id, label: seatLabel(id) }))}
+			>{#snippet item(option)}{#if grimoire.game.seating.includes(option.value)}<SeatBadge
+						game={grimoire.game}
+						{characters}
+						seatId={option.value}
+						interactive={false}
+					/>{:else}{option.label}{/if}{/snippet}</Select
 		>
-		{#each named as id (id)}
-			<button
-				type="button"
-				class="who"
-				aria-pressed={chosenSeats.includes(id)}
-				onclick={() => toggleFilter(id)}><PlayerBadge name={seatLabel(id)} /></button
-			>
-		{/each}
 	</div>
 	<!-- By stage, newest first, each a gold band as the Day's sections (Trevor, 2026-11-19). -->
 	<div class="history">
@@ -204,37 +202,17 @@
 	.inline .history {
 		padding-inline: var(--pane-gutter, 0rem);
 	}
-	/* One fixed row, scrolled sideways, so filtering never moves the list (Trevor). */
+	/* One fixed row, so filtering never moves the list (Trevor). */
 	.filter {
+		flex: none;
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
-		flex: none;
 		height: calc(var(--tap-target) + var(--space-2));
-		overflow-x: auto;
-		scrollbar-width: none;
 		border-bottom: 1px solid var(--border);
 	}
-	.filter button {
-		flex: none;
-		display: grid;
-		place-items: center;
-		min-width: var(--tap-target);
-		height: var(--tap-target);
-		padding: 0 var(--space-2);
-		border: 1px solid transparent;
-		border-radius: var(--radius-full);
-		background: none;
-		color: inherit;
-		font: 600 0.85rem var(--font-control);
-		cursor: pointer;
-	}
-	.filter .who {
-		max-width: 12em;
-	}
-	.filter button[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
+	.filter > :global(*) {
+		flex: 1;
+		min-width: 0;
 	}
 	.history {
 		display: grid;
