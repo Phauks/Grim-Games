@@ -591,6 +591,7 @@
 	/** Where Game notes and Players show beside the board (plan M86), if they can. */
 	let paneAt = $state<BesidePlacement>();
 	$effect(() => void (paneAt && (sizing.timerW = sizing.timerH = 0))); // The toolbar's, beside.
+	const keepTimer = () => !ended || !sizing.timerW; // Game over takes its room: no seat moves.
 	/** Export's picture: the board and its game info only (Trevor, 2026-10-26, 2026-11-01). */
 	let grimoireEl = $state<HTMLElement>();
 	const capture = (type?: 'image/png' | 'image/jpeg') => {
@@ -945,11 +946,10 @@
 			></BoardCorner>
 			<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 			{#if secret}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-			<!-- A phone's whole timer, in the board's corner (Trevor, 2026-11-19: "closest to A"). -->
-			{#if toolbar && !paneAt}<div
+			<!-- A phone's timer in the board's corner (Trevor, 2026-11-19: "closest to A"). -->{#if toolbar && !paneAt}<div
 					class="board-timer"
-					bind:clientWidth={sizing.timerW}
-					bind:clientHeight={sizing.timerH}
+					bind:clientWidth={() => sizing.timerW, (w) => keepTimer() && (sizing.timerW = w)}
+					bind:clientHeight={() => sizing.timerH, (h) => keepTimer() && (sizing.timerH = h)}
 				>
 					{@render toolbarTimer()}
 				</div>{/if}
@@ -1261,9 +1261,6 @@
 		height: var(--tap-target);
 		pointer-events: none;
 	}
-	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
-	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
-	.board.showing .board-timer,
 	.board-timer {
 		position: absolute;
 		top: var(--space-1);
@@ -1284,6 +1281,9 @@
 		grid-area: 1 / 1;
 		display: flex;
 	}
+	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
+	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
+	.board.showing .board-timer,
 	.timer-slot.gone {
 		visibility: hidden;
 	}
