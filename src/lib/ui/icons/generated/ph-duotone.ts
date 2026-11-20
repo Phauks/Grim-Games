@@ -218,6 +218,8 @@ import ph_square_split_horizontal_duotone from '~icons/ph/square-split-horizonta
 import ph_stamp_duotone from '~icons/ph/stamp-duotone';
 import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_star_half_duotone from '~icons/ph/star-half-duotone';
+import ph_stop_duotone from '~icons/ph/stop-duotone';
+import ph_stop_circle_duotone from '~icons/ph/stop-circle-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
 import ph_sun_horizon_duotone from '~icons/ph/sun-horizon-duotone';
 import ph_swap_duotone from '~icons/ph/swap-duotone';
@@ -473,6 +475,8 @@ const icons: IconMap = {
 	'ph:stamp-duotone': ph_stamp_duotone,
 	'ph:star-duotone': ph_star_duotone,
 	'ph:star-half-duotone': ph_star_half_duotone,
+	'ph:stop-duotone': ph_stop_duotone,
+	'ph:stop-circle-duotone': ph_stop_circle_duotone,
 	'ph:sun-duotone': ph_sun_duotone,
 	'ph:sun-horizon-duotone': ph_sun_horizon_duotone,
 	'ph:swap-duotone': ph_swap_duotone,

@@ -218,6 +218,8 @@ import ph_square_split_horizontal_thin from '~icons/ph/square-split-horizontal-t
 import ph_stamp_thin from '~icons/ph/stamp-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_star_half_thin from '~icons/ph/star-half-thin';
+import ph_stop_thin from '~icons/ph/stop-thin';
+import ph_stop_circle_thin from '~icons/ph/stop-circle-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
 import ph_sun_horizon_thin from '~icons/ph/sun-horizon-thin';
 import ph_swap_thin from '~icons/ph/swap-thin';
@@ -473,6 +475,8 @@ const icons: IconMap = {
 	'ph:stamp-thin': ph_stamp_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:star-half-thin': ph_star_half_thin,
+	'ph:stop-thin': ph_stop_thin,
+	'ph:stop-circle-thin': ph_stop_circle_thin,
 	'ph:sun-thin': ph_sun_thin,
 	'ph:sun-horizon-thin': ph_sun_horizon_thin,
 	'ph:swap-thin': ph_swap_thin,

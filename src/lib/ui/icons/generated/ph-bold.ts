@@ -218,6 +218,8 @@ import ph_square_split_horizontal_bold from '~icons/ph/square-split-horizontal-b
 import ph_stamp_bold from '~icons/ph/stamp-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_star_half_bold from '~icons/ph/star-half-bold';
+import ph_stop_bold from '~icons/ph/stop-bold';
+import ph_stop_circle_bold from '~icons/ph/stop-circle-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
 import ph_sun_horizon_bold from '~icons/ph/sun-horizon-bold';
 import ph_swap_bold from '~icons/ph/swap-bold';
@@ -473,6 +475,8 @@ const icons: IconMap = {
 	'ph:stamp-bold': ph_stamp_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:star-half-bold': ph_star_half_bold,
+	'ph:stop-bold': ph_stop_bold,
+	'ph:stop-circle-bold': ph_stop_circle_bold,
 	'ph:sun-bold': ph_sun_bold,
 	'ph:sun-horizon-bold': ph_sun_horizon_bold,
 	'ph:swap-bold': ph_swap_bold,

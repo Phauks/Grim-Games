@@ -218,6 +218,8 @@ import ph_square_split_horizontal_fill from '~icons/ph/square-split-horizontal-f
 import ph_stamp_fill from '~icons/ph/stamp-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_star_half_fill from '~icons/ph/star-half-fill';
+import ph_stop_fill from '~icons/ph/stop-fill';
+import ph_stop_circle_fill from '~icons/ph/stop-circle-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
 import ph_sun_horizon_fill from '~icons/ph/sun-horizon-fill';
 import ph_swap_fill from '~icons/ph/swap-fill';
@@ -473,6 +475,8 @@ const icons: IconMap = {
 	'ph:stamp-fill': ph_stamp_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:star-half-fill': ph_star_half_fill,
+	'ph:stop-fill': ph_stop_fill,
+	'ph:stop-circle-fill': ph_stop_circle_fill,
 	'ph:sun-fill': ph_sun_fill,
 	'ph:sun-horizon-fill': ph_sun_horizon_fill,
 	'ph:swap-fill': ph_swap_fill,

@@ -218,6 +218,8 @@ import ph_square_split_horizontal_light from '~icons/ph/square-split-horizontal-
 import ph_stamp_light from '~icons/ph/stamp-light';
 import ph_star_light from '~icons/ph/star-light';
 import ph_star_half_light from '~icons/ph/star-half-light';
+import ph_stop_light from '~icons/ph/stop-light';
+import ph_stop_circle_light from '~icons/ph/stop-circle-light';
 import ph_sun_light from '~icons/ph/sun-light';
 import ph_sun_horizon_light from '~icons/ph/sun-horizon-light';
 import ph_swap_light from '~icons/ph/swap-light';
@@ -473,6 +475,8 @@ const icons: IconMap = {
 	'ph:stamp-light': ph_stamp_light,
 	'ph:star-light': ph_star_light,
 	'ph:star-half-light': ph_star_half_light,
+	'ph:stop-light': ph_stop_light,
+	'ph:stop-circle-light': ph_stop_circle_light,
 	'ph:sun-light': ph_sun_light,
 	'ph:sun-horizon-light': ph_sun_horizon_light,
 	'ph:swap-light': ph_swap_light,

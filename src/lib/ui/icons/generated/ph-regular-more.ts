@@ -97,6 +97,7 @@ import ph_spinner from '~icons/ph/spinner';
 import ph_square from '~icons/ph/square';
 import ph_square_split_horizontal from '~icons/ph/square-split-horizontal';
 import ph_star from '~icons/ph/star';
+import ph_stop from '~icons/ph/stop';
 import ph_sun_horizon from '~icons/ph/sun-horizon';
 import ph_tag_simple from '~icons/ph/tag-simple';
 import ph_text_align_left from '~icons/ph/text-align-left';
@@ -213,6 +214,7 @@ const icons: IconMap = {
 	'ph:square': ph_square,
 	'ph:square-split-horizontal': ph_square_split_horizontal,
 	'ph:star': ph_star,
+	'ph:stop': ph_stop,
 	'ph:sun-horizon': ph_sun_horizon,
 	'ph:tag-simple': ph_tag_simple,
 	'ph:text-align-left': ph_text_align_left,

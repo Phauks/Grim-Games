@@ -1,37 +1,35 @@
-import type { Gain, Player } from 'tone';
+import type { Player } from 'tone';
 import {
 	BOARD_SOUNDS,
 	boardSound,
 	boardSoundUrl,
-	padSounds,
-	soundMix,
-	type BoardSoundMix,
-	type SoundPad
+	isGameSound,
+	isMadeSound,
+	soundLoops
 } from '#lib/core/sound/soundboard.ts';
-import type { TownSoundCommand, TownSoundPlay } from '#lib/core/sync/room-sound.ts';
+import type { TownSoundCommand } from '#lib/core/sync/room-sound.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { ambience } from './ambience.ts';
 import { recording } from './recording.ts';
-import { audio, claimSpeaker, unlockSound } from './sound.ts';
+import { audio, claimSpeaker, playSound, stopSound, unlockSound, vibrate } from './sound.ts';
 
 /**
- * Plays the soundboard's recordings (plan U6) and the sounds tied to the Storyteller's
- * actions (plan U7). Built on Tone.js (Trevor 2026-10-27: "more mixing controls", size is no
- * concern "if it builds a better tool"), loaded the first time a sound plays.
- *
- * The mix: the device's volume, then the soundboard's level, then each sound's own volume,
- * with a sound looping until stopped if its Loop is on. One sound plays at a time, a new one
- * cutting off the one before, unless "Let sounds overlap" is on. Tapping a sound playing
- * stops it. Pause (Trevor, 2026-10-27) holds every sound where it is and silences day and
- * night sound until Resume; playing another sound ends the pause.
+ * Plays the game's sounds in the room (Trevor, 2026-11-19: the full sound flow): the sound each
+ * moment of a game plays by itself (Dusk, Dawn, an execution, the game's end; the day timer's
+ * own are sent with the timer and Back to town), and the one the Storyteller plays from the
+ * pane's Sounds. One sound plays at a time, a new one cutting off the one before, and a second
+ * tap stops it. A recording that loops (a heartbeat) plays until stopped. Pause (Trevor,
+ * 2026-10-27) holds the sound where it is and silences day and night sound until Resume;
+ * playing another sound ends the pause. Recordings play on Tone.js, loaded the first time one
+ * plays; the made sounds (bell, chime, clock tower, buzzer) are `playSound`'s.
  *
  * None of them sound on the Storyteller's own device (Trevor, 2026-10-30: it "identifies where
  * a storyteller is in a room. Only play remote on other devices"). Play on (plan U10) sends
  * each to the Public Town tablet, the players' phones or both, through the room: the board's
- * room connects `town`, and those devices play them with `fromStoryteller`. Sounds still run
- * here, silent, so the pads show what is playing; without a room nothing is heard. A preview
- * in Settings is the one sound heard on the device it is chosen on.
+ * room connects `town`, and those devices play them with `fromStoryteller`. A recording still
+ * runs here, silent, so the pane shows what is playing; without a room nothing is heard. A
+ * preview in Settings is the one sound heard on the device it is chosen on.
  */
 
 type Tone = typeof import('tone');
@@ -42,12 +40,9 @@ const FADE = 0.3;
 interface Voice {
 	id: string;
 	player: Player;
-	gain: Gain;
 	data: AudioBuffer;
 	/** When the recording began, on the audio clock, for where to pause. */
 	startedAt: number;
-	/** The Storyteller's mix, for a sound sent to the Public Town; the device's own otherwise. */
-	fixed?: BoardSoundMix;
 }
 
 interface Held {
@@ -55,7 +50,6 @@ interface Held {
 	data: AudioBuffer;
 	/** Seconds into the recording where it was paused. */
 	at: number;
-	fixed?: BoardSoundMix;
 }
 
 let loading: Promise<Tone | undefined> | undefined;
@@ -76,96 +70,60 @@ function tone(ctx: AudioContext): Promise<Tone | undefined> {
 	return loading;
 }
 
-/** The soundboard's level under the device's volume. */
-function busLevel(): number {
-	return preferences.current.soundVolume * preferences.current.soundboardLevel;
-}
-
-/** What a sound plays at here: the device's own mix, or the one the Storyteller sent. */
-function mixOf(voice: { id: string; fixed?: BoardSoundMix }): BoardSoundMix {
-	return voice.fixed ?? soundMix(preferences.current.soundMixes, voice.id);
-}
-
 class Soundboard {
-	/** The sounds playing now, for their buttons' pressed state; kept while paused. */
-	playing = $state<string[]>([]);
+	/** The recording playing now, or held by Pause, for the pane's Play and Stop. */
+	playing = $state<string | undefined>();
 	paused = $state(false);
-	/** The sound the mixer's per-sound rows change. */
-	mixing = $state(BOARD_SOUNDS[0].id);
 	/**
 	 * Sends a command to the devices Play on names, while this device's board has a room;
 	 * false when the room can't be reached.
 	 */
 	town: ((command: TownSoundCommand) => boolean) | undefined;
-	#voices = new Map<string, Voice>();
-	/** Sounds asked for and still loading, so a stop before they load cancels them. */
-	#pending = new Set<string>();
-	#held: Held[] = [];
-	#bus: Gain | undefined;
+	#voice: Voice | undefined;
+	/** A recording asked for and still loading, so a stop before it loads cancels it. */
+	#pending: string | undefined;
+	#held: Held | undefined;
+	#bus: import('tone').Gain | undefined;
 	#keptOffline = false;
 	/** Sounds here are heard: they came from the Storyteller, or are a preview in Settings. */
 	#heard = false;
 
 	isPlaying(id: string): boolean {
-		return this.playing.includes(id);
+		return this.playing === id;
 	}
 
-	/** Plays a sound, stops it when it is playing, or resumes everything when paused. */
+	/** Plays a sound, stops it when it is playing, or resumes it when paused. */
 	toggle(id: string): void {
 		if (this.isPlaying(id)) {
 			if (this.paused) this.resume();
-			else this.stop(id);
-		} else void this.play(id);
+			else this.stop();
+		} else this.play(id);
 	}
 
-	async play(id: string): Promise<void> {
-		return this.playAll([id]);
-	}
-
-	/** Plays a pad: its sound, or every sound in its mix at once. */
-	togglePad(pad: SoundPad): void {
-		const ids = padSounds(pad);
-		if (ids.length === 1) return this.toggle(ids[0]);
-		if (this.isPadPlaying(pad)) {
-			if (this.paused) this.resume();
-			else for (const id of ids) this.stop(id);
-		} else void this.playAll(ids);
-	}
-
-	/** Every sound in the pad is playing, or held by Pause. */
-	isPadPlaying(pad: SoundPad): boolean {
-		return padSounds(pad).every((id) => this.isPlaying(id));
-	}
-
-	/** Plays sounds together, cutting off the others unless sounds may overlap. */
-	async playAll(ids: string[]): Promise<void> {
-		const sounds = ids
-			.filter((id) => boardSound(id))
-			.map((id) => ({ id, ...soundMix(preferences.current.soundMixes, id) }));
-		const cut = !preferences.current.soundboardOverlap;
+	/** Plays a sound in the room, cutting off the one before. */
+	play(id: string): void {
+		if (!isGameSound(id)) return;
 		this.#hear(false);
-		if (sounds.length) this.town?.({ command: 'play', sounds, cut });
+		this.town?.({ command: 'play', id });
 		this.#endPause();
-		await this.#play(sounds, cut, false);
+		void this.#play(id);
 	}
 
 	/** Plays a sound on this device alone, as chosen in Settings, so it can be heard. */
-	async preview(id: string): Promise<void> {
+	preview(id: string): void {
 		this.#hear(true);
 		this.#endPause();
-		await this.#play([{ id, ...soundMix(preferences.current.soundMixes, id) }], true, false);
+		void this.#play(id);
 	}
 
-	/** Plays what the Storyteller's soundboard sent the room (plan U10). */
+	/** Plays what the Storyteller sent the room (plan U10). */
 	fromStoryteller(command: TownSoundCommand): void {
 		this.#hear(true);
 		if (command.command === 'play') {
 			this.#endPause();
-			void this.#play(command.sounds, command.cut, true);
-		} else if (command.command === 'stop') {
-			if (command.ids) for (const id of command.ids) this.#stopHere(id);
-			else this.#stopHere();
-		} else if (command.command === 'pause') this.#pauseHere();
+			void this.#play(command.id);
+		} else if (command.command === 'stop') this.#stopHere();
+		else if (command.command === 'pause') this.#pauseHere();
 		else this.#resumeHere();
 	}
 
@@ -174,19 +132,22 @@ class Soundboard {
 		if (this.#heard === heard) return;
 		this.#stopHere();
 		this.#heard = heard;
-		this.applyMix();
+		this.applyVolume();
 	}
 
 	#level(): number {
-		return this.#heard ? busLevel() : 0;
+		return this.#heard ? preferences.current.soundVolume : 0;
 	}
 
-	async #play(sounds: TownSoundPlay[], cut: boolean, fixed: boolean): Promise<void> {
+	async #play(id: string): Promise<void> {
+		this.#stopHere();
+		if (isMadeSound(id)) {
+			if (this.#heard) playSound(id);
+			return;
+		}
+		const sound = boardSound(id);
 		const ctx = audio();
-		if (cut) this.#stopHere();
-		else for (const { id } of sounds) this.#stopHere(id);
-		const known = sounds.filter(({ id }) => boardSound(id));
-		if (!known.length || !ctx || (busLevel() <= 0 && this.#heard)) return;
+		if (!sound || !ctx || (this.#level() <= 0 && this.#heard)) return;
 		if (this.#heard) claimSpeaker();
 		unlockSound();
 		if (!this.#keptOffline) {
@@ -194,59 +155,45 @@ class Soundboard {
 			this.#keptOffline = true;
 			keepOffline(BOARD_SOUNDS.map(boardSoundUrl));
 		}
-		for (const { id } of known) this.#pending.add(id);
+		this.#pending = id;
 		this.#mark();
-		await Promise.all(
-			known.map(async ({ id, volume, loop }) => {
-				const sound = boardSound(id);
-				if (!sound) return;
-				const [Tone, data] = await Promise.all([tone(ctx), recording(ctx, boardSoundUrl(sound))]);
-				if (!this.#pending.delete(id) || !Tone || !data) {
-					this.#mark();
-					return;
-				}
-				this.#start(Tone, ctx, { id, data, at: 0, fixed: fixed ? { volume, loop } : undefined });
-			})
-		);
+		const [Tone, data] = await Promise.all([tone(ctx), recording(ctx, boardSoundUrl(sound))]);
+		if (this.#pending !== id || !Tone || !data) {
+			if (this.#pending === id) this.#pending = undefined;
+			this.#mark();
+			return;
+		}
+		this.#pending = undefined;
+		this.#start(Tone, ctx, { id, data, at: 0 });
 	}
 
-	#start(Tone: Tone, ctx: AudioContext, { id, data, at, fixed }: Held): void {
+	#start(Tone: Tone, ctx: AudioContext, { id, data, at }: Held): void {
 		this.#bus ??= new Tone.Gain(this.#level()).toDestination();
-		const mix = mixOf({ id, fixed });
-		const gain = new Tone.Gain(mix.volume).connect(this.#bus);
-		const player = new Tone.Player(data).connect(gain);
-		player.loop = mix.loop;
+		const player = new Tone.Player(data).connect(this.#bus);
+		player.loop = soundLoops(id);
 		player.fadeOut = FADE;
-		const voice: Voice = { id, player, gain, data, startedAt: ctx.currentTime - at, fixed };
+		const voice: Voice = { id, player, data, startedAt: ctx.currentTime - at };
 		player.onstop = () => {
-			if (this.#voices.get(id) === voice) {
-				this.#voices.delete(id);
+			if (this.#voice === voice) {
+				this.#voice = undefined;
 				this.#mark();
 			}
 			// After the fade, so the end isn't cut short.
-			setTimeout(() => {
-				player.dispose();
-				gain.dispose();
-			}, FADE * 1000);
+			setTimeout(() => player.dispose(), FADE * 1000);
 		};
-		this.#voices.set(id, voice);
+		this.#voice = voice;
 		player.start(undefined, at);
 		this.#mark();
 	}
 
-	/** Follows a change of level, of Play on or of a sound's mix while it plays. */
-	applyMix(): void {
+	/** Follows a change of the device's volume, or of Play on, while a sound plays. */
+	applyVolume(): void {
 		const ctx = audio();
 		if (!ctx) return;
 		this.#bus?.gain.setTargetAtTime(this.#level(), ctx.currentTime, 0.05);
-		for (const voice of this.#voices.values()) {
-			const mix = mixOf(voice);
-			voice.gain.gain.setTargetAtTime(mix.volume, ctx.currentTime, 0.05);
-			voice.player.loop = mix.loop;
-		}
 	}
 
-	/** Holds every sound where it is, and day and night sound, until resumed. */
+	/** Holds the sound where it is, and day and night sound, until resumed. */
 	pause(): void {
 		if (this.paused) return;
 		this.town?.({ command: 'pause' });
@@ -256,13 +203,13 @@ class Soundboard {
 	#pauseHere(): void {
 		const ctx = audio();
 		if (this.paused || !ctx) return;
-		const held = [...this.#voices.values()]
-			.map((voice) => {
-				const elapsed = ctx.currentTime - voice.startedAt;
-				const at = voice.player.loop ? elapsed % voice.data.duration : elapsed;
-				return { id: voice.id, data: voice.data, at, fixed: voice.fixed };
-			})
-			.filter((held) => held.at < held.data.duration);
+		const voice = this.#voice;
+		let held: Held | undefined;
+		if (voice) {
+			const elapsed = ctx.currentTime - voice.startedAt;
+			const at = voice.player.loop ? elapsed % voice.data.duration : elapsed;
+			if (at < voice.data.duration) held = { id: voice.id, data: voice.data, at };
+		}
 		this.#stopHere();
 		this.#held = held;
 		this.paused = true;
@@ -280,12 +227,12 @@ class Soundboard {
 		const held = this.#held;
 		const ctx = audio();
 		this.#endPause();
-		if (!held.length || !ctx) return;
+		if (!held || !ctx) return;
 		if (this.#heard) claimSpeaker();
 		unlockSound();
 		void tone(ctx).then((Tone) => {
 			if (!Tone || this.paused) return;
-			for (const sound of held) this.#start(Tone, ctx, sound);
+			this.#start(Tone, ctx, held);
 		});
 	}
 
@@ -293,39 +240,45 @@ class Soundboard {
 	#endPause(): void {
 		if (!this.paused) return;
 		this.paused = false;
-		this.#held = [];
+		this.#held = undefined;
 		ambience.setPaused(false);
 		this.#mark();
 	}
 
-	/** Stops one sound with a short fade, or every sound when none is named. */
-	stop(id?: string): void {
-		this.town?.(id === undefined ? { command: 'stop' } : { command: 'stop', ids: [id] });
-		this.#stopHere(id);
+	/** Stops the sound playing, with a short fade. */
+	stop(): void {
+		this.town?.({ command: 'stop' });
+		this.#stopHere();
 	}
 
-	#stopHere(id?: string): void {
-		for (const voice of [...this.#voices.values()]) {
-			if (id !== undefined && voice.id !== id) continue;
-			this.#voices.delete(voice.id);
-			voice.player.stop();
-		}
-		if (id === undefined) {
-			this.#pending.clear();
-			this.#held = [];
-		} else {
-			this.#pending.delete(id);
-			this.#held = this.#held.filter((held) => held.id !== id);
-		}
+	#stopHere(): void {
+		const voice = this.#voice;
+		this.#voice = undefined;
+		voice?.player.stop();
+		stopSound();
+		this.#pending = undefined;
+		this.#held = undefined;
 		this.#mark();
 	}
 
-	/** Updates which buttons show pressed. */
+	/** Updates what the pane shows playing. */
 	#mark(): void {
-		this.playing = [
-			...new Set([...this.#voices.keys(), ...this.#pending, ...this.#held.map((held) => held.id)])
-		];
+		this.playing = this.#voice?.id ?? this.#pending ?? this.#held?.id;
 	}
 }
 
 export const soundboard = new Soundboard();
+
+/**
+ * A sound the Storyteller's room sent with the timer running out or Back to town: played here
+ * as any other of their sounds, after a vibration where the phone's settings allow it.
+ */
+export function hearGameSound(id: string | undefined, { buzz = false } = {}): void {
+	if (buzz && preferences.current.timerVibrate) vibrate();
+	if (id && isGameSound(id)) soundboard.fromStoryteller({ command: 'play', id });
+}
+
+/** Plays a sound on this device alone, as it is chosen in Settings. */
+export function previewSound(id: string): void {
+	if (isGameSound(id)) soundboard.preview(id);
+}
