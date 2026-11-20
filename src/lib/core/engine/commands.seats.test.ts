@@ -230,6 +230,42 @@ describe('seats', () => {
 		expect(refused(s, ctx, { type: 'SetGameNote', noteId: 'n9', ...note })).toBe('unknown-note');
 	});
 
+	it("assigns a Storyteller's note to the game or a player in one undoable step", () => {
+		// Trevor, 2026-11-19: "make it so you can assign a note to a player or generally to the game".
+		const { session, ctx, seats } = newGame(names);
+		const note = { title: 'Claims', text: 'Washerwoman, 3 or 5', hidden: false };
+		const s = run(
+			session,
+			ctx,
+			{ type: 'SetGameNote', ...note },
+			{ type: 'SetSeatNote', seatId: seats[1], title: 'Old', text: '', hidden: false }
+		);
+		// To a player: it leaves the game's notes and goes last on the seat, with its next id.
+		const toSeat = run(s, ctx, { type: 'MoveNote', noteId: 'n1', from: 'game', to: seats[1] });
+		expect('notes' in toSeat.game).toBe(false);
+		expect(toSeat.game.seats[seats[1]].notes).toEqual([
+			{ noteId: 'n1', title: 'Old', text: '', hidden: false },
+			{ noteId: 'n2', ...note }
+		]);
+		expect(undo(toSeat).game).toEqual(s.game);
+		// Seat to seat, and back to the game.
+		const toOther = run(toSeat, ctx, {
+			type: 'MoveNote',
+			noteId: 'n2',
+			from: seats[1],
+			to: seats[3]
+		});
+		expect(toOther.game.seats[seats[3]].notes).toEqual([{ noteId: 'n1', ...note }]);
+		const back = run(toOther, ctx, { type: 'MoveNote', noteId: 'n1', from: seats[3], to: 'game' });
+		expect(back.game.notes).toEqual([{ noteId: 'n1', ...note }]);
+		expect('notes' in back.game.seats[seats[3]]).toBe(false);
+		const same = dispatch(back, { type: 'MoveNote', noteId: 'n1', from: 'game', to: 'game' }, ctx);
+		expect(same.ok && codes(same)).toEqual(['no-change']);
+		expect(refused(s, ctx, { type: 'MoveNote', noteId: 'n9', from: 'game', to: seats[0] })).toBe(
+			'unknown-note'
+		);
+	});
+
 	it('moves the note with its player when seats swap', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(

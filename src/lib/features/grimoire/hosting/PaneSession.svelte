@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -31,6 +32,11 @@
 		onEnd?: () => void;
 		/** A spectator's: only Game info. */
 		watching?: boolean;
+		/**
+		 * Players' feedback, last, once the game is over: unseen during the game (Trevor,
+		 * 2026-11-19: "We shouldn't even see player feedback section during the game").
+		 */
+		feedback?: Snippet;
 	}
 
 	let {
@@ -42,7 +48,8 @@
 		onReopen,
 		newGame,
 		onEnd,
-		watching = false
+		watching = false,
+		feedback
 	}: Props = $props();
 
 	/** A phone's sheet closes first, so what the item opens or starts is on the board. */
@@ -61,14 +68,17 @@
 	}
 </script>
 
-<div class="items" data-testid="pane-session">
-	{#if watching}
-		{#if gameInfo}
-			<Button variant="quiet" icon="info" onclick={() => act(onGameInfo)}>Game info</Button>
-		{:else}
-			<NoneState />
-		{/if}
-	{:else}{@render own()}{/if}
+<div class="session">
+	<div class="items" data-testid="pane-session">
+		{#if watching}
+			{#if gameInfo}
+				<Button variant="quiet" icon="info" onclick={() => act(onGameInfo)}>Game info</Button>
+			{:else}
+				<NoneState />
+			{/if}
+		{:else}{@render own()}{/if}
+	</div>
+	{#if feedback && !watching}<div class="feedback">{@render feedback()}</div>{/if}
 </div>
 
 {#snippet own()}
@@ -136,6 +146,17 @@
 {/snippet}
 
 <style>
+	/* Session scrolls on its own once Player feedback is under it. */
+	.session {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.feedback {
+		padding-inline: var(--pane-gutter, 0rem);
+		padding-block-start: var(--space-2);
+	}
 	.items {
 		display: grid;
 		align-content: start;

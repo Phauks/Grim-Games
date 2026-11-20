@@ -474,7 +474,10 @@ test('after End game a phone rates the game in half stars and sends accolades', 
 
 	// The Storyteller reads it from the ended game's menu; it is saved with the game on this
 	// device, so it is still there after a reload (Trevor, 2026-10-25).
-	const feedback = page.getByTestId('game-feedback');
+	// The dialog's: beside the board, More's Session shows the same feedback.
+	const feedback = page
+		.getByRole('dialog', { name: 'Player feedback' })
+		.getByTestId('game-feedback');
 	async function openFeedback() {
 		await page.getByTestId('game-over').tap();
 		await page.getByRole('menuitem', { name: 'Player feedback' }).tap();
@@ -546,9 +549,9 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	const seats = await page.getByTestId('seat').count();
 	await openPane(page, 'Session');
 	await expect(menu.getByRole('button', { name: 'Reopen game' })).toBeVisible();
-	await expect(
-		menu.getByRole('button', { name: /Share grim|Export game|Player feedback/ })
-	).toHaveCount(0);
+	await expect(menu.getByRole('button', { name: /Share grim|Export game/ })).toHaveCount(0);
+	// Player feedback is under Session once the game is over (Trevor, 2026-11-19).
+	await expect(menu.getByRole('button', { name: /^Player feedback/ })).toBeVisible();
 	await closePane(page);
 	await page.getByTestId('game-over').tap();
 	await expect(page.getByRole('menuitem')).toHaveText([
