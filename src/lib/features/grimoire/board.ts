@@ -2,6 +2,7 @@
  * Board helpers that are UI only: which characters the pickers offer and the text shown
  * for engine warnings. Rules stay in `#lib/core`; where seats sit is `#lib/ui/seating`.
  */
+import type { PastPicks } from '#lib/core/model/picks.ts';
 import {
 	findEdition,
 	type Alignment,
@@ -385,6 +386,8 @@ const MISS_WORDS: Record<TargetMiss, string> = {
 	'not-with-label': 'another reminder on this player rules it out',
 	'max-placed': 'it is already on as many players as it can be at once',
 	'last-night': 'the ability says different to last night',
+	'previous-pick': 'the ability says different from the previous pick',
+	'earlier-pick': 'this player was picked before, and the ability never picks one twice',
 	jinx: 'a jinx says who carries it',
 	'jinx-choice': "a jinx says its character can't choose this player",
 	'jinx-redirect': 'a jinx says the Storyteller chooses another player instead'
@@ -409,9 +412,9 @@ export function seatMisses(
 	reminder: Reminder,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): TargetMiss[] {
-	const misses = reminderTargetMisses(game, reminder, seatId, characters, atDawn);
+	const misses = reminderTargetMisses(game, reminder, seatId, characters, past);
 	return game.seats[seatId]?.characterId === undefined
 		? misses.filter((m) => !NEEDS_CHARACTER.includes(m))
 		: misses;
@@ -425,10 +428,10 @@ export function seatMisfits(
 	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): Set<SeatId> {
 	return new Set(
-		game.seating.filter((id) => seatMisses(game, reminder, id, characters, atDawn).length > 0)
+		game.seating.filter((id) => seatMisses(game, reminder, id, characters, past).length > 0)
 	);
 }
 
@@ -442,9 +445,9 @@ export function reminderFitWarning(
 	reminder: Reminder,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): string | undefined {
-	const misses = seatMisses(game, reminder, seatId, characters, atDawn);
+	const misses = seatMisses(game, reminder, seatId, characters, past);
 	if (misses.length === 0) return undefined;
 	const why = misses.map((m) => MISS_WORDS[m]).join('; ');
 	const note = targetRule(game, reminder, characters)?.note;

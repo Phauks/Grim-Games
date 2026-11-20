@@ -6,7 +6,7 @@
  * 1. who sits where: `scenario([...characters])`, one named seat per character in seating
  *    order (Ana, Ben, Cat, ...), on the test script;
  * 2. what has happened: steps such as `.drunk('chef')`, `.poisoned(1)`, `.dies('king')`,
- *    `.nominate('chef', 'imp')`, `.execute('imp')`, `.dusk()`, `.newDay()`, or any engine
+ *    `.nominate('chef', 'imp')`, `.execute('imp')`, `.dusk()`, `.newDay()`, `.moves(...)`, or any engine
  *    command with `.do(...)`;
  * 3. what the rules say now: `expect` on the scenario's `game`, calling the rule under test
  *    (`infoPicker`, `gameEnds`, `madnessOffer`, ...) with `characters`.
@@ -32,7 +32,13 @@
  * The scaffold (`npm run scaffold:rules-tests`) writes new test files with this import.
  */
 import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/data/index.ts';
-import type { Command, EngineContext, GameSession } from '#lib/core/engine/index.ts';
+import {
+	pickHistory,
+	type Command,
+	type EngineContext,
+	type GameSession
+} from '#lib/core/engine/index.ts';
+import type { PastPicks } from '#lib/core/model/picks.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
@@ -83,6 +89,20 @@ export class Scenario {
 			seatId: this.seat(on),
 			reminder: { characterId, label }
 		});
+	}
+
+	/** Moves `characterId`'s latest-placed `label` reminder to a seat. */
+	moves(characterId: CharacterId, label: ReminderLabel, to: SeatRef): Scenario {
+		const token = this.game.seating
+			.flatMap((id) => this.game.seats[id].reminders)
+			.findLast((r) => r.characterId === characterId && r.label === label);
+		if (!token) throw new Error(`no ${characterId} ${label} reminder to move`);
+		return this.do({ type: 'MoveReminder', reminderId: token.reminderId, toSeatId: this.seat(to) });
+	}
+
+	/** Each reminder's picks before tonight. */
+	pastPicks(): PastPicks {
+		return pickHistory(this.session.log);
 	}
 
 	/** The Poisoner's Poisoned reminder on a seat. */

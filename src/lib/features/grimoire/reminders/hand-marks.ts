@@ -5,6 +5,7 @@
  * characters its seats show), drawn by SeatDisc on both (Trevor, 2026-11-10: Local Grim
  * should match the Storyteller).
  */
+import type { PastPicks } from '#lib/core/model/picks.ts';
 import {
 	trueCharacter,
 	type CharacterLookup,
@@ -31,9 +32,9 @@ export function handMarks(
 	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup,
-	atDawn?: Game
+	past?: PastPicks
 ): HandMarks {
-	const misfits = seatMisfits(game, reminder, characters, atDawn);
+	const misfits = seatMisfits(game, reminder, characters, past);
 	const id = reminder.characterId;
 	return {
 		misfits,

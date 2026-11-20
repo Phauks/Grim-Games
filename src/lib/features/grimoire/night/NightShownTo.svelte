@@ -10,6 +10,7 @@
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import SeatBadge from '#lib/features/board/SeatBadge.svelte';
@@ -17,8 +18,9 @@
 
 	/**
 	 * Who this step wakes to show its character's token (`shownTo` in its rules block): the
-	 * player carrying the Widow's Know, or every Minion for the Damsel. Shown with one tap,
-	 * as the step's other Valid Information is; "None" until anyone qualifies.
+	 * player carrying the Widow's Know, or every Minion for the Damsel, on the "This character is
+	 * in play" card. Shown with one tap, as the step's other Valid Information is; "None" until
+	 * anyone qualifies.
 	 *
 	 * Also what each evil player learns (`evilLearns`: the Storm Catcher's Stormcaught): "This
 	 * player is" with the marked player's character, pointing at them; with no one marked,
@@ -29,11 +31,10 @@
 	interface Props {
 		grimoire: Grimoire;
 		step: NightStep;
-		onShow: (characterId: CharacterId) => void;
 		onShowCard: (card: ShownInfoCard) => void;
 	}
 
-	let { grimoire, step, onShow, onShowCard }: Props = $props();
+	let { grimoire, step, onShowCard }: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -62,6 +63,11 @@
 			return (type === 'townsfolk' || type === 'outsider') && !inPlay.has(id);
 		});
 	});
+	/** The step's token on the "This character is in play" card (Trevor, 2026-11-19). */
+	function showInPlay() {
+		const character = step.character;
+		if (character) onShowCard({ title: text('in-play'), characters: [{ character }] });
+	}
 	const shownId = $derived(learns?.marked ? learns.marked.characterId : named);
 	function showLearned() {
 		const character = shownId ? characters.get(shownId) : undefined;
@@ -81,6 +87,7 @@
 					{seatId}
 				/>{:else}<NoneState inline />{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
+			<ReminderToken label={text('in-play')} variant="info" title={t('reference.infoToken')} />
 			<CharacterPiece
 				template="badge"
 				characterId={step.character.id}
@@ -88,7 +95,7 @@
 				interactive={false}
 			/>
 		</p>
-		<ShowToPlayerButton onclick={() => onShow(step.character!.id)} />
+		<ShowToPlayerButton onclick={showInPlay} />
 	</section>
 {/if}
 
