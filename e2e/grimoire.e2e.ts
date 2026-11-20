@@ -1037,8 +1037,8 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 		'aria-pressed',
 		'false'
 	);
-	await expect(history.locator('.history > li')).not.toHaveCount(0);
-	for (const text of await history.locator('.history > li .text').allTextContents())
+	await expect(history.locator('.history li')).not.toHaveCount(0);
+	for (const text of await history.locator('.history li .text').allTextContents())
 		expect(text).toMatch(/Sailor/);
 	await filter.getByRole('button', { name: 'All' }).tap();
 	await expect(history).toContainText('New game:');
